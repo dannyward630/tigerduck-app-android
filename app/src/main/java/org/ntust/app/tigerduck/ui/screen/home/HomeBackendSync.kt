@@ -429,6 +429,8 @@ class HomeBackendSync @Inject constructor(
             allCourses.removeAll { it.isManual }
             dataCache.saveCourses(allCourses)
             dataCache.saveDeletedCourseNos(emptySet())
+            // In every term: the reconcile would keep a course whose add waits.
+            pendingCourseAdds.forgetAll()
             Log.i(TAG, "[sync] courses reset detected, wiped manual courses")
         }
         if (authService.isStillSignedInAs(account)) {

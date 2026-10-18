@@ -166,6 +166,15 @@ class PendingCourseAdds internal constructor(
             emptyList()
         }
 
+    /**
+     * Lets go of every waiting add: a course reset made on another device has
+     * taken the hand-added courses (`HomeBackendSync.applyCourseReset`), and an
+     * add kept past it would put its course back on every device.
+     */
+    suspend fun forgetAll() {
+        edit(dataCache.userDataGeneration) { emptyMap() }
+    }
+
     /** The course numbers whose add in [semester] is still waiting, for the reconcile to keep. */
     suspend fun waitingIn(semester: String): Set<String> = waiting()[semester].orEmpty().toSet()
 

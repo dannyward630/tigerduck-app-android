@@ -235,6 +235,25 @@ class PendingCourseAddsTest {
         assertEquals(emptySet<String>(), adds.waitingIn(term))
     }
 
+    /** HomeBackendSync.applyCourseReset: a course reset made on another device takes the waiting adds' courses. */
+    @Test
+    fun `a reset made elsewhere lets every waiting add go`() = runTest {
+        val other = Course(courseNo = "PE1010003", courseName = "Other", isManual = true)
+        cache.saveCourses(listOf(typed), term)
+        cache.saveCourses(listOf(other), "1142")
+        answer = { throw IOException("offline") }
+        adds.send(listOf(typed), term, typed.courseNo)
+        adds.send(listOf(other), "1142", other.courseNo)
+        uploads.clear()
+
+        adds.forgetAll()
+
+        assertEquals(emptyMap<String, List<String>>(), cache.loadPendingCourseAdds())
+        answer = { emptyList() }
+        adds.retry()
+        assertEquals(emptyList<Upload>(), uploads)
+    }
+
     @Test
     fun `an add deleted or reset away since is not sent again`() = runTest {
         cache.saveCourses(listOf(typed), term)
