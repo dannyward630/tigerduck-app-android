@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -32,6 +33,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.analytics.AnalyticsLogger
 import org.ntust.app.tigerduck.auth.AuthService
@@ -136,6 +138,9 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var libraryPagePresence: org.ntust.app.tigerduck.library.LibraryPagePresence
 
+    @Inject
+    lateinit var heldShareLink: HeldShareLink
+
     private val widgetStartRoute = mutableStateOf<String?>(null)
     private val whatsNewFlow = mutableStateOf<WhatsNewFlow?>(null)
 
@@ -168,6 +173,13 @@ class MainActivity : AppCompatActivity() {
         widgetStartRoute.value = resolveStartRoute(intent, restored = savedInstanceState != null)
         handleServerPushIntent(intent)
         openSharedClassTable(intent, restored = savedInstanceState != null)
+        // A share link held while no one could import it opens once someone signs in and onboarding
+        // is finished, in either order.
+        lifecycleScope.launch {
+            combine(authService.authState, snapshotFlow { appState.showOnboarding }) { signedIn, onboarding ->
+                signedIn && !onboarding
+            }.collect { mayImport -> heldShareLink.release(mayImport)?.let(::importSharedClassTable) }
+        }
 
         // Re-prompt for app updates only on a genuine fresh start, never on a
         // rotation/config-change recreation (issue #89).
@@ -462,9 +474,10 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Opens the class table with the import of the share code a link carries: an App Link from
-     * the camera, Google Lens, another QR app or a tapped link, or tigerduck.app's button. It
+     * the camera, Google Lens, another QR app or a tapped link, or the share page's button. It
      * takes the steps a scanned code does, and replaces an import already open. Only for someone
-     * signed in who has finished onboarding; otherwise the link just opens the app.
+     * signed in who has finished onboarding: before that the link is held ([HeldShareLink]), and
+     * opens then.
      *
      * Once per delivery, as [resolveStartRoute]: see [takeSharedClassTableCode]. The import
      * itself lives in [classTableImport], so a configuration change keeps it on screen.
@@ -472,10 +485,14 @@ class MainActivity : AppCompatActivity() {
     private fun openSharedClassTable(intent: Intent?, restored: Boolean) {
         intent ?: return
         val hadData = intent.data != null
-        val mayImport = authService.authState.value && !appState.showOnboarding
-        val text = takeSharedClassTableCode(intent, restored, mayImport)
+        val text = takeSharedClassTableCode(intent, restored)
         if (hadData && intent.data == null) setIntent(intent)
         text ?: return
+        val mayImport = authService.authState.value && !appState.showOnboarding
+        heldShareLink.arrived(text, mayImport)?.let(::importSharedClassTable)
+    }
+
+    private fun importSharedClassTable(text: String) {
         // As a widget's tap opens it, on the user's own table; the import, once saved, shows the
         // person it added.
         widgetStartRoute.value = Screen.ClassTable.route

@@ -28,12 +28,14 @@ import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportView
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
 import java.time.Instant
 
 /**
  * A class table share code opened as a link: from the camera, Google Lens or another QR app, a
  * tapped link, or the share page's "Open in TigerDuck" button. Any page or app can open one, so it
- * takes exactly the steps a scanned code does, and only for a signed-in student.
+ * takes exactly the steps a scanned code does, and only for a signed-in student: one that comes
+ * before is held until then.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
@@ -64,11 +66,21 @@ class ShareCodeLinkTest {
         "tigerduck://share/${rest(code)}",
     )
 
+    private fun source(rel: String): String {
+        val path = "src/main/java/org/ntust/app/tigerduck/$rel"
+        var dir: File? = File("").absoluteFile
+        while (dir != null) {
+            File(dir, path).let { if (it.isFile) return it.readText() }
+            File(dir, "app/$path").let { if (it.isFile) return it.readText() }
+            dir = dir.parentFile
+        }
+        throw AssertionError("Could not locate $path from ${File("").absolutePath}")
+    }
+
     private fun linkIntent(link: String) =
         Intent(Intent.ACTION_VIEW, Uri.parse(link)).addCategory(Intent.CATEGORY_BROWSABLE)
 
-    private fun take(link: String, restored: Boolean = false, mayImport: Boolean = true) =
-        takeSharedClassTableCode(linkIntent(link), restored, mayImport)
+    private fun take(link: String, restored: Boolean = false) = takeSharedClassTableCode(linkIntent(link), restored)
 
     private fun TestScope.model(
         lookup: suspend (String, List<String>) -> List<Course> = { _, _ -> listOf(calculus) },
@@ -180,31 +192,63 @@ class ShareCodeLinkTest {
         ).forEach { link ->
             val intent = linkIntent(link)
 
-            assertNull(link, takeSharedClassTableCode(intent, restored = false, mayImport = true))
+            assertNull(link, takeSharedClassTableCode(intent, restored = false))
             assertEquals(link, link, intent.dataString)
         }
     }
 
     @Test
-    fun `a link before sign-in or during onboarding imports nothing, and is not kept for later`() {
-        val intent = linkIntent(code)
+    fun `a link before sign-in or during onboarding is held, and opens once both are done`() {
+        val held = HeldShareLink()
 
-        assertNull(takeSharedClassTableCode(intent, restored = false, mayImport = false))
-        assertNull("the code is taken off the intent", intent.data)
-        assertNull("so signing in later reads nothing", takeSharedClassTableCode(intent, restored = false, mayImport = true))
+        assertNull(held.arrived(code, mayOpen = false))
+        assertNull("still signed out", held.release(mayOpen = false))
+        assertEquals(code, held.release(mayOpen = true))
+        assertNull("it opens once", held.release(mayOpen = true))
+
+        assertEquals("one that may open does so at once", code, held.arrived(code, mayOpen = true))
+        assertNull(held.release(mayOpen = true))
+    }
+
+    @Test
+    fun `a newer link replaces a held one, and a sign-out drops it`() {
+        val held = HeldShareLink()
+
+        held.arrived(code, mayOpen = false)
+        held.arrived(otherCode, mayOpen = false)
+        assertEquals(otherCode, held.release(mayOpen = true))
+
+        held.arrived(code, mayOpen = false)
+        assertEquals("one that opens at once replaces it too", otherCode, held.arrived(otherCode, mayOpen = true))
+        assertNull(held.release(mayOpen = true))
+
+        held.arrived(code, mayOpen = false)
+        held.drop()
+        assertNull(held.release(mayOpen = true))
+    }
+
+    @Test
+    fun `MainActivity holds a link that cannot open yet, and the sign-out drops it`() {
+        val activity = source("MainActivity.kt")
+        assertTrue("a link goes through the holder", "heldShareLink.arrived(" in activity)
+        assertTrue("and is released once someone may import it", "heldShareLink.release(" in activity)
+        assertTrue("whenever the sign-in or onboarding changes", "snapshotFlow { appState.showOnboarding }" in activity)
+        assertTrue(".drop() at sign-out", "heldShareLink.drop()" in source("auth/AuthService.kt"))
+        // In memory only: nothing for it to be written with.
+        assertTrue(HeldShareLink::class.java.declaredConstructors.all { it.parameterCount == 0 })
     }
 
     @Test
     fun `a link opens once per delivery, and not again for a rebuilt Activity or from Recents`() {
         val intent = linkIntent(code)
 
-        assertNotNull(takeSharedClassTableCode(intent, restored = false, mayImport = true))
+        assertNotNull(takeSharedClassTableCode(intent, restored = false))
         assertNull(intent.data)
-        assertNull(takeSharedClassTableCode(intent, restored = false, mayImport = true))
+        assertNull(takeSharedClassTableCode(intent, restored = false))
 
         assertNull(take(code, restored = true))
         val fromRecents = linkIntent(code).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
-        assertNull(takeSharedClassTableCode(fromRecents, restored = false, mayImport = true))
+        assertNull(takeSharedClassTableCode(fromRecents, restored = false))
         assertNull(fromRecents.data)
     }
 

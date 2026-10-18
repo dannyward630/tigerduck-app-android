@@ -108,7 +108,7 @@ class ClassTableImportViewModel @Inject constructor(
         ): ClassTableImportModel? {
             store.load()
             // Signed out, or someone else signed in, while the store was read: the link is dropped,
-            // as one that arrives signed out is.
+            // as one held for a sign-in is at a sign-out.
             if (!stillCurrent()) return null
             open()?.cancel()
             return next().also { it.scanned(text) }

@@ -3,6 +3,9 @@ package org.ntust.app.tigerduck
 import android.content.Intent
 import android.net.Uri
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode
+import java.util.concurrent.atomic.AtomicReference
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * A class table share code opened as a link rather than scanned in the app. A share code is a
@@ -50,18 +53,38 @@ internal object ShareCodeLink {
 }
 
 /**
- * The share code text [intent]'s link carries, for the import to read now, or null. The link is
- * taken off [intent] either way, so it opens once per delivery; and none opens for an Activity
- * rebuilt from saved state ([restored]) or relaunched from Recents, which hand back the intent it
- * was first started with. A link of any other kind is left on [intent].
- *
- * Nor does one open unless [mayImport]: someone signed in, onboarding finished. The code is not
- * kept for later then (decided for both apps): the link only opens the app, and the student scans
- * the code again after signing in.
+ * The share code text [intent]'s link carries, for the import to read, or null. The link is taken
+ * off [intent] either way, so it opens once per delivery; and none opens for an Activity rebuilt
+ * from saved state ([restored]) or relaunched from Recents, which hand back the intent it was
+ * first started with. A link of any other kind is left on [intent].
  */
-internal fun takeSharedClassTableCode(intent: Intent, restored: Boolean, mayImport: Boolean): String? {
+internal fun takeSharedClassTableCode(intent: Intent, restored: Boolean): String? {
     val text = ShareCodeLink.codeText(intent.data) ?: return null
     intent.data = null
     val fromHistory = intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
-    return text.takeIf { mayImport && !restored && !fromHistory }
+    return text.takeIf { !restored && !fromHistory }
+}
+
+/**
+ * A share code link that came before it could open: no one signed in, or onboarding not finished.
+ * It is held until both are, and its import then asks as a scanned code does, so the student need
+ * not scan the code again (decided for both apps, 2026-10-19).
+ *
+ * In memory only, never in saved state or on disk, so quitting the app loses it. A newer link
+ * replaces it, and a sign-out drops it ([drop], from `AuthService.logout`).
+ */
+@Singleton
+class HeldShareLink @Inject constructor() {
+    private val held = AtomicReference<String?>(null)
+
+    /** [text], to open now when [mayOpen]; otherwise held, in place of any held before. */
+    fun arrived(text: String, mayOpen: Boolean): String? {
+        held.set(text.takeUnless { mayOpen })
+        return text.takeIf { mayOpen }
+    }
+
+    /** The link held, taken, once [mayOpen]. */
+    fun release(mayOpen: Boolean): String? = if (mayOpen) held.getAndSet(null) else null
+
+    fun drop() = held.set(null)
 }
