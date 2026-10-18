@@ -51,6 +51,14 @@ class SyncWiringTest {
         assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "CourseSyncReconciler.syncsCourseColors(")
     }
 
+    /** tigerduck-app#727's Android side: a course added back is kept while its add waits. */
+    @Test
+    fun `Home's sync and the worker keep a course whose add still waits`() {
+        val keeps = "pendingAddNos = pendingCourseAdds.waitingIn(semester)"
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "syncCourseList", keeps)
+        assertCalls("notification/BackgroundSyncWorker.kt", "reconcileCurrentSemester", keeps)
+    }
+
     @Test
     fun `Home's sync records only the categories it took`() {
         assertCalls("ui/screen/home/HomeBackendSync.kt", "pull", "categoriesTaken(", "categoriesSynced(switchedOn, took, prefs)")

@@ -220,6 +220,21 @@ class PendingCourseAddsTest {
         assertEquals(emptyMap<String, List<String>>(), cache.loadPendingCourseAdds())
     }
 
+    /** What the reconcile keeps meanwhile; see CourseSyncReconciler.reconcileSemester's pendingAddNos. */
+    @Test
+    fun `the adds still waiting are read per term`() = runTest {
+        cache.saveCourses(listOf(typed), term)
+        answer = { throw IOException("offline") }
+        adds.send(listOf(typed), term, typed.courseNo)
+
+        assertEquals(setOf("MA1010002"), adds.waitingIn(term))
+        assertEquals(emptySet<String>(), adds.waitingIn("1142"))
+
+        answer = { listOf("MA1010002") }
+        adds.retry()
+        assertEquals(emptySet<String>(), adds.waitingIn(term))
+    }
+
     @Test
     fun `an add deleted or reset away since is not sent again`() = runTest {
         cache.saveCourses(listOf(typed), term)

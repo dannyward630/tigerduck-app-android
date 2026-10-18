@@ -298,6 +298,8 @@ class BackgroundSyncWorker @AssistedInject constructor(
             serverKnownNos = knownHere,
             // Deletes the retry above could not land: the snapshot still lists them.
             graceCourseNos = pendingCourseDeletes.waitingIn(semester),
+            // Adds the retry above could not land: the snapshot does not list them yet.
+            pendingAddNos = pendingCourseAdds.waitingIn(semester),
             selectionDroppedNos = dataCache.loadSelectionDroppedNos()[semester].orEmpty().toSet(),
         )
         if (outcome.tombstones != stored) {

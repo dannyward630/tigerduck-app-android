@@ -485,6 +485,8 @@ class HomeBackendSync @Inject constructor(
                 serverKnownNos = serverKnown[semester].orEmpty().toSet(),
                 // Deletes the retry above could not land: the snapshot still lists them.
                 graceCourseNos = pendingCourseDeletes.waitingIn(semester),
+                // Adds the retry above could not land: the snapshot does not list them yet.
+                pendingAddNos = pendingCourseAdds.waitingIn(semester),
                 selectionDroppedNos = selectionDropped[semester].orEmpty().toSet(),
             )
             tombstones = outcome.tombstones

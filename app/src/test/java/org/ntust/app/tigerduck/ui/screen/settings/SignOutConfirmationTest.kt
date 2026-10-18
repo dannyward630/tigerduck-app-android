@@ -191,6 +191,22 @@ class SignOutConfirmationTest {
         assertEquals(emptySet<SignOutLoss>(), check.losses())
     }
 
+    /** A course added back by hand whose add still waits (PendingCourseAdds): the server once had its number. */
+    @Test
+    fun `a course added back whose add still waits is asked about`() = runTest {
+        syncOn()
+        dataCache.saveCourses(listOf(course("XX0000001").copy(isManual = true)), "1141")
+        dataCache.saveServerKnownNos(mapOf("1141" to listOf("XX0000001")))
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        dataCache.savePendingCourseAdds(mapOf("1141" to listOf("XX0000001")))
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+
+        // An add whose course has left this phone is not sent again, and nothing of it is lost.
+        dataCache.saveCourses(emptyList(), "1141")
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+    }
+
     @Test
     fun `an ignore the server has not confirmed is asked about`() = runTest {
         syncOn()
