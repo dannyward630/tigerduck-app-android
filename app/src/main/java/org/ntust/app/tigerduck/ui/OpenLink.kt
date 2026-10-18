@@ -3,8 +3,12 @@ package org.ntust.app.tigerduck.ui
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
+import android.widget.Toast
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
+import org.ntust.app.tigerduck.R
 
 /** The values Settings > "Open links with" stores in [AppState.browserPreference]. */
 object BrowserPreference {
@@ -24,9 +28,13 @@ object BrowserPreference {
  *
  * Returns false rather than crashing when the link cannot be opened: some work
  * profiles, kiosk and de-Googled ROMs have no browser at all, and the platform
- * can refuse a launch outright.
+ * can refuse a launch outright. The user is told so with a short toast, where
+ * the tap used to do nothing at all (tigerduck-app-android#249).
  */
-fun openLink(context: Context, url: String, browserPreference: String): Boolean {
+fun openLink(context: Context, url: String, browserPreference: String): Boolean =
+    launchLink(context, url, browserPreference).also { opened -> if (!opened) sayNoAppOpens(context) }
+
+private fun launchLink(context: Context, url: String, browserPreference: String): Boolean {
     // Android matches intent schemes case-sensitively, so "HTTPS:" would find no browser.
     val uri = url.toUri().normalizeScheme()
     // Outside an Activity there is no task to put the browser in.
@@ -48,4 +56,10 @@ fun openLink(context: Context, url: String, browserPreference: String): Boolean 
         // unopenable as the others, and none worth a crash.
         false
     }
+}
+
+/** The toast for a link no app can open; posted to the main thread from any other. */
+private fun sayNoAppOpens(context: Context) {
+    val show = { Toast.makeText(context, R.string.error_link_no_app, Toast.LENGTH_SHORT).show() }
+    if (Looper.myLooper() == Looper.getMainLooper()) show() else Handler(Looper.getMainLooper()).post(show)
 }
