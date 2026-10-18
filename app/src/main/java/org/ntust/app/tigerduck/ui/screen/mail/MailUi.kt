@@ -26,6 +26,7 @@ fun MailError.messageRes(): Int = when (this) {
     // went wrong" would be actively misleading: nothing went wrong, the mail is
     // simply past what the app will hold in memory.
     is MailError.TooLarge -> R.string.school_mail_error_too_large
+    is MailError.SendUnconfirmed -> R.string.school_mail_send_unconfirmed
     // No dedicated copy for these yet: they either aren't reachable from sign-in
     // (SearchUnsupported, FolderChanged surface in the list/search screens, not
     // built yet) or are internal-only (Protocol, DemoMode never reach the UI;

@@ -280,9 +280,21 @@ private fun composeErrorMessage(error: ComposeError): String = when (error) {
     is ComposeError.InvalidRecipients -> stringResource(R.string.school_mail_invalid_recipients).replaceIosArg(1, error.tokens.joinToString(", "))
     ComposeError.NoRecipient -> stringResource(R.string.school_mail_no_recipient)
     ComposeError.TooLarge -> stringResource(R.string.school_mail_too_large)
-    is ComposeError.SendFailed -> stringResource(R.string.school_mail_send_failed) + "\n" + stringResource(error.error.messageRes())
+    is ComposeError.SendFailed -> sendFailureLines(error.error).map { stringResource(it) }.joinToString("\n")
     is ComposeError.DraftFailed -> stringResource(error.error.messageRes())
 }
+
+/**
+ * The lines a failed send shows, as string resources: that it failed and why, or, for one that
+ * may have gone out ([MailError.SendUnconfirmed]), only that, as the iPhone says it in place of
+ * the failure line.
+ */
+internal fun sendFailureLines(error: MailError): List<Int> =
+    if (error is MailError.SendUnconfirmed) {
+        listOf(error.messageRes())
+    } else {
+        listOf(R.string.school_mail_send_failed, error.messageRes())
+    }
 
 @Composable
 private fun ErrorText(error: ComposeError) {
