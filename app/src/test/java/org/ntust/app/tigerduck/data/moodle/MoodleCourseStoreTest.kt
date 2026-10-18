@@ -800,7 +800,13 @@ class MoodleCourseStoreTest {
 
         api.allowed = contentsAllowed
         store.refreshMaterials()
-        assertEquals(MoodleSectionRow(MoodleSectionRow.Kind.MATERIALS, 4, false), store.sectionRows.value.single())
+        // Waited for, not read at once: refreshMaterials ends on the thread its outdated-copy sweep
+        // ran on, so the rows the new materials make can land just after it returns. Read at once,
+        // the row was missing now and then on CI.
+        assertEquals(
+            MoodleSectionRow(MoodleSectionRow.Kind.MATERIALS, 4, false),
+            store.sectionRows.first { it.isNotEmpty() }.single(),
+        )
     }
 
     @Test
