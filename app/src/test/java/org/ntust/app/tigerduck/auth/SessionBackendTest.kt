@@ -5,6 +5,7 @@ import android.content.Context
 import com.google.gson.JsonObject
 import kotlinx.coroutines.test.runTest
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -128,6 +129,15 @@ class SessionBackendTest {
 
         assertFalse(manager.mayPresent(header, "http://127.0.0.1:9/v3x/sync/full".toHttpUrl()))
         assertFalse(manager.mayPresent(header, "http://127.0.0.1:99/v3/sync/full".toHttpUrl()))
+    }
+
+    @Test
+    fun `the guard checks a request first, and again at every hop a redirect takes`() {
+        // Within one origin OkHttp keeps the header on a redirect, past the first check.
+        val client = OkHttpClient.Builder().addInterceptor { it.proceed(it.request()) }.guardedBy(manager()).build()
+
+        assertTrue(client.interceptors.first() is SessionHostGuard)
+        assertTrue(client.networkInterceptors.any { it is SessionHostGuard })
     }
 
     private companion object {

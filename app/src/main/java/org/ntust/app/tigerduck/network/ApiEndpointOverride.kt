@@ -42,22 +42,27 @@ internal fun resolveAnnouncementEndpoint(prefs: AppPreferences): ResolvedAnnounc
 
 /** What [resolveAnnouncementEndpoint] answers with [stored] as the setting; null is the default. */
 internal fun resolveAnnouncementEndpoint(stored: String?): ResolvedAnnouncementEndpoint {
-    val default = BuildConfig.PUSH_BASE_URL.trimEnd('/')
+    val default = BuildConfig.PUSH_BASE_URL.let { canonical(it) ?: it.trimEnd('/') }
     val override = stored?.trimEnd('/')
         ?: return ResolvedAnnouncementEndpoint(default, overrideApplied = false)
     val ok = OverrideValidator.validate(override) as? OverrideValidator.Result.Ok
         ?: return ResolvedAnnouncementEndpoint(default, overrideApplied = false)
-    val normalized = ok.normalized.trimEnd('/')
     // Belt-and-suspenders: even after validation passes, OkHttp's parser
     // is the source of truth for what `HttpUrl.toHttpUrl()` will accept at
     // request time. Reject anything URI accepts but OkHttp doesn't, so we
     // don't crash every request with no path back to this screen.
-    return if (normalized.toHttpUrlOrNull() != null) {
-        ResolvedAnnouncementEndpoint(normalized, overrideApplied = true)
-    } else {
-        ResolvedAnnouncementEndpoint(default, overrideApplied = false)
-    }
+    val normalized = canonical(ok.normalized)
+        ?: return ResolvedAnnouncementEndpoint(default, overrideApplied = false)
+    return ResolvedAnnouncementEndpoint(normalized, overrideApplied = true)
 }
+
+/**
+ * [url] as OkHttp spells it, which is how its requests carry it: lower-case host, no default
+ * port, no trailing slash. A backend named two ways is one backend to the session it issued and
+ * to the unregister its sign-out owes, which are matched to it by this. Null when OkHttp cannot
+ * parse it.
+ */
+private fun canonical(url: String): String? = url.trimEnd('/').toHttpUrlOrNull()?.toString()?.trimEnd('/')
 
 /**
  * Mirrors the iOS `PushServerConfig.isOverrideAllowed` / `normalize` pair so

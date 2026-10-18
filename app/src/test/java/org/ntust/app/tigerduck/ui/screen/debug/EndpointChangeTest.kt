@@ -53,6 +53,7 @@ class EndpointChangeTest {
         stored = OTHER
         assertFalse(change().asks(OTHER))
         assertFalse(change().asks("$OTHER/"))
+        assertFalse(change().asks("https://OTHER.example:443/v3"))
     }
 
     @Test

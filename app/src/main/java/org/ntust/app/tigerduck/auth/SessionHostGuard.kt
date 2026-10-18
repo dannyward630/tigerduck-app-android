@@ -32,7 +32,11 @@ class SessionHostGuard(private val authTokenManager: AuthTokenManager) : Interce
 
 /**
  * Puts a [SessionHostGuard] ahead of every interceptor the client was built with, so none of them
- * answers or sends the request before it is checked.
+ * answers or sends the request before it is checked, and on every hop the request takes: within
+ * one origin OkHttp keeps the header on a redirect, which the first check never saw.
  */
-fun OkHttpClient.Builder.guardedBy(authTokenManager: AuthTokenManager): OkHttpClient.Builder =
-    apply { interceptors().add(0, SessionHostGuard(authTokenManager)) }
+fun OkHttpClient.Builder.guardedBy(authTokenManager: AuthTokenManager): OkHttpClient.Builder = apply {
+    val guard = SessionHostGuard(authTokenManager)
+    interceptors().add(0, guard)
+    addNetworkInterceptor(guard)
+}
