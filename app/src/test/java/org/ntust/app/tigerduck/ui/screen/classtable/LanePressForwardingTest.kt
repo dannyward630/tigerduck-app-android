@@ -40,4 +40,20 @@ class LanePressForwardingTest {
         assertEquals(seen[2], (seen[3] as PressInteraction.Cancel).press)
         assertEquals(4, seen.size)
     }
+
+    /** The run moved while pressed, which restarts its forwarding: the shape's press ends then. */
+    @Test
+    fun `a press still held when the forwarding ends is cancelled on the shape`() = runTest(UnconfinedTestDispatcher()) {
+        val run = MutableInteractionSource()
+        val shape = MutableInteractionSource()
+        val seen = mutableListOf<Interaction>()
+        backgroundScope.launch { shape.interactions.collect { seen += it } }
+        val forwarding = backgroundScope.launch { forwardInteractions(run, shape, Offset(0f, 10f)) }
+
+        run.emit(PressInteraction.Press(Offset(1f, 1f)))
+        forwarding.cancel()
+
+        assertEquals(2, seen.size)
+        assertEquals(seen[0], (seen[1] as PressInteraction.Cancel).press)
+    }
 }

@@ -567,19 +567,24 @@ private val BADGE_INSET = 3.dp
 /**
  * Passes [from]'s interactions on to [to], a press moved by [offset], with its release or cancel
  * ending the moved press: a run of a clashing course reports a press from its own corner, and the
- * course's whole shape, which draws it, starts it from its own.
+ * course's whole shape, which draws it, starts it from its own. A press still held when this ends
+ * (the run moved, which restarts it) is cancelled on [to], or the shape would stay pressed.
  */
 internal suspend fun forwardInteractions(from: InteractionSource, to: MutableInteractionSource, offset: Offset) {
     val moved = mutableMapOf<PressInteraction.Press, PressInteraction.Press>()
-    from.interactions.collect { interaction ->
-        when (interaction) {
-            is PressInteraction.Press -> PressInteraction.Press(interaction.pressPosition + offset).let {
-                moved[interaction] = it
-                to.emit(it)
+    try {
+        from.interactions.collect { interaction ->
+            when (interaction) {
+                is PressInteraction.Press -> PressInteraction.Press(interaction.pressPosition + offset).let {
+                    moved[interaction] = it
+                    to.emit(it)
+                }
+                is PressInteraction.Release -> moved.remove(interaction.press)?.let { to.emit(PressInteraction.Release(it)) }
+                is PressInteraction.Cancel -> moved.remove(interaction.press)?.let { to.emit(PressInteraction.Cancel(it)) }
+                else -> to.emit(interaction)
             }
-            is PressInteraction.Release -> moved.remove(interaction.press)?.let { to.emit(PressInteraction.Release(it)) }
-            is PressInteraction.Cancel -> moved.remove(interaction.press)?.let { to.emit(PressInteraction.Cancel(it)) }
-            else -> to.emit(interaction)
         }
+    } finally {
+        moved.values.forEach { to.tryEmit(PressInteraction.Cancel(it)) }
     }
 }
