@@ -6,6 +6,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -246,7 +247,7 @@ fun MainNavigation(
         calendarViewModel.load()
     }
     val pollingLifecycleOwner = LocalLifecycleOwner.current
-    val hostActivity = LocalContext.current as? Activity
+    val hostActivity = LocalActivity.current
     // Set when the app goes to the background, and saved across the activity
     // being rebuilt. A dark-mode or font-size change stops and restarts the
     // activity as well, and that is not the user coming back.

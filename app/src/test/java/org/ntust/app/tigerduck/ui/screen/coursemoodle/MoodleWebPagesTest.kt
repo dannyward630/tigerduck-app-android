@@ -2,11 +2,10 @@ package org.ntust.app.tigerduck.ui.screen.coursemoodle
 
 import android.app.Application
 import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.content.pm.ResolveInfo
-import androidx.core.net.toUri
+import android.content.IntentFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -45,14 +44,17 @@ class MoodleWebPagesTest {
     }
 
     private fun installBrowser(pkg: String = "com.example.browser") {
-        val probe = Intent(Intent.ACTION_VIEW, "https://example.com/".toUri()).addCategory(Intent.CATEGORY_BROWSABLE)
-        val info = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
-                packageName = pkg
-                name = "$pkg.Browser"
-            }
-        }
-        shadowOf(app.packageManager).addResolveInfoForIntent(probe, info)
+        val browser = ComponentName(pkg, "$pkg.Browser")
+        val packages = shadowOf(app.packageManager)
+        packages.addActivityIfNotPresent(browser)
+        packages.addIntentFilterForActivity(
+            browser,
+            IntentFilter(Intent.ACTION_VIEW).apply {
+                addCategory(Intent.CATEGORY_DEFAULT)
+                addCategory(Intent.CATEGORY_BROWSABLE)
+                addDataScheme("https")
+            },
+        )
     }
 
     private var asked = mutableListOf<String>()

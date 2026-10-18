@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
@@ -242,7 +243,7 @@ internal fun MoodleRefreshFailure(failure: Throwable, onRetry: () -> Unit, modif
 
 /** [error] as the reader is told it: Moodle's own words where it has them. */
 @Composable
-internal fun moodleErrorMessage(error: Throwable): String = moodleErrorText(LocalContext.current.resources, error)
+internal fun moodleErrorMessage(error: Throwable): String = moodleErrorText(LocalResources.current, error)
 
 /** [moodleErrorMessage] outside composition, as for a toast. */
 internal fun moodleErrorText(resources: Resources, error: Throwable): String {

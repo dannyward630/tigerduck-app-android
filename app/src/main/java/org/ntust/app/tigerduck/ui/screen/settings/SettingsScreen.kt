@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -158,7 +159,7 @@ fun SettingsScreen(
     // on the resolved tag string (not the live Configuration object) so
     // unrelated config changes — font scale, screen size, dark-mode flip —
     // don't pointlessly re-parse the asset.
-    val languageTag = context.resources.configuration.locales[0].toLanguageTag()
+    val languageTag = LocalConfiguration.current.locales[0].toLanguageTag()
     val whatsNewCatalog = remember(viewModel.appState) { WhatsNewCatalog.pages(viewModel.appState) }
     val whatsNewSummaries = remember(whatsNewRepo, languageTag) { whatsNewRepo.summaries(languageTag) }
     val whatsNewReplay = remember(whatsNewCatalog, whatsNewSummaries) {

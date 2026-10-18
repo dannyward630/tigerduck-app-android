@@ -5,6 +5,7 @@
 
 package org.ntust.app.tigerduck.ui.navigation
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -101,6 +102,9 @@ private fun CourseDetailSheet(
     onClosed: () -> Unit,
 ) {
     val navController = rememberNavController()
+    // The sheet's rules read every route on the stack, not only the top one, and Navigation has
+    // no public flow of the whole stack.
+    @SuppressLint("RestrictedApi")
     val backStack by navController.currentBackStack.collectAsStateWithLifecycle()
     val routes = backStack.map { it.destination.route }
     val mayClose = rememberUpdatedState(CourseDetailSheetRules.mayClose(routes))

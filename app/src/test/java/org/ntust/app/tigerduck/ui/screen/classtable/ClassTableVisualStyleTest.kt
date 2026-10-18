@@ -115,10 +115,10 @@ class ClassTableVisualStyleTest {
         spanCount: Int,
         course: Course = calculus,
         hasAssignment: Boolean = false,
-    ) = draw(preset, width, cellHeight * spanCount) { soloCellContent(course, spanCount, hasAssignment) }
+    ) = draw(preset, width, cellHeight * spanCount) { SoloCellContent(course, spanCount, hasAssignment) }
 
     @Composable
-    private fun soloCellContent(
+    private fun SoloCellContent(
         course: Course,
         spanCount: Int,
         hasAssignment: Boolean = false,
@@ -208,7 +208,7 @@ class ClassTableVisualStyleTest {
 
     private fun outlinedSoloCell(preset: VisualPreset, course: Course, outlineRequired: Boolean) =
         draw(preset, width, cellHeight, outlineDensity) {
-            soloCellContent(course, spanCount = 1, outlineRequired = outlineRequired)
+            SoloCellContent(course, spanCount = 1, outlineRequired = outlineRequired)
         }
 
     @Test
@@ -660,7 +660,7 @@ class ClassTableVisualStyleTest {
         ) {
             Column {
                 Spacer(Modifier.height(headerHeight.dp))
-                Box { soloCellContent(calculus, spanCount = 2, cellWidth = width - 2 * inset) }
+                Box { SoloCellContent(calculus, spanCount = 2, cellWidth = width - 2 * inset) }
             }
         }
     }

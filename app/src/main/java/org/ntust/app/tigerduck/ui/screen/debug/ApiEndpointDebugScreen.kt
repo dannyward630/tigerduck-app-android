@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
@@ -64,6 +65,7 @@ import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
 @Composable
 fun ApiEndpointDebugScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val entryPoint = remember(context) {
         EntryPointAccessors.fromApplication(
             context.applicationContext,
@@ -188,10 +190,10 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
                         savedNote = null
                         when (val result = OverrideValidator.validate(trimmed)) {
                             OverrideValidator.Result.Malformed ->
-                                error = context.getString(R.string.settings_api_endpoint_error_malformed)
+                                error = resources.getString(R.string.settings_api_endpoint_error_malformed)
 
                             OverrideValidator.Result.Insecure ->
-                                error = context.getString(R.string.settings_api_endpoint_error_insecure)
+                                error = resources.getString(R.string.settings_api_endpoint_error_insecure)
 
                             is OverrideValidator.Result.Ok -> {
                                 isChecking = true
@@ -203,13 +205,13 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
                                     // back and fix a bad value.
                                     when (val health = healthCheck.probe(result.normalized)) {
                                         is EndpointHealthCheck.Result.Unreachable ->
-                                            error = context.getString(
+                                            error = resources.getString(
                                                 R.string.settings_api_endpoint_error_unreachable,
                                                 health.detail,
                                             )
 
                                         EndpointHealthCheck.Result.NotTigerDuck ->
-                                            error = context.getString(
+                                            error = resources.getString(
                                                 R.string.settings_api_endpoint_error_not_backend
                                             )
 
@@ -226,7 +228,7 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
                                             // upsert the new backend has no
                                             // row for this device yet.
                                             pushRegistration.syncNow()
-                                            savedNote = context.getString(
+                                            savedNote = resources.getString(
                                                 if (result.rewrittenToHttp) {
                                                     R.string.settings_api_endpoint_saved_rewritten
                                                 } else {
@@ -263,7 +265,7 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
                         draft = ""
                         error = null
                         scope.launch { pushRegistration.syncNow() }
-                        savedNote = context.getString(R.string.settings_api_endpoint_reset_done)
+                        savedNote = resources.getString(R.string.settings_api_endpoint_reset_done)
                     },
                     enabled = !isChecking && stored != null,
                     colors = ButtonDefaults.outlinedButtonColors(

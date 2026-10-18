@@ -254,7 +254,7 @@ class DemoFixtureTest {
             )
             assertTrue("each page has a description", pages.all { it.intro.isNotBlank() })
             assertTrue("one of them was handed in, with a comment", pages.any { it.submission?.isSubmitted == true && !it.submission.comments.isNullOrEmpty() })
-            assertTrue("and graded, with feedback", pages.any { it.submission?.grade?.grade != null && it.submission.grade?.feedback != null })
+            assertTrue("and graded, with feedback", pages.any { it.submission?.grade?.grade != null && it.submission.grade.feedback != null })
             assertTrue("one of them was not", pages.any { it.submission?.isSubmitted != true })
             assertTrue(moodle.courses.all { c -> c.announcements.all { it.title.isNotBlank() && it.created > 0 } })
             assertTrue("the student is among each course's members",

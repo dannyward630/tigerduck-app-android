@@ -7,14 +7,12 @@ import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
 import android.provider.OpenableColumns
-import android.webkit.MimeTypeMap
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.Instant
 import java.time.ZoneId
@@ -56,7 +54,6 @@ class PickedAttachmentReaderTest {
     @Test
     fun `a photo from the picker is described under its capture date, not its media id`() {
         Robolectric.buildContentProvider(PickerProvider::class.java).create("picker")
-        shadowOf(MimeTypeMap.getSingleton()).addExtensionMimeTypeMapping("png", "image/png")
         val reader = ContentResolverAttachmentReader(RuntimeEnvironment.getApplication())
 
         val attachment = reader.describe(Uri.parse("content://picker/media/34"))!!

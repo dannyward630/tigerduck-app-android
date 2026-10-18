@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.push
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
@@ -126,6 +127,8 @@ class FcmService : FirebaseMessagingService() {
         }
     }
 
+    // Checked: areNotificationsEnabled() returns early, which lint does not count.
+    @SuppressLint("MissingPermission")
     private fun showBulletinNotification(
         id: Int,
         title: String,
@@ -175,6 +178,8 @@ class FcmService : FirebaseMessagingService() {
             .onFailure { Log.w(TAG, "notify failed for bulletin $id: ${it.logSummary()}") }
     }
 
+    // Checked: areNotificationsEnabled() returns early, which lint does not count.
+    @SuppressLint("MissingPermission")
     private fun showServerPopupNotification(
         notificationId: String,
         title: String,
@@ -245,6 +250,8 @@ class FcmService : FirebaseMessagingService() {
      * stacking. The account is either broken or it isn't — one row says
      * that as well as five.
      */
+    // Checked: areNotificationsEnabled() returns early, which lint does not count.
+    @SuppressLint("MissingPermission")
     private fun showReauthNotification(title: String, body: String) {
         // `tigerduck://home` is not a link the app opens — AppLink.parse takes
         // only `announcement`, `assignment`, `classtable` and `library` — so
