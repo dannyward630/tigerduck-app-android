@@ -4,6 +4,7 @@ import android.util.Log
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
+import org.ntust.app.tigerduck.network.canonicalBackend
 import org.ntust.app.tigerduck.util.logSummary
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,7 +35,7 @@ class OwedUnregister internal constructor(internal val store: PendingUnregisterS
      */
     suspend fun <T> signingIn(studentId: String, base: String, login: suspend () -> T): T {
         val pending = runCatching { store.load() }.getOrNull()
-        if (pending != null && pending.session.baseUrl != base) return login()
+        if (pending != null && canonicalBackend(pending.session.baseUrl) != canonicalBackend(base)) return login()
         val owedBy = pending?.session?.studentId
         if (owedBy != null && owedBy != studentId) {
             val result = login()

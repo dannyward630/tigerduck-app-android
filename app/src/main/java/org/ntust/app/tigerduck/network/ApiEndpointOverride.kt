@@ -65,6 +65,13 @@ internal fun resolveAnnouncementEndpoint(stored: String?): ResolvedAnnouncementE
 private fun canonical(url: String): String? = url.trimEnd('/').toHttpUrlOrNull()?.toString()?.trimEnd('/')
 
 /**
+ * The backend [url] names, in the one spelling [resolveAnnouncementEndpoint] gives it: for
+ * comparing with an address stored before that spelling was, as a session's issuer or an owed
+ * unregister's backend may have been.
+ */
+internal fun canonicalBackend(url: String): String = canonical(url) ?: url.trimEnd('/')
+
+/**
  * Mirrors the iOS `PushServerConfig.isOverrideAllowed` / `normalize` pair so
  * the two platforms accept the same backends.
  *

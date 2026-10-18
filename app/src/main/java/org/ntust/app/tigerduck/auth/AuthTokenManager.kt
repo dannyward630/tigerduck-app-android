@@ -26,6 +26,7 @@ import org.json.JSONObject
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
+import org.ntust.app.tigerduck.network.canonicalBackend
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.push.OwedUnregister
 import org.ntust.app.tigerduck.push.currentDeviceModel
@@ -131,8 +132,7 @@ class AuthTokenManager(
      * at that backend alone, so an unregister a sign-out owes another backend still stands.
      */
     fun hasSessionAt(base: String): Boolean = synchronized(signInLock) {
-        // A pair stored before its backend was recorded is the endpoint's, as departingSession takes it.
-        tokens.refreshToken != null && (tokens.issuedBy ?: baseUrl) == base
+        tokens.refreshToken != null && storedIssuer() == canonicalBackend(base)
     }
 
     // The access tokens this process stored or handed out, with the backend each came from, for
@@ -145,7 +145,7 @@ class AuthTokenManager(
 
     // Under signInLock. A pair stored before its backend was recorded is the endpoint's, as
     // departingSession takes it.
-    private fun storedIssuer(): String = tokens.issuedBy ?: baseUrl
+    private fun storedIssuer(): String = tokens.issuedBy?.let(::canonicalBackend) ?: baseUrl
 
     // Under signInLock.
     private fun issued(access: String): String = access.also { issuers[it] = storedIssuer() }
@@ -309,7 +309,7 @@ class AuthTokenManager(
         // the departing refresh must never be the token's third send (MAX_REFRESH_TOKEN_SENDS).
         // This process's own count of replies lost is taken as well; the disk's is never below it.
         DepartingSession(
-            access, refresh, tokens.expiresAt, tokens.issuedBy ?: baseUrl, tokens.studentId,
+            access, refresh, tokens.expiresAt, storedIssuer(), tokens.studentId,
             maxOf(sendsWithoutReply(refresh), tokens.refreshTokenSends),
         )
     }
