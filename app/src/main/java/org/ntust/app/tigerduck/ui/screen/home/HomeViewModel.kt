@@ -856,8 +856,14 @@ class HomeViewModel @Inject constructor(
 
             if (orderedCourseNos.isEmpty()) return@async emptyList()
 
+            // A course whose query fails keeps its row in the term, where
+            // Moodle's stand-in would take its times and room off this phone
+            // and, uploaded, off every other device (#417).
+            val cachedByNo = dataCache.loadCourses(semester).associateBy { it.courseNo }
             orderedCourseNos.map { courseNo ->
-                async { courseService.lookupOrFallback(semester, courseNo, moodleByNo[courseNo]) }
+                async {
+                    courseService.lookupOrFallback(semester, courseNo, moodleByNo[courseNo], kept = cachedByNo[courseNo])
+                }
             }.awaitAll().filterNotNull()
         }
 

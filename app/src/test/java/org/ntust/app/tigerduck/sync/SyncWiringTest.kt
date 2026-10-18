@@ -322,4 +322,14 @@ class SyncWiringTest {
         assertTrue("fetchData no longer uploads the assignments", "pushApiClient.uploadAssignments(written)" in body)
         assertTrue("fetchData catches the upload's cancellation", "runCatching { pushApiClient.uploadAssignments" !in body)
     }
+
+    /**
+     * tigerduck-app-android#417: Home's fetch saves the current term's list and the upload sends
+     * it, so a course whose query failed has to keep the row the term has, as the class table's
+     * fetch does (ClassTableTermFetchTest).
+     */
+    @Test
+    fun `Home's fetch keeps a course's row when its query fails`() {
+        assertCalls("ui/screen/home/HomeViewModel.kt", "fetchCoursesAndAssignments", "kept = cachedByNo[courseNo]")
+    }
 }

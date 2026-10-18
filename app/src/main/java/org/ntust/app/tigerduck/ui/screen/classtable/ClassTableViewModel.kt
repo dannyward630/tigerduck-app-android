@@ -157,8 +157,8 @@ class ClassTableViewModel @Inject constructor(
     private var warmJob: Job? = null
 
     // One term's lookups and their fold onto its list; see fetchTermCourses.
-    private val termFetch = ClassTableTermFetch { semester, courseNo, moodle, onFailed ->
-        courseService.lookupOrFallback(semester, courseNo, moodle, onFailed)
+    private val termFetch = ClassTableTermFetch { semester, courseNo, moodle, kept, onFailed ->
+        courseService.lookupOrFallback(semester, courseNo, moodle, kept, onFailed)
     }
 
     // This screen's tombstone edits whose write has not landed; see ClassTableTombstoneEdits.
