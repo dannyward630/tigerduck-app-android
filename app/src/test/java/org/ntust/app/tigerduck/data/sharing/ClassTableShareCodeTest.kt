@@ -238,6 +238,7 @@ class ClassTableShareCodeTest {
         val others = listOf(
             "https://example.com/CLASSTABLE/1.B00015999", "WIFI:S:home;T:WPA;P:secret;;", "",
             "HTTPS://TIGERDUCK.APP/X/1.", "HTTPS://SHARE.TIGERDUCK.APPS/CLASSTABLE/1.",
+            "HTTPS://SHARE.TIGERDUCK.APP.EXAMPLE.COM/CLASSTABLE/1.", "HTTPS://SHARE.TIGERDUCK.APP@EXAMPLE.COM/CLASSTABLE/1.",
         )
         for (other in others) {
             assertRefused<ClassTableShareCodeError.UnknownPrefix>(other)
@@ -254,6 +255,9 @@ class ClassTableShareCodeTest {
         }
         for (code in listOf(
             "HTTPS://SHARE.TIGERDUCK.APP/",
+            "HTTPS://SHARE.TIGERDUCK.APP",
+            "HTTPS://SHARE.TIGERDUCK.APP?FROM=MAIL",
+            "HTTPS://SHARE.TIGERDUCK.APP#TOP",
             "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE",
             "HTTPS://SHARE.TIGERDUCK.APP/FRIEND",
             "HTTPS://SHARE.TIGERDUCK.APP//1.B00015999",

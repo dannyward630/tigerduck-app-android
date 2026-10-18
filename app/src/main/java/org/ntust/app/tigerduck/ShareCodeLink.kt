@@ -29,21 +29,24 @@ internal object ShareCodeLink {
     /** The share host's root, as App Links deliver its URLs; the decoder ignores letter case. */
     private const val WEB_ROOT = "${AppUrls.SHARE}/"
 
+    private val SHARE_HOST: Uri = Uri.parse(AppUrls.SHARE)
+
     /**
      * The text the import reads for [link], an intent's data: a share host URL as it came, in
      * whatever letter case, as the decoder trims and upper-cases it itself; and
      * `tigerduck://share/<rest>` as that URL, `https://share.tigerduck.app/<rest>`. Null for any
      * other link, which the rest of the app reads.
      *
-     * Anything on the share host counts, as the manifest claims all of it: a newer app's type
-     * reaches the decoder, which asks for an update, and a URL that holds no share code is called
-     * damaged rather than opening nothing.
+     * Anything on the share host counts, the host alone included, as the manifest claims all of
+     * it: a newer app's type reaches the decoder, which asks for an update, and a URL that holds
+     * no share code is called damaged rather than opening nothing.
      */
     fun codeText(link: Uri?): String? {
         link ?: return null
         val text = link.toString()
         return when {
-            text.startsWith(ClassTableShareCode.SHARE_ROOT, ignoreCase = true) -> text
+            link.scheme.equals(SHARE_HOST.scheme, ignoreCase = true) &&
+                link.host.equals(SHARE_HOST.host, ignoreCase = true) -> text
             // Matched exactly, as the manifest's filter and AppLink.parse match a tigerduck:// link.
             link.scheme == AppLink.SCHEME && link.host == HOST ->
                 WEB_ROOT + link.encodedPath.orEmpty().removePrefix("/")

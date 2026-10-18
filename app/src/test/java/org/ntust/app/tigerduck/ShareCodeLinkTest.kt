@@ -149,6 +149,9 @@ class ShareCodeLinkTest {
     fun `a share host URL that is not a share code shows the malformed message`() = runTest {
         listOf(
             "https://share.tigerduck.app/",
+            // The host alone, as the manifest's filter claims it too.
+            "https://share.tigerduck.app",
+            "https://share.tigerduck.app?from=mail",
             "https://share.tigerduck.app/CLASSTABLE/",
             "https://share.tigerduck.app/CLASSTABLE/hello",
             code.dropLast(1) + "A",
@@ -186,6 +189,7 @@ class ShareCodeLinkTest {
             "https://example.com/${rest(code)}",
             "http://share.tigerduck.app/${rest(code)}",
             "https://share.tigerduck.app.example.com/${rest(code)}",
+            "https://share.tigerduck.app@example.com/${rest(code)}",
             "tigerduck://classtable",
             "tigerduck://announcement/42",
             "tigerduck://Share/${rest(code)}",
@@ -233,6 +237,12 @@ class ShareCodeLinkTest {
         assertTrue("a link goes through the holder", "heldShareLink.arrived(" in activity)
         assertTrue("and is released once someone may import it", "heldShareLink.release(" in activity)
         assertTrue("whenever the sign-in or onboarding changes", "snapshotFlow { appState.showOnboarding }" in activity)
+        // Only by the Activity on screen: another one, stopped in another task, would open its import there.
+        val release = activity.indexOf("heldShareLink.release(")
+        assertTrue(
+            "released only while started",
+            "repeatOnLifecycle(Lifecycle.State.STARTED)" in activity.substring(maxOf(0, release - 600), release),
+        )
         assertTrue(".drop() at sign-out", "heldShareLink.drop()" in source("auth/AuthService.kt"))
         // In memory only: nothing for it to be written with.
         assertTrue(HeldShareLink::class.java.declaredConstructors.all { it.parameterCount == 0 })

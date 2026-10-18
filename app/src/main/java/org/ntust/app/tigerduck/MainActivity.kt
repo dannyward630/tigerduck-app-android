@@ -30,7 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import kotlinx.coroutines.flow.combine
@@ -174,11 +176,14 @@ class MainActivity : AppCompatActivity() {
         handleServerPushIntent(intent)
         openSharedClassTable(intent, restored = savedInstanceState != null)
         // A share link held while no one could import it opens once someone signs in and onboarding
-        // is finished, in either order.
+        // is finished, in either order. Only in the Activity on screen: another one, stopped in
+        // another app's task, would take it and open its import where no one sees it.
         lifecycleScope.launch {
-            combine(authService.authState, snapshotFlow { appState.showOnboarding }) { signedIn, onboarding ->
-                signedIn && !onboarding
-            }.collect { mayImport -> heldShareLink.release(mayImport)?.let(::importSharedClassTable) }
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(authService.authState, snapshotFlow { appState.showOnboarding }) { signedIn, onboarding ->
+                    signedIn && !onboarding
+                }.collect { mayImport -> heldShareLink.release(mayImport)?.let(::importSharedClassTable) }
+            }
         }
 
         // Re-prompt for app updates only on a genuine fresh start, never on a

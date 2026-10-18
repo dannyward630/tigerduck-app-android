@@ -42,13 +42,15 @@ data class ClassTableShareCode(
     )
 
     companion object {
+        private const val SHARE_HOST = "HTTPS://SHARE.TIGERDUCK.APP"
+
         /**
          * Where every share link lives, in the upper case that keeps a QR code in alphanumeric
          * mode: `HTTPS://SHARE.TIGERDUCK.APP/<TYPE>/<content>`, so a later version can share
          * other things beside class tables. Codes written on tigerduck.app before the move are
          * not read (decided for both apps): that format never reached a release of this app.
          */
-        const val SHARE_ROOT = "HTTPS://SHARE.TIGERDUCK.APP/"
+        const val SHARE_ROOT = "$SHARE_HOST/"
 
         /** A class table's share code: the type `CLASSTABLE`, then the format's six fields. */
         const val PREFIX = SHARE_ROOT + "CLASSTABLE/"
@@ -61,7 +63,7 @@ data class ClassTableShareCode(
             val code = text.trim { it in TRIMMED }.uppercase()
             return when {
                 code.startsWith(PREFIX) -> decodeTigerDuck(code)
-                code.startsWith(SHARE_ROOT) -> throw if (namesType(code.substring(SHARE_ROOT.length))) {
+                isOnShareHost(code) -> throw if (code.startsWith(SHARE_ROOT) && namesType(code.substring(SHARE_ROOT.length))) {
                     ClassTableShareCodeError.UnknownType()
                 } else {
                     ClassTableShareCodeError.Malformed()
@@ -70,6 +72,10 @@ data class ClassTableShareCode(
                 else -> throw ClassTableShareCodeError.UnknownPrefix()
             }
         }
+
+        /** The share host alone, or with a path, query or fragment after it; not a host that only starts the same. */
+        private fun isOnShareHost(code: String): Boolean =
+            code == SHARE_HOST || code.startsWith(SHARE_HOST) && code[SHARE_HOST.length] in "/?#"
 
         /** Whether [path] starts with a type, as a newer app may write one: letters or digits, then `/`. */
         private fun namesType(path: String): Boolean = isUpperAlphanumerics(path.substringBefore('/', ""))
