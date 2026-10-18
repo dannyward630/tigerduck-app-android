@@ -37,9 +37,13 @@ internal data class ResolvedAnnouncementEndpoint(
  * "active override" status cannot diverge from what the client actually
  * sends).
  */
-internal fun resolveAnnouncementEndpoint(prefs: AppPreferences): ResolvedAnnouncementEndpoint {
+internal fun resolveAnnouncementEndpoint(prefs: AppPreferences): ResolvedAnnouncementEndpoint =
+    resolveAnnouncementEndpoint(prefs.announcementApiBaseUrlOverride)
+
+/** What [resolveAnnouncementEndpoint] answers with [stored] as the setting; null is the default. */
+internal fun resolveAnnouncementEndpoint(stored: String?): ResolvedAnnouncementEndpoint {
     val default = BuildConfig.PUSH_BASE_URL.trimEnd('/')
-    val override = prefs.announcementApiBaseUrlOverride?.trimEnd('/')
+    val override = stored?.trimEnd('/')
         ?: return ResolvedAnnouncementEndpoint(default, overrideApplied = false)
     val ok = OverrideValidator.validate(override) as? OverrideValidator.Result.Ok
         ?: return ResolvedAnnouncementEndpoint(default, overrideApplied = false)
