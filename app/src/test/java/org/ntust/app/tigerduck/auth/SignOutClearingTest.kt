@@ -52,6 +52,12 @@ class SignOutClearingTest {
     }
 
     @Test
+    fun `the sign-out forgets the departing student's holiday choices`() {
+        // Left behind, the next student would inherit their quiet days, and the waiting ones would go up as theirs.
+        assertEquals(1, Regex("""\bprefs\.forgetHolidayOverrides\(\)""").findAll(body("fun logout()")).count())
+    }
+
+    @Test
     fun `the widgets are drawn again once the departing student's timetable is wiped`() {
         // Not before: a widget drawn from the cache still on disk would keep the timetable.
         val logout = body("fun logout()")

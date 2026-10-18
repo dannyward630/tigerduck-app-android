@@ -110,6 +110,35 @@ class SyncWiringTest {
         }
     }
 
+    /** tigerduck-app-android#404. */
+    @Test
+    fun `a holiday choice whose PUT failed is kept, and Home's sync sends what waits first and keeps it over the snapshot`() {
+        assertCalls("ui/screen/calendar/CalendarViewModel.kt", "setNotifyOnHoliday", "pendingHolidayOverrides.send(")
+        val body = body("ui/screen/home/HomeBackendSync.kt", "pull")
+        val retry = body.indexOf("pendingHolidayOverrides.retry()")
+        val fetch = body.indexOf("syncApiClient.fetchFullSync()")
+        val merged = body.indexOf("pendingHolidayOverrides.merged(")
+        assertTrue("Home's sync no longer sends the waiting holiday choices before the snapshot", retry in 0 until fetch)
+        assertTrue("Home's sync no longer keeps the waiting holiday choices over the snapshot", merged > fetch)
+        assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "pendingHolidayOverrides.retry()")
+    }
+
+    /** tigerduck-app-android#404: sent directly, a PUT is lost when it fails. */
+    @Test
+    fun `every holiday choice PUT goes through the outbox`() {
+        var root: File? = File("").absoluteFile
+        while (root != null && !File(root, "app/src/main/java").isDirectory && !File(root, "src/main/java").isDirectory) {
+            root = root.parentFile
+        }
+        val main = File(root ?: throw AssertionError("no :app module"), if (File(root, "app").isDirectory) "app/src/main/java" else "src/main/java")
+        // A call or a reference, outside comments.
+        val use = Regex("""(?:\.|::)putHolidayOverride\b""")
+        val callers = main.walk().filter { it.isFile && it.extension == "kt" }
+            .filter { file -> file.readLines().any { line -> !line.trimStart().startsWith("*") && !line.trimStart().startsWith("//") && use.containsMatchIn(line) } }
+            .map { it.name }.toSet()
+        assertEquals(setOf("PendingHolidayOverrides.kt"), callers)
+    }
+
     /** tigerduck-app-android#380. */
     @Test
     fun `a colour or name whose PATCH failed is kept, and every full sync sends what waits first and holds it against the snapshot`() {

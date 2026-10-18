@@ -147,16 +147,17 @@ class PushApiClient @Inject constructor(
      *
      * A no-op when cloud sync is off or on fdroid: the local preference has
      * already been written by then, and this call is only about agreement
-     * between devices, not about whether the guard works.
+     * between devices, not about whether the guard works. With [signIn], sent
+     * only as that sign-in: see `PendingHolidayOverrides`.
      */
-    suspend fun putHolidayOverride(holidayId: Int, notify: Boolean): Unit =
+    suspend fun putHolidayOverride(holidayId: Int, notify: Boolean, signIn: Int? = null): Unit =
         withContext(Dispatchers.IO) {
             if (!isSyncCapable) return@withContext
             val body = gson.toJson(HolidayOverrideRequest(notify)).toRequestBody(jsonType)
             val request = Request.Builder()
                 .url("$baseUrl/sync/holiday-overrides/$holidayId")
                 .put(body)
-                .addAuthHeader()
+                .addAuthHeader(signIn)
                 .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
