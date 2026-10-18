@@ -53,10 +53,19 @@ jobs:
           # the same reason, and built without google-services.json, which only
           # the release workflow decodes; app/build.gradle.kts skips the plugin
           # without it, as for the debug legs.
+          # Lint's release check (lintVital) is left out of these two legs
+          # and runs in legs of its own below: inside them it took the
+          # cores R8 needed, and the two together set the gate's length.
           - leg: play release
-            tasks: :app:assemblePlayRelease
+            tasks: :app:assemblePlayRelease -x :app:lintVitalPlayRelease
           - leg: fdroid release
-            tasks: :app:assembleFdroidRelease
+            tasks: :app:assembleFdroidRelease -x :app:lintVitalFdroidRelease
+          # The check assemble*Release runs before a release, so a fatal lint
+          # error still fails the pull request, not release day.
+          - leg: play lint
+            tasks: :app:lintVitalPlayRelease
+          - leg: fdroid lint
+            tasks: :app:lintVitalFdroidRelease
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
