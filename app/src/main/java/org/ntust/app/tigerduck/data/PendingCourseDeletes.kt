@@ -115,7 +115,7 @@ class PendingCourseDeletes internal constructor(
      * [PendingCourseAdds.removing] itself, so call it outside that lock.
      */
     suspend fun send(semester: String, courseNo: String, queuedAt: Long) {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         // On disk before the wait for the lock, which a slow request may hold
         // for a while: a process killed meanwhile keeps the delete for its
@@ -131,7 +131,7 @@ class PendingCourseDeletes internal constructor(
      * so the snapshot lacks them.
      */
     suspend fun retry() {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         for ((semester, entries) in waiting()) {
             for (courseNo in entries.keys) {
@@ -155,7 +155,7 @@ class PendingCourseDeletes internal constructor(
      * outside that lock, before the add's own upload.
      */
     suspend fun forget(semester: String, courseNo: String, askedAt: Long) {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         pendingCourseAdds.removing {
             edit(generation) { it.without(semester, courseNo) { queuedAt -> queuedAt <= askedAt } }
         }
@@ -169,7 +169,7 @@ class PendingCourseDeletes internal constructor(
      * past, taking the course off the server again and tombstoning it.
      */
     suspend fun forgetTerm(semester: String) {
-        edit(dataCache.userDataGeneration) { it - semester }
+        edit(dataCache.writeGeneration()) { it - semester }
     }
 
     // Under the adds lock, with the delete read again there: false once the

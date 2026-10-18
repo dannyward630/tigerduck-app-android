@@ -5,6 +5,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -81,6 +82,28 @@ class PendingCourseAddsTest {
 
         assertEquals(Upload(listOf("MA1010002"), term, listOf("client:1151:MA1010002")), uploads.last())
         assertEquals(emptyMap<String, List<String>>(), cache.loadPendingCourseAdds())
+    }
+
+    /**
+     * A full sync for an account that has since signed out runs under the generation it began
+     * with; the snapshot it brings back lists that account's courses, and must not take the
+     * next account's waiting add of the same course as landed.
+     */
+    @Test
+    fun `a snapshot for an account that signed out leaves the next account's waiting adds alone`() = runTest {
+        val departed = cache.userDataGeneration
+        cache.clearAllUserData()
+        signIn = 2
+        cache.saveCourses(listOf(typed), term)
+        answer = { throw IOException("offline") }
+        adds.send(listOf(typed), term, typed.courseNo)
+
+        withContext(DataCache.Generation(departed)) {
+            adds.listed(listOf(row("MA1010002")))
+            adds.forgetAll()
+        }
+
+        assertEquals(mapOf(term to listOf("MA1010002")), cache.loadPendingCourseAdds())
     }
 
     @Test

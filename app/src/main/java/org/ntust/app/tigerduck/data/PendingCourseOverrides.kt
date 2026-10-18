@@ -146,7 +146,7 @@ class PendingCourseOverrides internal constructor(
         semester: String? = null,
         courseNo: String? = null,
     ) {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         val recorded = record(listOf(Change(moodleId, colorHex, customName, locale, semester, courseNo)), generation)
         for ((key, change) in recorded) {
@@ -165,7 +165,7 @@ class PendingCourseOverrides internal constructor(
      */
     suspend fun queue(changes: List<Change>, version: Long) {
         if (changes.isEmpty()) return
-        record(changes, dataCache.userDataGeneration, version)
+        record(changes, dataCache.writeGeneration(), version)
     }
 
     /**
@@ -182,7 +182,7 @@ class PendingCourseOverrides internal constructor(
      * starts with this, so the snapshot it fetches has them.
      */
     suspend fun retry() {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         for ((key, change) in waiting()) {
             if (sends(change.isColor)) trySend(key, change, generation, signIn)
@@ -208,7 +208,7 @@ class PendingCourseOverrides internal constructor(
      */
     suspend fun forget(moodleIds: Collection<String>) {
         if (moodleIds.isEmpty()) return
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         mutex.withLock {
             val waiting = waiting()
             val kept = waiting.filterValues { it.moodleId !in moodleIds }
@@ -223,7 +223,7 @@ class PendingCourseOverrides internal constructor(
      * would put this phone's back.
      */
     suspend fun adoptServer(categories: Collection<String>) {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         mutex.withLock {
             val waiting = waiting()
             val kept = waiting.filterValues { category(it.isColor) !in categories }
