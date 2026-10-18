@@ -267,23 +267,26 @@ class SchoolMailListViewModel @Inject constructor(
         // Signing out must not leave the previous account's mail on screen for
         // whoever signs in next (spec §7.5).
         viewModelScope.launch {
-            account.signedIn.collect { signedIn ->
-                if (!signedIn) {
-                    loadJob?.cancel()
-                    loadJob = null
-                    prefetchJob?.cancel()
-                    prefetchJob = null
-                    prefetchDone = false
-                    forgetSearch()
-                    lookedAt = null
-                    staleFolders.clear()
-                    changedAt.clear()
-                    listGeneration++
-                    folderValidity = emptyMap()
-                    _state.value = UiState()
-                }
-            }
+            account.signedIn.collect { signedIn -> if (!signedIn) forgetAccount() }
         }
+        // Nor may another student signing in over a rejected account, which never signs out:
+        // their taps and swipes would act on their own mailbox with this one's UIDs.
+        viewModelScope.launch { account.studentChanges.collect { forgetAccount() } }
+    }
+
+    private fun forgetAccount() {
+        loadJob?.cancel()
+        loadJob = null
+        prefetchJob?.cancel()
+        prefetchJob = null
+        prefetchDone = false
+        forgetSearch()
+        lookedAt = null
+        staleFolders.clear()
+        changedAt.clear()
+        listGeneration++
+        folderValidity = emptyMap()
+        _state.value = UiState()
     }
 
     /**
