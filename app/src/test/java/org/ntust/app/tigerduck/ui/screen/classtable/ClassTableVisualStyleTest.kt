@@ -36,6 +36,18 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.click
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.focus.FocusDirection
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -359,33 +371,42 @@ class ClassTableVisualStyleTest {
      * Physics on row 2 and is alone on row 3. At density 1 the inner area starts at (1, 1), its
      * lanes are 29px wide and its rows 51.5px tall.
      */
-    private fun chainCell(onSelect: (Course) -> Unit = {}) {
-        val role = CellRole.MultiConflictStart(
-            members = listOf(
-                CellRole.MultiConflictStart.Member(calculus, span = 2, offset = 0, lane = 0, firstPeriodId = "1"),
-                CellRole.MultiConflictStart.Member(physics, span = 3, offset = 0, lane = 1, firstPeriodId = "1"),
-                CellRole.MultiConflictStart.Member(chemistry, span = 2, offset = 2, lane = 0, firstPeriodId = "3"),
-            ),
-            combinedSpan = 4,
-            laneCount = 2,
-        )
-        draw(VisualPreset.TigerDuck, width, cellHeight * 4) {
-            MultiConflictCourseCell(
-                cellRole = role,
-                dayColWidth = width.dp,
-                cellHeight = cellHeight.dp,
-                x = 0.dp,
-                y = 0.dp,
-                weekday = 1,
-                hasAssignment = { false },
-                assignmentsIgnored = { false },
-                onSelect = { course, _ -> onSelect(course) },
-                onLongPress = {},
-                onRename = {},
-                onPickColor = {},
-                onToggleIgnoreAssignments = null,
-                onDelete = {},
-            )
+    private val chain = CellRole.MultiConflictStart(
+        members = listOf(
+            CellRole.MultiConflictStart.Member(calculus, span = 2, offset = 0, lane = 0, firstPeriodId = "1"),
+            CellRole.MultiConflictStart.Member(physics, span = 3, offset = 0, lane = 1, firstPeriodId = "1"),
+            CellRole.MultiConflictStart.Member(chemistry, span = 2, offset = 2, lane = 0, firstPeriodId = "3"),
+        ),
+        combinedSpan = 4,
+        laneCount = 2,
+    )
+
+    private fun chainCell(
+        role: CellRole.MultiConflictStart = chain,
+        direction: LayoutDirection = LayoutDirection.Ltr,
+        onFocusManager: (FocusManager, InputModeManager) -> Unit = { _, _ -> },
+        onSelect: (Course) -> Unit = {},
+    ) {
+        draw(VisualPreset.TigerDuck, width, cellHeight * role.combinedSpan) {
+            onFocusManager(LocalFocusManager.current, LocalInputModeManager.current)
+            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                MultiConflictCourseCell(
+                  cellRole = role,
+                  dayColWidth = width.dp,
+                  cellHeight = cellHeight.dp,
+                  x = 0.dp,
+                  y = 0.dp,
+                  weekday = 1,
+                  hasAssignment = { false },
+                  assignmentsIgnored = { false },
+                  onSelect = { course, _ -> onSelect(course) },
+                  onLongPress = {},
+                  onRename = {},
+                  onPickColor = {},
+                  onToggleIgnoreAssignments = null,
+                  onDelete = {},
+                )
+            }
         }
     }
 
@@ -401,7 +422,7 @@ class ClassTableVisualStyleTest {
     @Test
     fun `a tap lands on the course drawn there, and each course is one button`() {
         var picked: Course? = null
-        chainCell { picked = it }
+        chainCell(onSelect = { picked = it })
 
         composeRule.onAllNodes(hasClickAction()).assertCountEquals(3)
         composeRule.onRoot().performTouchInput { click(Offset(50f, 160f)) }
@@ -410,6 +431,51 @@ class ClassTableVisualStyleTest {
         assertEquals(physics, picked)
         composeRule.onRoot().performTouchInput { click(Offset(8f, 112f)) }
         assertEquals(chemistry, picked)
+    }
+
+    /**
+     * A course whose name sits in a run narrower than its whole shape: Calculus in its own lane
+     * beside Physics, then Statistics, and alone on the last row. The grid places by absolute
+     * offsets, so in a right-to-left language the name must stay in that run, not at the shape's
+     * right edge, where the shape is cut away.
+     */
+    @Test
+    fun `in a right-to-left language a course's name stays in its own run`() {
+        val role = CellRole.MultiConflictStart(
+            members = listOf(
+                CellRole.MultiConflictStart.Member(calculus, span = 5, offset = 0, lane = 0, firstPeriodId = "1"),
+                CellRole.MultiConflictStart.Member(physics, span = 2, offset = 0, lane = 1, firstPeriodId = "1"),
+                CellRole.MultiConflictStart.Member(statistics, span = 2, offset = 2, lane = 1, firstPeriodId = "3"),
+            ),
+            combinedSpan = 5,
+            laneCount = 2,
+        )
+        chainCell(role, LayoutDirection.Rtl)
+
+        val name = composeRule.onNodeWithText("Calculus", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("Calculus's name runs ${name.left}..${name.right}, its lane 1..30", name.right.value <= 31f)
+    }
+
+    @Test
+    fun `the keyboard stops once on each course`() {
+        lateinit var focus: FocusManager
+        lateinit var inputMode: InputModeManager
+        chainCell(onFocusManager = { manager, mode -> focus = manager; inputMode = mode })
+        // A clickable takes focus from a keyboard, not in touch mode.
+        composeRule.runOnIdle { inputMode.requestInputMode(InputMode.Keyboard) }
+        fun focused() = listOf(calculus, physics, chemistry).firstOrNull { course ->
+            runCatching {
+                composeRule.onNode(hasContentDescription(course.courseName, substring = true)).assertIsFocused()
+            }.isSuccess
+        }?.courseName
+
+        composeRule.onNode(hasContentDescription("Calculus", substring = true)).requestFocus()
+        val stops = listOf(focused()) + (1..2).map {
+            composeRule.runOnIdle { focus.moveFocus(FocusDirection.Next) }
+            composeRule.waitForIdle()
+            focused()
+        }
+        assertEquals(listOf("Calculus", "Physics", "Chemistry"), stops)
     }
 
     // ---- conflict marks ----

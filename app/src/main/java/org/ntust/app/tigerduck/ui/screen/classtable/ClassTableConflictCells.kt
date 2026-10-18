@@ -44,6 +44,12 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.runtime.key
@@ -399,6 +405,9 @@ internal fun MultiConflictCourseCell(
                             .background(bgFor(member.course))
                             .requiredCourseOutline(outlineFor(member.course), shape)
                             .indication(interactionSource, indication),
+                        // The name and the mark are placed by absolute offsets, from the left in
+                        // either direction; TopStart would start them at the right edge in RTL.
+                        contentAlignment = AbsoluteAlignment.TopLeft,
                     ) {
                         ClassTableCourseNameText(
                             text = member.course.displayName,
@@ -421,44 +430,53 @@ internal fun MultiConflictCourseCell(
                     }
 
                     // Taps land on the runs themselves: the shape's bounds reach over the courses
-                    // beside it. The run holding the name is the course's one button for TalkBack.
+                    // beside it. The run holding the name is the course's one button for TalkBack
+                    // and its one stop for a keyboard.
                     rects.forEachIndexed { index, rect ->
-                        Box(
-                            modifier = Modifier
-                                .absoluteOffset(x = rect.left, y = rect.top)
-                                .size(rect.right - rect.left, rect.bottom - rect.top)
-                                .then(
-                                    if (index == labelRun) {
-                                        Modifier.semantics(mergeDescendants = true) {
-                                            contentDescription = labels.label(
-                                                member.course,
-                                                weekday,
-                                                member.firstPeriodId,
-                                                hasAssignmentForMember,
-                                                ignoredForMember,
-                                                conflict = true,
-                                            )
-                                            role = Role.Button
-                                        }
-                                    } else {
-                                        Modifier.clearAndSetSemantics {}
-                                    },
-                                )
-                                .combinedClickable(
-                                    interactionSource = interactionSource,
-                                    indication = null,
-                                    onClick = { onSelect(member.course, member.firstPeriodId) },
-                                    // The app vibrates for this long press itself, through the Vibration setting;
-                                    // Compose's own buzz would land on top of it and ignore that setting.
-                                    hapticFeedbackEnabled = false,
-                                    onLongClick = onLongPress?.let { press ->
-                                        {
-                                            press()
-                                            menuForCourse = member.course
-                                        }
-                                    },
-                                ),
-                        )
+                        key(index) {
+                            // A press shows on the whole shape, from where it was made on this run.
+                            val runSource = remember { MutableInteractionSource() }
+                            val fromShape = with(LocalDensity.current) {
+                                Offset((rect.left - bounds.left).toPx(), (rect.top - bounds.top).toPx())
+                            }
+                            LaunchedEffect(runSource, fromShape) { forwardInteractions(runSource, interactionSource, fromShape) }
+                            Box(
+                                modifier = Modifier
+                                    .absoluteOffset(x = rect.left, y = rect.top)
+                                    .size(rect.right - rect.left, rect.bottom - rect.top)
+                                    .then(
+                                        if (index == labelRun) {
+                                            Modifier.semantics(mergeDescendants = true) {
+                                                contentDescription = labels.label(
+                                                    member.course,
+                                                    weekday,
+                                                    member.firstPeriodId,
+                                                    hasAssignmentForMember,
+                                                    ignoredForMember,
+                                                    conflict = true,
+                                                )
+                                                role = Role.Button
+                                            }
+                                        } else {
+                                            Modifier.clearAndSetSemantics {}.focusProperties { canFocus = false }
+                                        },
+                                    )
+                                    .combinedClickable(
+                                        interactionSource = runSource,
+                                        indication = null,
+                                        onClick = { onSelect(member.course, member.firstPeriodId) },
+                                        // The app vibrates for this long press itself, through the Vibration setting;
+                                        // Compose's own buzz would land on top of it and ignore that setting.
+                                        hapticFeedbackEnabled = false,
+                                        onLongClick = onLongPress?.let { press ->
+                                            {
+                                                press()
+                                                menuForCourse = member.course
+                                            }
+                                        },
+                                    ),
+                            )
+                        }
                     }
                 }
             }
@@ -545,3 +563,23 @@ private val LANE_SEAM = 1.dp
 private val LANE_CORNER = 4.dp
 private val BADGE_SIZE = 10.dp
 private val BADGE_INSET = 3.dp
+
+/**
+ * Passes [from]'s interactions on to [to], a press moved by [offset], with its release or cancel
+ * ending the moved press: a run of a clashing course reports a press from its own corner, and the
+ * course's whole shape, which draws it, starts it from its own.
+ */
+internal suspend fun forwardInteractions(from: InteractionSource, to: MutableInteractionSource, offset: Offset) {
+    val moved = mutableMapOf<PressInteraction.Press, PressInteraction.Press>()
+    from.interactions.collect { interaction ->
+        when (interaction) {
+            is PressInteraction.Press -> PressInteraction.Press(interaction.pressPosition + offset).let {
+                moved[interaction] = it
+                to.emit(it)
+            }
+            is PressInteraction.Release -> moved.remove(interaction.press)?.let { to.emit(PressInteraction.Release(it)) }
+            is PressInteraction.Cancel -> moved.remove(interaction.press)?.let { to.emit(PressInteraction.Cancel(it)) }
+            else -> to.emit(interaction)
+        }
+    }
+}
