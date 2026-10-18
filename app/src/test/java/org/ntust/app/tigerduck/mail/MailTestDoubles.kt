@@ -78,6 +78,8 @@ class RecordingNotifier : MailNotifier {
         onPostNewMail?.invoke()
     }
     override fun postAuthFailure() { authFailures++ }
+    var authFailuresCancelled = 0
+    override fun cancelAuthFailure() { authFailuresCancelled++ }
     override fun cancelMessage(uid: Long) { cancelledUids += uid }
     val cancelledPosted = mutableListOf<List<MailSummary>>()
     override fun cancelPosted(messages: List<MailSummary>) { cancelledPosted += messages }

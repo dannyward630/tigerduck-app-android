@@ -109,6 +109,8 @@ class AndroidMailNotifier @Inject constructor(
         postGroupSummary()
     }
 
+    override fun cancelAuthFailure() = NotificationGroup.MAIL.cancel(context, MailNotificationPlanner.AUTH_FAILED_ID)
+
     override fun cancelMessage(uid: Long) =
         NotificationGroup.MAIL.cancel(context, MailNotificationPlanner.notificationId(uid), MailNotificationPlanner.TAG)
 
