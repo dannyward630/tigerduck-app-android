@@ -151,6 +151,20 @@ class ShareCodeLinkTest {
     }
 
     @Test
+    fun `a link to a newer app's code asks for an update`() = runTest {
+        listOf(
+            "https://share.tigerduck.app/FRIEND/1.B11300001",
+            "tigerduck://share/FRIEND/1.B11300001",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/2.B11300001",
+        ).forEach { link ->
+            val model = openLink(link)
+
+            assertEquals(link, Prompt.NeedsUpdate, model.state.value.prompt)
+            assertNull(link, model.state.value.pending)
+        }
+    }
+
+    @Test
     fun `other links are left for the rest of the app`() {
         listOf(
             "https://tigerduck.app/",

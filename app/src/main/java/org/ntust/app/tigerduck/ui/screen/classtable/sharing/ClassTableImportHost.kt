@@ -245,20 +245,21 @@ private fun ImportConfirmDialog(model: ClassTableImportModel, code: ClassTableSh
 @Composable
 private fun ImportPromptDialog(model: ClassTableImportModel, prompt: Prompt) {
     val title = when (prompt) {
-        Prompt.Invalid, Prompt.NoCode, Prompt.OwnCode, is Prompt.SaveFailed ->
+        Prompt.Invalid, Prompt.NeedsUpdate, Prompt.NoCode, Prompt.OwnCode, is Prompt.SaveFailed ->
             stringResource(R.string.class_table_import_failed)
         is Prompt.Replace -> stringResource(R.string.class_table_import_replace_title, prompt.job.nickname)
         is Prompt.LookupFailed -> stringResource(R.string.class_table_import_lookup_failed)
     }
     val message = when (prompt) {
         Prompt.Invalid -> stringResource(R.string.class_table_import_invalid_message)
+        Prompt.NeedsUpdate -> stringResource(R.string.share_code_needs_update_message)
         Prompt.NoCode -> stringResource(R.string.class_table_import_no_code_message)
         Prompt.OwnCode -> stringResource(R.string.class_table_import_own_code_message)
         is Prompt.Replace -> stringResource(R.string.class_table_import_replace_message)
         is Prompt.LookupFailed, is Prompt.SaveFailed -> null
     }
     when (prompt) {
-        Prompt.Invalid, Prompt.NoCode, Prompt.OwnCode -> TigerDuckDialog(
+        Prompt.Invalid, Prompt.NeedsUpdate, Prompt.NoCode, Prompt.OwnCode -> TigerDuckDialog(
             onDismissRequest = model::dismissPrompt,
             title = title,
             message = message,

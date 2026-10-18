@@ -40,10 +40,13 @@ class ClassTableImportModel(
 
     /** The prompts that start a lookup carry its job, so their buttons need nothing else. */
     sealed interface Prompt {
-        /** A wrong checksum, layout or course code, or a format version this app does not know. */
+        /** A wrong checksum, layout or course code. */
         data object Invalid : Prompt
 
         data object NoCode : Prompt
+
+        /** A code a newer app wrote: a format version or a share type this one does not know. */
+        data object NeedsUpdate : Prompt
 
         data object OwnCode : Prompt
 
@@ -93,6 +96,7 @@ class ClassTableImportModel(
         when (val reading = reading(text)) {
             Reading.NotShareCode -> return false
             Reading.Invalid -> _state.update { it.copy(prompt = Prompt.Invalid) }
+            Reading.NeedsUpdate -> _state.update { it.copy(prompt = Prompt.NeedsUpdate) }
             is Reading.Code -> open(reading.code)
         }
         return true
@@ -109,7 +113,12 @@ class ClassTableImportModel(
         if (code != null) {
             open(code)
         } else {
-            val prompt = if (readings.any { it == Reading.Invalid }) Prompt.Invalid else Prompt.NoCode
+            // A newer app's code is one this one could read once updated, so that comes first.
+            val prompt = when {
+                Reading.NeedsUpdate in readings -> Prompt.NeedsUpdate
+                Reading.Invalid in readings -> Prompt.Invalid
+                else -> Prompt.NoCode
+            }
             _state.update { it.copy(prompt = prompt) }
         }
     }
@@ -239,6 +248,8 @@ class ClassTableImportModel(
 
         data object Invalid : Reading
 
+        data object NeedsUpdate : Reading
+
         data class Code(val code: ClassTableShareCode) : Reading
     }
 
@@ -246,6 +257,10 @@ class ClassTableImportModel(
         Reading.Code(ClassTableShareCode.decode(text))
     } catch (_: ClassTableShareCodeError.UnknownPrefix) {
         Reading.NotShareCode
+    } catch (_: ClassTableShareCodeError.UnknownVersion) {
+        Reading.NeedsUpdate
+    } catch (_: ClassTableShareCodeError.UnknownType) {
+        Reading.NeedsUpdate
     } catch (e: ClassTableShareCodeError) {
         Log.i(TAG, "Share code refused: ${e.javaClass.simpleName}")
         Reading.Invalid

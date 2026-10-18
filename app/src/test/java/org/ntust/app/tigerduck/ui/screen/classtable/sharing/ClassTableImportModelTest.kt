@@ -83,6 +83,24 @@ class ClassTableImportModelTest {
     }
 
     @Test
+    fun `a code from a newer app asks for an update, whether a version or a type this one does not know`() = runTest {
+        val newer = listOf(
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/2.B11300001",
+            "https://share.tigerduck.app/FRIEND/1.B11300001",
+        )
+        newer.forEach { text ->
+            val model = model()
+            assertTrue(text, model.scanned(text))
+            assertEquals(text, Prompt.NeedsUpdate, model.state.value.prompt)
+        }
+
+        // Asked of a picture too, before a damaged code beside it.
+        val picture = model()
+        picture.imageRead(listOf("https://example.com", "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.X", newer[1]))
+        assertEquals(Prompt.NeedsUpdate, picture.state.value.prompt)
+    }
+
+    @Test
     fun `the user's own code is refused`() = runTest {
         val own = ClassTableShareCode.encode(account, sharedAt, listOf(ClassTableShareCode.Term("1151", listOf("CS1010001"))))!!
         val model = model()
