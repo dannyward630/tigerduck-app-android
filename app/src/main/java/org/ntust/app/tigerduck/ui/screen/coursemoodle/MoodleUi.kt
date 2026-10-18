@@ -258,8 +258,11 @@ internal fun moodleErrorText(resources: Resources, error: Throwable): String {
         is MoodleWebserviceError.AccessDenied,
         is MoodleWebserviceError.WebserviceDisabled -> resources.getString(R.string.error_moodle_webservice_disabled)
         is MoodleWebserviceError.HttpStatus -> resources.getString(R.string.error_moodle_http_status_format, error.code)
+        // The part this app wrote: what follows a colon quotes the server -- a sign-in page's
+        // address and the start of its HTML, a parser's message -- and stays in the log.
         is MoodleWebserviceError.MalformedResponse ->
-            resources.getString(R.string.error_moodle_malformed_response_format).replaceIosArg(1, error.detail)
+            resources.getString(R.string.error_moodle_malformed_response_format)
+                .replaceIosArg(1, error.detail.substringBefore(':').trim())
         else -> resources.getString(R.string.error_moodle_malformed_response_format)
             .replaceIosArg(1, error.javaClass.simpleName)
     }

@@ -1066,7 +1066,12 @@ class DataCache @Inject constructor(
         saveToUserDataIf(value, filename, writeGeneration())
     }
 
-    private suspend fun writeGeneration(): Int =
+    /**
+     * The generation a write made here would carry: the [Generation] of the work this coroutine
+     * does, or the current one outside such work. An outbox takes this, not [userDataGeneration],
+     * so a sync pinned to an account that has since signed out cannot write to the next one's.
+     */
+    suspend fun writeGeneration(): Int =
         currentCoroutineContext()[Generation]?.value ?: userDataGeneration
 
     // Checked under the folder's lock, which the wipe takes before deleting

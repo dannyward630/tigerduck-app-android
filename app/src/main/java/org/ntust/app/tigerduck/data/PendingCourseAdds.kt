@@ -63,7 +63,7 @@ class PendingCourseAdds internal constructor(
      * back on.
      */
     suspend fun send(courses: List<Course>, semester: String, courseNo: String) {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         if (!edit(generation) { it.with(semester, listOf(courseNo)) }) return
         trySend(semester, listOf(courseNo), generation, signIn, courses)
@@ -75,7 +75,7 @@ class PendingCourseAdds internal constructor(
      * them. An add whose course this phone no longer holds is let go unsent.
      */
     suspend fun retry() {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         for ((semester, nos) in waiting()) {
             if (!trySend(semester, nos, generation, signIn)) return
@@ -105,7 +105,7 @@ class PendingCourseAdds internal constructor(
 
     /** Lets go of the adds [serverCourses], a snapshot's rows, list: the server has them. */
     suspend fun listed(serverCourses: List<ServerCourse>) {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val waiting = waiting()
         if (waiting.isEmpty()) return
         val listed = serverCourses.groupBy({ it.semester }, { it.courseNo })
@@ -172,7 +172,7 @@ class PendingCourseAdds internal constructor(
      * add kept past it would put its course back on every device.
      */
     suspend fun forgetAll() {
-        edit(dataCache.userDataGeneration) { emptyMap() }
+        edit(dataCache.writeGeneration()) { emptyMap() }
     }
 
     /** The course numbers whose add in [semester] is still waiting, for the reconcile to keep. */

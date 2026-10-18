@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.academic.QuietDays
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.push.PushApiClient
 import org.ntust.app.tigerduck.ui.component.ServerFailureSimulator
 import org.ntust.app.tigerduck.ui.component.ServerKind
@@ -730,6 +731,8 @@ class HomeViewModel @Inject constructor(
                         courses = HomeCourseMerge.mergeRemote(
                             remote = remoteCourses,
                             cached = dataCache.loadCourses(),
+                            names = dataCache.loadCourseCustomNames(),
+                            locale = AppLanguageManager.resolvedCourseApiLanguage(prefs.appLanguage),
                             deletedNos = hiddenNow(),
                         )
                         dataCache.saveCourses(courses)
@@ -751,11 +754,16 @@ class HomeViewModel @Inject constructor(
                     }
                     if (written != null) {
                         assignments = written
-                        runCatching { pushApiClient.uploadAssignments(written) }
-                            .onFailure {
-                                prefs.setLastSyncSource(SyncSource.LOCAL)
-                                Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${it.logSummary()}")
-                            }
+                        try {
+                            pushApiClient.uploadAssignments(written)
+                        } catch (e: CancellationException) {
+                            // A sign-out cancels this fetch: taken for a failed upload, the
+                            // fetch would go on to show the departing account's lists again.
+                            throw e
+                        } catch (e: Exception) {
+                            prefs.setLastSyncSource(SyncSource.LOCAL)
+                            Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${e.logSummary()}")
+                        }
                     }
                 }
             }

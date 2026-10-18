@@ -33,6 +33,13 @@ interface MailStateStore {
     fun ownedDeleted(folder: String, uidValidity: Long): Set<Long>
     fun setOwnedDeleted(folder: String, uidValidity: Long, uids: Set<Long>)
     fun clear()
+
+    /**
+     * [clear], but for the same student signing in again: what is theirs rather than the
+     * sign-in's stays -- the display name, whether new mail notifies, and the mail this app
+     * flagged `\Deleted` and has still to expunge.
+     */
+    fun clearSignIn()
 }
 
 /** Entries of the owned-`\Deleted` set: mails this app flagged but could not expunge yet (spec §8.3). */
@@ -121,6 +128,18 @@ class SharedPrefsMailStateStore(context: Context) : MailStateStore {
     @Synchronized
     override fun clear() {
         prefs.edit().clear().apply()
+    }
+
+    @Synchronized
+    override fun clearSignIn() {
+        val name = prefs.getString(K_NAME, null)
+        val notify = prefs.getBoolean(K_NOTIFY, true)
+        val owned = prefs.getStringSet(K_OWNED, emptySet()).orEmpty().toSet()
+        prefs.edit().clear().apply {
+            name?.let { putString(K_NAME, it) }
+            putBoolean(K_NOTIFY, notify)
+            if (owned.isNotEmpty()) putStringSet(K_OWNED, owned)
+        }.apply()
     }
 
     private companion object {

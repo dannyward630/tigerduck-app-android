@@ -26,8 +26,10 @@ import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
@@ -158,6 +160,12 @@ class HomeBackendSync @Inject constructor(
      * produces a 401 gives up rather than recursing.
      */
     suspend fun pull(state: HomeSyncState, retried: Boolean = false) {
+        // Pinned to the data this sync began with: once a sign-out wipes it, every cache write
+        // below drops, so a sync that outlives one cannot write the departing account's courses,
+        // deletions and marks into the files the next account starts from.
+        if (currentCoroutineContext()[DataCache.Generation] == null) {
+            return withContext(DataCache.Generation(dataCache.userDataGeneration)) { pull(state, retried) }
+        }
         // cloudSyncEnabled already reads false on fdroid at its source
         // (AppPreferences.cloudSyncEnabled), so no separate flavor check
         // is needed here.

@@ -171,6 +171,8 @@ class MoodleSubmissionJsonTest {
         assertEquals(5601, submission.id)
         assertEquals(1_790_800_000L, submission.submittedAt)
         assertTrue(submission.takesComments)
+        // What the group handed in is on its record still, while it waits for the others.
+        assertEquals(listOf("project.zip"), submission.files.map { it.name })
     }
 
     @Test
