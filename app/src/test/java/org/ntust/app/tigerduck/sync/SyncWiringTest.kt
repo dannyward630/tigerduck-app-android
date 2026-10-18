@@ -301,6 +301,29 @@ class SyncWiringTest {
     }
 
     /**
+     * A full sync still out when the user signs out comes back after the wipe. Its cache writes
+     * run under the data generation it began with, so they drop rather than put the departing
+     * account's courses, deletions and marks into the files the next account starts from.
+     */
+    @Test
+    fun `Home's sync and the worker write nothing once a sign-out has wiped the data`() {
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "pull", "DataCache.Generation(dataCache.userDataGeneration)")
+        assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "DataCache.Generation(dataCache.userDataGeneration)")
+    }
+
+    /**
+     * The sign-out cancels Home's fetch, and a `runCatching` around its last upload would take
+     * that cancellation for a failed upload: the fetch would go on to put the departing
+     * account's courses and assignments back on the screen the sign-out just emptied.
+     */
+    @Test
+    fun `Home's fetch lets a sign-out's cancellation through its assignment upload`() {
+        val body = body("ui/screen/home/HomeViewModel.kt", "fetchData")
+        assertTrue("fetchData no longer uploads the assignments", "pushApiClient.uploadAssignments(written)" in body)
+        assertTrue("fetchData catches the upload's cancellation", "runCatching { pushApiClient.uploadAssignments" !in body)
+    }
+
+    /**
      * tigerduck-app-android#417: Home's fetch saves the current term's list and the upload sends
      * it, so a course whose query failed has to keep the row the term has, as the class table's
      * fetch does (ClassTableTermFetchTest).

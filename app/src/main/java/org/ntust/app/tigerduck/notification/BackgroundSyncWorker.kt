@@ -25,6 +25,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.academic.SemesterTerm
 import org.ntust.app.tigerduck.auth.AuthService
@@ -174,6 +176,11 @@ class BackgroundSyncWorker @AssistedInject constructor(
     }
 
     private suspend fun syncOverridesFromBackend() {
+        // Pinned to the data this sync began with, as Home's is: once a sign-out wipes it, every
+        // cache write below drops rather than land in the files the next account starts from.
+        if (currentCoroutineContext()[DataCache.Generation] == null) {
+            return withContext(DataCache.Generation(dataCache.userDataGeneration)) { syncOverridesFromBackend() }
+        }
         // cloudSyncEnabled already reads false on fdroid at its source
         // (AppPreferences.cloudSyncEnabled), so no separate flavor check
         // is needed here.

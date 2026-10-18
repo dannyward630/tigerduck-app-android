@@ -8,6 +8,8 @@ android {
 
     defaultConfig {
         minSdk = 29
+        // See consumer-rules.pro: the classes Gson reads and writes, kept in every app.
+        consumerProguardFiles("consumer-rules.pro")
     }
 
     compileOptions {

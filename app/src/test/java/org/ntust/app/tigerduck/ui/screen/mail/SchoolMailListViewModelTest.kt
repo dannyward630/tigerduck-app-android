@@ -928,6 +928,23 @@ class SchoolMailListViewModelTest {
         assertEquals(lists + 1, repo.foldersCalls)
     }
 
+    /**
+     * A sign-in over a rejected account never signs out, so the list's sign-out reset never ran:
+     * the first student's rows stayed up, and a tap or a swipe acted on the second student's mail
+     * with the first one's UIDs.
+     */
+    @Test
+    fun `another student signing in over this one never sees this one's mail`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+        // Before their own list lands, or when it never does.
+        repo.loadError = MailError.Network()
+        signInAnotherOverThisOne()
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals(emptyList<Long>(), vm.state.value.displayed.map { it.uid })
+    }
+
     @Test
     fun `a list that failed with nothing to show is tried again as the page appears`() {
         repo.add("INBOX", mailSummary(1))

@@ -28,6 +28,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -133,7 +134,7 @@ fun OutlinedAccountIdField(
     // restartInput, GBoard/Samsung IME can drop the composing span.
     // -1 means "not applied yet" so the first write always goes through and
     // skips the IME reconnect (no IME connection on initial compose).
-    var lastAppliedInputType by remember { mutableStateOf(-1) }
+    var lastAppliedInputType by remember { mutableIntStateOf(-1) }
 
     OutlinedTextFieldDefaults.DecorationBox(
         value = value,

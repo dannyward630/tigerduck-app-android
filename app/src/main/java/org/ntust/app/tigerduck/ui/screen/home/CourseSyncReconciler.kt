@@ -452,8 +452,10 @@ object CourseSyncReconciler {
         if (!syncColors || courses.isEmpty()) return null
         val serverHex = mutableMapOf<String, String>()
         val picks = courses.mapNotNull { course ->
-            val override = overrides.find { it.courseNo == course.courseNo }
-                ?: overrides.find { it.moodleCourseId == course.moodleIdNumber }
+            // By the course's own Moodle id first: the snapshot carries every
+            // term's rows, and a course taken again keeps its number.
+            val override = course.moodleIdNumber?.let { id -> overrides.find { it.moodleCourseId == id } }
+                ?: overrides.find { it.courseNo == course.courseNo }
             // By the row's id and by the course's own: a row made before the
             // course had an idnumber is keyed by its term and number instead.
             // A held course counts with no row of its own too: a row's colour

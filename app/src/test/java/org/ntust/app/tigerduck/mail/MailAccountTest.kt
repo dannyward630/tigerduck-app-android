@@ -109,6 +109,36 @@ class MailAccountTest {
         assertFalse(account.authFailed.value)
     }
 
+    /**
+     * A password typed again after the server rejected it is the same student's account: what
+     * they chose stays as they chose it, and the notice that their sign-in failed goes.
+     */
+    @Test
+    fun `signing in again as the same student keeps their new-mail switch and the mail still to be expunged`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        state.notificationsEnabled = false
+        state.setOwnedDeleted("INBOX", server.uidValidity, setOf(7L))
+        account.onAuthFailure()
+        val noticesTakenDown = notifier.authFailuresCancelled
+        assertNull(account.signIn("B10000001", "pw"))
+        assertFalse(state.notificationsEnabled)
+        assertEquals(setOf(7L), state.ownedDeleted("INBOX", server.uidValidity))
+        assertEquals(noticesTakenDown + 1, notifier.authFailuresCancelled)
+        assertEquals("the same student's new-mail notices stay", 0, notifier.cancelledAll)
+    }
+
+    @Test
+    fun `signing in as another student takes the previous one's notifications down`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        state.notificationsEnabled = false
+        server.passwords["B10000002"] = "pw"
+        assertNull(account.signIn("b10000002", "pw"))
+        assertEquals(1, notifier.cancelledAll)
+        assertTrue("another student starts from the default", state.notificationsEnabled)
+    }
+
     @Test
     fun `auth failure stops background checks`() = runTest {
         val account = account()

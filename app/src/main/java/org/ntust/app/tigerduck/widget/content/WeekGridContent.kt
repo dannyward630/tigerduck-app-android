@@ -529,7 +529,7 @@ private fun ConflictCell(
             )
             // Course A label — pinned inside A's own Box at top-right (Γ's top bar).
             ConflictLabel(
-                courseName = cell.courseA.courseName,
+                courseName = cell.courseA.displayName,
                 textColor = weekCourseTextColor(highlightA, colors, style),
                 alignment = Alignment.TopEnd,
                 boxTopPadding = rowHeight * cell.offsetA,
@@ -539,7 +539,7 @@ private fun ConflictCell(
             )
             // Course B label — pinned inside B's own Box at bottom-left (mirror-L's bottom bar).
             ConflictLabel(
-                courseName = cell.courseB.courseName,
+                courseName = cell.courseB.displayName,
                 textColor = weekCourseTextColor(highlightB, colors, style),
                 alignment = Alignment.BottomStart,
                 boxTopPadding = rowHeight * cell.offsetB,

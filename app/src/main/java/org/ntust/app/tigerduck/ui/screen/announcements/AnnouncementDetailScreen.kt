@@ -32,11 +32,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -119,6 +122,7 @@ fun AnnouncementDetailScreen(
                             body = s.summary.summary,
                             bodyState = BodyState.Failed(onRetry = viewModel::reload),
                             taxonomy = s.taxonomy,
+                            browserPreference = browserPreference,
                         )
                     } else {
                         Column(
@@ -142,6 +146,7 @@ fun AnnouncementDetailScreen(
                     body = null,
                     bodyState = BodyState.Loading,
                     taxonomy = s.taxonomy,
+                    browserPreference = browserPreference,
                 )
 
                 is AnnouncementDetailViewModel.State.Loaded -> DetailBody(
@@ -149,6 +154,7 @@ fun AnnouncementDetailScreen(
                     body = BulletinBodyRenderer.bodyMarkdown(s.detail, viewModel.listSummary),
                     bodyState = BodyState.Ready,
                     taxonomy = s.taxonomy,
+                    browserPreference = browserPreference,
                 )
             }
         }
@@ -172,6 +178,7 @@ private fun DetailBody(
     body: String?,
     bodyState: BodyState,
     taxonomy: TaxonomyResponse?,
+    browserPreference: String,
 ) {
     val scrollState = rememberScrollState()
     Column(
@@ -224,7 +231,7 @@ private fun DetailBody(
         // Body content stays in Mandarin (server-side, original language).
         // Which field it comes from is BulletinBodyRenderer.bodyMarkdown's call.
         when (bodyState) {
-            BodyState.Ready -> body?.let { BodyMarkdown(it) }
+            BodyState.Ready -> body?.let { BodyMarkdown(it, browserPreference) }
 
             BodyState.Loading -> {
                 Row(
@@ -258,7 +265,7 @@ private fun DetailBody(
                     }
                 }
                 // The summary stands in for the body it could not load, as on the iPhone.
-                body?.let { BodyMarkdown(it) }
+                body?.let { BodyMarkdown(it, browserPreference) }
             }
         }
         // Footer: hashtag strip — wraps multi-line for posts with many tags.
@@ -290,12 +297,27 @@ private fun DetailBody(
     }
 }
 
-/** Server markdown with [BulletinBodyRenderer.normalize]'s fix-ups applied; nothing when blank. */
+/**
+ * Server markdown with [BulletinBodyRenderer.normalize]'s fix-ups applied; nothing when blank.
+ *
+ * A tapped link goes through [openLink], as the Source button's does: Compose's own handler would
+ * start whatever app claims the link's scheme, and open a web page outside "Open links with".
+ */
 @Composable
-private fun BodyMarkdown(markdown: String) {
+internal fun BodyMarkdown(markdown: String, browserPreference: String) {
     if (markdown.isBlank()) return
     val normalized = remember(markdown) { BulletinBodyRenderer.normalize(markdown) }
-    Markdown(content = normalized)
+    val context = LocalContext.current
+    val handler = remember(context, browserPreference) {
+        object : UriHandler {
+            override fun openUri(uri: String) {
+                openLink(context, uri, browserPreference)
+            }
+        }
+    }
+    CompositionLocalProvider(LocalUriHandler provides handler) {
+        Markdown(content = normalized)
+    }
 }
 
 /**
