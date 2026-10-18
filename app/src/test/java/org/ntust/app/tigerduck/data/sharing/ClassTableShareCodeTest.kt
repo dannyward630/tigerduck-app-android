@@ -1,164 +1,313 @@
 package org.ntust.app.tigerduck.data.sharing
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Format
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Term
 import org.ntust.app.tigerduck.shared.Course
-import java.io.ByteArrayOutputStream
 import java.time.Instant
-import java.util.zip.CRC32
-import java.util.zip.Deflater
+import kotlin.random.Random
 
 /**
- * The share code formats. The TigerDuck vectors are those of tigerduck-app's
- * docs/decisions/0023-class-table-share-code.md under the share host both apps moved to on
- * 2026-10-19, with their checksums written again by Python's zlib, and the TAT vectors are the
- * record's verbatim: written by an encoder other than either app's, so these tests read other
- * platforms' codes. Our encoder's output is only read back here: DEFLATE encoders differ, so it is
- * never compared with another platform's.
+ * The share code formats. Ours is the packed layout both apps agreed for tigerduck-app#612, and its
+ * vectors are the iOS side's vectors.txt verbatim, written by its reference codec in Python, an
+ * encoder other than either app's. The layout has one code for each class table, so our encoder
+ * must write those very codes. The TAT vectors are tigerduck-app's decision 0023's, verbatim.
  */
 class ClassTableShareCodeTest {
 
     private companion object {
-        /** 2026-10-13 14:05 and 2026-02-20 09:30, Taipei time. */
-        val OCTOBER: Instant = Instant.ofEpochSecond(1_791_871_500)
-        val FEBRUARY: Instant = Instant.ofEpochSecond(1_771_551_000)
+        /** 2026-10-13 14:05 in Taipei, the time most vectors were shared. */
+        val OCTOBER: Instant = Instant.parse("2026-10-13T06:05:00Z")
 
-        // The vectors of docs/decisions/0023-class-table-share-code.md, in its order.
-        const val ONE_TERM = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151." +
-            "OMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.JY2E2OA"
-        const val STORED_BLOCK = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151." +
-            "AEYQBTX7INJTCMBRGAYDAMJMINJTCMBRGAYDAMRMIVCTCMBRGAYDAMJMJVATCMBRGAYDAMJMKBCTCMBRGAYDAMI.N5WALRA"
-        const val SEVERAL_TERMS = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.M00015998.202602200930.1151-114H-1142." +
-            "GN3A4NRUGA2DAMBQ2KA3CDDV3RO2CLDLL5D2RLBVJTLFRR6VCWTMGHOOBKALCAA.TDAREYQ"
+        // vectors.txt, in its order.
+        const val ONE_TERM = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1KNTO5SJB234O09283J89PYINHMLGU86XQH3K2WVREW0CHIZS78"
+        const val SEVERAL_TERMS_WITH_SUMMER =
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1G7XI6UJ8QNWKLS5E0UHI2L0EHI1B2EDHW5C1YZ7PXCXYT3IPC0N2O"
+        const val LONGEST_STUDENT_ID = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/16V0RAQJIRG0R158Q9S0000000000005NB6ZK0K"
+        const val UNUSUAL_COURSE_CODES = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/" +
+            "1XGGDD7JB234OQP6KRJAJKY0XNM3APH8VOQPLT62AKG4SF7KU24A8E42KE99404OK5DJHPM2O2U"
+        const val EXPLICIT_TERMS = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/17BPXMX1JS2NCFYLE9U09283GA1GT3S010"
+        const val LARGEST_ALL_TERMS = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/" +
+            "1ERD6XSJB23426AEQL89YN8G8ENJHIUYV1CVF8BF86UHR4KLJ88VXJZRFO3KFSX2QHYJYG9BOJOB2XWQLXLS49F409I1Z6BYO1M4LDZQ8K2M" +
+            "9EKQFHPO59M1J17JQ34H3P6787KL6Q341Q7OFEJTM8E27AK5G00TL3BMMTZEL3Y448998XL2XOIRY2LM600KJ0WI35C0DQHDS54SM4GCM039" +
+            "FF7ZKSN4HJHG602CAB40N3KRK1KL2VRJZD19RQ9OGXE44EOYOV7UZ296NUAL0T57E6GVC4JF60HNGWB4LWT1EQN0CUJHSWI9M"
 
-        /** The first code with its payload's first `O` changed to `P`. */
-        const val CHANGED = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151." +
-            "PMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.JY2E2OA"
-        const val BAD_COURSE =
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151.OMHDMNBQGQYDAMGUOGDLAAA.WYNVUEQ"
-        const val NEWER =
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/2.B00015999.202610131405.1151.OMHDMNBQGQYDAMAEAA.5YHOVEI"
+        const val NEWER = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/2KNTO5SJB234O09283J89PYINHMLGU86XQH3K2WVREW0CHIZS78"
+        const val CHANGED = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1KNTO5SJB234O09283J89PYINHMLGU86XQH3K2WVREW0CHIZA78"
+        const val UNKNOWN_TYPE = "HTTPS://SHARE.TIGERDUCK.APP/FRIEND/1ABC"
+        const val NOT_A_VERSION = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/HELLO"
 
-        /** A share link of a type a newer app may write. */
-        const val UNKNOWN_TYPE = "HTTPS://SHARE.TIGERDUCK.APP/FRIEND/1.B00015999"
-
-        /** The record's first code as it was written before the move, on tigerduck.app. */
+        /** A code as it was written before the move, on tigerduck.app. */
         const val OLD_HOST = "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151." +
             "OMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.E2YUDIQ"
+
         const val TAT2 = "HTTPS://NTUST-TAT.WEB.APP/S/TAT21151B11300001CS1010001.267-EE1010002.13.5N-MA1010003"
         const val TAT1 = "HTTPS://NTUST-TAT.WEB.APP/S/TAT11142B11300002CS1010004-PE1010005"
 
-        val ONE_TERM_CODE = ClassTableShareCode(
-            format = Format.TIGER_DUCK,
-            studentId = "B00015999",
-            sharedAt = OCTOBER,
-            terms = listOf(Term("1151", listOf("CS1010001", "CS1010002", "EE1010001", "MA1010001", "PE1010001"))),
+        fun code(studentId: String, sharedAt: Instant, vararg terms: Pair<String, String>) = ClassTableShareCode(
+            Format.TIGER_DUCK, studentId, sharedAt,
+            terms.map { (semester, courses) -> Term(semester, courses.split(' ').sorted()) },
         )
-        val SEVERAL_TERMS_CODE = ClassTableShareCode(
-            format = Format.TIGER_DUCK,
-            studentId = "M00015998",
-            sharedAt = FEBRUARY,
-            terms = listOf(
-                Term("1151", listOf("3CS1010002", "CS1010001", "GE1010001")),
-                Term("114H", listOf("MA1010002")),
-                Term("1142", listOf("CS1010003", "EE1010002", "GE1010002", "PE1010002")),
+
+        /** What each vector decodes to, newest term first. */
+        val TABLES = mapOf(
+            ONE_TERM to code(
+                "B00015999", OCTOBER,
+                "1151" to "CS2001301 CS2006301 CS2007302 EE2005301 FL1002301 MA2001301 PE1006301 TCG032301",
+            ),
+            SEVERAL_TERMS_WITH_SUMMER to code(
+                "M00015998", Instant.parse("2026-09-01T00:30:00Z"),
+                "1151" to "CS5140701 CS5164701",
+                "114H" to "CS5001701",
+                "1142" to "BA130A001 CS5003701 EE5428701",
+                "1141" to "AS5140701 CS5001702",
+            ),
+            LONGEST_STUDENT_ID to code("X0000000000000AB", Instant.parse("2027-03-02T15:59:00Z"), "1152" to "ME3001301"),
+            UNUSUAL_COURSE_CODES to code(
+                "D00015997", OCTOBER,
+                "1151" to "3CS3003302 3CS3003303 3N1004701 3NG115701 3T5287701 3TG015301 CS1001001 CS1A01B01 ZZ0000099",
+            ),
+            EXPLICIT_TERMS to code("B00015996", OCTOBER, "1153" to "CS1001301", "1151" to "CS1002301"),
+            LARGEST_ALL_TERMS to code(
+                "B00015995", OCTOBER,
+                "1152" to "3N7113701 FL4994701 PE113B031 TCG028301 TCG116301 TCG126301 TCG132301 TCG141301 TCG147301 TCG151301",
+                "1151" to "3NG304701 FL2062301 GD213A001 PE114A041 TC2002701 TCG111301 TCG123301 TCG127301 TCG130301 TCG136302",
+                "1142" to "3T6736701 FL3922701 PE139B043 TCG030301 TCG118302 TCG134301 TCG162302 TCG177301 TCG182301 TCG190301",
+                "1141" to "FL2003303 PE127A051 PE128A021 TC2001701 TCG100301 TCG103301 TCG113301 TCG120301 TCG161302 TCG180301",
+                "1132" to "3TG096701 AT3926701 FL4995701 PE113B052 TC2001701 TC2002701 TC2003701 TC2004702 TC2005701 TC2005702",
+                "1131" to "FL3833703 FN6906701 PE114A022 TC2002701 TC2003701 TC2004701 TC2004702 TC2005701 TC2005702 TCG115301",
+                "1122" to "3N1142701 3N2763701 AC5715701 FL3801701 MG6905701 PE112B053 TC1004701 TC1005701 TC1010301 TCG132301",
+                "1121" to "AD5225701 EC163A001 FL5257701 MB2102301 ME3801303 PE128A011 TC1004701 TC1005701 TC1010301 TCG143302",
             ),
         )
+
+        const val A36 = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     }
 
     private inline fun <reified T : ClassTableShareCodeError> assertRefused(code: String): T =
         assertThrows(code, T::class.java) { ClassTableShareCode.decode(code) }
 
-    /** Our code around [plain], deflated here rather than by the encoder, with a checksum that matches. */
-    private fun codeAround(plain: ByteArray, cut: Int = 0): String {
-        val deflater = Deflater(Deflater.DEFAULT_COMPRESSION, true)
-        deflater.setInput(plain)
-        deflater.finish()
-        val out = ByteArrayOutputStream()
-        val buffer = ByteArray(4096)
-        while (!deflater.finished()) out.write(buffer, 0, deflater.deflate(buffer))
-        deflater.end()
-        val compressed = out.toByteArray().let { it.copyOf(it.size - cut) }
-        val body = ClassTableShareCode.PREFIX +
-            listOf("1", "B00015999", "202610131405", "1151", ClassTableShareCode.base32(compressed)).joinToString(".")
-        val crc = CRC32().apply { update(body.toByteArray(Charsets.US_ASCII)) }.value
-        return body + "." + ClassTableShareCode.base32(ByteArray(4) { (crc shr (24 - 8 * it)).toByte() })
-    }
+    private fun encode(table: ClassTableShareCode) = ClassTableShareCode.encode(table.studentId!!, table.sharedAt!!, table.terms)
 
-    /** [length] characters of distinct course codes, nine or ten characters each, joined by `,`. */
-    private fun distinctCourseNos(length: Int): String {
-        val count = (length + 1) / 10
-        val longer = length - (10 * count - 1)
-        return (0 until count).joinToString(",") { (if (it < longer) "3AA" else "AA") + it.toString().padStart(7, '0') }
-            .also { assertEquals(length, it.length) }
-    }
-
-    // --- The decision record's vectors ---
+    // --- The shared vectors ---
 
     @Test
-    fun `the decision record's codes decode`() {
-        assertEquals(ONE_TERM_CODE, ClassTableShareCode.decode(ONE_TERM))
-        assertEquals(ONE_TERM_CODE, ClassTableShareCode.decode(STORED_BLOCK))
-        assertEquals(SEVERAL_TERMS_CODE, ClassTableShareCode.decode(SEVERAL_TERMS))
-        assertEquals(ONE_TERM_CODE, ClassTableShareCode.decode(" ${ONE_TERM.lowercase()}\n"))
+    fun `the shared vectors decode to their tables`() {
+        TABLES.forEach { (code, table) -> assertEquals(code, table, ClassTableShareCode.decode(code)) }
     }
 
     @Test
-    fun `the decision record's refused codes are refused for its reasons`() {
-        assertRefused<ClassTableShareCodeError.ChecksumMismatch>(CHANGED)
-        assertEquals("CS10100", assertRefused<ClassTableShareCodeError.InvalidCourseCode>(BAD_COURSE).courseNo)
+    fun `our encoder writes the shared vectors exactly, whatever order the terms come in`() {
+        TABLES.forEach { (code, table) ->
+            assertEquals(code, encode(table))
+            assertEquals(code, encode(table.copy(terms = table.terms.reversed().map { it.copy(courseNos = it.courseNos.reversed()) })))
+        }
+    }
+
+    @Test
+    fun `the shared refused codes are refused for their reasons`() {
         assertRefused<ClassTableShareCodeError.UnknownVersion>(NEWER)
+        assertRefused<ClassTableShareCodeError.ChecksumMismatch>(CHANGED)
+        assertRefused<ClassTableShareCodeError.UnknownType>(UNKNOWN_TYPE)
+        assertRefused<ClassTableShareCodeError.Malformed>(NOT_A_VERSION)
     }
 
     @Test
-    fun `the decision record's TAT codes decode, version 2 dropping its class times`() {
-        assertEquals(
-            ClassTableShareCode(
-                Format.TAT2, "B11300001", null, listOf(Term("1151", listOf("CS1010001", "EE1010002", "MA1010003"))),
-            ),
-            ClassTableShareCode.decode(TAT2),
-        )
-        assertEquals(
-            ClassTableShareCode(Format.TAT1, "B11300002", null, listOf(Term("1142", listOf("CS1010004", "PE1010005")))),
-            ClassTableShareCode.decode(TAT1),
-        )
+    fun `a version is a digit, 2 to 9 a newer one's and anything else malformed`() {
+        val payload = ONE_TERM.removePrefix(ClassTableShareCode.PREFIX + "1")
+        for (version in "23456789") {
+            assertRefused<ClassTableShareCodeError.UnknownVersion>(ClassTableShareCode.PREFIX + version + payload)
+        }
+        for (version in listOf("0", "A", "Z", ".", "")) {
+            assertRefused<ClassTableShareCodeError.Malformed>(ClassTableShareCode.PREFIX + version + payload)
+        }
+        assertRefused<ClassTableShareCodeError.Malformed>(ClassTableShareCode.PREFIX)
+        assertRefused<ClassTableShareCodeError.Malformed>(ClassTableShareCode.PREFIX + "1")
     }
 
-    // --- Our format ---
+    @Test
+    fun `every one-character change and every cut of a vector is refused`() {
+        for (code in TABLES.keys) {
+            for (index in ClassTableShareCode.PREFIX.length until code.length) {
+                for (replacement in A36) {
+                    if (replacement == code[index]) continue
+                    val changed = code.substring(0, index) + replacement + code.substring(index + 1)
+                    try {
+                        ClassTableShareCode.decode(changed)
+                        fail("read $changed")
+                    } catch (_: ClassTableShareCodeError) {
+                    }
+                }
+            }
+            for (length in ClassTableShareCode.PREFIX.length until code.length) {
+                try {
+                    ClassTableShareCode.decode(code.substring(0, length))
+                    fail("read ${code.substring(0, length)}")
+                } catch (_: ClassTableShareCodeError) {
+                }
+            }
+        }
+    }
 
     @Test
-    fun `one term comes back as it went in, in QR alphanumeric characters only`() {
+    fun `an NTU or NTNU course code is a course, and keeps the head the rule gives it`() {
+        assertTrue(ClassTableShareCode.isCourseNo("3N1004701"))
+        assertTrue(ClassTableShareCode.isCourseNo("3T5287701"))
+        // 3NG first: the same characters as head 3N with tail G115701.
+        val table = code("B00015999", OCTOBER, "1151" to "3N1004701 3NG115701")
+        assertEquals(table, ClassTableShareCode.decode(encode(table)!!))
+    }
+
+    // --- One code for each table ---
+
+    /**
+     * A code written field by field, as the layout spells them, to make codes no encoder writes.
+     * Its own CRC-32 and Base36, not the codec's. [classTable] starts every field of a one-term,
+     * one-head table shared [OCTOBER] by B00015999, up to its courses.
+     */
+    private class RawCode {
+        private val bits = StringBuilder()
+
+        fun u(x: Long, k: Int) = apply { if (k > 0) bits.append(x.toString(2).padStart(k, '0')) }
+
+        fun gamma(x: Long) = apply {
+            val k = 64 - java.lang.Long.numberOfLeadingZeros(x)
+            bits.append("0".repeat(k - 1))
+            u(x, k)
+        }
+
+        fun chars(text: String) = apply { text.forEach { u(A36.indexOf(it).toLong(), 6) } }
+
+        /** The layout's padding: zero bits up to a 31-bit group, or a multiple of 5. */
+        val padding: Int get() = ((32 + bits.length) % 31).let { r -> if (r > 25) 31 - r else Math.floorMod(-r, 5) }
+
+        /** The code, with the layout's padding or [padding] in its place. */
+        fun code(padding: ((String) -> String)? = null): String {
+            val zeros = "0".repeat(this.padding)
+            val data = bits.toString() + (padding?.invoke(zeros) ?: zeros)
+            val bytes = (data + "0".repeat(Math.floorMod(-data.length, 8))).chunked(8).map { it.toInt(2).toByte() }
+            val crc = java.util.zip.CRC32().apply {
+                update((ClassTableShareCode.PREFIX + "1").toByteArray())
+                update(bytes.toByteArray())
+            }.value.toString(2).padStart(32, '0')
+            val text = (crc + data).chunked(31).joinToString("") { group ->
+                val digits = if (group.length == 31) 6 else group.length / 5
+                group.toLong(2).toString(36).uppercase().padStart(digits, '0')
+            }
+            return ClassTableShareCode.PREFIX + "1" + text
+        }
+
+        companion object {
+            /** Minutes from 2024-01-01 00:00 in Taipei to [OCTOBER]. */
+            val MINUTES = (OCTOBER.epochSecond - Instant.parse("2023-12-31T16:00:00Z").epochSecond) / 60
+
+            /** Index of a head in the frozen list, for a set of one known head: 56 heads take 6 bits. */
+            fun classTable(knownHead: Int, studentId: RawCode.() -> Unit = { u(0, 1).u(0, 1).gamma(116).u(15999, 17) }) =
+                RawCode().u(MINUTES, 24)
+                    .u(0, 1).gamma(1).gamma(1).u(0, 2) // regular: one term, this year's 1
+                    .apply(studentId)
+                    .gamma(2).u(knownHead.toLong(), 6) // one known head
+                    .gamma(1) // no other head
+        }
+    }
+
+    private val cs = 16
+    private val threeN = 0
+
+    /** CS1001301's tail: the leveled shape, level 1, 001, 3, serial 01. */
+    private fun RawCode.leveled(number: Long, first: Boolean = true) = apply {
+        u(0, 1)
+        if (first) u(0, 1).u(0, 2) else u(0, 1)
+        u(number, 10).u(0, 1).gamma(1)
+    }
+
+    @Test
+    fun `the raw writer writes what the encoder does`() {
+        val raw = RawCode.classTable(cs).gamma(1).leveled(1).code()
+        assertEquals(ClassTableShareCode.encode("B00015999", OCTOBER, listOf(Term("1151", listOf("CS1001301")))), raw)
+    }
+
+    @Test
+    fun `a head's tails out of order, or one twice, are malformed`() {
+        assertRefused<ClassTableShareCodeError.Malformed>(RawCode.classTable(cs).gamma(2).leveled(2).leveled(1, first = false).code())
+        assertRefused<ClassTableShareCodeError.Malformed>(RawCode.classTable(cs).gamma(2).leveled(1).leveled(1, first = false).code())
+    }
+
+    @Test
+    fun `a head and tail the head rule splits otherwise are malformed`() {
+        // 3N with G115701, in the other-tail shape, is 3NG115701, whose head is 3NG.
+        val code = RawCode.classTable(threeN).gamma(1).u(0b1111, 4).u(1, 1).chars("G115701").code()
+        assertRefused<ClassTableShareCodeError.Malformed>(code)
+    }
+
+    @Test
+    fun `a tail in a later shape than the first that fits is malformed`() {
+        // 1001301 is leveled, and 1234567 is seven digits.
+        assertRefused<ClassTableShareCodeError.Malformed>(RawCode.classTable(cs).gamma(1).u(0b1110, 4).u(1_001_301, 24).code())
+        assertRefused<ClassTableShareCodeError.Malformed>(RawCode.classTable(cs).gamma(1).u(0b1111, 4).u(1, 1).chars("1234567").code())
+    }
+
+    @Test
+    fun `terms or a student ID the regular fields can hold are malformed in the explicit ones`() {
+        val explicitTerms = RawCode().u(RawCode.MINUTES, 24)
+            .u(1, 1).gamma(1).u(115, 10).u(1, 6) // 1151, written explicitly
+            .u(0, 1).u(0, 1).gamma(116).u(15999, 17)
+            .gamma(2).u(cs.toLong(), 6).gamma(1).gamma(1).leveled(1).code()
+        assertRefused<ClassTableShareCodeError.Malformed>(explicitTerms)
+
+        val otherId = RawCode.classTable(cs, studentId = { u(1, 1).gamma(9).chars("B00015999") }).gamma(1).leveled(1).code()
+        assertRefused<ClassTableShareCodeError.Malformed>(otherId)
+    }
+
+    @Test
+    fun `padding of another length, or not zero, is malformed`() {
+        val table = RawCode.classTable(cs).gamma(1).leveled(1)
+        assertRefused<ClassTableShareCodeError.Malformed>(table.code { it + "0".repeat(31) })
+
+        // The first table of 1, 2, 3... courses whose padding has a bit to set.
+        val padded = (1L..8L).map { n ->
+            RawCode.classTable(cs).gamma(n).apply { (1L..n).forEach { leveled(it, first = it == 1L) } }
+        }.first { it.padding > 0 }
+        assertNotNull(ClassTableShareCode.decode(padded.code()))
+        assertRefused<ClassTableShareCodeError.Malformed>(padded.code { it.dropLast(1) + "1" })
+    }
+
+    // --- Our encoder ---
+
+    @Test
+    fun `random tables come back as they went in, in QR alphanumeric characters only`() {
+        val random = Random(20261019)
+        repeat(600) { round ->
+            val table = randomTable(random)
+            val code = encode(table)
+            assertNotNull("round $round: $table", code)
+            assertTrue(code!!, code.removePrefix(ClassTableShareCode.PREFIX).all { it in A36 })
+            assertEquals("round $round: $code", table, ClassTableShareCode.decode(code))
+        }
+    }
+
+    @Test
+    fun `terms in any case and order, a repeated term and invalid course codes are written as one table`() {
         val code = ClassTableShareCode.encode(
-            studentId = "b00015999",
-            sharedAt = OCTOBER.plusSeconds(42),
-            terms = listOf(Term("1151", listOf("PE1010001", "CS1010002", "MA1010001", "CS1010001", "EE1010001", "CS1010002"))),
-        )!!
-
-        assertTrue(code, code.all { it in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:" })
-        assertTrue(code, code.startsWith("HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151."))
-        assertEquals(ONE_TERM_CODE, ClassTableShareCode.decode(code))
-    }
-
-    @Test
-    fun `several terms keep their order, and a term left without valid courses is not written`() {
-        val code = ClassTableShareCode.encode(
-            studentId = "M00015998",
-            sharedAt = FEBRUARY,
+            studentId = "m00015998",
+            sharedAt = Instant.parse("2026-09-01T00:30:42Z"),
             terms = listOf(
-                Term("1151", listOf("GE1010001", "3CS1010002", "CS1010001", "NOT-A-CODE")),
+                Term("1142", listOf("EE5428701", "ba130a001", "CS5003701", "NOT-A-CODE")),
+                Term("114h", listOf("CS5001701")),
                 Term("1152", listOf("CS101")),
-                Term("114h", listOf("MA1010002")),
-                Term("1142", listOf("PE1010002", "EE1010002", "GE1010002", "CS1010003")),
+                Term("1151", listOf("CS5164701", "CS5140701", "CS5164701")),
+                Term("1141", listOf("CS5001702", "AS5140701")),
                 Term("1151", listOf("PE1010009")),
             ),
-        )!!
+        )
 
-        assertEquals(SEVERAL_TERMS_CODE, ClassTableShareCode.decode(code))
+        assertEquals(SEVERAL_TERMS_WITH_SUMMER, code)
     }
 
     @Test
@@ -171,79 +320,67 @@ class ClassTableShareCodeTest {
     }
 
     @Test
-    fun `changing any one character after the version fails the checksum`() {
-        for (vector in listOf(ONE_TERM, SEVERAL_TERMS)) {
-            for (index in ClassTableShareCode.PREFIX.length + 2 until vector.length) {
-                val original = vector[index]
-                if (!original.isLetterOrDigit()) continue
-                val replacement = when {
-                    original.isLetter() -> if (original == 'A') 'B' else 'A'
-                    else -> if (original == '2') '3' else '2'
+    fun `every term shares its newest 24, and any other table past a limit writes no code`() {
+        val terms = (90..114).flatMap { year -> listOf("%03d1".format(year), "%03d2".format(year)) }.take(25)
+            .map { Term(it, listOf("CS1001301")) }
+        val newest = terms.sortedByDescending { it.semester }.take(24)
+        assertEquals(newest, ClassTableShareCode.decode(ClassTableShareCode.encode("B00015999", OCTOBER, terms)!!).terms)
+
+        val courses = (1..65).map { "CS1%03d301".format(it) }
+        assertNotNull(ClassTableShareCode.encode("B00015999", OCTOBER, listOf(Term("1151", courses.take(64)))))
+        assertNull(ClassTableShareCode.encode("B00015999", OCTOBER, listOf(Term("1151", courses))))
+
+        val one = listOf(Term("1151", listOf("CS1001301")))
+        assertNotNull(ClassTableShareCode.encode("X".repeat(16), OCTOBER, one))
+        assertNull(ClassTableShareCode.encode("X".repeat(17), OCTOBER, one))
+
+        val epoch = Instant.parse("2023-12-31T16:00:00Z")
+        val end = epoch.plusSeconds((1L shl 24) * 60)
+        assertNotNull(ClassTableShareCode.encode("B00015999", epoch, one))
+        assertNull(ClassTableShareCode.encode("B00015999", epoch.minusSeconds(60), one))
+        assertNotNull(ClassTableShareCode.encode("B00015999", end.minusSeconds(60), one))
+        assertNull(ClassTableShareCode.encode("B00015999", end, one))
+        assertNull(ClassTableShareCode.encode("B00015999", Instant.MAX, one))
+        assertNull(ClassTableShareCode.encode("B00015999", Instant.MIN, one))
+    }
+
+    // --- Reading ---
+
+    @Test
+    fun `a code reads and writes the same under a locale with its own digits`() {
+        val before = java.util.Locale.getDefault()
+        try {
+            for (tag in listOf("ar-EG", "fa-IR", "hi-IN-u-nu-deva")) {
+                java.util.Locale.setDefault(java.util.Locale.forLanguageTag(tag))
+                TABLES.forEach { (code, table) ->
+                    assertEquals("$tag $code", table, ClassTableShareCode.decode(code))
+                    assertEquals("$tag $code", code, encode(table))
                 }
-                val changed = vector.substring(0, index) + replacement + vector.substring(index + 1)
-                assertRefused<ClassTableShareCodeError.ChecksumMismatch>(changed)
             }
+        } finally {
+            java.util.Locale.setDefault(before)
         }
     }
 
     @Test
-    fun `a course code outside NTUST's shape is refused, though the checksum matches`() {
-        assertEquals("CS10100", assertRefused<ClassTableShareCodeError.InvalidCourseCode>(BAD_COURSE).courseNo)
-        assertEquals(
-            "123456789",
-            assertRefused<ClassTableShareCodeError.InvalidCourseCode>(
-                "HTTPS://NTUST-TAT.WEB.APP/S/TAT21151B11300001123456789.12",
-            ).courseNo,
-        )
-        // Course codes come out of the payload as they went in: a lower-case one is not NTUST's.
-        val lowerCase = codeAround("cs1010001".toByteArray())
-        assertEquals("cs1010001", assertRefused<ClassTableShareCodeError.InvalidCourseCode>(lowerCase).courseNo)
-    }
-
-    @Test
-    fun `a code with a sound checksum but a broken layout is malformed`() {
-        for (code in listOf(
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151-1151.OMHDMNBQGQYDAMFUO2DLFDAA.O5T6NPY",
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151-1142.OMHDMNBQGQYDAMAEAA.4NQRVOA",
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151-1142.OMHDMNBQGQYDAMFUAYAA.C7HHNZA",
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202602300930.1151.OMHDMNBQGQYDAMAEAA.7GN4UHY",
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151.OMHDMNBQGQYDAMGUOGDLCAA.WWPY47A",
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151",
-            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/V1.B00015999",
-            codeAround("CS1010001,CS1010001".toByteArray()),
-            codeAround("CS1010001\u0080".toByteArray(Charsets.ISO_8859_1)),
-        )) {
-            assertRefused<ClassTableShareCodeError.Malformed>(code)
-        }
-    }
-
-    @Test
-    fun `a payload is read up to 64 KiB and refused from there`() {
-        val longest = ClassTableShareCode.decode(codeAround(distinctCourseNos(65_535).toByteArray()))
-        assertEquals(6_553, longest.terms.single().courseNos.size)
-
-        assertRefused<ClassTableShareCodeError.Malformed>(codeAround(distinctCourseNos(65_536).toByteArray()))
-    }
-
-    @Test
-    fun `a payload whose DEFLATE stream stops early is malformed`() {
-        val plain = "CS1010001,CS1010002,EE1010001,MA1010001,PE1010001".toByteArray()
-        assertEquals(ONE_TERM_CODE, ClassTableShareCode.decode(codeAround(plain)))
-
-        assertRefused<ClassTableShareCodeError.Malformed>(codeAround(plain, cut = 3))
+    fun `a code reads in any letter case, with whitespace around it trimmed as the iOS app trims it`() {
+        val table = TABLES.getValue(ONE_TERM)
+        assertEquals(table, ClassTableShareCode.decode(" ${ONE_TERM.lowercase()}\n"))
+        assertEquals(table, ClassTableShareCode.decode("\u00A0\t$ONE_TERM\u0085\u3000"))
+        assertRefused<ClassTableShareCodeError.UnknownPrefix>("\uFEFF$ONE_TERM")
     }
 
     @Test
     fun `other QR codes and newer versions are told apart from damaged codes`() {
         val others = listOf(
-            "https://example.com/CLASSTABLE/1.B00015999", "WIFI:S:home;T:WPA;P:secret;;", "",
+            "https://example.com/CLASSTABLE/1ABC", "WIFI:S:home;T:WPA;P:secret;;", "",
             "HTTPS://TIGERDUCK.APP/X/1.", "HTTPS://SHARE.TIGERDUCK.APPS/CLASSTABLE/1.",
             "HTTPS://SHARE.TIGERDUCK.APP.EXAMPLE.COM/CLASSTABLE/1.", "HTTPS://SHARE.TIGERDUCK.APP@EXAMPLE.COM/CLASSTABLE/1.",
         )
         for (other in others) {
             assertRefused<ClassTableShareCodeError.UnknownPrefix>(other)
         }
-        for (newer in listOf(NEWER, "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/12", "HTTPS://NTUST-TAT.WEB.APP/S/TAT31151B11300001CS1010001")) {
+        for (newer in listOf(NEWER, "HTTPS://NTUST-TAT.WEB.APP/S/TAT31151B11300001CS1010001")) {
             assertRefused<ClassTableShareCodeError.UnknownVersion>(newer)
         }
     }
@@ -260,8 +397,8 @@ class ClassTableShareCodeTest {
             "HTTPS://SHARE.TIGERDUCK.APP#TOP",
             "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE",
             "HTTPS://SHARE.TIGERDUCK.APP/FRIEND",
-            "HTTPS://SHARE.TIGERDUCK.APP//1.B00015999",
-            "HTTPS://SHARE.TIGERDUCK.APP/FRI-END/1.B00015999",
+            "HTTPS://SHARE.TIGERDUCK.APP//1ABC",
+            "HTTPS://SHARE.TIGERDUCK.APP/FRI-END/1ABC",
         )) {
             assertRefused<ClassTableShareCodeError.Malformed>(code)
         }
@@ -274,9 +411,68 @@ class ClassTableShareCodeTest {
     }
 
     @Test
-    fun `whitespace is trimmed as the iOS app trims it`() {
-        assertEquals(ONE_TERM_CODE, ClassTableShareCode.decode("\u00A0\t$ONE_TERM\u0085\u3000"))
-        assertRefused<ClassTableShareCodeError.UnknownPrefix>("\uFEFF$ONE_TERM")
+    fun `the decision record's TAT codes decode, version 2 dropping its class times`() {
+        assertEquals(
+            ClassTableShareCode(
+                Format.TAT2, "B11300001", null, listOf(Term("1151", listOf("CS1010001", "EE1010002", "MA1010003"))),
+            ),
+            ClassTableShareCode.decode(TAT2),
+        )
+        assertEquals(
+            ClassTableShareCode(Format.TAT1, "B11300002", null, listOf(Term("1142", listOf("CS1010004", "PE1010005")))),
+            ClassTableShareCode.decode(TAT1),
+        )
+    }
+
+    @Test
+    fun `a TAT course code outside NTUST's shape is refused`() {
+        assertEquals(
+            "123456789",
+            assertRefused<ClassTableShareCodeError.InvalidCourseCode>(
+                "HTTPS://NTUST-TAT.WEB.APP/S/TAT21151B11300001123456789.12",
+            ).courseNo,
+        )
+    }
+
+    /**
+     * A table the layout can hold, reaching each of its branches: NTUST-shaped and other student
+     * IDs, regular and explicit term lists, known and other heads, and every tail shape.
+     */
+    private fun randomTable(random: Random): ClassTableShareCode {
+        val sharedAt = Instant.parse("2024-01-01T00:00:00Z").plusSeconds(random.nextLong(0, 30L * 365 * 24 * 60) * 60)
+        val academicYear = sharedAt.atOffset(java.time.ZoneOffset.ofHours(8)).let { it.year - 1911 - if (it.monthValue < 8) 1 else 0 }
+        val explicit = random.nextInt(5) == 0
+        val semesters = mutableSetOf<String>()
+        repeat(random.nextInt(1, 9)) {
+            val year = if (explicit) random.nextInt(0, 1000) else academicYear + 1 - random.nextInt(0, 6)
+            val kind = if (explicit) A36[random.nextInt(36)] else "12H"[random.nextInt(3)]
+            if (year >= 0) semesters += "%03d%c".format(year, kind)
+        }
+        val heads = listOf("CS", "EE", "PE", "TC", "3NG", "ZZ", "3CS", "QX", "3N", "3T", "3Q")
+        val terms = semesters.map { semester ->
+            val courses = (1..random.nextInt(1, 12)).map { heads[random.nextInt(heads.size)] + randomTail(random) }
+            Term(semester, courses.toSortedSet().toList())
+        }.sortedWith(compareByDescending<Term> { it.semester.take(3).toInt() }.thenByDescending { A36.indexOf(it.semester[3]) })
+        val oldest = terms.minOf { it.semester.take(3).toInt() }
+        val studentId = when (random.nextInt(3)) {
+            0 -> "%c%03d%05d".format("BMDX"[random.nextInt(4)], random.nextInt(0, oldest + 1), random.nextInt(100_000))
+            1 -> (1..random.nextInt(1, 17)).map { A36[random.nextInt(36)] }.joinToString("")
+            else -> "B%03d%05d".format(minOf(999, oldest + 1), random.nextInt(100_000))
+        }
+        return ClassTableShareCode(Format.TIGER_DUCK, studentId, sharedAt, terms)
+    }
+
+    private fun randomTail(random: Random): String {
+        fun digits(n: Int) = (1..n).map { '0' + random.nextInt(10) }.joinToString("")
+        fun serial() = "%02d".format(random.nextInt(1, 100))
+        return when (random.nextInt(7)) {
+            0, 1 -> "${random.nextInt(10)}${digits(3)}${"37"[random.nextInt(2)]}${serial()}"
+            2 -> "${digits(3)}${"AB"[random.nextInt(2)]}0${serial()}"
+            3 -> "G${digits(3)}3${serial()}"
+            4 -> "${digits(3)}7${serial()}"
+            5 -> digits(7)
+            else -> (1..random.nextInt(6, 8)).map { A36[random.nextInt(36)] }.joinToString("")
+        }
     }
 
     // --- TAT ---
