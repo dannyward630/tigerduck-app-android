@@ -10,6 +10,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.model.BulletinDetail
 import org.ntust.app.tigerduck.network.model.BulletinListResponse
@@ -52,6 +53,7 @@ class BulletinApiClient @Inject constructor(
 
     private val client = baseClient.newBuilder()
         .addInterceptor(acceptInterceptor)
+        .guardedBy(authTokenManager)
         .build()
 
     /**

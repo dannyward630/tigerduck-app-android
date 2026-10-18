@@ -14,6 +14,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Call
 import okhttp3.EventListener
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -131,6 +133,36 @@ class AuthTokenManager(
     fun hasSessionAt(base: String): Boolean = synchronized(signInLock) {
         // A pair stored before its backend was recorded is the endpoint's, as departingSession takes it.
         tokens.refreshToken != null && (tokens.issuedBy ?: baseUrl) == base
+    }
+
+    // The access tokens this process stored or handed out, with the backend each came from, for
+    // [mayPresent]. Kept past a sign-out, so a request built before it can still reach that
+    // backend and no other; a few, as only the last pairs can still be on their way.
+    // Under signInLock.
+    private val issuers = object : LinkedHashMap<String, String>() {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?) = size > KNOWN_ISSUERS
+    }
+
+    // Under signInLock. A pair stored before its backend was recorded is the endpoint's, as
+    // departingSession takes it.
+    private fun storedIssuer(): String = tokens.issuedBy ?: baseUrl
+
+    // Under signInLock.
+    private fun issued(access: String): String = access.also { issuers[it] = storedIssuer() }
+
+    /**
+     * Whether [accessToken] may go to [url]: only to the backend that issued it, and an access
+     * token this phone never held nowhere. The backend clients' last check before a request
+     * leaves ([SessionHostGuard]), so a request that read its address and its header at different
+     * times, around a change of the API endpoint setting, still goes nowhere else.
+     */
+    fun mayPresent(accessToken: String, url: HttpUrl): Boolean {
+        val issuer = synchronized(signInLock) {
+            issuers[accessToken] ?: storedIssuer().takeIf { tokens.accessToken == accessToken }
+        }?.toHttpUrlOrNull() ?: return false
+        if (url.scheme != issuer.scheme || url.host != issuer.host || url.port != issuer.port) return false
+        val path = issuer.encodedPath.trimEnd('/')
+        return url.encodedPath == path || url.encodedPath.startsWith("$path/")
     }
 
     suspend fun authHeader(): String? {
@@ -474,6 +506,7 @@ class AuthTokenManager(
         synchronized(signInLock) {
             if (generation != signIn) return false
             tokens.save(access, refresh, expiresAt, issuedBy, studentId)
+            issued(access)
             return true
         }
     }
@@ -498,7 +531,7 @@ class AuthTokenManager(
     // generation [signIn]'s.
     private fun validTokenIfSignedIn(signIn: Int): String? = synchronized(signInLock) {
         val access = tokens.accessToken
-        if (generation != signIn || access == null || now() >= tokens.expiresAt - 30_000) null else access
+        if (generation != signIn || access == null || now() >= tokens.expiresAt - 30_000) null else issued(access)
     }
 
     private suspend fun refresh(signIn: Int): String? = refreshMutex.withLock {
@@ -509,12 +542,15 @@ class AuthTokenManager(
         // the account's that asked; its count with it. Marked on its way in the
         // same step, so a departing refresh of the token waits for this one
         // rather than send it alongside.
-        val (onItsWay, sends) = synchronized(signInLock) {
+        val marked = synchronized(signInLock) {
             val token = if (generation == signIn) tokens.refreshToken else null
+            // With the backend the pair came from, which the refresh goes back to
+            // whatever the endpoint setting names now.
             token?.let {
-                (it to CompletableDeferred<Unit>()).also { mark -> refreshOnItsWay = mark } to tokens.refreshTokenSends
+                Triple((it to CompletableDeferred<Unit>()).also { mark -> refreshOnItsWay = mark }, tokens.refreshTokenSends, storedIssuer())
             }
         } ?: return null
+        val (onItsWay, sends, issuer) = marked
         try {
             // No header rather than the access token in its last seconds, which
             // would draw a 401, and Home answers a 401 with a relogin.
@@ -522,7 +558,7 @@ class AuthTokenManager(
             // Finishes even when the caller is cancelled: stopped between a send
             // and what follows it, a token the backend may have rotated would stay
             // on disk for the next refresh.
-            withContext(NonCancellable) { refreshAndSettle(onItsWay, sends, signIn) }
+            withContext(NonCancellable) { refreshAndSettle(onItsWay, sends, signIn, issuer) }
         } finally {
             arrived(onItsWay)
         }
@@ -542,6 +578,7 @@ class AuthTokenManager(
         onItsWay: Pair<String, CompletableDeferred<Unit>>,
         sends: Int,
         signIn: Int,
+        issuer: String,
     ): String? {
         val outcome = try {
             if (sends >= MAX_REFRESH_TOKEN_SENDS) {
@@ -549,7 +586,7 @@ class AuthTokenManager(
                 Log.w(TAG, "refresh token may have been used twice; signing in again")
                 RefreshOutcome.Refused
             } else {
-                withContext(Dispatchers.IO) { sendWithOneResend(onItsWay.first, sends, signIn) }
+                withContext(Dispatchers.IO) { sendWithOneResend(onItsWay.first, sends, signIn, issuer) }
             }
         } catch (e: CancellationException) {
             throw e
@@ -583,7 +620,7 @@ class AuthTokenManager(
     // After a sign-out during the relogin, the stored token belongs to whoever
     // signed in since and is not this refresh's to hand out.
     private fun accessTokenIfSignedIn(signIn: Int): String? =
-        synchronized(signInLock) { if (generation == signIn) tokens.accessToken else null }
+        synchronized(signInLock) { if (generation == signIn) tokens.accessToken?.let(::issued) else null }
 
     // Measured from the failure rather than to a deadline, so a clock set back
     // does not stretch the pause.
@@ -605,11 +642,11 @@ class AuthTokenManager(
      * did not use ([RefreshOutcome.Unused]) leaves the token that send, kept
      * for a later refresh.
      */
-    private fun sendWithOneResend(refreshToken: String, sends: Int, signIn: Int): RefreshOutcome {
-        val first = send(refreshToken, sends, signIn)
+    private fun sendWithOneResend(refreshToken: String, sends: Int, signIn: Int, base: String): RefreshOutcome {
+        val first = send(refreshToken, sends, signIn, base)
         val mayResend = sends + 1 < MAX_REFRESH_TOKEN_SENDS && signIn == signInGeneration
         if (first != RefreshOutcome.NoReply || !mayResend) return first
-        return when (val second = send(refreshToken, sends + 1, signIn)) {
+        return when (val second = send(refreshToken, sends + 1, signIn, base)) {
             is RefreshOutcome.Refreshed, RefreshOutcome.Unused -> second
             else -> RefreshOutcome.Refused
         }
@@ -620,10 +657,10 @@ class AuthTokenManager(
      * killed while it is out leaves it counted; [sendsBefore] is the count
      * before it. A count the disk does not take keeps it from going out. A
      * 429 and a send that never left the device put the count back, as the
-     * backend did not use the token. It goes to [base]: for a departing
-     * session, the backend that issued it, whatever the endpoint setting says.
+     * backend did not use the token. It goes to [base], the backend that
+     * issued it, whatever the endpoint setting says.
      */
-    private fun send(refreshToken: String, sendsBefore: Int, signIn: Int, base: String = baseUrl): RefreshOutcome {
+    private fun send(refreshToken: String, sendsBefore: Int, signIn: Int, base: String): RefreshOutcome {
         val json = JSONObject().apply {
             put("refresh_token", refreshToken)
         }
@@ -658,7 +695,7 @@ class AuthTokenManager(
                 val refreshed = RefreshOutcome.Refreshed(newAccess, newRefresh, expiresAt)
                 // Stores nothing after a sign-out, which refreshAndSettle then sees.
                 // The pair is kept aside instead, for the sign-out's unregister.
-                if (!saveIfSignedIn(signIn, newAccess, newRefresh, expiresAt) && signIn != DEPARTING) {
+                if (!saveIfSignedIn(signIn, newAccess, newRefresh, expiresAt, issuedBy = base) && signIn != DEPARTING) {
                     synchronized(signInLock) { unstoredPair = refreshToken to refreshed }
                 }
                 refreshed
@@ -789,6 +826,10 @@ class AuthTokenManager(
 
         // The backend limits refreshes per IP over a minute.
         const val REFRESH_PAUSE_MS = 60_000L
+
+        // Access tokens kept with their backend for mayPresent: the pair now, the ones a refresh
+        // or a sign-out replaced while requests built with them may still be on their way.
+        const val KNOWN_ISSUERS = 8
     }
 }
 

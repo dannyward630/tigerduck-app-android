@@ -12,6 +12,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.NotSignedInException
+import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.model.Assignment
@@ -45,12 +46,18 @@ class PushApiClient @Inject constructor(
     private val gson = Gson()
     private val jsonType = "application/json".toMediaType()
 
-    private val client = baseClient.newBuilder()
+    // Without the session's guard: the sign-out's unregister names its backend
+    // and token itself, from the debt.
+    private val unguarded = baseClient.newBuilder()
         .addInterceptor { chain ->
             val builder = chain.request().newBuilder()
                 .header("Accept", "application/json")
             chain.proceed(builder.build())
         }
+        .build()
+
+    private val client = unguarded.newBuilder()
+        .guardedBy(authTokenManager)
         .build()
 
     /**
@@ -135,7 +142,7 @@ class PushApiClient @Inject constructor(
     // DELETE gives up within a bound; and it is retried by its own debt, never
     // sent again by OkHttp on its own.
     internal val deleteClient: OkHttpClient by lazy {
-        client.newBuilder()
+        unguarded.newBuilder()
             .retryOnConnectionFailure(false)
             .callTimeout(DELETE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()

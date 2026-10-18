@@ -137,8 +137,9 @@ class AuthTokenManagerRefreshTest {
 
         assertEquals("Bearer access-2", manager.authHeader())
 
-        // The send's count, then the pair, whose count starts over.
-        assertEquals(listOf(setOf(KEY_REFRESH_TOKEN_SENDS), PAIR_KEYS), file.commits)
+        // The send's count, then the pair, whose count starts over, with the backend that issued
+        // it: the one the refresh went to.
+        assertEquals(listOf(setOf(KEY_REFRESH_TOKEN_SENDS), PAIR_KEYS + KEY_ISSUED_BY), file.commits)
         assertEquals(0, file.applies)
         assertEquals(listOf("refresh-1"), sentRefreshTokens)
         assertEquals("refresh-2", tokens.refreshToken)
