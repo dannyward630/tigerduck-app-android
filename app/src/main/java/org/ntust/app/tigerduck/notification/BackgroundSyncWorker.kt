@@ -80,6 +80,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
     private val pendingCourseAdds: PendingCourseAdds,
     private val pendingCourseDeletes: org.ntust.app.tigerduck.data.PendingCourseDeletes,
     private val pendingCourseOverrides: PendingCourseOverrides,
+    private val pendingHolidayOverrides: org.ntust.app.tigerduck.data.PendingHolidayOverrides,
     private val academicCalendar: AcademicCalendarStore,
     @param:ApplicationScope private val appScope: CoroutineScope,
 ) : CoroutineWorker(context, params) {
@@ -191,13 +192,14 @@ class BackgroundSyncWorker @AssistedInject constructor(
             val account = authService.storedStudentId
             val generation = courseIgnoreSync.currentGeneration()
             courseIgnoreSync.retryPending()
-            // Marks and course colours and names whose PATCH failed, and
-            // course adds and deletes whose request did, go first, so the
-            // snapshot has them.
+            // Marks, course colours and names and holiday choices whose
+            // request failed, and course adds and deletes whose request did,
+            // go first, so the snapshot has them.
             unsentMarks.retry()
             pendingCourseAdds.retry()
             pendingCourseDeletes.retry()
             pendingCourseOverrides.retry()
+            pendingHolidayOverrides.retry()
             val result = syncApiClient.fetchFullSync()
             pendingCourseAdds.listed(result.serverCourses)
             // With the Assignments switch off, the re-enable check pending,
@@ -495,12 +497,15 @@ class BackgroundSyncWorker @AssistedInject constructor(
             // Null, which keeps the cache, when no course was left to ask
             // about; an empty answer empties it, and the
             // reminders below go with it — see assignmentsToStore.
+            val answer = moodleService.fetchAssignments(enrolled) ?: return true
             val merged = CourseRosterMerge.assignmentsToStore(
-                remote = moodleService.fetchAssignments(enrolled),
+                remote = answer.assignments,
                 cached = dataCache.loadAssignments(),
             ) ?: return true
-            dataCache.saveAssignments(merged)
-            runCatching { pushApiClient.uploadAssignments(merged) }
+            // Uploaded as written: the write reconciles the list against
+            // newer answers, and nothing is uploaded when it was refused.
+            val written = moodleService.storeAssignments(merged, answer) ?: return true
+            runCatching { pushApiClient.uploadAssignments(written) }
                 .onFailure {
                     prefs.setLastSyncSource(SyncSource.LOCAL)
                     Log.w(TAG, "uploadAssignments failed (non-fatal): ${it.logSummary()}")

@@ -115,6 +115,7 @@ class HomeBackendSync @Inject constructor(
     private val pendingCourseAdds: PendingCourseAdds,
     private val pendingCourseDeletes: org.ntust.app.tigerduck.data.PendingCourseDeletes,
     private val pendingCourseOverrides: PendingCourseOverrides,
+    private val pendingHolidayOverrides: org.ntust.app.tigerduck.data.PendingHolidayOverrides,
     private val reenableCheck: ReenableCheck,
     @param:ApplicationScope private val appScope: CoroutineScope,
 ) {
@@ -125,7 +126,8 @@ class HomeBackendSync @Inject constructor(
 
     /**
      * Sends what waits to go up: course-ignore changes, marks, course adds and
-     * deletes, and course colours and names. A full sync starts with this.
+     * deletes, course colours and names, and holiday choices. A full sync
+     * starts with this.
      */
     suspend fun retryUnsent() {
         courseIgnoreSync.retryPending()
@@ -133,6 +135,7 @@ class HomeBackendSync @Inject constructor(
         pendingCourseAdds.retry()
         pendingCourseDeletes.retry()
         pendingCourseOverrides.retry()
+        pendingHolidayOverrides.retry()
     }
 
     /**
@@ -209,8 +212,17 @@ class HomeBackendSync @Inject constructor(
             // exception is a notification setting, not course or assignment
             // data, and the categories the user can turn off do not cover
             // it. Null means an older backend that does not send the
-            // section, so the local set stands.
-            result.holidayOverrides?.let(academicCalendar::applySyncedOverrides)
+            // section, so the local set stands. A choice whose PUT has not
+            // landed stays as this phone has it, and a snapshot that may
+            // predate one is not applied: see PendingHolidayOverrides.merged.
+            result.holidayOverrides?.let { snapshot ->
+                authTokenManager.runIfSignedIn(signIn) {
+                    // Under the sign-out's lock: applied after its clear, the
+                    // departing account's choices would come back.
+                    pendingHolidayOverrides.merged(snapshot, result.fetchedAtMs, academicCalendar.optedInHolidayIds)
+                        ?.let(academicCalendar::applySyncedOverrides)
+                }
+            }
             val syncCourses = CourseSyncReconciler.syncsCourseList(
                 switchOn = "courses" in switchedOn,
                 pendingConflictCategories = prefs.pendingConflictCategories,
