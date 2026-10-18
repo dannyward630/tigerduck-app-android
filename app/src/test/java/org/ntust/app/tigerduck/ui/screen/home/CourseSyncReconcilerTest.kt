@@ -538,6 +538,24 @@ class CourseSyncReconcilerTest {
         assertEquals("#00FF00", updated!!.courses.single().customColorHex)
     }
 
+    /**
+     * A course taken again keeps its number, and the snapshot carries every term's rows: the
+     * row of this offering, by its Moodle id, is the one whose colour it takes.
+     */
+    @Test
+    fun `a course taken again takes its own term's colour, not an earlier term's`() {
+        val course = Course(courseNo = "A", courseName = "A", moodleIdNumber = "m1141")
+        val updated = CourseSyncReconciler.applyColorOverrides(
+            courses = listOf(course),
+            overrides = listOf(
+                CourseOverrideResult("m1122", "A", "#FF0000", semester = "1122"),
+                CourseOverrideResult("m1141", "A", "#00FF00", semester = "1141"),
+            ),
+            syncColors = true,
+        )
+        assertEquals("#00FF00", updated!!.courses.single().customColorHex)
+    }
+
     @Test
     fun `null when the colour is unchanged, so no cache write or widget reload`() {
         val course = Course(courseNo = "A", courseName = "A", customColorHex = "#FF0000")
