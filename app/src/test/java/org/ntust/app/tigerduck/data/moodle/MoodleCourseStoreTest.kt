@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -80,7 +81,13 @@ class MoodleCourseStoreTest {
             memberCalls++
             return membersAnswer()
         }
-        override suspend fun picture(url: String) = ByteArray(0)
+        /** The picture URLs asked for, in order, and what each answers. */
+        val pictureUrls = mutableListOf<String>()
+        var pictureAnswer: suspend (String) -> ByteArray = { ByteArray(0) }
+        override suspend fun picture(url: String): ByteArray {
+            pictureUrls += url
+            return pictureAnswer(url)
+        }
         override suspend fun gradeItems(courseId: Int): List<MoodleGradeItem> {
             gradeCalls++
             gate?.await()
@@ -841,5 +848,145 @@ class MoodleCourseStoreTest {
         val newer = MoodleMaterials.fileRefs(store.materials.value!!).first()
         assertEquals(MoodleDownloadState.NotDownloaded, store.downloadState(newer, downloads.snapshot.value))
         assertEquals(MoodleDownloadState.NotDownloaded, store.downloadState(old, downloads.snapshot.value))
+    }
+
+    // --- A member's picture full screen (tigerduck-app#741, #698) ---
+
+    private val small = "https://moodle2.ntust.edu.tw/pluginfile.php/9/user/icon/moove/f1?rev=3"
+    private val large = "https://moodle2.ntust.edu.tw/pluginfile.php/9/user/icon/moove/f3?rev=3"
+    private val jpeg = byteArrayOf(0xFF.toByte(), 0xD8.toByte(), 0xFF.toByte(), 1, 2, 3)
+
+    private fun amy(pictureUrl: String? = small) = org.ntust.app.tigerduck.network.model.moodle.MoodleMember(
+        7, "B00015007 @ Amy Lin", null, null, emptyList(), emptyList(), pictureUrl, "", emptyList(), emptyList(),
+    )
+
+    private fun TestScope.pictureStore(isCurrent: () -> Boolean = { signedIn }) = MoodleCourseStore(
+        courseId = 5, termCourseIds = emptyList(), courseCodes = emptyList(), api = api,
+        context = MoodleCacheContext("B1", cache, isCurrent = isCurrent, now = { now }),
+        scope = backgroundScope,
+        picturesDir = java.io.File(tmp.root, "moodle/pictures"),
+        openedPicturesDir = java.io.File(tmp.root, "moodle_files/pictures"),
+        decodePicture = { OnePixel },
+    )
+
+    /** A decoded picture, without Android's Bitmap. */
+    private object OnePixel : androidx.compose.ui.graphics.ImageBitmap {
+        override val width = 1
+        override val height = 1
+        override val colorSpace = androidx.compose.ui.graphics.colorspace.ColorSpaces.Srgb
+        override val hasAlpha = false
+        override val config = androidx.compose.ui.graphics.ImageBitmapConfig.Argb8888
+        override fun readPixels(buffer: IntArray, startX: Int, startY: Int, width: Int, height: Int, bufferOffset: Int, stride: Int) = Unit
+        override fun prepareToDraw() = Unit
+    }
+
+    @Test
+    fun `a member's picture opens in Moodle's 512 px size, downloaded once and named after the member`() = runTest(UnconfinedTestDispatcher()) {
+        api.pictureAnswer = { jpeg }
+        val store = pictureStore()
+
+        val first = store.fullPicture(amy())!!
+        val again = store.fullPicture(amy())!!
+
+        assertEquals(listOf(large), api.pictureUrls)
+        assertEquals("Amy Lin.jpg", first.file.name)
+        assertEquals("image/jpeg", first.mimeType)
+        assertEquals(first.file, again.file)
+        assertTrue(first.file.readBytes().contentEquals(jpeg))
+        assertTrue("where the system's viewers may read it", first.file.canonicalPath.startsWith(java.io.File(tmp.root, "moodle_files").canonicalPath))
+    }
+
+    @Test
+    fun `with the large size not downloaded the picture shown opens, and the next open tries again`() = runTest(UnconfinedTestDispatcher()) {
+        val store = pictureStore()
+        api.pictureAnswer = { url -> if (url == small) jpeg else throw IOException("offline") }
+        store.loadPicture(amy())
+
+        val fallback = store.fullPicture(amy())!!
+        assertTrue(fallback.file.readBytes().contentEquals(jpeg))
+
+        api.pictureAnswer = { byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 9) }
+        val retried = store.fullPicture(amy())!!
+        assertEquals(listOf(small, large, large), api.pictureUrls)
+        assertEquals("image/png", retried.mimeType)
+        assertEquals("Amy Lin.png", retried.file.name)
+    }
+
+    @Test
+    fun `Moodle's default picture opens nothing`() = runTest(UnconfinedTestDispatcher()) {
+        assertNull(pictureStore().fullPicture(amy(pictureUrl = null)))
+        assertEquals(emptyList<String>(), api.pictureUrls)
+    }
+
+    @Test
+    fun `a second open while the first gets ready opens nothing, and the member shows it is getting ready`() = runTest(UnconfinedTestDispatcher()) {
+        val gate = CompletableDeferred<Unit>()
+        api.pictureAnswer = { gate.await(); jpeg }
+        val store = pictureStore()
+
+        val first = async { store.fullPicture(amy()) }
+        assertEquals(setOf(7), store.openingPictures.value)
+        assertNull(store.fullPicture(amy()))
+
+        gate.complete(Unit)
+        assertTrue(first.await() != null)
+        assertEquals(emptySet<Int>(), store.openingPictures.value)
+        assertEquals(1, api.pictureUrls.size)
+    }
+
+    @Test
+    fun `a new upload of the picture replaces the copy kept`() = runTest(UnconfinedTestDispatcher()) {
+        api.pictureAnswer = { jpeg }
+        val store = pictureStore()
+        val old = store.fullPicture(amy())!!
+
+        val newer = store.fullPicture(amy(pictureUrl = small.replace("rev=3", "rev=4")))!!
+
+        assertFalse("the earlier revision's copy is gone", old.file.exists())
+        assertTrue(newer.file.exists())
+    }
+
+    @Test
+    fun `a picture that lands after a sign-out opens nothing and is not kept`() = runTest(UnconfinedTestDispatcher()) {
+        api.pictureAnswer = { signedIn = false; jpeg }
+
+        assertNull(pictureStore().fullPicture(amy()))
+        assertTrue(java.io.File(tmp.root, "moodle_files").walkTopDown().none { it.isFile })
+    }
+
+    @Test
+    fun `a picture kept as the sign-out begins is not left behind`() = runTest(UnconfinedTestDispatcher()) {
+        api.pictureAnswer = { jpeg }
+        // Signed in at the download's end, signed out once the copy is written.
+        var checks = 0
+        val store = pictureStore(isCurrent = { ++checks <= 1 })
+
+        assertNull(store.fullPicture(amy()))
+        assertTrue(java.io.File(tmp.root, "moodle_files").walkTopDown().none { it.isFile })
+    }
+
+    @Test
+    fun `a kept copy is not handed out after a sign-out`() = runTest(UnconfinedTestDispatcher()) {
+        api.pictureAnswer = { jpeg }
+        val store = pictureStore()
+        assertTrue(store.fullPicture(amy()) != null)
+
+        signedIn = false
+
+        assertNull(store.fullPicture(amy()))
+    }
+
+    @Test
+    fun `a copy a write left cut short is never opened, and the next open downloads it again`() = runTest(UnconfinedTestDispatcher()) {
+        // As a write cut short by a full disk leaves it, in the folder a whole copy would be in.
+        val folder = java.io.File(tmp.root, "moodle_files/pictures/7-3").apply { mkdirs() }
+        java.io.File(folder, ".Amy Lin.jpg.part").writeBytes(byteArrayOf(0xFF.toByte()))
+        api.pictureAnswer = { jpeg }
+
+        val opened = pictureStore().fullPicture(amy())!!
+
+        assertEquals(listOf(large), api.pictureUrls)
+        assertEquals("Amy Lin.jpg", opened.file.name)
+        assertTrue(opened.file.readBytes().contentEquals(jpeg))
     }
 }
