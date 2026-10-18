@@ -77,7 +77,18 @@ jobs:
         env:
           TASKS: ${{ matrix.tasks }}
         # $TASKS is unquoted on purpose: it is a space-separated task list.
-        run: ./gradlew --no-daemon $TASKS
+        # gradle.properties sizes the build for a laptop: a 2 GB heap, which
+        # the Kotlin daemon copies, and one module at a time. A runner has 4
+        # cores and 16 GB, and R8, lint and the Kotlin compiler were short of
+        # memory, so the build gets 6 GB and the Kotlin daemon 3 GB here, and
+        # --parallel builds a leg's modules side by side. No --no-daemon: JVM
+        # settings unlike the launcher's made Gradle fork a single-use daemon
+        # anyway, a second JVM start on every leg.
+        run: >-
+          ./gradlew --parallel
+          -Dorg.gradle.jvmargs="-Xmx6g -XX:+UseParallelGC -Dfile.encoding=UTF-8"
+          -Pkotlin.daemon.jvmargs=-Xmx3g
+          $TASKS
 
   release-scripts:
     # The scripts the release workflows run, which otherwise first run once
