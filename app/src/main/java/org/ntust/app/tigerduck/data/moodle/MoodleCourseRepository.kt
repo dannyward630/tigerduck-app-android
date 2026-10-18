@@ -140,8 +140,8 @@ class MoodleCourseRepository internal constructor(
         stores[account to courseId]?.let { return@withLock it }
         val api = apiLocked() ?: return@withLock null
         val ids = idMap()
-        val filesDir = downloads?.let { withContext(Dispatchers.IO) { downloadsDir(account) } }
-            ?.let { File(it, courseId.toString()) }
+        val accountDownloads = downloads?.let { withContext(Dispatchers.IO) { downloadsDir(account) } }
+        val filesDir = accountDownloads?.let { File(it, courseId.toString()) }
         MoodleCourseStore(
             courseId = courseId,
             termCourseIds = MoodleCourseStore.termCourseIds(courseId, ids),
@@ -151,6 +151,8 @@ class MoodleCourseRepository internal constructor(
             context = contextLocked(account),
             scope = scope,
             picturesDir = picturesDir(account),
+            // Beside the course folders, which the downloads index by number, so none lists it.
+            openedPicturesDir = accountDownloads?.let { File(it, "pictures") },
             downloads = downloads,
             filesDir = filesDir,
             decodePicture = decode,
