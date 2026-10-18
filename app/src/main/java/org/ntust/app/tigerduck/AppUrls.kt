@@ -16,6 +16,12 @@ object AppUrls {
     /** The Android app's issue tracker, where About > Others sends feedback. */
     const val ISSUES = "https://github.com/tigerduck-app/tigerduck-app-android/issues"
 
+    /**
+     * The share links' host (`ClassTableShareCode.SHARE_ROOT`): its page opens the app, or sends
+     * someone without it to the store.
+     */
+    const val SHARE = "https://share.tigerduck.app"
+
     /** Public uptime page for every TigerDuck-facing service. */
     const val SERVER_STATUS = "https://status.tigerduck.app/"
 }

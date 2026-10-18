@@ -28,12 +28,14 @@ import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportView
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
 import java.time.Instant
 
 /**
  * A class table share code opened as a link: from the camera, Google Lens or another QR app, a
- * tapped link, or tigerduck.app's "Open in TigerDuck" button. Any page or app can open one, so it
- * takes exactly the steps a scanned code does, and only for a signed-in student.
+ * tapped link, or the share page's "Open in TigerDuck" button. Any page or app can open one, so it
+ * takes exactly the steps a scanned code does, and only for a signed-in student: one that comes
+ * before is held until then.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
@@ -54,21 +56,31 @@ class ShareCodeLinkTest {
     )!!
     private val calculus = Course(courseNo = "MA1010001", courseName = "Calculus")
 
-    /** What follows `/T/`. */
-    private fun body(code: String) = code.removePrefix(ClassTableShareCode.PREFIX)
+    /** What follows the share host: the type, then the code. */
+    private fun rest(code: String) = code.removePrefix(ClassTableShareCode.SHARE_ROOT)
 
     /** The code as it is written, the form App Links deliver, and the web page's button. */
     private val links = listOf(
         code,
-        "https://tigerduck.app/T/${body(code)}",
-        "tigerduck://share/${body(code)}",
+        "https://share.tigerduck.app/${rest(code)}",
+        "tigerduck://share/${rest(code)}",
     )
+
+    private fun source(rel: String): String {
+        val path = "src/main/java/org/ntust/app/tigerduck/$rel"
+        var dir: File? = File("").absoluteFile
+        while (dir != null) {
+            File(dir, path).let { if (it.isFile) return it.readText() }
+            File(dir, "app/$path").let { if (it.isFile) return it.readText() }
+            dir = dir.parentFile
+        }
+        throw AssertionError("Could not locate $path from ${File("").absolutePath}")
+    }
 
     private fun linkIntent(link: String) =
         Intent(Intent.ACTION_VIEW, Uri.parse(link)).addCategory(Intent.CATEGORY_BROWSABLE)
 
-    private fun take(link: String, restored: Boolean = false, mayImport: Boolean = true) =
-        takeSharedClassTableCode(linkIntent(link), restored, mayImport)
+    private fun take(link: String, restored: Boolean = false) = takeSharedClassTableCode(linkIntent(link), restored)
 
     private fun TestScope.model(
         lookup: suspend (String, List<String>) -> List<Course> = { _, _ -> listOf(calculus) },
@@ -134,11 +146,14 @@ class ShareCodeLinkTest {
     }
 
     @Test
-    fun `a T URL that is not a share code shows the malformed message`() = runTest {
+    fun `a share host URL that is not a share code shows the malformed message`() = runTest {
         listOf(
-            "https://tigerduck.app/T/",
-            "https://tigerduck.app/T/hello",
-            "HTTPS://TIGERDUCK.APP/T/2.B11300001",
+            "https://share.tigerduck.app/",
+            // The host alone, as the manifest's filter claims it too.
+            "https://share.tigerduck.app",
+            "https://share.tigerduck.app?from=mail",
+            "https://share.tigerduck.app/CLASSTABLE/",
+            "https://share.tigerduck.app/CLASSTABLE/hello",
             code.dropLast(1) + "A",
             "tigerduck://share",
             "tigerduck://share/hello",
@@ -151,44 +166,99 @@ class ShareCodeLinkTest {
     }
 
     @Test
+    fun `a link to a newer app's code asks for an update`() = runTest {
+        listOf(
+            "https://share.tigerduck.app/FRIEND/1.B11300001",
+            "tigerduck://share/FRIEND/1.B11300001",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/2.B11300001",
+        ).forEach { link ->
+            val model = openLink(link)
+
+            assertEquals(link, Prompt.NeedsUpdate, model.state.value.prompt)
+            assertNull(link, model.state.value.pending)
+        }
+    }
+
+    @Test
     fun `other links are left for the rest of the app`() {
         listOf(
             "https://tigerduck.app/",
             "https://tigerduck.app/guide",
-            "https://example.com/T/${body(code)}",
-            "http://tigerduck.app/T/${body(code)}",
-            "https://tigerduck.app.example.com/T/${body(code)}",
+            // Where codes were written before the move to the share host: no longer one.
+            "https://tigerduck.app/T/${rest(code).substringAfter('/')}",
+            "https://example.com/${rest(code)}",
+            "http://share.tigerduck.app/${rest(code)}",
+            "https://share.tigerduck.app.example.com/${rest(code)}",
+            "https://share.tigerduck.app@example.com/${rest(code)}",
             "tigerduck://classtable",
             "tigerduck://announcement/42",
-            "tigerduck://Share/${body(code)}",
+            "tigerduck://Share/${rest(code)}",
         ).forEach { link ->
             val intent = linkIntent(link)
 
-            assertNull(link, takeSharedClassTableCode(intent, restored = false, mayImport = true))
+            assertNull(link, takeSharedClassTableCode(intent, restored = false))
             assertEquals(link, link, intent.dataString)
         }
     }
 
     @Test
-    fun `a link before sign-in or during onboarding imports nothing, and is not kept for later`() {
-        val intent = linkIntent(code)
+    fun `a link before sign-in or during onboarding is held, and opens once both are done`() {
+        val held = HeldShareLink()
 
-        assertNull(takeSharedClassTableCode(intent, restored = false, mayImport = false))
-        assertNull("the code is taken off the intent", intent.data)
-        assertNull("so signing in later reads nothing", takeSharedClassTableCode(intent, restored = false, mayImport = true))
+        assertNull(held.arrived(code, mayOpen = false))
+        assertNull("still signed out", held.release(mayOpen = false))
+        assertEquals(code, held.release(mayOpen = true))
+        assertNull("it opens once", held.release(mayOpen = true))
+
+        assertEquals("one that may open does so at once", code, held.arrived(code, mayOpen = true))
+        assertNull(held.release(mayOpen = true))
+    }
+
+    @Test
+    fun `a newer link replaces a held one, and a sign-out drops it`() {
+        val held = HeldShareLink()
+
+        held.arrived(code, mayOpen = false)
+        held.arrived(otherCode, mayOpen = false)
+        assertEquals(otherCode, held.release(mayOpen = true))
+
+        held.arrived(code, mayOpen = false)
+        assertEquals("one that opens at once replaces it too", otherCode, held.arrived(otherCode, mayOpen = true))
+        assertNull(held.release(mayOpen = true))
+
+        held.arrived(code, mayOpen = false)
+        held.drop()
+        assertNull(held.release(mayOpen = true))
+    }
+
+    @Test
+    fun `MainActivity holds a link that cannot open yet, and the sign-out drops it`() {
+        val activity = source("MainActivity.kt")
+        assertTrue("a link goes through the holder", "heldShareLink.arrived(" in activity)
+        assertTrue("and is released once someone may import it", "heldShareLink.release(" in activity)
+        assertTrue("whenever the sign-in or onboarding changes", "snapshotFlow { appState.showOnboarding }" in activity)
+        // Only by the Activity on screen: another one, stopped in another task, would open its import there.
+        val release = activity.indexOf("heldShareLink.release(")
+        assertTrue(
+            "released only while started",
+            "repeatOnLifecycle(Lifecycle.State.STARTED)" in activity.substring(maxOf(0, release - 600), release),
+        )
+        assertTrue(".drop() at sign-out", "heldShareLink.drop()" in source("auth/AuthService.kt"))
+        // In memory only: nothing for it to be written with.
+        assertTrue(HeldShareLink::class.java.declaredConstructors.all { it.parameterCount == 0 })
     }
 
     @Test
     fun `a link opens once per delivery, and not again for a rebuilt Activity or from Recents`() {
         val intent = linkIntent(code)
 
-        assertNotNull(takeSharedClassTableCode(intent, restored = false, mayImport = true))
+        assertNotNull(takeSharedClassTableCode(intent, restored = false))
         assertNull(intent.data)
-        assertNull(takeSharedClassTableCode(intent, restored = false, mayImport = true))
+        assertNull(takeSharedClassTableCode(intent, restored = false))
 
         assertNull(take(code, restored = true))
         val fromRecents = linkIntent(code).addFlags(Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY)
-        assertNull(takeSharedClassTableCode(fromRecents, restored = false, mayImport = true))
+        assertNull(takeSharedClassTableCode(fromRecents, restored = false))
         assertNull(fromRecents.data)
     }
 
@@ -200,7 +270,7 @@ class ShareCodeLinkTest {
         advanceUntilIdle()
         assertTrue(first.state.value.isLookingUp)
 
-        val second = openLink("tigerduck://share/${body(otherCode)}", open = first)
+        val second = openLink("tigerduck://share/${rest(otherCode)}", open = first)
         answer.complete(listOf(calculus))
         advanceUntilIdle()
 
@@ -212,7 +282,7 @@ class ShareCodeLinkTest {
 
     @Test
     fun `a second link replaces a prompt the first one raised`() = runTest {
-        val first = openLink("https://tigerduck.app/T/hello")
+        val first = openLink("https://share.tigerduck.app/CLASSTABLE/hello")
         assertEquals(Prompt.Invalid, first.state.value.prompt)
 
         val second = openLink(code, open = first)
@@ -223,9 +293,14 @@ class ShareCodeLinkTest {
     }
 
     @Test
-    fun `a QR app or a browser opens the share code link and the web page's button in MainActivity`() {
+    fun `a QR app or a browser opens the share host's links and the web page's button in MainActivity`() {
         val packageManager = context.packageManager
-        listOf("https://tigerduck.app/T/${body(code)}", "tigerduck://share/${body(code)}").forEach { link ->
+        listOf(
+            "https://share.tigerduck.app/${rest(code)}",
+            // The whole host is claimed, so a newer app's type reaches the import too.
+            "https://share.tigerduck.app/FRIEND/1.B00015999",
+            "tigerduck://share/${rest(code)}",
+        ).forEach { link ->
             // A QR app may leave out the BROWSABLE category a browser adds.
             listOf(Intent(Intent.ACTION_VIEW, Uri.parse(link)), linkIntent(link)).forEach { intent ->
                 assertEquals(link, MainActivity::class.java.name, packageManager.resolveActivity(intent, 0)?.activityInfo?.name)
@@ -234,12 +309,12 @@ class ShareCodeLinkTest {
     }
 
     @Test
-    fun `the rest of the site, and the code's upper-case spelling, stay with the browser`() {
+    fun `the main site, and the code's upper-case spelling, stay with the browser`() {
         val packageManager = context.packageManager
         listOf(
             "https://tigerduck.app/",
             "https://tigerduck.app/guide",
-            "https://tigerduck.app/t/${body(code)}",
+            "https://tigerduck.app/T/${rest(code).substringAfter('/')}",
             // Android compares the scheme and host case-sensitively, and only the lower-case host is
             // verified; the web page's button opens the app for a scanner that opens the browser.
             code,

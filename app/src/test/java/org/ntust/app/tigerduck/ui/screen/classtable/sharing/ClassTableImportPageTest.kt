@@ -81,6 +81,17 @@ class ClassTableImportPageTest {
         assertEquals(0, closed)
         assertEquals(listOf("B11300001"), store.tables.value.people.map { it.nickname })
     }
+
+    @Test
+    fun `a code from a newer app says the app needs an update, under the import's failure title`() {
+        composeRule.setContent {
+            ClassTableImportPage(model, onClose = {}, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { model.imageRead(listOf("HTTPS://SHARE.TIGERDUCK.APP/FRIEND/1.B11300001")) }
+
+        composeRule.onNodeWithText(app.getString(R.string.class_table_import_failed)).assertExists()
+        composeRule.onNodeWithText(app.getString(R.string.share_code_needs_update_message)).assertExists()
+    }
 }
 
 /** Holds what is dispatched to it until [release] runs it, as a busy I/O thread would. */
