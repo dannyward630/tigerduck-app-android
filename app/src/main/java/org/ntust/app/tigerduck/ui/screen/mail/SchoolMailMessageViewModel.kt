@@ -654,16 +654,12 @@ class SchoolMailMessageViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Nothing to release here. `SessionHolder`'s hold is a flag, not a count, and only the list
-     * view model owns it -- it pairs `acquire()` with `release()` around the page's lifecycle.
-     * This view model never calls `acquire()`, so the `release()` that used to live here armed
-     * an idle close on a connection someone else was holding: popping back to the list runs the
-     * list's ON_RESUME `acquire()` first and this `onCleared()` after it.
-     */
-    override fun onCleared() {
-        super.onCleared()
-    }
+    // No onCleared(): there is nothing to release here. `SessionHolder`'s hold is a flag, not a
+    // count, and only the list view model owns it -- it pairs `acquire()` with `release()` around
+    // the page's lifecycle. This view model never calls `acquire()`, so the `release()` its
+    // onCleared() used to make armed an idle close on a connection someone else was holding:
+    // popping back to the list runs the list's ON_RESUME `acquire()` first and this view model's
+    // onCleared() after it.
 
     companion object {
         private const val DAY_MS = 24L * 60 * 60 * 1000

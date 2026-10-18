@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -531,7 +532,7 @@ private fun FluidTrack(viewModel: TimeSliderViewModel, invertDirection: Boolean)
     val context = LocalContext.current
     val density = LocalDensity.current
     val trackHeightDp = TimeSliderViewModel.FLUID_TRACK_HEIGHT.dp
-    var widthPx by remember { mutableStateOf(0f) }
+    var widthPx by remember { mutableFloatStateOf(0f) }
 
     val pxPerDp = with(density) { 1.dp.toPx() }
     val style = LocalVisualStylePolicy.current

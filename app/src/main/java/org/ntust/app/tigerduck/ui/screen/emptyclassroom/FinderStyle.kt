@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
@@ -50,7 +50,7 @@ internal object FinderColors {
 /** The UI's locale, the one the app's strings resolve against. */
 @Composable
 @ReadOnlyComposable
-internal fun finderLocale(): Locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+internal fun finderLocale(): Locale = LocalLocale.current.platformLocale
 
 /**
  * The locale's short date with its weekday: one letter long where the locale's one-letter

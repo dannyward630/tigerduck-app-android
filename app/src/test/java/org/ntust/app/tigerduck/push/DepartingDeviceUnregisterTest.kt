@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package org.ntust.app.tigerduck.push
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent

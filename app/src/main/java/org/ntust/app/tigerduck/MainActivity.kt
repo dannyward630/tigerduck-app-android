@@ -1,12 +1,12 @@
 package org.ntust.app.tigerduck
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.Bundle
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -592,7 +592,7 @@ private fun ServerPushPopupHost(coordinator: ServerPushPopupCoordinator) {
  * when an update is awaiting the user's choice. Flavor-safe: on fdroid the
  * flow is permanently null, so the dialog never mounts.
  *
- * Pulls the hosting Activity from `LocalContext` because the "Update Now"
+ * Pulls the hosting Activity from `LocalActivity` because the "Update Now"
  * deep link needs an Activity context (FLAG_ACTIVITY_NEW_TASK is required
  * for the Play Store intent, and using the application context for that
  * silently no-ops on some OEM launchers).
@@ -600,7 +600,7 @@ private fun ServerPushPopupHost(coordinator: ServerPushPopupCoordinator) {
 @Composable
 private fun UpdatePromptHost(updateChecker: UpdateChecker) {
     val pending by updateChecker.pendingUpdate.collectAsStateWithLifecycle()
-    val activity = LocalContext.current as? Activity ?: return
+    val activity = LocalActivity.current ?: return
     if (pending != null) {
         UpdatePromptDialog(
             onUpdateNow = { updateChecker.onUpdateNow(activity) },
@@ -719,7 +719,7 @@ private fun ReviewPromptHost(
     otherPromptShowing: Boolean,
 ) {
     val pending by reviewPrompt.pending.collectAsStateWithLifecycle()
-    val activity = LocalContext.current as? Activity ?: return
+    val activity = LocalActivity.current ?: return
     if (!pending || otherPromptShowing) return
     // Keyed on nothing: a recomposition while Play is being asked for the
     // flow must not ask twice. Leaving composition — the ask withdrawn, or

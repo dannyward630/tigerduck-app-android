@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package org.ntust.app.tigerduck.liveactivity
 
 import android.Manifest
@@ -5,6 +7,7 @@ import android.app.AlarmManager
 import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking

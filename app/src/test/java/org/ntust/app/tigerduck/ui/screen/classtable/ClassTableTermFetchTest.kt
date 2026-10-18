@@ -67,7 +67,7 @@ class ClassTableTermFetchTest {
         assertTrue(out[1].isManual)
         assertEquals(manual("NEW"), out[2])
         assertEquals(setOf("A", "MINE", "GONE"), asked.toSet())
-        assertTrue(answers!!.answered)
+        assertTrue(answers.answered)
     }
 
     @Test

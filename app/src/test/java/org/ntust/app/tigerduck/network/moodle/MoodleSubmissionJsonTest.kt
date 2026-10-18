@@ -258,7 +258,7 @@ class MoodleSubmissionJsonTest {
         )
         assertNotNull(imageOnly.onlineText)
         assertFalse("a text that is one image still points it at its file (iOS #728)", imageOnly.onlineText!!.contains("@@PLUGINFILE@@"))
-        assertTrue(imageOnly.onlineText!!.contains("submissions_onlinetext/5703/chart.png"))
+        assertTrue(imageOnly.onlineText.contains("submissions_onlinetext/5703/chart.png"))
     }
 
     @Test
