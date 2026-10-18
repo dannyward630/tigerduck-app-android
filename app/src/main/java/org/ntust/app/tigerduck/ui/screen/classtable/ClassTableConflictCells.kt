@@ -44,6 +44,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.runtime.key
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.indication
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.component.ConflictLOrientation
 import org.ntust.app.tigerduck.ui.component.ConflictLShape
@@ -306,9 +311,11 @@ internal fun ConflictCourseCell(
  * each course occupies one column for its own row range, with greedy lane
  * coloring (see [ClassTableViewModel.cellRole]) packing non-overlapping
  * courses into the same lane so a chain like A(6-7) / B(6-8) / C(8-9) fits in
- * two columns instead of three. The 2-course L-shape ([ConflictCourseCell])
- * can't tile 3 shapes, so this is the fallback. Tapping a lane selects that
- * specific course directly (no picker), matching the home slider's per-band
+ * two columns instead of three. In the rows a course has alone it takes every
+ * lane, drawn as one rounded outline with its seams to the courses beside it
+ * kept ([ConflictLaneShape]), as the iPhone does (tigerduck-app#153) and as
+ * the 2-course L-shape ([ConflictCourseCell]) takes the full width. Tapping a
+ * course selects it directly (no picker), matching the home slider's per-band
  * behavior.
  */
 @OptIn(ExperimentalFoundationApi::class)
@@ -338,8 +345,6 @@ internal fun MultiConflictCourseCell(
     fun bgFor(course: Course) = style.courseFill(course.courseNo)
     fun outlineFor(course: Course) =
         if (outlineRequired && course.isRequired) style.courseOutline(course.courseNo) else null
-    val laneShape = RoundedCornerShape(4.dp)
-
     val labels = classTableCellLabels()
 
     var menuForCourse by remember { mutableStateOf<Course?>(null) }
@@ -355,64 +360,106 @@ internal fun MultiConflictCourseCell(
         BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = AbsoluteAlignment.TopLeft) {
             val rowHeight = maxHeight / cellRole.combinedSpan
             val laneWidth = maxWidth / cellRole.laneCount
+            val indication = LocalIndication.current
+            // A run within the cluster, inset by half the seam the lanes and rows keep between them.
+            fun rectOf(run: LaneRun) = DpRect(
+                left = laneWidth * run.lanes.first + LANE_SEAM / 2,
+                top = rowHeight * run.firstRow + LANE_SEAM / 2,
+                right = laneWidth * (run.lanes.last + 1) - LANE_SEAM / 2,
+                bottom = rowHeight * (run.firstRow + run.rowCount) - LANE_SEAM / 2,
+            )
 
             cellRole.members.forEach { member ->
-                val mTop = rowHeight * member.offset
-                val mHeight = rowHeight * member.span
-                val mLeft = laneWidth * member.lane
-                val hasAssignmentForMember = hasAssignment(member.course.courseNo)
-                val ignoredForMember = assignmentsIgnored(member.course.courseNo)
+                key(member.course.courseNo, member.offset) {
+                    // Across every lane in the rows the course has alone (ClassTableCellLayout.laneRuns).
+                    val runs = ClassTableCellLayout.laneRuns(member, cellRole)
+                    val rects = runs.map(::rectOf)
+                    val bounds = DpRect(
+                        left = rects.minOf { it.left },
+                        top = rects.minOf { it.top },
+                        right = rects.maxOf { it.right },
+                        bottom = rects.maxOf { it.bottom },
+                    )
+                    fun DpRect.inBounds() = DpRect(left - bounds.left, top - bounds.top, right - bounds.left, bottom - bounds.top)
+                    val shape = remember(rects) { ConflictLaneShape(rects.map { it.inBounds() }, LANE_CORNER) }
+                    // The name goes in the course's largest run, the mark in the corner of its last.
+                    val labelRun = runs.indices.maxBy { runs[it].rowCount * (runs[it].lanes.last - runs[it].lanes.first + 1) }
+                    val label = rects[labelRun].inBounds()
+                    val last = rects.last().inBounds()
+                    val hasAssignmentForMember = hasAssignment(member.course.courseNo)
+                    val ignoredForMember = assignmentsIgnored(member.course.courseNo)
+                    // Shared by the course's runs, so a press on any of them shows on its whole shape.
+                    val interactionSource = remember { MutableInteractionSource() }
 
-                Box(
-                    modifier = Modifier
-                        .width(laneWidth)
-                        .height(mHeight)
-                        .absoluteOffset(x = mLeft, y = mTop)
-                        .padding(0.5.dp)
-                        .clip(laneShape)
-                        .background(bgFor(member.course))
-                        .requiredCourseOutline(outlineFor(member.course), laneShape)
-                        .semantics(mergeDescendants = true) {
-                            contentDescription = labels.label(
-                                member.course,
-                                weekday,
-                                member.firstPeriodId,
-                                hasAssignmentForMember,
-                                ignoredForMember,
-                                conflict = true,
-                            )
-                            role = Role.Button
-                        }
-                        .combinedClickable(
-                            onClick = { onSelect(member.course, member.firstPeriodId) },
-                            // The app vibrates for this long press itself, through the Vibration setting;
-                            // Compose's own buzz would land on top of it and ignore that setting.
-                            hapticFeedbackEnabled = false,
-                            onLongClick = onLongPress?.let { press ->
-                                {
-                                    press()
-                                    menuForCourse = member.course
-                                }
-                            },
-                        ),
-                ) {
-                    ClassTableCourseNameText(
-                        text = member.course.displayName,
-                        color = textColor,
-                        maxLines = if (member.span >= 2) 3 else 2,
+                    Box(
                         modifier = Modifier
-                            .padding(2.dp)
-                            .align(Alignment.Center),
-                    )
-                    CourseCellBadge(
-                        hasAssignment = hasAssignmentForMember,
-                        assignmentsIgnored = ignoredForMember,
-                        tint = markColor,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(3.dp)
-                            .size(10.dp),
-                    )
+                            .absoluteOffset(x = bounds.left, y = bounds.top)
+                            .size(bounds.right - bounds.left, bounds.bottom - bounds.top)
+                            .clip(shape)
+                            .background(bgFor(member.course))
+                            .requiredCourseOutline(outlineFor(member.course), shape)
+                            .indication(interactionSource, indication),
+                    ) {
+                        ClassTableCourseNameText(
+                            text = member.course.displayName,
+                            color = textColor,
+                            maxLines = if (runs[labelRun].rowCount >= 2) 3 else 2,
+                            modifier = Modifier
+                                .absoluteOffset(x = label.left, y = label.top)
+                                .size(label.right - label.left, label.bottom - label.top)
+                                .padding(2.dp)
+                                .wrapContentSize(Alignment.Center),
+                        )
+                        CourseCellBadge(
+                            hasAssignment = hasAssignmentForMember,
+                            assignmentsIgnored = ignoredForMember,
+                            tint = markColor,
+                            modifier = Modifier
+                                .absoluteOffset(x = last.right - BADGE_INSET - BADGE_SIZE, y = last.bottom - BADGE_INSET - BADGE_SIZE)
+                                .size(BADGE_SIZE),
+                        )
+                    }
+
+                    // Taps land on the runs themselves: the shape's bounds reach over the courses
+                    // beside it. The run holding the name is the course's one button for TalkBack.
+                    rects.forEachIndexed { index, rect ->
+                        Box(
+                            modifier = Modifier
+                                .absoluteOffset(x = rect.left, y = rect.top)
+                                .size(rect.right - rect.left, rect.bottom - rect.top)
+                                .then(
+                                    if (index == labelRun) {
+                                        Modifier.semantics(mergeDescendants = true) {
+                                            contentDescription = labels.label(
+                                                member.course,
+                                                weekday,
+                                                member.firstPeriodId,
+                                                hasAssignmentForMember,
+                                                ignoredForMember,
+                                                conflict = true,
+                                            )
+                                            role = Role.Button
+                                        }
+                                    } else {
+                                        Modifier.clearAndSetSemantics {}
+                                    },
+                                )
+                                .combinedClickable(
+                                    interactionSource = interactionSource,
+                                    indication = null,
+                                    onClick = { onSelect(member.course, member.firstPeriodId) },
+                                    // The app vibrates for this long press itself, through the Vibration setting;
+                                    // Compose's own buzz would land on top of it and ignore that setting.
+                                    hapticFeedbackEnabled = false,
+                                    onLongClick = onLongPress?.let { press ->
+                                        {
+                                            press()
+                                            menuForCourse = member.course
+                                        }
+                                    },
+                                ),
+                        )
+                    }
                 }
             }
 
@@ -492,3 +539,9 @@ private fun CourseActionSection(
         onDelete = onDelete,
     )
 }
+
+/** The gap between two lanes, and between two rows, of a cluster of three or more. */
+private val LANE_SEAM = 1.dp
+private val LANE_CORNER = 4.dp
+private val BADGE_SIZE = 10.dp
+private val BADGE_INSET = 3.dp

@@ -61,6 +61,13 @@ sealed class CellRole {
     object Skip : CellRole()
 }
 
+/**
+ * Rows of one [CellRole.MultiConflictStart.Member] that keep one horizontal extent, counted from
+ * the cluster's top: [lanes] is every lane where the member is the only course in those rows,
+ * else its own lane. As the iPhone's `ClassTableLaneRun`.
+ */
+data class LaneRun(val firstRow: Int, val rowCount: Int, val lanes: IntRange)
+
 data class TripleConflictError(
     val weekday: Int,
     val periodId: String,
@@ -70,6 +77,27 @@ data class TripleConflictError(
 )
 
 object ClassTableCellLayout {
+
+    /**
+     * How [member] of [role] is drawn row by row, as the iPhone's `ClassTableLayout.laneRuns`
+     * (tigerduck-app#153, tigerduck-app-android#85): across every lane in the rows where no other
+     * member meets, as the two-course L shape takes the full width where a course is alone, and
+     * in its own lane elsewhere. Consecutive rows with the same extent are one run.
+     */
+    fun laneRuns(member: CellRole.MultiConflictStart.Member, role: CellRole.MultiConflictStart): List<LaneRun> {
+        val runs = mutableListOf<LaneRun>()
+        for (row in member.offset until member.offset + member.span) {
+            val meeting = role.members.count { row >= it.offset && row < it.offset + it.span }
+            val lanes = if (meeting <= 1) 0 until role.laneCount else member.lane..member.lane
+            val last = runs.lastOrNull()
+            if (last != null && last.lanes == lanes) {
+                runs[runs.lastIndex] = last.copy(rowCount = last.rowCount + 1)
+            } else {
+                runs += LaneRun(row, 1, lanes)
+            }
+        }
+        return runs
+    }
 
     /**
      * What a cell's courses show, as the identity of its block: a change in name, room or rows

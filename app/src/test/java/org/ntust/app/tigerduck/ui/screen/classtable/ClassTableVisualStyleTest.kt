@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PixelMap
 import androidx.compose.ui.graphics.toPixelMap
@@ -31,6 +32,8 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import org.junit.After
@@ -145,6 +148,7 @@ class ClassTableVisualStyleTest {
 
     private val calculusColour get() = TigerDuckTheme.courseColorVibrant(calculus.courseNo)
     private val physicsColour get() = TigerDuckTheme.courseColorVibrant(physics.courseNo)
+    private val chemistryColour get() = TigerDuckTheme.courseColorVibrant(chemistry.courseNo)
 
     // ---- a course's run ----
 
@@ -344,6 +348,68 @@ class ClassTableVisualStyleTest {
         val image = pixels()
         assertNear("first lane", calculusColour.pastel(), image[width / 4, 6])
         assertNear("second lane", physicsColour.pastel(), image[width * 3 / 4, 6])
+    }
+
+    // ---- lanes that widen (tigerduck-app-android#85, as the iPhone's tigerduck-app#153) ----
+
+    private val chemistry = Course(courseNo = "CH4004", courseName = "Chemistry")
+
+    /**
+     * Calculus on rows 0-1, Physics on 0-2, Chemistry on 2-3, in two lanes: Chemistry meets
+     * Physics on row 2 and is alone on row 3. At density 1 the inner area starts at (1, 1), its
+     * lanes are 29px wide and its rows 51.5px tall.
+     */
+    private fun chainCell(onSelect: (Course) -> Unit = {}) {
+        val role = CellRole.MultiConflictStart(
+            members = listOf(
+                CellRole.MultiConflictStart.Member(calculus, span = 2, offset = 0, lane = 0, firstPeriodId = "1"),
+                CellRole.MultiConflictStart.Member(physics, span = 3, offset = 0, lane = 1, firstPeriodId = "1"),
+                CellRole.MultiConflictStart.Member(chemistry, span = 2, offset = 2, lane = 0, firstPeriodId = "3"),
+            ),
+            combinedSpan = 4,
+            laneCount = 2,
+        )
+        draw(VisualPreset.TigerDuck, width, cellHeight * 4) {
+            MultiConflictCourseCell(
+                cellRole = role,
+                dayColWidth = width.dp,
+                cellHeight = cellHeight.dp,
+                x = 0.dp,
+                y = 0.dp,
+                weekday = 1,
+                hasAssignment = { false },
+                assignmentsIgnored = { false },
+                onSelect = { course, _ -> onSelect(course) },
+                onLongPress = {},
+                onRename = {},
+                onPickColor = {},
+                onToggleIgnoreAssignments = null,
+                onDelete = {},
+            )
+        }
+    }
+
+    @Test
+    fun `a course alone in a row of a cluster takes the whole width there`() {
+        chainCell()
+        val image = pixels()
+        assertNear("Chemistry, alone on row 3, across the other lane", overWhite(chemistryColour, 0.5f), image[50, 160])
+        assertNear("Physics beside it on row 2", overWhite(physicsColour, 0.5f), image[52, 112])
+        assertNear("Chemistry in its own lane on row 2", overWhite(chemistryColour, 0.5f), image[8, 112])
+    }
+
+    @Test
+    fun `a tap lands on the course drawn there, and each course is one button`() {
+        var picked: Course? = null
+        chainCell { picked = it }
+
+        composeRule.onAllNodes(hasClickAction()).assertCountEquals(3)
+        composeRule.onRoot().performTouchInput { click(Offset(50f, 160f)) }
+        assertEquals(chemistry, picked)
+        composeRule.onRoot().performTouchInput { click(Offset(52f, 112f)) }
+        assertEquals(physics, picked)
+        composeRule.onRoot().performTouchInput { click(Offset(8f, 112f)) }
+        assertEquals(chemistry, picked)
     }
 
     // ---- conflict marks ----
