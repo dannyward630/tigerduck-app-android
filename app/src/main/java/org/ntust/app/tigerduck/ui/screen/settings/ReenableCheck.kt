@@ -14,6 +14,7 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.di.ApplicationScope
 import org.ntust.app.tigerduck.network.SemesterCatalog
 import org.ntust.app.tigerduck.push.BackendSyncResult
+import org.ntust.app.tigerduck.push.CourseOverrideResult
 import org.ntust.app.tigerduck.push.SyncApiClient
 import org.ntust.app.tigerduck.util.logSummary
 import java.util.concurrent.atomic.AtomicInteger
@@ -181,24 +182,7 @@ class ReenableCheck @Inject constructor(
         }
 
         if ("course_names" in pending) {
-            val localNames = dataCache.loadCourseCustomNames()
-            var nameMismatches = 0
-            val serverNosWithNames = mutableSetOf<String>()
-            for (override in result.courseOverrides) {
-                val courseNo = override.courseNo ?: continue
-                if (override.customNames.isEmpty()) continue
-                serverNosWithNames.add(courseNo)
-                if ((localNames[courseNo] ?: emptyMap()) != override.customNames) {
-                    nameMismatches++
-                    Log.d(TAG, "[reenable] name mismatch: $courseNo local=${localNames[courseNo]} server=${override.customNames}")
-                }
-            }
-            for ((courseNo, locales) in localNames) {
-                if (locales.isNotEmpty() && courseNo !in serverNosWithNames) {
-                    nameMismatches++
-                    Log.d(TAG, "[reenable] name mismatch: $courseNo local=$locales server=default")
-                }
-            }
+            val nameMismatches = courseNameMismatches(dataCache.loadCourseCustomNames(), result.courseOverrides)
             Log.i(TAG, "[reenable] names: ${if (nameMismatches == 0) "MATCH" else "DIFFER ($nameMismatches)"}")
             if (nameMismatches > 0) {
                 diffs.add(context.getString(R.string.sync_conflict_reenable_names_differ))
@@ -223,4 +207,33 @@ class ReenableCheck @Inject constructor(
     private companion object {
         const val TAG = "SyncReenable"
     }
+}
+
+/**
+ * How many courses' names differ between [localNames] and the server's [overrides].
+ * A name the server holds as "" was cleared, so it counts as none.
+ */
+internal fun courseNameMismatches(
+    localNames: Map<String, Map<String, String>>,
+    overrides: List<CourseOverrideResult>,
+): Int {
+    var mismatches = 0
+    val serverNosWithNames = mutableSetOf<String>()
+    for (override in overrides) {
+        val courseNo = override.courseNo ?: continue
+        val serverNames = override.customNames.filterValues { it.isNotEmpty() }
+        if (serverNames.isEmpty()) continue
+        serverNosWithNames.add(courseNo)
+        if ((localNames[courseNo] ?: emptyMap()) != serverNames) {
+            mismatches++
+            Log.d("SyncReenable", "[reenable] name mismatch: $courseNo local=${localNames[courseNo]} server=$serverNames")
+        }
+    }
+    for ((courseNo, locales) in localNames) {
+        if (locales.isNotEmpty() && courseNo !in serverNosWithNames) {
+            mismatches++
+            Log.d("SyncReenable", "[reenable] name mismatch: $courseNo local=$locales server=default")
+        }
+    }
+    return mismatches
 }

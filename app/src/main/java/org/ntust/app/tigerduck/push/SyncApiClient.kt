@@ -17,6 +17,7 @@ data class CourseOverrideResult(
     val moodleCourseId: String,
     val courseNo: String?,
     val colorHex: String?,
+    /** Per language; an empty name is one the user cleared. */
     val customNames: Map<String, String> = emptyMap(),
     /** The term of the course row the override belongs to. */
     val semester: String? = null,
@@ -354,10 +355,11 @@ internal fun parseCourseOverrides(
         val moodleId = nullableString(co, "moodle_id") ?: continue
         val namesObj = co.optJSONObject("custom_names")
         val names = mutableMapOf<String, String>()
+        // Kept when empty: "" is a name the user cleared (tigerduck-backend#122),
+        // which the merge takes off this phone too.
         if (namesObj != null) {
             for (key in namesObj.keys()) {
-                val v = namesObj.optString(key, "")
-                if (v.isNotEmpty()) names[key] = v
+                names[key] = namesObj.optString(key, "")
             }
         }
         val resolvedNo = nullableString(co, "course_no") ?: courseMoodleIdToNo[moodleId]
