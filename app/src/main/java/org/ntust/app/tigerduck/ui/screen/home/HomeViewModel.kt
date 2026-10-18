@@ -751,11 +751,16 @@ class HomeViewModel @Inject constructor(
                     }
                     if (written != null) {
                         assignments = written
-                        runCatching { pushApiClient.uploadAssignments(written) }
-                            .onFailure {
-                                prefs.setLastSyncSource(SyncSource.LOCAL)
-                                Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${it.logSummary()}")
-                            }
+                        try {
+                            pushApiClient.uploadAssignments(written)
+                        } catch (e: CancellationException) {
+                            // A sign-out cancels this fetch: taken for a failed upload, the
+                            // fetch would go on to show the departing account's lists again.
+                            throw e
+                        } catch (e: Exception) {
+                            prefs.setLastSyncSource(SyncSource.LOCAL)
+                            Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${e.logSummary()}")
+                        }
                     }
                 }
             }
