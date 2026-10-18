@@ -32,9 +32,10 @@ internal fun interface CourseUploader {
  * course or a snapshot lists it, or once the course has left this phone's
  * cache or been deleted (by hand, a reset, Use Server). Account-scoped: sent
  * only as the account that kept it, and wiped with the user data at sign-out.
+ * Meanwhile the reconcile keeps the course ([waitingIn]), past a tombstone or
+ * the server's silence, and the sign-out warning counts it.
  *
- * iOS sends an add once and keeps nothing; its next sync drops a hand-added
- * course a populated server term does not list.
+ * As the iPhone's outbox since tigerduck-app#727.
  */
 @Singleton
 class PendingCourseAdds internal constructor(
@@ -164,6 +165,18 @@ class PendingCourseAdds internal constructor(
             Log.w(TAG, "course add upload failed, kept for the next sync: ${e.logSummary()}")
             emptyList()
         }
+
+    /**
+     * Lets go of every waiting add: a course reset made on another device has
+     * taken the hand-added courses (`HomeBackendSync.applyCourseReset`), and an
+     * add kept past it would put its course back on every device.
+     */
+    suspend fun forgetAll() {
+        edit(dataCache.userDataGeneration) { emptyMap() }
+    }
+
+    /** The course numbers whose add in [semester] is still waiting, for the reconcile to keep. */
+    suspend fun waitingIn(semester: String): Set<String> = waiting()[semester].orEmpty().toSet()
 
     private suspend fun waiting(): Map<String, List<String>> = dataCache.loadPendingCourseAdds()
 

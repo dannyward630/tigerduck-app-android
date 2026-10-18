@@ -429,6 +429,8 @@ class HomeBackendSync @Inject constructor(
             allCourses.removeAll { it.isManual }
             dataCache.saveCourses(allCourses)
             dataCache.saveDeletedCourseNos(emptySet())
+            // In every term: the reconcile would keep a course whose add waits.
+            pendingCourseAdds.forgetAll()
             Log.i(TAG, "[sync] courses reset detected, wiped manual courses")
         }
         if (authService.isStillSignedInAs(account)) {
@@ -485,6 +487,8 @@ class HomeBackendSync @Inject constructor(
                 serverKnownNos = serverKnown[semester].orEmpty().toSet(),
                 // Deletes the retry above could not land: the snapshot still lists them.
                 graceCourseNos = pendingCourseDeletes.waitingIn(semester),
+                // Adds the retry above could not land: the snapshot does not list them yet.
+                pendingAddNos = pendingCourseAdds.waitingIn(semester),
                 selectionDroppedNos = selectionDropped[semester].orEmpty().toSet(),
             )
             tombstones = outcome.tombstones

@@ -38,11 +38,11 @@ data class LocalEdits(
 
 /**
  * Edits the server has not confirmed, which a sign-out deletes even with their kind synced: a
- * course added by hand that has not been uploaded, a removal whose DELETE still waits
- * (PendingCourseDeletes), a colour or name still waiting to go up (PendingCourseOverrides), a
- * holiday choice still waiting to go up (PendingHolidayOverrides), an ignore not yet confirmed,
- * a done or ignored mark still waiting to be sent (UnsentMarks), and edits whose upload the
- * re-enable check holds back (the sign-out drops the hold).
+ * course added by hand that has not been uploaded or whose add still waits (PendingCourseAdds),
+ * a removal whose DELETE still waits (PendingCourseDeletes), a colour or name still waiting to go
+ * up (PendingCourseOverrides), a holiday choice still waiting to go up (PendingHolidayOverrides),
+ * an ignore not yet confirmed, a done or ignored mark still waiting to be sent (UnsentMarks), and
+ * edits whose upload the re-enable check holds back (the sign-out drops the hold).
  */
 data class Unconfirmed(
     val courses: Boolean = false,
@@ -129,9 +129,14 @@ class SignOutLossCheck @Inject constructor(
         val held = prefs.pendingConflictCategories
         val serverKnown = dataCache.loadServerKnownNos()
         val overrides = dataCache.loadPendingCourseOverrides()
+        // Only adds whose course is still here: PendingCourseAdds lets the others go unsent.
+        val adds = dataCache.loadPendingCourseAdds()
         val unconfirmed = Unconfirmed(
             courses = (edits.courses && "courses" in held) || terms.any { (semester, termCourses) ->
-                termCourses.any { it.isManual && it.courseNo !in serverKnown[semester].orEmpty() }
+                termCourses.any {
+                    (it.isManual && it.courseNo !in serverKnown[semester].orEmpty()) ||
+                        it.courseNo in adds[semester].orEmpty()
+                }
             } || dataCache.loadPendingCourseDeletes().values.any { it.isNotEmpty() },
             courseNames = (edits.courseNames && "course_names" in held) || overrides.any { it.customName != null },
             courseColours = (edits.courseColours && "course_colors" in held) || overrides.any { it.colorHex != null },

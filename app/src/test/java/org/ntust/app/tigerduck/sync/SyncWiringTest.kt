@@ -51,6 +51,21 @@ class SyncWiringTest {
         assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "CourseSyncReconciler.syncsCourseColors(")
     }
 
+    /**
+     * tigerduck-app#727's Android side: a course added back is kept while its add waits, but not
+     * past a course reset made on another device, which takes the hand-added courses.
+     */
+    @Test
+    fun `Home's sync and the worker keep a course whose add still waits`() {
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "syncCourseList", "pendingAddNos = pendingCourseAdds.waitingIn(semester)")
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "applyCourseReset", "pendingCourseAdds.forgetAll()")
+        assertCalls(
+            "notification/BackgroundSyncWorker.kt", "reconcileCurrentSemester",
+            "CourseSyncReconciler.coursesReset(",
+            "pendingAddNos = if (resetElsewhere) emptySet() else pendingCourseAdds.waitingIn(semester)",
+        )
+    }
+
     @Test
     fun `Home's sync records only the categories it took`() {
         assertCalls("ui/screen/home/HomeBackendSync.kt", "pull", "categoriesTaken(", "categoriesSynced(switchedOn, took, prefs)")

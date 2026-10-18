@@ -46,6 +46,7 @@ class CourseSyncReconcilerTest {
         grace: Set<String> = emptySet(),
         selectionDropped: Set<String> = emptySet(),
         serverKnown: Set<String> = emptySet(),
+        pendingAdds: Set<String> = emptySet(),
     ) = CourseSyncReconciler.reconcileSemester(
         semester = semester,
         localCourses = local,
@@ -54,6 +55,7 @@ class CourseSyncReconcilerTest {
         tombstones = tombstones,
         serverKnownNos = serverKnown,
         graceCourseNos = grace,
+        pendingAddNos = pendingAdds,
         selectionDroppedNos = selectionDropped,
     )
 
@@ -302,6 +304,62 @@ class CourseSyncReconcilerTest {
         )
         assertEquals(setOf("1141:A"), out.tombstones)
         assertTrue(out.toUpload.isEmpty())
+    }
+
+    /**
+     * A course the server once listed, deleted, then added back here by hand
+     * (the iPhone's tigerduck-app#727): its number is known, so neither rule
+     * above keeps it, and an upload that fails twice used to end here. While
+     * its add waits in PendingCourseAdds it is this phone's latest word: the
+     * add forces its key past the tombstone once it lands.
+     */
+    @Test
+    fun `a course added back here is kept while its add waits, past the server's tombstone`() {
+        val out = reconcile(
+            local = listOf(local("A"), local("M", manual = true)),
+            rows = listOf(server("A")),
+            tombstoneNos = setOf("M"),
+            serverKnown = setOf("M"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(emptySet<String>(), out.tombstones)
+    }
+
+    @Test
+    fun `a course added back here is kept while its add waits, past the server's silence`() {
+        val out = reconcile(
+            local = listOf(local("A"), local("M", manual = true)),
+            rows = listOf(server("A")),
+            serverKnown = setOf("M"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(emptySet<String>(), out.tombstones)
+    }
+
+    @Test
+    fun `in a term the server has nothing for, a course whose add waits goes up with the rest`() {
+        val out = reconcile(
+            local = listOf(local("M", manual = true)),
+            rows = emptyList(),
+            tombstoneNos = setOf("M"),
+            serverKnown = setOf("M"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(emptySet<String>(), out.tombstones)
+        assertEquals(listOf("M"), out.toUpload.map { it.courseNo })
+    }
+
+    /** Only the waiting add keeps it: another known course the server dropped still goes. */
+    @Test
+    fun `a waiting add keeps only its own course`() {
+        val out = reconcile(
+            local = listOf(local("A"), local("M", manual = true), local("N", manual = true)),
+            rows = listOf(server("A")),
+            tombstoneNos = setOf("M"),
+            serverKnown = setOf("M", "N"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(setOf("1141:N"), out.tombstones)
     }
 
     // ---- keeping the cache honest ----
