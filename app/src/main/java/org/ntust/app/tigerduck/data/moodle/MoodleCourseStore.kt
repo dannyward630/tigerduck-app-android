@@ -555,7 +555,7 @@ class MoodleCourseStore(
                 null
             }
             if (!context.isCurrent()) return null
-            val kept = if (large != null) {
+            return if (large != null) {
                 keepOpenedPicture(dir, folder, member.name, large, replacing = "${member.id}-")
             } else {
                 // Apart from the large size's folder, so the next open tries the download again.
@@ -563,26 +563,25 @@ class MoodleCourseStore(
                     withContext(Dispatchers.IO) { runCatching { file.readBytes() }.getOrNull() }
                 } ?: return null
                 keepOpenedPicture(dir, "$folder$SHOWN_SIZE_SUFFIX", member.name, shown, replacing = null)
-            } ?: return null
-            // Asked again once written: a sign-out says so before its wipe starts, so a copy
-            // written as it began goes here, and one written before is the wipe's to delete.
-            if (!context.isCurrent()) {
-                withContext(Dispatchers.IO) { kept.file.parentFile?.deleteRecursively() }
-                return null
             }
-            return kept
         } finally {
             synchronized(openingLock) { _openingPictures.value -= member.id }
         }
     }
 
-    /** The picture kept in [folder], its one file. */
+    /** The picture kept in [folder], its one whole file: never one a write left cut short. */
     private fun keptOpenedPicture(folder: File): MoodleOpenedPicture? {
-        val file = folder.listFiles()?.singleOrNull { it.isFile } ?: return null
+        val file = folder.listFiles()?.singleOrNull { it.isFile && !it.name.startsWith(".") } ?: return null
         return MoodleOpenedPicture(file, MoodlePictureType.ofExtension(file.extension).mimeType)
     }
 
-    /** Writes [bytes] as [name]'s picture in [folder], dropping the member's other copies, named [replacing]. */
+    /**
+     * Writes [bytes] as [name]'s picture in [folder], dropping the member's other copies, named
+     * [replacing]; null when it could not, or when a sign-out began meanwhile. One blocking step,
+     * the sign-out's question last: a cancellation, as the sign-out ends the screen, cannot come
+     * between the write and the question. A sign-out says so before its wipe starts, so a copy
+     * written as it began goes here, and one written before is the wipe's to delete.
+     */
     private suspend fun keepOpenedPicture(
         dir: File,
         folder: String,
@@ -601,8 +600,21 @@ class MoodleCourseStore(
                 mkdirs()
             }
             val file = File(target, "${openedPictureName(name)}.${type.extension}")
-            file.writeBytes(bytes)
-            MoodleOpenedPicture(file, type.mimeType)
+            // Written apart and moved in once whole: a write cut short, as on a full disk, leaves
+            // no copy a later open would take.
+            val part = File(target, ".${file.name}.part")
+            try {
+                part.writeBytes(bytes)
+                check(part.renameTo(file)) { "not moved into place" }
+            } finally {
+                part.delete()
+            }
+            if (context.isCurrent()) {
+                MoodleOpenedPicture(file, type.mimeType)
+            } else {
+                target.deleteRecursively()
+                null
+            }
         }.onFailure { Log.w(TAG, "member picture not kept to open: ${it.logSummary()}") }.getOrNull()
     }
 

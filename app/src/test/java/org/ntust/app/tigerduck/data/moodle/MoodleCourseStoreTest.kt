@@ -975,4 +975,18 @@ class MoodleCourseStoreTest {
 
         assertNull(store.fullPicture(amy()))
     }
+
+    @Test
+    fun `a copy a write left cut short is never opened, and the next open downloads it again`() = runTest(UnconfinedTestDispatcher()) {
+        // As a write cut short by a full disk leaves it, in the folder a whole copy would be in.
+        val folder = java.io.File(tmp.root, "moodle_files/pictures/7-3").apply { mkdirs() }
+        java.io.File(folder, ".Amy Lin.jpg.part").writeBytes(byteArrayOf(0xFF.toByte()))
+        api.pictureAnswer = { jpeg }
+
+        val opened = pictureStore().fullPicture(amy())!!
+
+        assertEquals(listOf(large), api.pictureUrls)
+        assertEquals("Amy Lin.jpg", opened.file.name)
+        assertTrue(opened.file.readBytes().contentEquals(jpeg))
+    }
 }
