@@ -248,6 +248,53 @@ class AutomaticSignInTest {
     }
 
     @Test
+    fun `a sign-in at another backend leaves the unregister owed to the one before`() = runTest {
+        val (owed, pending) = owed()
+        val manager = manager(owedUnregister = owed)
+        // The endpoint set since the sign-out: logging in there moves nothing at the backend owed.
+        prefs.announcementApiBaseUrlOverride = "http://127.0.0.1:10/v3"
+
+        manager.login("B00000000", moodleToken = "moodle", moodlePrivateToken = null)
+
+        assertEquals("device-1", pending()?.deviceId)
+    }
+
+    @Test
+    fun `a debt owed to the backend spelled another way is still that backend's`() = runTest {
+        // As a build that kept the address as typed stored it.
+        var pending: PendingUnregister? = PendingUnregister(
+            "device-1",
+            DepartingSession("access-0", "refresh-0", Long.MAX_VALUE, "HTTP://127.0.0.1:9/v3/"),
+            owedAt = 0L,
+        )
+        val store = object : PendingUnregisterStore {
+            override fun load() = pending
+            override fun save(pending: PendingUnregister) = true
+            override fun clear() {
+                pending = null
+            }
+        }
+        val manager = manager(owedUnregister = OwedUnregister(store))
+
+        manager.login("B00000000", moodleToken = "moodle", moodlePrivateToken = null)
+
+        assertNull("signed in at the same backend, the device is the new session's", pending)
+        assertTrue(manager.hasSessionAt("HTTP://127.0.0.1:9/v3/"))
+    }
+
+    @Test
+    fun `a session is the backend's that issued it, whatever the endpoint names since`() = runTest {
+        val manager = manager()
+        val issuer = resolveAnnouncementEndpoint(prefs).url
+        manager.login("B00000000", moodleToken = "moodle", moodlePrivateToken = null)
+
+        prefs.announcementApiBaseUrlOverride = "http://127.0.0.1:10/v3"
+
+        assertTrue(manager.hasSessionAt(issuer))
+        assertFalse(manager.hasSessionAt("http://127.0.0.1:10/v3"))
+    }
+
+    @Test
     fun `a sign-in waits for the owed unregister's lock before its login goes out`() = runTest {
         val (owed, _) = owed()
         val manager = manager(owedUnregister = owed)

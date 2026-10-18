@@ -49,8 +49,9 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.EndpointHealthCheck
 import org.ntust.app.tigerduck.network.OverrideValidator
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.ntust.app.tigerduck.push.PushRegistrationService
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
+import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
+import org.ntust.app.tigerduck.ui.screen.settings.SignOutLoss
 
 /**
  * Screen for picking which backend the app talks to.
@@ -59,7 +60,8 @@ import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
  * user-facing setting rather than a developer hatch: any host is accepted,
  * subject to [OverrideValidator]'s transport rule (HTTPS unless the address
  * is private/loopback) and to [EndpointHealthCheck] finding a TigerDuck
- * backend actually answering.
+ * backend actually answering. A change to another backend asks first and
+ * signs out before it is stored: see [EndpointChange].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +75,7 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
         )
     }
     val prefs = remember(entryPoint) { entryPoint.appPreferences() }
-    val pushRegistration = remember(entryPoint) { entryPoint.pushRegistrationService() }
+    val endpointChange = remember(entryPoint) { entryPoint.endpointChange() }
     val healthCheck = remember(entryPoint) { entryPoint.endpointHealthCheck() }
     val scope = rememberCoroutineScope()
 
@@ -89,6 +91,24 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
     // landing mid-probe would race two writes to the same pref with no
     // ordering guarantee.
     var isChecking by remember { mutableStateOf(false) }
+    // The change waiting for the user's answer; nothing is stored before it.
+    var question by remember { mutableStateOf<EndpointQuestion?>(null) }
+
+    // Stores [target] (null: the default), signing out first when it moves the backend.
+    fun applyChange(target: String?, rewrittenToHttp: Boolean) {
+        endpointChange.apply(target)
+        stored = prefs.announcementApiBaseUrlOverride
+        resolved = resolveAnnouncementEndpoint(prefs)
+        draft = stored.orEmpty()
+        error = null
+        savedNote = resources.getString(
+            when {
+                target == null -> R.string.settings_api_endpoint_reset_done
+                rewrittenToHttp -> R.string.settings_api_endpoint_saved_rewritten
+                else -> R.string.settings_api_endpoint_saved
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -215,27 +235,18 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
                                                 R.string.settings_api_endpoint_error_not_backend
                                             )
 
-                                        EndpointHealthCheck.Result.Ok -> {
-                                            prefs.announcementApiBaseUrlOverride = result.normalized
-                                            stored = prefs.announcementApiBaseUrlOverride
-                                            resolved = resolveAnnouncementEndpoint(prefs)
-                                            draft = stored.orEmpty()
-                                            // Re-register the device against
-                                            // the new endpoint so the change
-                                            // takes effect immediately — the
-                                            // API clients pick the URL up per
-                                            // call, but without a fresh
-                                            // upsert the new backend has no
-                                            // row for this device yet.
-                                            pushRegistration.syncNow()
-                                            savedNote = resources.getString(
-                                                if (result.rewrittenToHttp) {
-                                                    R.string.settings_api_endpoint_saved_rewritten
-                                                } else {
-                                                    R.string.settings_api_endpoint_saved
-                                                }
-                                            )
-                                        }
+                                        EndpointHealthCheck.Result.Ok ->
+                                            if (endpointChange.asks(result.normalized)) {
+                                                // Still busy while it reads what the
+                                                // sign-out deletes, for the question.
+                                                question = EndpointQuestion(
+                                                    result.normalized,
+                                                    result.rewrittenToHttp,
+                                                    endpointChange.losses(),
+                                                )
+                                            } else {
+                                                applyChange(result.normalized, result.rewrittenToHttp)
+                                            }
                                     }
                                     isChecking = false
                                 }
@@ -259,13 +270,19 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
 
                 OutlinedButton(
                     onClick = {
-                        prefs.announcementApiBaseUrlOverride = null
-                        stored = null
-                        resolved = resolveAnnouncementEndpoint(prefs)
-                        draft = ""
                         error = null
-                        scope.launch { pushRegistration.syncNow() }
-                        savedNote = resources.getString(R.string.settings_api_endpoint_reset_done)
+                        savedNote = null
+                        if (!endpointChange.asks(null)) {
+                            applyChange(null, rewrittenToHttp = false)
+                        } else {
+                            // Busy while it reads what the sign-out deletes, so
+                            // Save cannot start meanwhile.
+                            isChecking = true
+                            scope.launch {
+                                question = EndpointQuestion(null, rewrittenToHttp = false, endpointChange.losses())
+                                isChecking = false
+                            }
+                        }
                     },
                     enabled = !isChecking && stored != null,
                     colors = ButtonDefaults.outlinedButtonColors(
@@ -282,12 +299,41 @@ fun ApiEndpointDebugScreen(onBack: () -> Unit) {
             )
         }
     }
+
+    // As the sign-out's own confirmation, one line each for what it deletes.
+    question?.let { asked ->
+        TigerDuckDialog(
+            onDismissRequest = { question = null },
+            title = stringResource(R.string.settings_api_endpoint_change_alert_title),
+            message = (
+                listOf(stringResource(R.string.settings_api_endpoint_change_alert_message)) +
+                    asked.losses.sortedBy { it.ordinal }.map { stringResource(it.message) }
+                ).joinToString("\n"),
+            confirmText = stringResource(R.string.settings_api_endpoint_change_alert_confirm),
+            confirmColors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.error,
+                contentColor = MaterialTheme.colorScheme.onError,
+            ),
+            onConfirm = {
+                question = null
+                applyChange(asked.target, asked.rewrittenToHttp)
+            },
+            dismissText = stringResource(R.string.action_cancel),
+        )
+    }
 }
+
+/** A change the API endpoint screen asks about: [target] null is Reset. */
+private data class EndpointQuestion(
+    val target: String?,
+    val rewrittenToHttp: Boolean,
+    val losses: Set<SignOutLoss>,
+)
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 private interface ApiEndpointEntryPoint {
     fun appPreferences(): AppPreferences
-    fun pushRegistrationService(): PushRegistrationService
+    fun endpointChange(): EndpointChange
     fun endpointHealthCheck(): EndpointHealthCheck
 }

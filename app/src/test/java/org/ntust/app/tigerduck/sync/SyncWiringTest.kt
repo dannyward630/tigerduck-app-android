@@ -42,6 +42,16 @@ class SyncWiringTest {
         for (call in calls) assertTrue("$rel $name no longer calls $call", call in body)
     }
 
+    /**
+     * A sign-in at another backend, the one the endpoint setting names since the sign-out, moved
+     * nothing at the backend the unregister is owed to, so it does not end the debt there.
+     */
+    @Test
+    fun `the sign-out's unregister asks for a session from the backend it is owed to`() {
+        val source = source("push/DepartingDeviceUnregister.kt").joinToString("\n")
+        assertTrue("sessionAt = authTokenManager::hasSessionAt" in source)
+    }
+
     @Test
     fun `Home's sync and the worker hold colours and names for their re-enable checks`() {
         assertCalls(

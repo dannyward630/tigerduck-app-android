@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.shared.Course
@@ -141,7 +142,9 @@ class SyncApiClient @Inject constructor(
     private val baseUrl: String
         get() = resolveAnnouncementEndpoint(prefs).url.trimEnd('/')
 
-    private val client = baseClient.newBuilder().build()
+    private val client = baseClient.newBuilder()
+        .guardedBy(authTokenManager)
+        .build()
 
     suspend fun fetchRevision(): Long = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
