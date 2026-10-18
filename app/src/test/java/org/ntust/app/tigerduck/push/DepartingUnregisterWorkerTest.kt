@@ -42,8 +42,7 @@ class DepartingUnregisterWorkerTest {
         owed = OwedUnregister(store),
         deleteDevice = { _, _, _ -> throw IOException("offline") },
         refresh = { _, _ -> DepartingRefresh.Unavailable },
-        hasSession = { false },
-        currentBaseUrl = { BACKEND },
+        sessionAt = { _ -> false },
         now = { 0L },
     )
 

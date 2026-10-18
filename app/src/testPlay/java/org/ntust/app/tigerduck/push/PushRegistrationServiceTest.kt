@@ -110,8 +110,7 @@ class PushRegistrationServiceTest {
                 owed = OwedUnregister(owedStore),
                 deleteDevice = PushApiClient(backend.client, prefs, auth)::deleteDevice,
                 refresh = auth::refreshDeparting,
-                hasSession = { auth.isLoggedIn },
-                currentBaseUrl = { resolveAnnouncementEndpoint(prefs).url.trimEnd('/') },
+                sessionAt = { _ -> auth.isLoggedIn },
                 now = System::currentTimeMillis,
             ),
         )

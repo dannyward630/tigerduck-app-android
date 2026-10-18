@@ -122,8 +122,7 @@ class PendingUnregisterPrefsTest {
             owed = OwedUnregister(PendingUnregisterPrefs(prefs)),
             deleteDevice = { _, device, token -> deletes += "$device $token"; 204 },
             refresh = { _, _ -> DepartingRefresh.Refused },
-            hasSession = { tokens.refreshToken != null },
-            currentBaseUrl = { "https://backend.example/v3" },
+            sessionAt = { _ -> tokens.refreshToken != null },
             now = { 0L },
         )
 

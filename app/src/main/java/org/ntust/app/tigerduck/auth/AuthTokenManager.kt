@@ -124,6 +124,15 @@ class AuthTokenManager(
 
     val isLoggedIn: Boolean get() = tokens.refreshToken != null
 
+    /**
+     * Whether this phone holds a session from [base]. Signing in moves the device to the account
+     * at that backend alone, so an unregister a sign-out owes another backend still stands.
+     */
+    fun hasSessionAt(base: String): Boolean = synchronized(signInLock) {
+        // A pair stored before its backend was recorded is the endpoint's, as departingSession takes it.
+        tokens.refreshToken != null && (tokens.issuedBy ?: baseUrl) == base
+    }
+
     suspend fun authHeader(): String? {
         val access = validAccessToken() ?: return null
         return "Bearer $access"
@@ -359,7 +368,20 @@ class AuthTokenManager(
         moodlePrivateToken: String?,
         platform: String = "android",
         signInGeneration: Int = this.signInGeneration,
-    ): LoginResult = signingIn(studentId) {
+    ): LoginResult {
+        // Read once: the debt the login may end and the pair it stores are this backend's.
+        val issuer = baseUrl
+        return signingIn(studentId, issuer) { postLogin(issuer, studentId, moodleToken, moodlePrivateToken, platform, signInGeneration) }
+    }
+
+    private fun postLogin(
+        issuer: String,
+        studentId: String,
+        moodleToken: String,
+        moodlePrivateToken: String?,
+        platform: String,
+        signInGeneration: Int,
+    ): LoginResult {
         if (moodleToken.isBlank()) throw AuthException("no Moodle token")
         val json = JSONObject().apply {
             put("student_id", studentId)
@@ -374,12 +396,11 @@ class AuthTokenManager(
             })
         }
         val body = json.toString().toRequestBody(jsonType)
-        val issuer = baseUrl
         val request = Request.Builder()
             .url("$issuer/auth/login")
             .post(body)
             .build()
-        signInClient.newCall(request).execute().use { response ->
+        return signInClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw AuthException("login failed: ${response.code}", response.code)
             val result = JSONObject(response.body.string())
             val accessToken = result.getString("access_token")
@@ -401,10 +422,10 @@ class AuthTokenManager(
      * unregister a sign-out owes, which a login that lands ends: see
      * [OwedUnregister.signingIn].
      */
-    private suspend fun <T> signingIn(studentId: String, login: suspend CoroutineScope.() -> T): T =
+    private suspend fun <T> signingIn(studentId: String, base: String, login: suspend CoroutineScope.() -> T): T =
         withContext(Dispatchers.IO) {
             val owed = owedUnregister ?: return@withContext login()
-            owed.signingIn(studentId) { login() }
+            owed.signingIn(studentId, base) { login() }
         }
 
     /**
