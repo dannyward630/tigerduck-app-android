@@ -14,7 +14,8 @@ import java.util.zip.Inflater
 /**
  * A class table share code read from a QR code: whose class table it is and the course codes of
  * each term it shares. The iOS app reads and writes the same codes; the format is
- * https://github.com/tigerduck-app/tigerduck-app/blob/dev/docs/decisions/0023-class-table-share-code.md
+ * https://github.com/tigerduck-app/tigerduck-app/blob/dev/docs/decisions/0023-class-table-share-code.md,
+ * under the share host both apps moved its codes to on 2026-10-19 ([PREFIX]).
  */
 data class ClassTableShareCode(
     val format: Format,
@@ -41,7 +42,16 @@ data class ClassTableShareCode(
     )
 
     companion object {
-        const val PREFIX = "HTTPS://TIGERDUCK.APP/T/"
+        /**
+         * Where every share link lives, in the upper case that keeps a QR code in alphanumeric
+         * mode: `HTTPS://SHARE.TIGERDUCK.APP/<TYPE>/<content>`, so a later version can share
+         * other things beside class tables. Codes written on tigerduck.app before the move are
+         * not read (decided for both apps): that format never reached a release of this app.
+         */
+        const val SHARE_ROOT = "HTTPS://SHARE.TIGERDUCK.APP/"
+
+        /** A class table's share code: the type `CLASSTABLE`, then the format's six fields. */
+        const val PREFIX = SHARE_ROOT + "CLASSTABLE/"
 
         /**
          * Reads any share code the app accepts, ignoring surrounding whitespace and letter case,
@@ -51,10 +61,18 @@ data class ClassTableShareCode(
             val code = text.trim { it in TRIMMED }.uppercase()
             return when {
                 code.startsWith(PREFIX) -> decodeTigerDuck(code)
+                code.startsWith(SHARE_ROOT) -> throw if (namesType(code.substring(SHARE_ROOT.length))) {
+                    ClassTableShareCodeError.UnknownType()
+                } else {
+                    ClassTableShareCodeError.Malformed()
+                }
                 code.startsWith(TAT_PREFIX) -> decodeTat(code)
                 else -> throw ClassTableShareCodeError.UnknownPrefix()
             }
         }
+
+        /** Whether [path] starts with a type, as a newer app may write one: letters or digits, then `/`. */
+        private fun namesType(path: String): Boolean = isUpperAlphanumerics(path.substringBefore('/', ""))
 
         /**
          * Our code for [terms]: one of the user's terms, or every term that has courses. Course
@@ -278,8 +296,9 @@ data class ClassTableShareCode(
 }
 
 /**
- * Why a share code was refused. The import screen shows one message for all but
- * [UnknownPrefix], which a scanner skips, but they stay apart for tests and logs.
+ * Why a share code was refused. A scanner skips an [UnknownPrefix]; the import screen asks for a
+ * newer app for an [UnknownVersion] or an [UnknownType], and shows one message for the rest,
+ * which stay apart for tests and logs.
  */
 sealed class ClassTableShareCodeError : Exception() {
     /** Not a share code, such as another app's QR code. */
@@ -287,6 +306,9 @@ sealed class ClassTableShareCodeError : Exception() {
 
     /** A share code in a format version this app does not know yet. */
     class UnknownVersion : ClassTableShareCodeError()
+
+    /** A share link of a type this app does not know yet, which a newer one writes. */
+    class UnknownType : ClassTableShareCodeError()
 
     class Malformed : ClassTableShareCodeError()
 

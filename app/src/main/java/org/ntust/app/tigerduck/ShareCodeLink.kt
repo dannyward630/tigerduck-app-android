@@ -6,9 +6,10 @@ import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode
 
 /**
  * A class table share code opened as a link rather than scanned in the app. A share code is a
- * URL, `HTTPS://TIGERDUCK.APP/T/<code>`, which App Links hand to the app when the camera, Google
- * Lens or another QR app reads one, or when one is tapped as a link (the manifest's autoVerify
- * filter); tigerduck.app's "Open in TigerDuck" button opens `tigerduck://share/<code>`.
+ * URL on the share host, `HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/<code>`, which App Links hand to
+ * the app when the camera, Google Lens or another QR app reads one, or when one is tapped as a
+ * link (the manifest's autoVerify filter); the share page's "Open in TigerDuck" button opens
+ * `tigerduck://share/<type>/<code>`, the same path on the custom scheme.
  *
  * Any web page or app can open either, not only a QR code, so a link does no more than a scan:
  * the import reads it as the camera's code, and nothing is saved before its confirm step.
@@ -22,26 +23,27 @@ internal object ShareCodeLink {
     /** `tigerduck://share/<code>`, beside the [AppLink] hosts in the manifest. */
     const val HOST = "share"
 
-    /** Where a share code's URL points, as App Links deliver it; the decoder ignores letter case. */
-    private const val WEB_PREFIX = "${AppUrls.WEBSITE}/T/"
+    /** The share host's root, as App Links deliver its URLs; the decoder ignores letter case. */
+    private const val WEB_ROOT = "${AppUrls.SHARE}/"
 
     /**
-     * The text the import reads for [link], an intent's data: a share code URL as it came, in
+     * The text the import reads for [link], an intent's data: a share host URL as it came, in
      * whatever letter case, as the decoder trims and upper-cases it itself; and
-     * `tigerduck://share/<code>` as that URL, `https://tigerduck.app/T/<code>`. Null for any other
-     * link, which the rest of the app reads.
+     * `tigerduck://share/<rest>` as that URL, `https://share.tigerduck.app/<rest>`. Null for any
+     * other link, which the rest of the app reads.
      *
-     * Anything under `/T/` counts, so a URL that holds no share code still reaches the decoder,
-     * and the import says the code is damaged rather than opening nothing.
+     * Anything on the share host counts, as the manifest claims all of it: a newer app's type
+     * reaches the decoder, which asks for an update, and a URL that holds no share code is called
+     * damaged rather than opening nothing.
      */
     fun codeText(link: Uri?): String? {
         link ?: return null
         val text = link.toString()
         return when {
-            text.startsWith(ClassTableShareCode.PREFIX, ignoreCase = true) -> text
+            text.startsWith(ClassTableShareCode.SHARE_ROOT, ignoreCase = true) -> text
             // Matched exactly, as the manifest's filter and AppLink.parse match a tigerduck:// link.
             link.scheme == AppLink.SCHEME && link.host == HOST ->
-                WEB_PREFIX + link.encodedPath.orEmpty().removePrefix("/")
+                WEB_ROOT + link.encodedPath.orEmpty().removePrefix("/")
             else -> null
         }
     }

@@ -14,10 +14,12 @@ import java.util.zip.CRC32
 import java.util.zip.Deflater
 
 /**
- * The share code formats. The vectors are copied verbatim from tigerduck-app's
- * docs/decisions/0023-class-table-share-code.md, written there by an encoder other than either
- * app's, so these tests read other platforms' codes. Our encoder's output is only read back here:
- * DEFLATE encoders differ, so it is never compared with another platform's.
+ * The share code formats. The TigerDuck vectors are those of tigerduck-app's
+ * docs/decisions/0023-class-table-share-code.md under the share host both apps moved to on
+ * 2026-10-19, with their checksums written again by Python's zlib, and the TAT vectors are the
+ * record's verbatim: written by an encoder other than either app's, so these tests read other
+ * platforms' codes. Our encoder's output is only read back here: DEFLATE encoders differ, so it is
+ * never compared with another platform's.
  */
 class ClassTableShareCodeTest {
 
@@ -27,30 +29,39 @@ class ClassTableShareCodeTest {
         val FEBRUARY: Instant = Instant.ofEpochSecond(1_771_551_000)
 
         // The vectors of docs/decisions/0023-class-table-share-code.md, in its order.
-        const val ONE_TERM = "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151." +
-            "OMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.E2YUDIQ"
-        const val STORED_BLOCK = "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151." +
-            "AEYQBTX7INJTCMBRGAYDAMJMINJTCMBRGAYDAMRMIVCTCMBRGAYDAMJMJVATCMBRGAYDAMJMKBCTCMBRGAYDAMI.Y4XVOOA"
-        const val SEVERAL_TERMS = "HTTPS://TIGERDUCK.APP/T/1.M11300002.202602200930.1151-114H-1142." +
-            "GN3A4NRUGA2DAMBQ2KA3CDDV3RO2CLDLL5D2RLBVJTLFRR6VCWTMGHOOBKALCAA.XSAWPTA"
+        const val ONE_TERM = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151." +
+            "OMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.JY2E2OA"
+        const val STORED_BLOCK = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151." +
+            "AEYQBTX7INJTCMBRGAYDAMJMINJTCMBRGAYDAMRMIVCTCMBRGAYDAMJMJVATCMBRGAYDAMJMKBCTCMBRGAYDAMI.N5WALRA"
+        const val SEVERAL_TERMS = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.M00015998.202602200930.1151-114H-1142." +
+            "GN3A4NRUGA2DAMBQ2KA3CDDV3RO2CLDLL5D2RLBVJTLFRR6VCWTMGHOOBKALCAA.TDAREYQ"
 
         /** The first code with its payload's first `O` changed to `P`. */
-        const val CHANGED = "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151." +
-            "PMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.E2YUDIQ"
-        const val BAD_COURSE = "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151.OMHDMNBQGQYDAMGUOGDLAAA.5GDOVTY"
-        const val NEWER = "HTTPS://TIGERDUCK.APP/T/2.B11300001.202610131405.1151.OMHDMNBQGQYDAMAEAA.O6Y5T6Y"
+        const val CHANGED = "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151." +
+            "PMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.JY2E2OA"
+        const val BAD_COURSE =
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151.OMHDMNBQGQYDAMGUOGDLAAA.WYNVUEQ"
+        const val NEWER =
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/2.B00015999.202610131405.1151.OMHDMNBQGQYDAMAEAA.5YHOVEI"
+
+        /** A share link of a type a newer app may write. */
+        const val UNKNOWN_TYPE = "HTTPS://SHARE.TIGERDUCK.APP/FRIEND/1.B00015999"
+
+        /** The record's first code as it was written before the move, on tigerduck.app. */
+        const val OLD_HOST = "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151." +
+            "OMHDMNBQGQYDAMGUOGDLFDDULROWCYV6RYYFMACMBQAA.E2YUDIQ"
         const val TAT2 = "HTTPS://NTUST-TAT.WEB.APP/S/TAT21151B11300001CS1010001.267-EE1010002.13.5N-MA1010003"
         const val TAT1 = "HTTPS://NTUST-TAT.WEB.APP/S/TAT11142B11300002CS1010004-PE1010005"
 
         val ONE_TERM_CODE = ClassTableShareCode(
             format = Format.TIGER_DUCK,
-            studentId = "B11300001",
+            studentId = "B00015999",
             sharedAt = OCTOBER,
             terms = listOf(Term("1151", listOf("CS1010001", "CS1010002", "EE1010001", "MA1010001", "PE1010001"))),
         )
         val SEVERAL_TERMS_CODE = ClassTableShareCode(
             format = Format.TIGER_DUCK,
-            studentId = "M11300002",
+            studentId = "M00015998",
             sharedAt = FEBRUARY,
             terms = listOf(
                 Term("1151", listOf("3CS1010002", "CS1010001", "GE1010001")),
@@ -74,7 +85,7 @@ class ClassTableShareCodeTest {
         deflater.end()
         val compressed = out.toByteArray().let { it.copyOf(it.size - cut) }
         val body = ClassTableShareCode.PREFIX +
-            listOf("1", "B11300001", "202610131405", "1151", ClassTableShareCode.base32(compressed)).joinToString(".")
+            listOf("1", "B00015999", "202610131405", "1151", ClassTableShareCode.base32(compressed)).joinToString(".")
         val crc = CRC32().apply { update(body.toByteArray(Charsets.US_ASCII)) }.value
         return body + "." + ClassTableShareCode.base32(ByteArray(4) { (crc shr (24 - 8 * it)).toByte() })
     }
@@ -123,20 +134,20 @@ class ClassTableShareCodeTest {
     @Test
     fun `one term comes back as it went in, in QR alphanumeric characters only`() {
         val code = ClassTableShareCode.encode(
-            studentId = "b11300001",
+            studentId = "b00015999",
             sharedAt = OCTOBER.plusSeconds(42),
             terms = listOf(Term("1151", listOf("PE1010001", "CS1010002", "MA1010001", "CS1010001", "EE1010001", "CS1010002"))),
         )!!
 
         assertTrue(code, code.all { it in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:" })
-        assertTrue(code, code.startsWith("HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151."))
+        assertTrue(code, code.startsWith("HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151."))
         assertEquals(ONE_TERM_CODE, ClassTableShareCode.decode(code))
     }
 
     @Test
     fun `several terms keep their order, and a term left without valid courses is not written`() {
         val code = ClassTableShareCode.encode(
-            studentId = "M11300002",
+            studentId = "M00015998",
             sharedAt = FEBRUARY,
             terms = listOf(
                 Term("1151", listOf("GE1010001", "3CS1010002", "CS1010001", "NOT-A-CODE")),
@@ -152,10 +163,10 @@ class ClassTableShareCodeTest {
 
     @Test
     fun `nothing to share writes no code`() {
-        assertNull(ClassTableShareCode.encode("B11300001", OCTOBER, emptyList()))
-        assertNull(ClassTableShareCode.encode("B11300001", OCTOBER, listOf(Term("1151", listOf("CS101")))))
-        assertNull(ClassTableShareCode.encode("B11300001", OCTOBER, listOf(Term("11511", listOf("CS1010001")))))
-        assertNull(ClassTableShareCode.encode("B113.0001", OCTOBER, listOf(Term("1151", listOf("CS1010001")))))
+        assertNull(ClassTableShareCode.encode("B00015999", OCTOBER, emptyList()))
+        assertNull(ClassTableShareCode.encode("B00015999", OCTOBER, listOf(Term("1151", listOf("CS101")))))
+        assertNull(ClassTableShareCode.encode("B00015999", OCTOBER, listOf(Term("11511", listOf("CS1010001")))))
+        assertNull(ClassTableShareCode.encode("B000.5999", OCTOBER, listOf(Term("1151", listOf("CS1010001")))))
         assertNull(ClassTableShareCode.encode("", OCTOBER, listOf(Term("1151", listOf("CS1010001")))))
     }
 
@@ -192,13 +203,13 @@ class ClassTableShareCodeTest {
     @Test
     fun `a code with a sound checksum but a broken layout is malformed`() {
         for (code in listOf(
-            "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151-1151.OMHDMNBQGQYDAMFUO2DLFDAA.4HFLDLQ",
-            "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151-1142.OMHDMNBQGQYDAMAEAA.XT6KUZI",
-            "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151-1142.OMHDMNBQGQYDAMFUAYAA.5A4SDJY",
-            "HTTPS://TIGERDUCK.APP/T/1.B11300001.202602300930.1151.OMHDMNBQGQYDAMAEAA.MASPS5I",
-            "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151.OMHDMNBQGQYDAMGUOGDLCAA.5IBD5II",
-            "HTTPS://TIGERDUCK.APP/T/1.B11300001.202610131405.1151",
-            "HTTPS://TIGERDUCK.APP/T/V1.B11300001",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151-1151.OMHDMNBQGQYDAMFUO2DLFDAA.O5T6NPY",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151-1142.OMHDMNBQGQYDAMAEAA.4NQRVOA",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151-1142.OMHDMNBQGQYDAMFUAYAA.C7HHNZA",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202602300930.1151.OMHDMNBQGQYDAMAEAA.7GN4UHY",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151.OMHDMNBQGQYDAMGUOGDLCAA.WWPY47A",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.B00015999.202610131405.1151",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/V1.B00015999",
             codeAround("CS1010001,CS1010001".toByteArray()),
             codeAround("CS1010001\u0080".toByteArray(Charsets.ISO_8859_1)),
         )) {
@@ -224,13 +235,38 @@ class ClassTableShareCodeTest {
 
     @Test
     fun `other QR codes and newer versions are told apart from damaged codes`() {
-        val others = listOf("https://example.com/T/1.B11300001", "WIFI:S:home;T:WPA;P:secret;;", "", "HTTPS://TIGERDUCK.APP/X/1.")
+        val others = listOf(
+            "https://example.com/CLASSTABLE/1.B00015999", "WIFI:S:home;T:WPA;P:secret;;", "",
+            "HTTPS://TIGERDUCK.APP/X/1.", "HTTPS://SHARE.TIGERDUCK.APPS/CLASSTABLE/1.",
+        )
         for (other in others) {
             assertRefused<ClassTableShareCodeError.UnknownPrefix>(other)
         }
-        for (newer in listOf(NEWER, "HTTPS://TIGERDUCK.APP/T/12", "HTTPS://NTUST-TAT.WEB.APP/S/TAT31151B11300001CS1010001")) {
+        for (newer in listOf(NEWER, "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/12", "HTTPS://NTUST-TAT.WEB.APP/S/TAT31151B11300001CS1010001")) {
             assertRefused<ClassTableShareCodeError.UnknownVersion>(newer)
         }
+    }
+
+    @Test
+    fun `a share link of a type this app does not know is a newer app's, and one with no type is malformed`() {
+        for (newer in listOf(UNKNOWN_TYPE, UNKNOWN_TYPE.lowercase(), "HTTPS://SHARE.TIGERDUCK.APP/T2/")) {
+            assertRefused<ClassTableShareCodeError.UnknownType>(newer)
+        }
+        for (code in listOf(
+            "HTTPS://SHARE.TIGERDUCK.APP/",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE",
+            "HTTPS://SHARE.TIGERDUCK.APP/FRIEND",
+            "HTTPS://SHARE.TIGERDUCK.APP//1.B00015999",
+            "HTTPS://SHARE.TIGERDUCK.APP/FRI-END/1.B00015999",
+        )) {
+            assertRefused<ClassTableShareCodeError.Malformed>(code)
+        }
+    }
+
+    @Test
+    fun `a code with the prefix from before the move to the share host is not a share code any more`() {
+        assertRefused<ClassTableShareCodeError.UnknownPrefix>(OLD_HOST)
+        assertRefused<ClassTableShareCodeError.UnknownPrefix>(OLD_HOST.lowercase())
     }
 
     @Test

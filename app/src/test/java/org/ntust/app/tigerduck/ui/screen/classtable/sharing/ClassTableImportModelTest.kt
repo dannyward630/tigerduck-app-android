@@ -72,7 +72,7 @@ class ClassTableImportModelTest {
         assertEquals(Prompt.NoCode, model.state.value.prompt)
         model.dismissPrompt()
 
-        model.imageRead(listOf("https://example.com", "HTTPS://TIGERDUCK.APP/T/1.X"))
+        model.imageRead(listOf("https://example.com", "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.X"))
         assertEquals(Prompt.Invalid, model.state.value.prompt)
         model.dismissPrompt()
 
