@@ -123,6 +123,27 @@ class SyncWiringTest {
         assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "pendingHolidayOverrides.retry()")
     }
 
+    /** tigerduck-app-android#404: applied after the sign-out cleared them, the departing account's choices came back. */
+    @Test
+    fun `Home's sync applies the holiday snapshot only under the sign-in it fetched with`() {
+        val body = body("ui/screen/home/HomeBackendSync.kt", "pull")
+        assertTrue(
+            "the holiday snapshot is no longer applied under authTokenManager.runIfSignedIn(signIn)",
+            Regex("""authTokenManager\.runIfSignedIn\(signIn\) \{\s*(?://[^\n]*\s*)*pendingHolidayOverrides\.merged\(""").containsMatchIn(body),
+        )
+    }
+
+    /** tigerduck-app-android#404: the switches kept the set they were built with. */
+    @Test
+    fun `the Calendar's holiday switches follow a sync's choices and a sign-out's clear`() {
+        val source = source("ui/screen/calendar/CalendarViewModel.kt").joinToString("\n")
+        val refresh = "_holidayOverrides.value = academicCalendar.optedInHolidayIds"
+        val changes = source.indexOf("academicCalendar.changes.collect")
+        assertTrue("Calendar no longer follows the store's changes", changes >= 0 && source.indexOf(refresh, changes) in changes until changes + 300)
+        val signedOut = source.indexOf("if (!isAuthed) {")
+        assertTrue("Calendar no longer redraws the switches at a sign-out", signedOut >= 0 && source.indexOf(refresh, signedOut) in signedOut until source.indexOf("} else if (signedIn)", signedOut))
+    }
+
     /** tigerduck-app-android#404: sent directly, a PUT is lost when it fails. */
     @Test
     fun `every holiday choice PUT goes through the outbox`() {

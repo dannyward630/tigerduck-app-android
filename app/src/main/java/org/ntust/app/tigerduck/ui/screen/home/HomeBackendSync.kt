@@ -195,9 +195,14 @@ class HomeBackendSync @Inject constructor(
             // section, so the local set stands. A choice whose PUT has not
             // landed stays as this phone has it, and a snapshot that may
             // predate one is not applied: see PendingHolidayOverrides.merged.
-            result.holidayOverrides
-                ?.let { pendingHolidayOverrides.merged(it, result.fetchedAtMs, academicCalendar.optedInHolidayIds) }
-                ?.let(academicCalendar::applySyncedOverrides)
+            result.holidayOverrides?.let { snapshot ->
+                authTokenManager.runIfSignedIn(signIn) {
+                    // Under the sign-out's lock: applied after its clear, the
+                    // departing account's choices would come back.
+                    pendingHolidayOverrides.merged(snapshot, result.fetchedAtMs, academicCalendar.optedInHolidayIds)
+                        ?.let(academicCalendar::applySyncedOverrides)
+                }
+            }
             val syncCourses = CourseSyncReconciler.syncsCourseList(
                 switchOn = "courses" in switchedOn,
                 pendingConflictCategories = prefs.pendingConflictCategories,

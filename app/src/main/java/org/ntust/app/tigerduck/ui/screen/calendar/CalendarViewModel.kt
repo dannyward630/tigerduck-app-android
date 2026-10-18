@@ -220,6 +220,11 @@ class CalendarViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            // A sync took another device's holiday choices: the switches show
+            // the set as it now stands, not the one this screen was built with.
+            academicCalendar.changes.collect { _holidayOverrides.value = academicCalendar.optedInHolidayIds }
+        }
+        viewModelScope.launch {
             // Switching language recreates the Activity, but this ViewModel is
             // retained across that, so the already-built rows would keep the
             // titles of the language they were built in. They are cheap to
@@ -264,6 +269,9 @@ class CalendarViewModel @Inject constructor(
                     // on the calendar after a sign-out; only the account's
                     // own events go.
                     _events.value = academicEvents()
+                    // The sign-out cleared the departing account's holiday
+                    // choices before it said so, which the store does not emit.
+                    _holidayOverrides.value = academicCalendar.optedInHolidayIds
                     hasLoaded = false
                 } else if (signedIn) {
                     // As a launch, so the page counts as loaded and a return

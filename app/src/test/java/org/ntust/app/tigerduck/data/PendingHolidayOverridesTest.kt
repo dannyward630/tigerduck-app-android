@@ -33,6 +33,12 @@ class PendingHolidayOverridesTest {
 
     /** TigerSync on. */
     private var syncs = true
+
+    /** Whether the client sent the PUT: false as with TigerSync turned off before its turn. */
+    private var delivered = true
+
+    /** A sign-out that lands just as an acknowledgment is written, clearing both sets. */
+    private var signOutAtTheWrite = false
     private var signInGeneration = 1
     private var now = 1_000_000L
 
@@ -48,9 +54,23 @@ class PendingHolidayOverridesTest {
                 signIns += signIn
                 sent += id to notify
                 answer(id, notify)
+                delivered
             },
             syncs = { syncs },
             signInGeneration = { signInGeneration },
+            runIfSignedIn = { signIn, block ->
+                if (signOutAtTheWrite) {
+                    // The sign-out moved the generation under the lock first, and cleared after.
+                    signInGeneration++
+                    prefs.forgetHolidayOverrides()
+                }
+                if (signIn == signInGeneration) {
+                    block()
+                    true
+                } else {
+                    false
+                }
+            },
             clock = { now },
         )
     }
@@ -161,6 +181,38 @@ class PendingHolidayOverridesTest {
         tapping.join()
         now += 1_000
         assertEquals(setOf(3, 4), holidays.merged(setOf(3, 4), fetchedAtMs = now, local = setOf(3, 4)))
+    }
+
+    @Test
+    fun `a PUT the client did not send is not taken for landed`() = runTest {
+        delivered = false
+        tap(3, notify = true)
+
+        assertEquals(setOf(3), holidays.waitingIds)
+    }
+
+    @Test
+    fun `an acknowledgment is written only while its sign-in holds, under the sign-out's lock`() = runTest {
+        prefs.holidayOverridesAwaitingUpload = setOf(4)
+        signOutAtTheWrite = true
+
+        tap(3, notify = true)
+
+        assertEquals("the departing account's 4 is not written back over the sign-out", emptySet<Int>(), holidays.waitingIds)
+    }
+
+    @Test
+    fun `a snapshot fetched before a PUT landed is not applied`() = runTest {
+        answer = { _, _ -> throw IOException("offline") }
+        tap(3, notify = true)
+        now += 1_000
+        val fetchedAt = now
+        now += 1_000
+        answer = { _, _ -> }
+        // Sent by the worker while Home's fetch was under way.
+        holidays.retry()
+
+        assertNull(holidays.merged(emptySet(), fetchedAtMs = fetchedAt, local = setOf(3)))
     }
 
     @Test
