@@ -1,5 +1,6 @@
 // The foreground revision poll: asks the backend's revision counter whether
-// anything changed, and runs a full sync when it did.
+// anything changed, and when it did, reads the change feed to tell whether a
+// full sync is needed (ChangeFeedPlan).
 //
 // It used to be a fixed 10-second loop for as long as the app was in the
 // foreground, whatever the server answered — 360 requests an hour, each of
@@ -26,6 +27,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.push.PushApiException
+import org.ntust.app.tigerduck.push.SyncChangesPage
 import org.ntust.app.tigerduck.util.logSummary
 import kotlin.math.max
 import kotlin.math.min
@@ -239,21 +241,61 @@ class RevisionPoller(
 }
 
 /**
- * One revision poll: the revision counter, and a full sync when the server is
- * ahead. With sync off or no session it asks nothing, so the schedule slows to
- * its idle wait and turning sync on is picked up within it. A full sync
- * already under way takes the change rather than fetch it a second time, as
- * on a return, when the poll and Home's own sync start together. One that did
- * not move the watermark failed, and backs off like any other failure instead
- * of being retried every 10 seconds.
+ * What a revision poll does with the change feed after its watermark, as the
+ * iPhone's `ChangeFeedPlan` (tigerduck-app/tigerduck-app#241,
+ * tigerduck-app-android#120). Assignment changes come from the server's own
+ * copy of the Moodle list, which this phone fetches from Moodle itself, and
+ * bulletins are not part of TigerSync, so changes to those alone only move the
+ * watermark. Any other change, or a page that may not hold every change up to
+ * the current revision, takes the full sync.
+ */
+internal sealed interface ChangeFeedPlan {
+    data object FullSync : ChangeFeedPlan
+
+    data class Advance(val to: Long) : ChangeFeedPlan
+
+    companion object {
+        val PASSED_OVER = setOf("assignment", "bulletin_subscription", "bulletin_state", "bulletin_match")
+
+        /** [page] is null when the read failed or the server no longer keeps the changes after [since]. */
+        fun of(page: SyncChangesPage?, since: Long): ChangeFeedPlan {
+            if (page == null || page.hasMore ||
+                page.returnedUntilRevision != page.currentRevision ||
+                page.changes.lastOrNull()?.revision != page.currentRevision ||
+                page.changes.any { it.revision <= since }
+            ) {
+                return FullSync
+            }
+            return if (page.changes.all { it.entityType in PASSED_OVER }) Advance(page.returnedUntilRevision) else FullSync
+        }
+    }
+}
+
+/**
+ * One revision poll: the revision counter, and when the server is ahead, the
+ * change feed after this phone's watermark, and a full sync unless the feed
+ * holds only changes [ChangeFeedPlan] passes over. Those move the watermark,
+ * once what waits to go up has been sent ([retryUnsent]), as a full sync would
+ * have sent it. With sync off or no session it asks nothing, so the schedule
+ * slows to its idle wait and turning sync on is picked up within it. Until a
+ * full sync has set the watermark the feed cannot show what this phone lacks,
+ * so the full sync runs instead. A full sync already under way takes the change
+ * rather than fetch it a second time, as on a return, when the poll and Home's
+ * own sync start together, and so does one, or a sign-out, that overtakes the
+ * feed's read. One that did not move the watermark failed, and backs off like
+ * any other failure instead of being retried every 10 seconds.
  */
 internal suspend fun pollRevisionOnce(
     syncEnabled: () -> Boolean,
     online: () -> Boolean,
     signIn: suspend () -> Boolean,
     fetchRevision: suspend () -> Long,
+    fetchChanges: suspend (sinceRevision: Long) -> SyncChangesPage?,
     lastKnownRevision: () -> Long,
+    setLastKnownRevision: (Long) -> Unit,
+    signInGeneration: () -> Int,
     fullSyncsInFlight: () -> Int,
+    retryUnsent: suspend () -> Unit,
     fullSync: suspend () -> Unit,
 ): RevisionPollOutcome {
     if (!syncEnabled()) return RevisionPollOutcome.UNCHANGED
@@ -261,8 +303,31 @@ internal suspend fun pollRevisionOnce(
     if (!signIn()) return RevisionPollOutcome.UNCHANGED
     return try {
         val revision = fetchRevision()
-        if (revision <= lastKnownRevision()) return RevisionPollOutcome.UNCHANGED
+        val since = lastKnownRevision()
+        if (revision <= since) return RevisionPollOutcome.UNCHANGED
         if (fullSyncsInFlight() > 0) return RevisionPollOutcome.CHANGED
+        if (since > 0) {
+            val startedIn = signInGeneration()
+            // Read on the poll's own thread, with nothing suspending between the
+            // check and the move, as a full sync sets the watermark.
+            fun overtaken() = lastKnownRevision() != since || signInGeneration() != startedIn || fullSyncsInFlight() > 0
+            val page = try {
+                fetchChanges(since)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.i(TAG, "[feed] read failed: ${e.logSummary()}")
+                null
+            }
+            if (overtaken()) return RevisionPollOutcome.CHANGED
+            val plan = ChangeFeedPlan.of(page, since)
+            Log.i(TAG, "[feed] since=$since plan=$plan")
+            if (plan is ChangeFeedPlan.Advance) {
+                retryUnsent()
+                if (!overtaken()) setLastKnownRevision(plan.to)
+                return RevisionPollOutcome.CHANGED
+            }
+        }
         fullSync()
         if (lastKnownRevision() >= revision) RevisionPollOutcome.CHANGED else RevisionPollOutcome.FAILED
     } catch (e: CancellationException) {

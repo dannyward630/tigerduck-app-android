@@ -97,12 +97,13 @@ class SyncWiringTest {
     @Test
     fun `a hand-added course's upload is kept until it lands, and every full sync sends what waits first`() {
         assertCalls("ui/screen/classtable/ClassTableViewModel.kt", "addCourse", "pendingCourseAdds.send(")
-        for ((rel, name) in listOf(
-            "ui/screen/home/HomeBackendSync.kt" to "pull",
-            "notification/BackgroundSyncWorker.kt" to "syncOverridesFromBackend",
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "retryUnsent", "pendingCourseAdds.retry()")
+        for ((rel, name, sends) in listOf(
+            Triple("ui/screen/home/HomeBackendSync.kt", "pull", "retryUnsent()"),
+            Triple("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "pendingCourseAdds.retry()"),
         )) {
             val body = body(rel, name)
-            val retry = body.indexOf("pendingCourseAdds.retry()")
+            val retry = body.indexOf(sends)
             val fetch = body.indexOf("syncApiClient.fetchFullSync()")
             val listed = body.indexOf("pendingCourseAdds.listed(result.serverCourses)")
             assertTrue("$rel $name no longer sends the waiting course adds before the snapshot", retry in 0 until fetch)
@@ -110,16 +111,32 @@ class SyncWiringTest {
         }
     }
 
+    /** tigerduck-app-android#120: a revision move ran a full sync, whatever moved it. */
+    @Test
+    fun `Home's revision poll reads the change feed and sends what waits before moving the watermark`() {
+        assertCalls(
+            "ui/screen/home/HomeViewModel.kt", "pollRevision",
+            "fetchChanges = syncApiClient::fetchChanges", "retryUnsent = backendSync::retryUnsent",
+            "setLastKnownRevision = { syncState.lastKnownRevision = it }",
+        )
+        assertCalls(
+            "ui/screen/home/HomeBackendSync.kt", "retryUnsent",
+            "courseIgnoreSync.retryPending()", "unsentMarks.retry()", "pendingCourseAdds.retry()",
+            "pendingCourseDeletes.retry()", "pendingCourseOverrides.retry()",
+        )
+    }
+
     /** tigerduck-app-android#380. */
     @Test
     fun `a colour or name whose PATCH failed is kept, and every full sync sends what waits first and holds it against the snapshot`() {
         assertCalls("ui/screen/classtable/ClassTableViewModel.kt", "syncCourseOverride", "pendingCourseOverrides.send(")
-        for ((rel, name) in listOf(
-            "ui/screen/home/HomeBackendSync.kt" to "pull",
-            "notification/BackgroundSyncWorker.kt" to "syncOverridesFromBackend",
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "retryUnsent", "pendingCourseOverrides.retry()")
+        for ((rel, name, sends) in listOf(
+            Triple("ui/screen/home/HomeBackendSync.kt", "pull", "retryUnsent()"),
+            Triple("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "pendingCourseOverrides.retry()"),
         )) {
             val body = body(rel, name)
-            val retry = body.indexOf("pendingCourseOverrides.retry()")
+            val retry = body.indexOf(sends)
             val fetch = body.indexOf("syncApiClient.fetchFullSync()")
             val held = body.indexOf("pendingCourseOverrides.held(result.fetchedAtMs)")
             assertTrue("$rel $name no longer sends the waiting colours and names before the snapshot", retry in 0 until fetch)

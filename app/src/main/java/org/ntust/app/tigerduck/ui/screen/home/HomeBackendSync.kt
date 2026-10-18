@@ -124,6 +124,20 @@ class HomeBackendSync @Inject constructor(
     )
 
     /**
+     * Sends what waits to go up: course-ignore changes, marks, course adds and
+     * deletes, and course colours and names. A full sync starts with this, and
+     * so does a revision poll that moves the watermark without one
+     * (`pollRevisionOnce`), as the iPhone's `retryUnsentEdits`.
+     */
+    suspend fun retryUnsent() {
+        courseIgnoreSync.retryPending()
+        unsentMarks.retry()
+        pendingCourseAdds.retry()
+        pendingCourseDeletes.retry()
+        pendingCourseOverrides.retry()
+    }
+
+    /**
      * Pull everything from the backend and reconcile it into [state].
      *
      * [retried] guards the 401 path against looping: a relogin that still
@@ -145,13 +159,8 @@ class HomeBackendSync @Inject constructor(
             if (BuildConfig.DEBUG) ServerFailureSimulator.check(ServerKind.BACKEND)
             val account = authService.storedStudentId
             val generation = courseIgnoreSync.currentGeneration()
-            // Unsent course-ignore changes, marks, course adds and deletes and
-            // course colours and names go first, so the snapshot has them.
-            courseIgnoreSync.retryPending()
-            unsentMarks.retry()
-            pendingCourseAdds.retry()
-            pendingCourseDeletes.retry()
-            pendingCourseOverrides.retry()
+            // What waits to go up goes first, so the snapshot has it.
+            retryUnsent()
             // The first-sync mark upload is pinned to the sign-in read here:
             // a sign-out and another sign-in meanwhile must not send these
             // marks as theirs.

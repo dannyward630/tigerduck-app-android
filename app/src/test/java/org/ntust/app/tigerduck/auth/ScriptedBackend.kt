@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
  * "access-2" and "refresh-2".
  */
 internal class ScriptedBackend {
-    class Received(val endpoint: String, val authorization: String?, val body: String, val host: String = "")
+    class Received(val endpoint: String, val authorization: String?, val body: String, val host: String = "", val query: String = "")
 
     class Held {
         val arrived = CompletableDeferred<Unit>()
@@ -50,6 +50,11 @@ internal class ScriptedBackend {
         codes.forEach { queue(endpoint).add(it) }
     }
 
+    /** Answers [endpoint] once with [code] and [body] in place of the default reply. */
+    fun answer(endpoint: String, code: Int, body: String) {
+        queue(endpoint).add(code to body)
+    }
+
     fun hold(endpoint: String): Held = Held().also { queue(endpoint).add(it) }
 
     fun received(endpoint: String): List<Received> = received.filter { it.endpoint == endpoint }
@@ -66,17 +71,20 @@ internal class ScriptedBackend {
     private fun answer(request: Request): Response {
         val endpoint = request.method + " " + request.url.encodedPath.removePrefix("/v3")
         val sent = request.body?.let { Buffer().also(it::writeTo).readUtf8() }.orEmpty()
-        received += Received(endpoint, request.header("Authorization"), sent, request.url.host)
+        received += Received(endpoint, request.header("Authorization"), sent, request.url.host, request.url.encodedQuery.orEmpty())
         if (endpoint == "POST /auth/login") onLogin()
-        val code = when (val next = queued[endpoint]?.poll()) {
+        val next = queued[endpoint]?.poll()
+        val code = when (next) {
             is Held -> {
                 next.arrived.complete(Unit)
                 next.await()
             }
             is Int -> next
+            is Pair<*, *> -> next.first as Int
             else -> 200
         }
         val reply = when {
+            next is Pair<*, *> -> next.second as String
             code !in 200..299 -> """{"detail":"refused"}"""
             endpoint == "POST /auth/login" || endpoint == "POST /auth/refresh" ->
                 """{"access_token":"access-2","refresh_token":"refresh-2","expires_in":900,"device_id":"device-1"}"""

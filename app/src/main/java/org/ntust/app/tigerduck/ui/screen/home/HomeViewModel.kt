@@ -644,8 +644,12 @@ class HomeViewModel @Inject constructor(
         online = networkChecker::isAvailable,
         signIn = authTokenManager::signInIfSignedOut,
         fetchRevision = syncApiClient::fetchRevision,
+        fetchChanges = syncApiClient::fetchChanges,
         lastKnownRevision = { syncState.lastKnownRevision },
+        setLastKnownRevision = { syncState.lastKnownRevision = it },
+        signInGeneration = { authTokenManager.signInGeneration },
         fullSyncsInFlight = backendPullsInFlight::get,
+        retryUnsent = backendSync::retryUnsent,
         fullSync = ::syncAndRepublish,
     ).also { outcome ->
         // Reached the server with nothing new: a re-enable check that failed
