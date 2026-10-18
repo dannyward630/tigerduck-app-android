@@ -860,9 +860,9 @@ class MoodleCourseStoreTest {
         7, "B00015007 @ Amy Lin", null, null, emptyList(), emptyList(), pictureUrl, "", emptyList(), emptyList(),
     )
 
-    private fun TestScope.pictureStore() = MoodleCourseStore(
+    private fun TestScope.pictureStore(isCurrent: () -> Boolean = { signedIn }) = MoodleCourseStore(
         courseId = 5, termCourseIds = emptyList(), courseCodes = emptyList(), api = api,
-        context = MoodleCacheContext("B1", cache, isCurrent = { signedIn }, now = { now }),
+        context = MoodleCacheContext("B1", cache, isCurrent = isCurrent, now = { now }),
         scope = backgroundScope,
         picturesDir = java.io.File(tmp.root, "moodle/pictures"),
         openedPicturesDir = java.io.File(tmp.root, "moodle_files/pictures"),
@@ -952,5 +952,27 @@ class MoodleCourseStoreTest {
 
         assertNull(pictureStore().fullPicture(amy()))
         assertTrue(java.io.File(tmp.root, "moodle_files").walkTopDown().none { it.isFile })
+    }
+
+    @Test
+    fun `a picture kept as the sign-out begins is not left behind`() = runTest(UnconfinedTestDispatcher()) {
+        api.pictureAnswer = { jpeg }
+        // Signed in at the download's end, signed out once the copy is written.
+        var checks = 0
+        val store = pictureStore(isCurrent = { ++checks <= 1 })
+
+        assertNull(store.fullPicture(amy()))
+        assertTrue(java.io.File(tmp.root, "moodle_files").walkTopDown().none { it.isFile })
+    }
+
+    @Test
+    fun `a kept copy is not handed out after a sign-out`() = runTest(UnconfinedTestDispatcher()) {
+        api.pictureAnswer = { jpeg }
+        val store = pictureStore()
+        assertTrue(store.fullPicture(amy()) != null)
+
+        signedIn = false
+
+        assertNull(store.fullPicture(amy()))
     }
 }

@@ -543,7 +543,9 @@ class MoodleCourseStore(
         if (!claimed) return null
         try {
             val folder = "${member.id}-${pictureRevision(url)}"
-            withContext(Dispatchers.IO) { keptOpenedPicture(File(dir, folder)) }?.let { return it }
+            withContext(Dispatchers.IO) { keptOpenedPicture(File(dir, folder)) }?.let { kept ->
+                return kept.takeIf { context.isCurrent() }
+            }
             val large = try {
                 api.picture(largePictureUrl(url))
             } catch (e: CancellationException) {
@@ -553,12 +555,22 @@ class MoodleCourseStore(
                 null
             }
             if (!context.isCurrent()) return null
-            if (large != null) return keepOpenedPicture(dir, folder, member.name, large, replacing = "${member.id}-")
-            // Apart from the large size's folder, so the next open tries the download again.
-            val shown = pictureFile(member.id, url)?.let { file ->
-                withContext(Dispatchers.IO) { runCatching { file.readBytes() }.getOrNull() }
+            val kept = if (large != null) {
+                keepOpenedPicture(dir, folder, member.name, large, replacing = "${member.id}-")
+            } else {
+                // Apart from the large size's folder, so the next open tries the download again.
+                val shown = pictureFile(member.id, url)?.let { file ->
+                    withContext(Dispatchers.IO) { runCatching { file.readBytes() }.getOrNull() }
+                } ?: return null
+                keepOpenedPicture(dir, "$folder$SHOWN_SIZE_SUFFIX", member.name, shown, replacing = null)
             } ?: return null
-            return keepOpenedPicture(dir, "$folder$SHOWN_SIZE_SUFFIX", member.name, shown, replacing = null)
+            // Asked again once written: a sign-out says so before its wipe starts, so a copy
+            // written as it began goes here, and one written before is the wipe's to delete.
+            if (!context.isCurrent()) {
+                withContext(Dispatchers.IO) { kept.file.parentFile?.deleteRecursively() }
+                return null
+            }
+            return kept
         } finally {
             synchronized(openingLock) { _openingPictures.value -= member.id }
         }
