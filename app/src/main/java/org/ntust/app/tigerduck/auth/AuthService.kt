@@ -374,6 +374,10 @@ class AuthService @Inject constructor(
         // The cache they dated is wiped below; left behind, they would date
         // the next account's data, and hold its first background sync off.
         prefs.clearSyncStamps()
+        // The departing student's holiday choices, and those still waiting to go up: left
+        // behind, the next student would inherit the quiet days and send the waiting ones as
+        // theirs. Any PUT still queued is pinned to the sign-in that just ended.
+        prefs.forgetHolidayOverrides()
         // The term picked in the class table was the departing student's. Cleared, the next
         // student's picker follows the newest term.
         prefs.classTableSelectedSemester = null

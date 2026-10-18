@@ -51,6 +51,7 @@ class SignOutConfirmationTest {
             LocalEdits(courseColours = true),
             LocalEdits(assignmentMarks = true),
             LocalEdits(ignoredCourses = true),
+            LocalEdits(holidays = true),
         ).forEach { edits ->
             assertEquals("$edits", setOf(UNSYNCED_DATA), signOutLosses(edits, syncOff, hasImportedClassTables = false))
         }
@@ -94,6 +95,16 @@ class SignOutConfirmationTest {
             setOf(UNSYNCED_DATA),
             signOutLosses(edits, allSynced.copy(syncedOnce = REENABLE_CATEGORIES - "courses"), hasImportedClassTables = false),
         )
+    }
+
+    @Test
+    fun `holiday choices are kept with TigerSync alone`() {
+        // Not a category with a switch: a full sync sends and takes them whatever the switches say.
+        val edits = LocalEdits(holidays = true)
+        val switchesOff = allSynced.copy(courses = false, courseNames = false, courseColours = false, assignments = false, syncedOnce = emptySet())
+
+        assertEquals(emptySet<SignOutLoss>(), signOutLosses(edits, switchesOff, hasImportedClassTables = false))
+        assertEquals(setOf(UNSYNCED_DATA), signOutLosses(edits, syncOff, hasImportedClassTables = false))
     }
 
     @Test
@@ -271,6 +282,27 @@ class SignOutConfirmationTest {
 
         // Its DELETE waits in PendingCourseDeletes: lost, the course comes back at the next sign-in.
         dataCache.savePendingCourseDeletes(mapOf("1141" to mapOf("CS1001301" to 1L)))
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `a holiday choice is the user's own with TigerSync off`() = runTest {
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        prefs.holidayNotifyOverrides = setOf(3)
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `a holiday choice still waiting to go up is asked about`() = runTest {
+        syncOn()
+        prefs.holidayNotifyOverrides = setOf(3)
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        // Its PUT failed: PendingHolidayOverrides keeps it, and the sign-out wipes it.
+        prefs.holidayOverridesAwaitingUpload = setOf(3)
 
         assertEquals(setOf(UNSYNCED_DATA), check.losses())
     }
