@@ -125,6 +125,33 @@ class HomeBackendSync @Inject constructor(
     )
 
     /**
+     * Sends what waits to go up: course-ignore changes, marks, course adds and
+     * deletes, course colours and names, and holiday choices. A full sync
+     * starts with this.
+     */
+    suspend fun retryUnsent() {
+        courseIgnoreSync.retryPending()
+        unsentMarks.retry()
+        pendingCourseAdds.retry()
+        pendingCourseDeletes.retry()
+        pendingCourseOverrides.retry()
+        pendingHolidayOverrides.retry()
+    }
+
+    /**
+     * What a full sync sends besides taking its snapshot, for a revision poll
+     * that moves the watermark without one (`pollRevisionOnce`): what waits
+     * ([retryUnsent]), and a notification-settings edit whose push never
+     * landed, which [pull] re-sends once it lands. The feed read before this
+     * proves a session and a network as a full sync does. As the iPhone's
+     * `retryUnsentEdits`.
+     */
+    suspend fun sendWhatWaits() {
+        retryUnsent()
+        notificationSettingsSync.pushIfUnconfirmed()
+    }
+
+    /**
      * Pull everything from the backend and reconcile it into [state].
      *
      * [retried] guards the 401 path against looping: a relogin that still
@@ -146,15 +173,8 @@ class HomeBackendSync @Inject constructor(
             if (BuildConfig.DEBUG) ServerFailureSimulator.check(ServerKind.BACKEND)
             val account = authService.storedStudentId
             val generation = courseIgnoreSync.currentGeneration()
-            // Unsent course-ignore changes, marks, course adds and deletes,
-            // course colours and names, and holiday choices go first, so the
-            // snapshot has them.
-            courseIgnoreSync.retryPending()
-            unsentMarks.retry()
-            pendingCourseAdds.retry()
-            pendingCourseDeletes.retry()
-            pendingCourseOverrides.retry()
-            pendingHolidayOverrides.retry()
+            // What waits to go up goes first, so the snapshot has it.
+            retryUnsent()
             // The first-sync mark upload is pinned to the sign-in read here:
             // a sign-out and another sign-in meanwhile must not send these
             // marks as theirs.
@@ -220,7 +240,9 @@ class HomeBackendSync @Inject constructor(
                 coursesLoaded = coursesLoaded,
             )
             if (authService.isStillSignedInAs(account)) prefs.syncedCategories += categoriesSynced(switchedOn, took, prefs)
-            state.lastKnownRevision = result.currentRevision
+            // Only for the account this sync fetched for: set after a sign-out
+            // reset it, the departing account's would stand for the next one.
+            authTokenManager.runIfSignedIn(signIn) { state.lastKnownRevision = result.currentRevision }
             ServerStatusTracker.set(ServerStatus.OK, ServerKind.BACKEND)
             prefs.setLastSyncSource(SyncSource.BACKEND)
             widgetUpdater.requestUpdate()
