@@ -217,7 +217,9 @@ class HomeBackendSync @Inject constructor(
                 coursesLoaded = coursesLoaded,
             )
             if (authService.isStillSignedInAs(account)) prefs.syncedCategories += categoriesSynced(switchedOn, took, prefs)
-            state.lastKnownRevision = result.currentRevision
+            // Only for the account this sync fetched for: set after a sign-out
+            // reset it, the departing account's would stand for the next one.
+            authTokenManager.runIfSignedIn(signIn) { state.lastKnownRevision = result.currentRevision }
             ServerStatusTracker.set(ServerStatus.OK, ServerKind.BACKEND)
             prefs.setLastSyncSource(SyncSource.BACKEND)
             widgetUpdater.requestUpdate()

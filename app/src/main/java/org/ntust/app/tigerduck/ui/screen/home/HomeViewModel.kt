@@ -367,6 +367,11 @@ class HomeViewModel @Inject constructor(
                     _ignoredAssignmentIds.value = emptySet()
                     _markedCompletedIds.value = emptySet()
                     _ignoredCourseKeys.value = emptySet()
+                    // The watermark is the departing account's: the next
+                    // account's feed read after it would skip that account's
+                    // own earlier changes. From 0 the poll runs a full sync
+                    // until one lands for the account that signs in.
+                    syncState.lastKnownRevision = 0
                     hasLoaded = false
                     _initialLoadComplete.value = true
                 } else if (signedIn) {

@@ -126,6 +126,20 @@ class SyncWiringTest {
         )
     }
 
+    /** tigerduck-app-android#120: the departing account's watermark let the next one's feed read skip its own data. */
+    @Test
+    fun `the watermark is the signed-in account's alone`() {
+        val home = source("ui/screen/home/HomeViewModel.kt").joinToString("\n")
+        val signedOut = home.indexOf("if (!isAuthed) {")
+        val reset = home.indexOf("syncState.lastKnownRevision = 0", signedOut)
+        assertTrue("Home no longer forgets the watermark at a sign-out", signedOut >= 0 && reset in signedOut until home.indexOf("} else if (signedIn)", signedOut))
+        assertTrue(
+            "Home's sync no longer sets the watermark only under the sign-in it fetched with",
+            Regex("""authTokenManager\.runIfSignedIn\(signIn\) \{\s*state\.lastKnownRevision = result\.currentRevision""")
+                .containsMatchIn(body("ui/screen/home/HomeBackendSync.kt", "pull")),
+        )
+    }
+
     /** tigerduck-app-android#380. */
     @Test
     fun `a colour or name whose PATCH failed is kept, and every full sync sends what waits first and holds it against the snapshot`() {
