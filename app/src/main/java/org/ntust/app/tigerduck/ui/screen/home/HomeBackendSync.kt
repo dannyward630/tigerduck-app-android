@@ -125,9 +125,7 @@ class HomeBackendSync @Inject constructor(
 
     /**
      * Sends what waits to go up: course-ignore changes, marks, course adds and
-     * deletes, and course colours and names. A full sync starts with this, and
-     * so does a revision poll that moves the watermark without one
-     * (`pollRevisionOnce`), as the iPhone's `retryUnsentEdits`.
+     * deletes, and course colours and names. A full sync starts with this.
      */
     suspend fun retryUnsent() {
         courseIgnoreSync.retryPending()
@@ -135,6 +133,19 @@ class HomeBackendSync @Inject constructor(
         pendingCourseAdds.retry()
         pendingCourseDeletes.retry()
         pendingCourseOverrides.retry()
+    }
+
+    /**
+     * What a full sync sends besides taking its snapshot, for a revision poll
+     * that moves the watermark without one (`pollRevisionOnce`): what waits
+     * ([retryUnsent]), and a notification-settings edit whose push never
+     * landed, which [pull] re-sends once it lands. The feed read before this
+     * proves a session and a network as a full sync does. As the iPhone's
+     * `retryUnsentEdits`.
+     */
+    suspend fun sendWhatWaits() {
+        retryUnsent()
+        notificationSettingsSync.pushIfUnconfirmed()
     }
 
     /**

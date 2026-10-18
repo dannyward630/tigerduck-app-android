@@ -116,7 +116,7 @@ class SyncWiringTest {
     fun `Home's revision poll reads the change feed and sends what waits before moving the watermark`() {
         assertCalls(
             "ui/screen/home/HomeViewModel.kt", "pollRevision",
-            "fetchChanges = syncApiClient::fetchChanges", "retryUnsent = backendSync::retryUnsent",
+            "fetchChanges = syncApiClient::fetchChanges", "retryUnsent = backendSync::sendWhatWaits",
             "setLastKnownRevision = { syncState.lastKnownRevision = it }",
         )
         assertCalls(
@@ -124,6 +124,8 @@ class SyncWiringTest {
             "courseIgnoreSync.retryPending()", "unsentMarks.retry()", "pendingCourseAdds.retry()",
             "pendingCourseDeletes.retry()", "pendingCourseOverrides.retry()",
         )
+        // And the notification-settings repair a full sync makes once it lands.
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "sendWhatWaits", "retryUnsent()", "notificationSettingsSync.pushIfUnconfirmed()")
     }
 
     /** tigerduck-app-android#120: the departing account's watermark let the next one's feed read skip its own data. */

@@ -654,7 +654,7 @@ class HomeViewModel @Inject constructor(
         setLastKnownRevision = { syncState.lastKnownRevision = it },
         signInGeneration = { authTokenManager.signInGeneration },
         fullSyncsInFlight = backendPullsInFlight::get,
-        retryUnsent = backendSync::retryUnsent,
+        retryUnsent = backendSync::sendWhatWaits,
         fullSync = ::syncAndRepublish,
     ).also { outcome ->
         // Reached the server with nothing new: a re-enable check that failed
