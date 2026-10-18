@@ -18,11 +18,11 @@ internal class ClassTableTermFetch(
     /**
      * One course as the school has it: QueryCourse's rows, or Moodle's
      * stand-in when it has none, or null for neither —
-     * `CourseService.lookupOrFallback`. Tells `onFailed` of a query that
-     * failed, which the stand-in otherwise hides.
+     * `CourseService.lookupOrFallback`. A query that fails comes to `kept`,
+     * the row the term already has, where there is one, and tells `onFailed`.
      */
     private val lookUpCourse: suspend (
-        semester: String, courseNo: String, moodle: MoodleEnrolledCourse?, onFailed: () -> Unit,
+        semester: String, courseNo: String, moodle: MoodleEnrolledCourse?, kept: Course?, onFailed: () -> Unit,
     ) -> Course?,
 ) {
     /** What a term's lookups brought, for [fold]. */
@@ -59,13 +59,16 @@ internal class ClassTableTermFetch(
         }
         var failed = false
         val noteFailure = { failed = true }
+        // A roster course whose query fails keeps its row in the term, where
+        // Moodle's stand-in would take its times and room (#417).
+        val beforeByNo = before.associateBy { it.courseNo }
         val roster = rosterNos.map { courseNo ->
-            async { lookUpCourse(semester, courseNo, moodleByNo[courseNo], noteFailure) }
+            async { lookUpCourse(semester, courseNo, moodleByNo[courseNo], beforeByNo[courseNo], noteFailure) }
         }
         // Without Moodle to fall back on: a hand-added course the query does
         // not answer keeps its snapshot, where a stub would take its times.
         val manual = manualNos.map { courseNo ->
-            async { courseNo to lookUpCourse(semester, courseNo, null, noteFailure) }
+            async { courseNo to lookUpCourse(semester, courseNo, null, null, noteFailure) }
         }
         val fetched = roster.awaitAll().filterNotNull()
         val lookedUp = manual.awaitAll().mapNotNull { (courseNo, course) -> course?.let { courseNo to it } }.toMap()
