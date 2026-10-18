@@ -53,10 +53,19 @@ jobs:
           # the same reason, and built without google-services.json, which only
           # the release workflow decodes; app/build.gradle.kts skips the plugin
           # without it, as for the debug legs.
+          # Lint's release check (lintVital) is left out of these two legs
+          # and runs in legs of its own below: inside them it ran beside R8
+          # on the same four cores, and the two together set the gate's length.
           - leg: play release
-            tasks: :app:assemblePlayRelease
+            tasks: :app:assemblePlayRelease -x :app:lintVitalPlayRelease
           - leg: fdroid release
-            tasks: :app:assembleFdroidRelease
+            tasks: :app:assembleFdroidRelease -x :app:lintVitalFdroidRelease
+          # The check assemble*Release runs before a release, so a fatal lint
+          # error still fails the pull request, not release day.
+          - leg: play lint
+            tasks: :app:lintVitalPlayRelease
+          - leg: fdroid lint
+            tasks: :app:lintVitalFdroidRelease
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -77,7 +86,18 @@ jobs:
         env:
           TASKS: ${{ matrix.tasks }}
         # $TASKS is unquoted on purpose: it is a space-separated task list.
-        run: ./gradlew --no-daemon $TASKS
+        # gradle.properties sizes the build for a laptop: a 2 GB heap, which
+        # the Kotlin daemon copies. A runner has 16 GB; with 6 GB for the
+        # build and 3 GB for the Kotlin daemon the release legs measured about
+        # half a minute faster. No --no-daemon: JVM settings unlike the
+        # launcher's make Gradle fork a single-use daemon anyway, a second JVM
+        # start. Not --parallel: it did not shorten the gate, and it runs a
+        # leg's test tasks side by side.
+        run: >-
+          ./gradlew
+          -Dorg.gradle.jvmargs="-Xmx6g -Dfile.encoding=UTF-8"
+          -Pkotlin.daemon.jvmargs=-Xmx3g
+          $TASKS
 
   release-scripts:
     # The scripts the release workflows run, which otherwise first run once
