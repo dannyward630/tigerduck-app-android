@@ -30,6 +30,21 @@ class HomeCourseMergeTest {
         assertEquals("#FF0000", merged.single().customColorHex)
     }
 
+    /**
+     * Home writes the file the widgets, the Live Update and the watch read, and none of them
+     * looks the rename up again: dropped here, the school's name came back everywhere but the
+     * class table.
+     */
+    @Test
+    fun `a rename survives a refresh that does not know it`() {
+        val merged = HomeCourseMerge.mergeRemote(
+            remote = listOf(course("A", name = "Calculus (I)")),
+            cached = listOf(course("A", name = "Calculus (I)").copy(customCourseName = "Calc")),
+            deletedNos = emptySet(),
+        )
+        assertEquals("Calc", merged.single().displayName)
+    }
+
     @Test
     fun `a manually added course the roster never heard of is kept`() {
         val merged = HomeCourseMerge.mergeRemote(

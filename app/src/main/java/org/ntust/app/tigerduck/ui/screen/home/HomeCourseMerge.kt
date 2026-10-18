@@ -8,9 +8,10 @@
 // The rules the class table needs too — roster ordering, the Moodle semester
 // filter, the submission safety net, the weekday mapping — live in
 // data.CourseRosterMerge. The class table's own version of this merge is
-// ClassTableCourseMerge, which additionally restores the per-locale rename;
-// the two are deliberately not shared, but both must restore the manual flag
-// because they write the same cache file.
+// ClassTableCourseMerge, which looks the per-locale rename up in the stored
+// names where this one keeps the cached one; the two are deliberately not
+// shared, but both must restore the manual flag and the rename because they
+// write the same cache file.
 //
 // Pure on purpose — extracted from HomeViewModel.fetchData, which is 200
 // lines of coroutine orchestration that no test can reach.
@@ -24,7 +25,7 @@ object HomeCourseMerge {
     /**
      * Fold a freshly fetched course list into what is already on disk.
      *
-     * Three things survive the remote list:
+     * What survives the remote list:
      *
      * - **Colours.** Read from [cached] rather than from the fetch, because a
      *   colour the user picked seconds ago exists only locally — the remote
@@ -32,6 +33,9 @@ object HomeCourseMerge {
      * - **Manual courses.** Anything `isManual` that the remote does not
      *   mention is kept. The remote only knows enrolments; a course the user
      *   typed in is invisible to it and would otherwise vanish on refresh.
+     * - **Renames.** From [cached] too, as the class table resolved them for
+     *   the locale it last showed. This file is what the widgets, the Live
+     *   Update and the watch read, and none of them looks a rename up again.
      * - **The manual flag itself.** A hand-added course the school *also*
      *   lists comes back through [remote] with `isManual` at its default of
      *   false, so the flag has to be restored from [cached] the same way the
@@ -54,6 +58,7 @@ object HomeCourseMerge {
             val prior = cachedByNo[course.courseNo]
             course.copy(
                 customColorHex = prior?.customColorHex,
+                customCourseName = prior?.customCourseName,
                 isManual = prior?.isManual == true,
             )
         }
