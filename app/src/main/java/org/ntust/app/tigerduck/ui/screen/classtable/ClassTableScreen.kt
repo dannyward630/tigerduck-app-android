@@ -97,6 +97,7 @@ import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableShareSheet
 import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.ui.component.ColorPickerSheet
+import org.ntust.app.tigerduck.ui.component.colorPickerOffersDarkPalette
 import org.ntust.app.tigerduck.ui.component.ConflictCoursePickerSheet
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.component.CourseCard
@@ -108,6 +109,7 @@ import org.ntust.app.tigerduck.ui.component.SyncStatusDot
 import org.ntust.app.tigerduck.ui.component.TigerPullToRefresh
 import org.ntust.app.tigerduck.ui.component.PageLeftEffect
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import org.ntust.app.tigerduck.ui.theme.courseColorPalette
 import org.ntust.app.tigerduck.ui.theme.courseColorPaletteDark
@@ -735,14 +737,16 @@ fun ClassTableScreen(
     }
 
     courseToRecolor?.let { course ->
-        val isDark = TigerDuckTheme.isDarkMode
-        val displayPalette = if (isDark) courseColorPaletteDark else courseColorPalette
-        val currentColor = TigerDuckTheme.courseColor(course.courseNo)
-        val usedByOthers = remember(courses, course.courseNo, isDark) {
+        val darkPalette = LocalVisualStylePolicy.current.colorPickerOffersDarkPalette(TigerDuckTheme.isDarkMode)
+        val displayPalette = if (darkPalette) courseColorPaletteDark else courseColorPalette
+        // Each course's color as the palette above has it.
+        val shown = if (darkPalette) TigerDuckTheme::courseColor else TigerDuckTheme::courseColorVibrant
+        val currentColor = shown(course.courseNo)
+        val usedByOthers = remember(courses, course.courseNo, darkPalette) {
             courses
                 .asSequence()
                 .filter { it.courseNo != course.courseNo }
-                .map { TigerDuckTheme.courseColor(it.courseNo).toArgb() or 0xFF000000.toInt() }
+                .map { shown(it.courseNo).toArgb() or 0xFF000000.toInt() }
                 .toSet()
         }
         ColorPickerSheet(

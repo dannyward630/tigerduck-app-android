@@ -244,6 +244,34 @@ class VisualStylePolicyTest {
         }
     }
 
+    // ---- every other course color ----
+
+    @Test
+    fun `TigerDuck draws a course's color and its text as each place picks them`() {
+        val color = Color(0xFFFF6B6B)
+        val dark = Color(0xFF994747)
+        assertEquals(dark, tigerDuck.courseAccentColor(color, tint = dark))
+        assertEquals(color.copy(alpha = 0.85f), tigerDuck.courseAccentColor(color, tint = color.copy(alpha = 0.85f)))
+        assertEquals(Color.White, tigerDuck.courseAccentTextColor(tintText = Color.White))
+        assertEquals(Color.White.copy(alpha = 0.85f), tigerDuck.courseAccentSecondaryTextColor(Color.White.copy(alpha = 0.85f)))
+    }
+
+    @Test
+    fun `TAT draws a course's color as the class table's pastel in either theme, with dark text`() {
+        colours.forEach { color ->
+            val tile = tat.classTableCourseFill(color, Color.Magenta, isDark = false)
+            listOf(color, Color.Magenta, color.copy(alpha = 0.85f)).forEach { tint ->
+                assertEquals("$color drawn for $tint", tile, tat.courseAccentColor(color, tint))
+            }
+            val text = contrast(tat.courseAccentTextColor(tintText = Color.White), tile)
+            val details = contrast(tat.courseAccentSecondaryTextColor(tintText = Color.White), tile)
+            assertTrue("text on $color: $text", text >= 7.0)
+            assertTrue("details on $color: $details", details >= 4.5)
+        }
+        assertEquals(VisualStylePolicy.TextOnPastel, tat.courseAccentTextColor(Color.White))
+        assertEquals(VisualStylePolicy.TextOnPastelSecondary, tat.courseAccentSecondaryTextColor(Color.White))
+    }
+
     // ---- time slider track ----
 
     @Test
