@@ -36,6 +36,7 @@ class SsoLoginLatchTest {
     private lateinit var latch: PersistedStoredPasswordLatch
     private lateinit var service: SsoLoginService
     private var stored: Pair<String, String>? = STUDENT to PASSWORD
+    private var clock = 1_800_000_000_000L
 
     /** Whether the school takes the password posted to it. */
     private var accepts = false
@@ -50,7 +51,7 @@ class SsoLoginLatchTest {
         val context = RuntimeEnvironment.getApplication()
         val latchPrefs = context.getSharedPreferences("sso-latch-test", Context.MODE_PRIVATE)
         latchPrefs.edit().clear().commit()
-        latch = PersistedStoredPasswordLatch(latchPrefs) { stored }
+        latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) { stored }
         val sessionManager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
         val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain.request()) }.build()
         service = SsoLoginService(sessionManager, latch) { school }
@@ -150,6 +151,19 @@ class SsoLoginLatchTest {
         assertTrue(service.ensureServiceLogin(SERVICE, STUDENT, PASSWORD))
 
         assertEquals(1, posts.size)
+        assertFalse(latch.isRejected)
+    }
+
+    @Test
+    fun `an automatic sign-in the school accepts once the wait is over ends the refusals`() = runTest {
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        clock += 10_000
+        accepts = true
+
+        assertTrue(service.ensureServiceLogin(SERVICE, STUDENT, PASSWORD))
+
+        assertEquals(1, posts.size)
+        assertEquals(0, latch.refusals.value)
         assertFalse(latch.isRejected)
     }
 

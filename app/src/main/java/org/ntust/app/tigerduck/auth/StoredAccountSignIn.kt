@@ -12,8 +12,8 @@ import kotlin.coroutines.cancellation.CancellationException
  *
  * [harvestMoodleToken] gets a fresh token with the stored account, in place of the one the
  * backend refused (null when none was stored), and stores it only while that account is still
- * signed in. It posts the stored password to NTUST's SSO, and posts none once the school has
- * refused it (StoredPasswordLatch). [afterSignIn] is not a suspending call: the sign-in can run
+ * signed in. It posts the stored password to NTUST's SSO, and posts none while a refusal of it
+ * waits (StoredPasswordLatch). [afterSignIn] is not a suspending call: the sign-in can run
  * inside a request that PushRegistrationService makes while it holds the lock a registration
  * takes.
  */

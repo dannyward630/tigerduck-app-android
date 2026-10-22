@@ -404,6 +404,18 @@ class AutomaticSignInTest {
     }
 
     @Test
+    fun `the try of a refused stored password signs in without waiting out the pause`() = runTest {
+        backend.answer(LOGIN, 503)
+        val manager = manager()
+        assertFalse(manager.signInIfSignedOut())
+
+        assertTrue(manager.signInIfSignedOutNow())
+
+        assertEquals(2, backend.received(LOGIN).size)
+        assertEquals("refresh-2", tokens.refreshToken)
+    }
+
+    @Test
     fun `an automatic sign-in that starts during an interactive one waits for it and sends no login`() = runTest {
         val held = backend.hold(LOGIN)
         val manager = manager()
