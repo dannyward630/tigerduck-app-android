@@ -81,13 +81,27 @@ class CourseUploadGateTest {
     }
 
     @Test
-    fun `a refused upload is not recorded, so the next one goes`() = runTest {
+    fun `a refused upload is not recorded, and the same list waits a minute while another goes`() = runTest {
         backend.answer(UPLOAD, 500)
         assertTrue(runCatching { api.uploadCourses(roster("CS1"), "1151") }.isFailure)
 
+        // Every trigger that came along sent it again, each answered the same way.
+        api.uploadCourses(roster("CS1"), "1151")
+        assertEquals(1, uploads())
+        api.uploadCourses(roster("CS1", "CS2"), "1151")
+        assertEquals(2, uploads())
+    }
+
+    @Test
+    fun `an upload that never reached the server goes again at once`() = runTest {
+        tokens.clear()
+        // No session and no account to sign in with: nothing goes out.
+        assertTrue(runCatching { api.uploadCourses(roster("CS1"), "1151") }.isFailure)
+        tokens.save("access", "refresh", Long.MAX_VALUE)
+
         api.uploadCourses(roster("CS1"), "1151")
 
-        assertEquals(2, uploads())
+        assertEquals(1, uploads())
     }
 
     @Test
