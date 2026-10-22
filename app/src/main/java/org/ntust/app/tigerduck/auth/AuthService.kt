@@ -151,7 +151,9 @@ class AuthService @Inject constructor(
                 ssoLoginService.ensureServiceLogin(SSO_SERVICE_URL, studentId, password)
             }
         },
-        signInAgainToSchool = { studentId, password -> ssoLoginService.signInAgain(SSO_SERVICE_URL, studentId, password) },
+        signInAgainToSchool = { studentId, password, stillRefused ->
+            ssoLoginService.signInAgain(SSO_SERVICE_URL, studentId, password, stillRefused)
+        },
         // A library-only demo sign-in may still be standing in; see
         // [org.ntust.app.tigerduck.demo.DemoAccount.signOutLibrary].
         afterLibrarySignIn = { demoAccount.signOutLibrary() },

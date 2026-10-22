@@ -177,7 +177,7 @@ class SsoLoginLatchTest {
         val sessionAtFirstVisit = mutableListOf<Long>()
         onVisit = { if (it == 0) sessionAtFirstVisit += sessionManager.loginTimestampMs }
 
-        assertTrue(service.signInAgain(SERVICE, STUDENT, PASSWORD))
+        assertTrue(service.signInAgain(SERVICE, STUDENT, PASSWORD) { true })
 
         assertEquals(listOf(0L), sessionAtFirstVisit)
         assertEquals(1, posts.size)
@@ -188,9 +188,22 @@ class SsoLoginLatchTest {
     fun `a sign-in again still waits out a refusal's wait`() = runTest {
         latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
 
-        val failure = runCatching { service.signInAgain(SERVICE, STUDENT, PASSWORD) }.exceptionOrNull()
+        val failure = runCatching { service.signInAgain(SERVICE, STUDENT, PASSWORD) { true } }.exceptionOrNull()
 
         assertTrue("got $failure", failure is SsoLoginError.LoginFailed)
+        assertEquals(0, posts.size)
+    }
+
+    /** Another automatic sign-in that held the lock first, and that the school took, settled it. */
+    @Test
+    fun `a sign-in again whose refusal is gone once it holds the lock keeps the session and posts nothing`() = runTest {
+        sessionManager.markLoginSuccess()
+        val session = sessionManager.loginTimestampMs
+
+        assertTrue(service.signInAgain(SERVICE, STUDENT, PASSWORD) { false })
+
+        assertEquals(session, sessionManager.loginTimestampMs)
+        assertEquals(0, visits)
         assertEquals(0, posts.size)
     }
 

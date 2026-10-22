@@ -39,7 +39,7 @@ internal class SchoolSignIn(
     /** The SSO step; [typed] for credentials just entered — see [org.ntust.app.tigerduck.network.SsoLoginService.signIn]. */
     private val signInToSchool: suspend (studentId: String, password: String, typed: Boolean) -> Boolean,
     /** The SSO step past a warm session; see [org.ntust.app.tigerduck.network.SsoLoginService.signInAgain]. */
-    private val signInAgainToSchool: suspend (studentId: String, password: String) -> Boolean,
+    private val signInAgainToSchool: suspend (studentId: String, password: String, stillRefused: () -> Boolean) -> Boolean,
     private val afterLibrarySignIn: () -> Unit,
 ) {
     /** A sign-in with credentials just entered. Throws what the SSO step throws; the library step only logs. */
@@ -81,7 +81,7 @@ internal class SchoolSignIn(
         if (!stillRefused()) return true
         val studentId = studentId() ?: return false
         val password = password() ?: return false
-        return signInAgainToSchool(studentId.trim().uppercase(), password)
+        return signInAgainToSchool(studentId.trim().uppercase(), password, stillRefused)
     }
 
     private suspend fun signInToLibrary(studentId: String, password: String, libraryAccount: Int, school: Int) {

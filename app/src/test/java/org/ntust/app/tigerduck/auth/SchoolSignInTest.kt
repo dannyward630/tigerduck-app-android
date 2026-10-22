@@ -114,7 +114,7 @@ class SchoolSignInTest {
             duringSchoolSignIn()
             true
         },
-        signInAgainToSchool = { _, _ ->
+        signInAgainToSchool = { _, _, _ ->
             signInsAgain++
             true
         },
