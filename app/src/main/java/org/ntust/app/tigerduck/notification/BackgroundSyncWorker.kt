@@ -33,6 +33,7 @@ import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.data.CourseIgnoreSync
 import org.ntust.app.tigerduck.data.CourseTombstoneKeys
 import org.ntust.app.tigerduck.auth.StoredPasswordLatch
+import org.ntust.app.tigerduck.auth.retryingAfterRelogin
 import org.ntust.app.tigerduck.data.PendingCourseAdds
 import org.ntust.app.tigerduck.data.PendingCourseOverrides
 import org.ntust.app.tigerduck.data.UnsentMarks
@@ -207,7 +208,10 @@ class BackgroundSyncWorker @AssistedInject constructor(
             pendingCourseDeletes.retry()
             pendingCourseOverrides.retry()
             pendingHolidayOverrides.retry()
-            val result = syncApiClient.fetchFullSync()
+            // A session the backend ended before its access token ran out
+            // draws a 401 until a sign-in, and the uploads below would draw
+            // one too; as Home's full sync, this signs in again once.
+            val result = retryingAfterRelogin(authService::attemptRelogin) { syncApiClient.fetchFullSync() }
             pendingCourseAdds.listed(result.serverCourses)
             // With the Assignments switch off, the re-enable check pending,
             // or marks the server lacks on the account's first sync here
