@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.ui.component
 
 import android.app.Activity
 import android.content.Context
+import android.content.res.Configuration
 import android.content.ContextWrapper
 import android.text.Editable
 import android.text.InputType
@@ -36,6 +37,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -88,7 +90,9 @@ import org.ntust.app.tigerduck.R
  * compatibility toggle is rendered at the top-end of the screen
  * while the field is focused. Tapping it pins the field to
  * `TYPE_CLASS_TEXT` for the entire input — a plain text keyboard, no
- * numeric flip. State is per-field and ephemeral.
+ * numeric flip. State is per-field and ephemeral. A hardware keyboard,
+ * which types no letters into the numeric layout, turns it on by itself
+ * until the user taps the toggle ([usesStandardKeyboard]).
  *
  * Callers can opt out of the floating chip by passing
  * `useStandardKeyboardOverride` (e.g. dialogs that prefer to render the
@@ -124,8 +128,10 @@ fun OutlinedAccountIdField(
     val onSurfaceVariantArgb = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
 
     var isFocused by remember { mutableStateOf(false) }
-    var internalUseStandardKeyboard by remember { mutableStateOf(false) }
-    val useStandardKeyboard = useStandardKeyboardOverride ?: internalUseStandardKeyboard
+    // Null until the user taps the toggle; see [usesStandardKeyboard].
+    var standardKeyboardChoice by remember { mutableStateOf<Boolean?>(null) }
+    val useStandardKeyboard = useStandardKeyboardOverride
+        ?: usesStandardKeyboard(standardKeyboardChoice, hardwareKeyboardInUse())
 
     // Tracks the last inputType pushed to the EditText so the update block
     // only flips it (and asks the IME to reconnect) when the value actually
@@ -331,7 +337,7 @@ fun OutlinedAccountIdField(
             FilterChip(
                 selected = useStandardKeyboard,
                 onClick = {
-                    internalUseStandardKeyboard = !internalUseStandardKeyboard
+                    standardKeyboardChoice = !useStandardKeyboard
                 },
                 leadingIcon = {
                     Icon(
@@ -368,6 +374,25 @@ private fun Context.findActivity(): Activity? {
         ctx = ctx.baseContext
     }
     return null
+}
+
+/**
+ * Whether the field types on the standard keyboard: what the user [chosen] with the toggle, and
+ * until they choose, whether a hardware keyboard is in use. A hardware keyboard types no letters
+ * into the numeric layout the field flips to after its leading letter, so it gets the standard
+ * one, which goes again once the touch keyboard is back, unless the user chose it.
+ */
+internal fun usesStandardKeyboard(chosen: Boolean?, hardwareKeyboard: Boolean): Boolean = chosen ?: hardwareKeyboard
+
+/**
+ * Whether a hardware keyboard is attached and not tucked away, as the configuration says: a
+ * slide-out keyboard closed reports itself hidden.
+ */
+@Composable
+internal fun hardwareKeyboardInUse(): Boolean {
+    val configuration = LocalConfiguration.current
+    return configuration.keyboard == Configuration.KEYBOARD_QWERTY &&
+        configuration.hardKeyboardHidden != Configuration.HARDKEYBOARDHIDDEN_YES
 }
 
 private fun computeAccountInputType(
