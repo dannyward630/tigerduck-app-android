@@ -32,7 +32,6 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy.CourseColorStyle
-import org.ntust.app.tigerduck.ui.theme.pastelOutline
 import org.ntust.app.tigerduck.widget.CourseBlock
 import org.ntust.app.tigerduck.widget.WidgetColors
 import org.ntust.app.tigerduck.widget.WidgetState
@@ -41,7 +40,8 @@ import org.ntust.app.tigerduck.widget.widgetCourseColor
 /**
  * The colors the Next Class widget draws [shown], the course it is about, in. Under TAT the widget
  * is that course's card, as Home's time machine card is: the class table's pastel, light in either
- * theme, with dark text, and the badge and the progress in the course's own darker line. Under
+ * theme, with dark text, and the badge and the progress in that text's color. The course's own
+ * darker line would leave the badge's white text under 4.5:1 on a bright picked color. Under
  * TigerDuck, or with no course to show, the theme's.
  */
 internal fun nextClassColors(
@@ -59,7 +59,7 @@ internal fun nextClassColors(
         surface = fill,
         onSurface = style.courseCardTextColor(colors.onSurface),
         onSurfaceVariant = style.courseCardSecondaryTextColor(colors.onSurface),
-        highlight = courseColor.pastelOutline(),
+        highlight = VisualStylePolicy.TextOnPastel,
         emptyCell = VisualStylePolicy.TextOnPastel.copy(alpha = 0.12f),
     )
 }
