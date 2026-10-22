@@ -31,6 +31,7 @@ import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.data.model.status
 import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -54,7 +55,9 @@ fun AssignmentItem(
     isIgnored: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
-    val courseColor = TigerDuckTheme.courseColorVibrant(assignment.courseNo)
+    val courseColor = TigerDuckTheme.courseColorVibrant(assignment.courseNo).let {
+        LocalVisualStylePolicy.current.courseAccentColor(it, tint = it)
+    }
     // Subscribe to AppClock changes so toggling the debug clock (forward,
     // back, or off) re-evaluates status — otherwise the badge would stay
     // pinned to whatever "now" was the first time this row composed.

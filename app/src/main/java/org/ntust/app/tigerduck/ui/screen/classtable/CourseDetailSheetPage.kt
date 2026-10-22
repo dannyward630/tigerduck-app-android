@@ -77,6 +77,7 @@ import org.ntust.app.tigerduck.ui.screen.coursemoodle.MoodleRoutes
 import org.ntust.app.tigerduck.ui.screen.coursemoodle.cardDividerColor
 import org.ntust.app.tigerduck.ui.screen.coursemoodle.openMoodlePage
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import org.ntust.app.tigerduck.util.formatCredits
 import java.text.SimpleDateFormat
@@ -189,7 +190,10 @@ internal fun CourseDetailContent(
     /** Opens an incomplete assignment's page inside the sheet. */
     onOpenAssignment: (Assignment) -> Unit = {},
 ) {
-    val courseColor = TigerDuckTheme.courseColor(course.courseNo)
+    val courseColor = LocalVisualStylePolicy.current.courseAccentColor(
+        courseColor = TigerDuckTheme.courseColorVibrant(course.courseNo),
+        tint = TigerDuckTheme.courseColor(course.courseNo),
+    )
     val dash = "—"
     val classroomValue = classroom.trim().ifEmpty { dash }
     val timeValue = timeRange?.takeIf { it.isNotBlank() } ?: dash

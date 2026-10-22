@@ -24,6 +24,8 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.shared.Course
+import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
 import org.ntust.app.tigerduck.widget.CourseBlock
 import org.ntust.app.tigerduck.widget.WidgetColors
 import org.ntust.app.tigerduck.widget.WidgetState
@@ -48,8 +50,33 @@ internal fun todayListBlocks(state: WidgetState): List<CourseBlock> {
         .sortedBy { block -> order.indexOf(block.firstPeriodId).takeIf { it >= 0 } ?: Int.MAX_VALUE }
 }
 
+/**
+ * A row's fill on the Today widget: the widget's surface, or for a class in
+ * session its course's own color, as on iOS, so back-to-back 衝堂 rows in
+ * session stay apart; under TAT the class table's pastel.
+ */
+internal fun todayRowFill(
+    course: Course,
+    ongoing: Boolean,
+    colors: WidgetColors,
+    style: VisualStylePolicy,
+    courseColors: Map<String, Color>,
+): Color = if (!ongoing) colors.surface else style.courseAccentColor(
+    courseColor = widgetCourseColor(course, courseColors, isDark = false),
+    tint = widgetCourseColor(course, courseColors, colors.isDark),
+)
+
+/** A row's periods and course name on [todayRowFill]. */
+internal fun todayRowTextColor(ongoing: Boolean, colors: WidgetColors, style: VisualStylePolicy): Color =
+    if (ongoing) style.courseAccentTextColor(tintText = Color.White) else colors.onSurface
+
+/** A row's times and room on [todayRowFill]. */
+internal fun todayRowSecondaryTextColor(ongoing: Boolean, colors: WidgetColors, style: VisualStylePolicy): Color =
+    if (ongoing) style.courseAccentSecondaryTextColor(tintText = Color.White.copy(alpha = 0.85f))
+    else colors.onSurfaceVariant
+
 @Composable
-fun TodayListContent(state: WidgetState, colors: WidgetColors, tapAction: Action) {
+fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStylePolicy, tapAction: Action) {
     val context = LocalContext.current
     val today = state.currentWeekday
     val dayNames = listOf(
@@ -125,17 +152,9 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, tapAction: Action
                 todayBlocks.forEach { block ->
                     val course = block.course
                     val isOngoing = state.isOngoing(block)
-                    // iOS parity: ongoing rows tint with the course's own
-                    // color (not a single shared highlight), so back-to-back
-                    // 衝堂 ongoing rows stay visually distinguishable.
-                    val rowBg = if (isOngoing) {
-                        widgetCourseColor(course, state.courseColors, colors.isDark)
-                    } else {
-                        colors.surface
-                    }
-                    val primaryText = if (isOngoing) Color.White else colors.onSurface
-                    val secondaryText =
-                        if (isOngoing) Color.White.copy(alpha = 0.85f) else colors.onSurfaceVariant
+                    val rowBg = todayRowFill(course, isOngoing, colors, style, state.courseColors)
+                    val primaryText = todayRowTextColor(isOngoing, colors, style)
+                    val secondaryText = todayRowSecondaryTextColor(isOngoing, colors, style)
 
                     Row(
                         modifier = GlanceModifier
