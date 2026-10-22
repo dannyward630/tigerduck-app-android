@@ -43,7 +43,7 @@ class FullResetTest {
         credentials = CredentialManager(credentialPrefs)
         credentials.ntustStudentId = "B10000001"
         credentials.ntustPassword = "school"
-        // Another student's library account, which a school sign-out keeps.
+        // A library account, which a school sign-out keeps.
         credentials.saveLibrarySignIn(credentials.libraryAccountGeneration, "B10000009", "pw", "token", Long.MAX_VALUE, byUser = true)
     }
 

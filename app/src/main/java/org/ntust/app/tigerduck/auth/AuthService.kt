@@ -21,7 +21,6 @@ import org.ntust.app.tigerduck.network.NtustSessionManager
 import org.ntust.app.tigerduck.network.SsoLoginService
 import org.ntust.app.tigerduck.push.NotificationSettingsSync
 import org.ntust.app.tigerduck.push.PushRegistrationService
-import org.ntust.app.tigerduck.shared.LibraryService
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -34,7 +33,6 @@ class AuthService @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val sessionManager: NtustSessionManager,
     private val ssoLoginService: SsoLoginService,
-    private val libraryService: LibraryService,
     private val credentials: CredentialManager,
     private val pushRegistration: PushRegistrationService,
     private val notificationSettingsSync: NotificationSettingsSync,
@@ -52,7 +50,6 @@ class AuthService @Inject constructor(
     private val demoAccount: org.ntust.app.tigerduck.demo.DemoAccount,
     private val prefs: org.ntust.app.tigerduck.data.preferences.AppPreferences,
     private val classroomUsage: org.ntust.app.tigerduck.emptyclassroom.ClassroomUsageService,
-    private val mailAccount: org.ntust.app.tigerduck.mail.MailAccount,
     private val heldShareLink: org.ntust.app.tigerduck.HeldShareLink,
 ) {
     /**
@@ -137,26 +134,15 @@ class AuthService @Inject constructor(
     // The stored account's sign-in again, run under loginMutex by ensureAuthenticated(). The
     // typed sign-in is typedSignIn's.
     private val schoolSignIn = SchoolSignIn(
-        libraryStore = credentials,
-        libraryService = libraryService,
-        schoolAccount = { credentials.schoolAccountGeneration },
-        isSchoolAccount = credentials::isSchoolAccount,
         studentId = { credentials.ntustStudentId },
         password = { credentials.ntustPassword },
         sessionIsWarm = { sessionManager.cookiesValid },
-        signInToSchool = { studentId, password, typed ->
-            if (typed) {
-                ssoLoginService.signIn(SSO_SERVICE_URL, studentId, password)
-            } else {
-                ssoLoginService.ensureServiceLogin(SSO_SERVICE_URL, studentId, password)
-            }
+        signInToSchool = { studentId, password ->
+            ssoLoginService.ensureServiceLogin(SSO_SERVICE_URL, studentId, password)
         },
         signInAgainToSchool = { studentId, password, stillRefused ->
             ssoLoginService.signInAgain(SSO_SERVICE_URL, studentId, password, stillRefused)
         },
-        // A library-only demo sign-in may still be standing in; see
-        // [org.ntust.app.tigerduck.demo.DemoAccount.signOutLibrary].
-        afterLibrarySignIn = { demoAccount.signOutLibrary() },
     )
 
     init {
@@ -183,24 +169,7 @@ class AuthService @Inject constructor(
         demoSignIn = { studentId, password ->
             demoAccount.matches(studentId, password).also { matches -> if (matches) demoAccount.enter() }
         },
-        signInToLibrary = { studentId, password, generation ->
-            signInToLibrary(studentId, password, generation)
-        },
         markSignedIn = { _authState.value = true },
-    )
-
-    private val librarySignIn = LibraryAfterSchoolSignIn(
-        tokenValid = { credentials.isLibraryTokenValid },
-        hasAccountOtherThan = libraryService::hasAccountOtherThan,
-        schoolAccount = { credentials.schoolAccountGeneration },
-        isSchoolAccount = credentials::isSchoolAccount,
-        libraryAccount = { credentials.libraryAccountGeneration },
-        // An automatic sign-in: it yields to a library account the user signed in to meanwhile.
-        login = { studentId, password, libraryAccount, stillCurrent ->
-            libraryService.login(studentId, password, libraryAccount, byUser = false, stillCurrent)
-        },
-        signInGeneration = { authTokenManager.signInGeneration },
-        accountLock = accountLock,
     )
 
     /**
@@ -370,27 +339,9 @@ class AuthService @Inject constructor(
      * The library sign-in after the school's, unless the library token is still good. [generation]
      * was read before the sign-in began: a sign-out since leaves none of what it stores.
      */
-    private suspend fun signInToLibrary(normalizedId: String, password: String, generation: Int) {
-        // Best-effort: library credentials may differ from NTUST SSO, so a
-        // failure here must not fail the SSO login — but log it, otherwise
-        // "library QR never works" is undiagnosable in the field.
-        try {
-            librarySignIn.signIn(normalizedId, password, generation)
-            // A library-only demo sign-in may still be standing in; see
-            // [org.ntust.app.tigerduck.demo.DemoAccount.signOutLibrary].
-            demoAccount.signOutLibrary()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            android.util.Log.w("AuthService", "Library login failed (best-effort): ${e.logSummary()}")
-        }
-    }
-
     fun logout() {
-        // A school mail account signed in as the same student goes with it, and its background
-        // checks and notifications stop; another student's stays. Before the sign-out below,
-        // which takes the student ID it is matched by.
-        credentials.ntustStudentId?.let { mailAccount.signOutIfSchoolAccount(it) }
+        // The school account alone: the library account and the school mail stay signed in, each
+        // signed out of by itself (decided for Android on 2026-10-22).
         // One step for a sign-in under way, which checks the generation under the same lock
         // before it stores anything: it either stores before this clears, or stores nothing.
         // The session it wipes, taken as it moves the generation: the

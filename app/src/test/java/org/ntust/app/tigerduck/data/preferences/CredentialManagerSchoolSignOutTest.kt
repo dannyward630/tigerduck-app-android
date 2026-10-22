@@ -17,9 +17,8 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * A school sign-out takes the library account of the same student ID, read
- * before the school account is wiped, and leaves one signed in with another
- * ID, as on the iPhone.
+ * A school sign-out takes the school account alone: the library account stays signed in, whoever's
+ * it is, as each account signs in and out by itself (decided for Android on 2026-10-22).
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
@@ -43,16 +42,18 @@ class CredentialManagerSchoolSignOutTest {
     }
 
     @Test
-    fun `the same student's library account goes with the school account`() {
+    fun `the same student's library account stays through the school sign-out`() {
         credentials.ntustStudentId = "B10000001"
         credentials.ntustPassword = "school"
         libraryAccount("B10000001")
 
-        assertTrue(credentials.signOutSchoolAccount())
+        credentials.signOutSchoolAccount()
 
         assertNull(credentials.ntustStudentId)
         assertNull(credentials.ntustPassword)
-        assertNull(credentials.libraryUsername)
+        assertEquals("B10000001", credentials.libraryUsername)
+        assertEquals("pw", credentials.libraryPassword)
+        assertTrue(credentials.isLibraryTokenValid)
     }
 
     @Test
@@ -61,79 +62,40 @@ class CredentialManagerSchoolSignOutTest {
         credentials.ntustPassword = "school"
         libraryAccount("B10000009")
 
-        assertFalse(credentials.signOutSchoolAccount())
+        credentials.signOutSchoolAccount()
 
         assertNull(credentials.ntustStudentId)
         assertEquals("B10000009", credentials.libraryUsername)
     }
 
     @Test
-    fun `the library account of the same student goes, whatever the case`() {
-        libraryAccount("b10000001")
-
-        assertTrue(credentials.clearLibraryCredentials(ifSchoolAccount = "B10000001"))
-        assertNull(credentials.libraryUsername)
-        assertNull(credentials.libraryPassword)
-    }
-
-    @Test
-    fun `a library account of another student stays`() {
-        libraryAccount("B10000009")
-
-        assertFalse(credentials.clearLibraryCredentials(ifSchoolAccount = "B10000001"))
-        assertEquals("B10000009", credentials.libraryUsername)
-        assertTrue(credentials.isLibraryTokenValid)
-    }
-
-    @Test
-    fun `without a stored school account the library account stays`() {
-        libraryAccount("B10000009")
-
-        assertFalse(credentials.clearLibraryCredentials(ifSchoolAccount = null))
-        assertEquals("B10000009", credentials.libraryUsername)
-    }
-
-    @Test
-    fun `the school sign-in's library step still out stores nothing`() {
-        libraryAccount("B10000009")
-        val generation = credentials.libraryAccountGeneration
+    fun `the school sign-out moves the school account, and only it`() {
+        credentials.ntustStudentId = "B10000001"
+        libraryAccount("B10000001")
         val school = credentials.schoolAccountGeneration
+        val library = credentials.libraryAccountGeneration
 
-        credentials.clearLibraryCredentials(ifSchoolAccount = "B10000001")
+        credentials.signOutSchoolAccount()
 
-        assertFalse(
-            credentials.saveLibrarySignIn(generation, "B10000001", "school", "theirs", Long.MAX_VALUE, byUser = false) {
-                credentials.isSchoolAccount(school)
-            },
-        )
-        assertEquals("B10000009", credentials.libraryUsername)
-    }
-
-    @Test
-    fun `a library sign-in the user asked for still stores`() {
-        libraryAccount("B10000009")
-        val generation = credentials.libraryAccountGeneration
-
-        credentials.clearLibraryCredentials(ifSchoolAccount = "B10000001")
-
-        assertTrue(credentials.saveLibrarySignIn(generation, "B10000009", "new", "token", Long.MAX_VALUE, byUser = true))
+        assertFalse(credentials.isSchoolAccount(school))
+        assertEquals(library, credentials.libraryAccountGeneration)
     }
 
     /**
-     * Another student's library account, signing in again with its stored
-     * credentials while the school account signs out: the sign-out keeps that
-     * account, so what the library answers is still about its password.
+     * The library account, signing in again with its stored credentials while
+     * the school account of the same student signs out: the sign-out keeps
+     * that account, so what the library answers is still about its password.
      */
     private fun storedSignInDuringSchoolSignOut(): FakeLibraryServer {
         credentials.ntustStudentId = "B10000001"
         assertTrue(
-            credentials.saveLibrarySignIn(credentials.libraryAccountGeneration, "B10000009", "pw", "expired", 1L, byUser = true),
+            credentials.saveLibrarySignIn(credentials.libraryAccountGeneration, "B10000001", "pw", "expired", 1L, byUser = true),
         )
         return FakeLibraryServer().apply { whileSigningIn = { credentials.signOutSchoolAccount() } }
     }
 
     @Test
-    fun `a refusal found as another student signs out of the school is kept`() = runBlocking {
+    fun `a refusal found as the school account signs out is kept`() = runBlocking {
         val server = storedSignInDuringSchoolSignOut()
         server.signInAnswers += FakeLibraryServer.WRONG_PASSWORD
         val service = server.service(credentials)
@@ -148,28 +110,13 @@ class CredentialManagerSchoolSignOutTest {
     }
 
     @Test
-    fun `a token renewed as another student signs out of the school is kept`() = runBlocking {
+    fun `a token renewed as the school account signs out is kept`() = runBlocking {
         val service = storedSignInDuringSchoolSignOut().service(credentials)
 
         assertEquals("token-1", service.ensureToken())
 
-        assertEquals("B10000009", credentials.libraryUsername)
+        assertEquals("B10000001", credentials.libraryUsername)
         assertEquals("token-1", credentials.libraryToken)
         assertTrue(credentials.isLibraryTokenValid)
-    }
-
-    /**
-     * A user name stored before the library form trimmed it can carry spaces around it; it is
-     * still the same student's account.
-     */
-    @Test
-    fun `the same student's library account goes though its stored name carries spaces`() {
-        credentials.ntustStudentId = "B11234567"
-        libraryAccount(" b11234567 ")
-
-        assertTrue(credentials.signOutSchoolAccount())
-
-        assertNull(credentials.libraryUsername)
-        assertNull(credentials.libraryPassword)
     }
 }
