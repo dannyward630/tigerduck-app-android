@@ -240,7 +240,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
             // check-and-apply requires it. It catches its own transport
             // failures; the guard keeps anything else from failing this sync.
             appScope.async(Dispatchers.Main) {
-                runCatching { notificationSettingsSync.pullNow() }
+                runCatching { notificationSettingsSync.pullNow(knownRevision = result.currentRevision) }
                     .onFailure { e ->
                         if (e is CancellationException) throw e
                         Log.w(TAG, "notification settings pull failed: ${e.logSummary()}")

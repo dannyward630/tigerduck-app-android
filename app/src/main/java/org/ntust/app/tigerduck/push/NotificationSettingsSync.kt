@@ -164,6 +164,10 @@ internal interface SettingsDocumentTransport {
  */
 private class SingleReadTransport(
     private val delegate: SettingsDocumentTransport,
+    /** The document is known to be missing, so the read answers as a 404 without going out. */
+    private val knownMissing: Boolean = false,
+    /** Runs when the read finds no document. */
+    private val onMissing: () -> Unit = {},
 ) : SettingsDocumentTransport {
     private var answered = false
     private var envelope: SettingsDocumentEnvelope<JsonObject>? = null
@@ -172,7 +176,10 @@ private class SingleReadTransport(
     override suspend fun read(): SettingsDocumentEnvelope<JsonObject>? {
         if (!answered) {
             try {
-                envelope = delegate.read()
+                if (!knownMissing) {
+                    envelope = delegate.read()
+                    if (envelope == null) onMissing()
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -1297,6 +1304,15 @@ class NotificationSettingsSync internal constructor(
     // by the time it runs.
     private val generation = AtomicInteger(0)
 
+    /**
+     * The sign-in ([generation]) and the sync revision a pull after a full sync last found no
+     * document at. A user who never changed a setting has none, and every full sync's pull drew a
+     * 404; any device's write of the document moves the revision, so until it moves there is
+     * nothing to read.
+     */
+    @Volatile
+    private var missingAt: Pair<Int, Long>? = null
+
     // Held by each queued push for the whole of its read-modify-write, and
     // by pullNow() from its snapshot of the local values to its apply, so
     // neither can land in the middle of the other. Without it, an edit's
@@ -1573,8 +1589,12 @@ class NotificationSettingsSync internal constructor(
      * additionally wraps this call itself: two independent guards against the
      * one failure mode this repo has already documented twice as a process
      * kill.
+     *
+     * [knownRevision] is the sync revision of the full sync this pull follows:
+     * at one a pull already found no document at, it reads none ([missingAt]).
+     * A settings screen's pull passes none and always reads.
      */
-    suspend fun pullNow(): Boolean {
+    suspend fun pullNow(knownRevision: Long? = null): Boolean {
         requireMainThread()
         var assignmentsChanged = false
         val attempted = documentLock.withLock {
@@ -1584,8 +1604,15 @@ class NotificationSettingsSync internal constructor(
             // abandoned instead of applied — see pullLiveActivitySettings.
             val pulledGeneration = generation.get()
             val isCurrentGeneration = { pulledGeneration == generation.get() }
-            // One GET for both sections; see SingleReadTransport.
-            val pullTransport = SingleReadTransport(transport)
+            // One GET for both sections; see SingleReadTransport. None at a
+            // revision a pull already found no document at: any device's write
+            // of one moves the revision (missingAt).
+            val missingHere = knownRevision?.let { pulledGeneration to it }
+            val pullTransport = SingleReadTransport(
+                transport,
+                knownMissing = missingHere != null && missingHere == missingAt,
+                onMissing = { if (missingHere != null && isCurrentGeneration()) missingAt = missingHere },
+            )
             // Snapshotted before any read goes out, not between the two: what
             // it is for is catching an edit that lands while one is on the
             // wire, and a snapshot taken after the read already contains it.

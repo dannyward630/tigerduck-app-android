@@ -293,7 +293,7 @@ class HomeBackendSync @Inject constructor(
             // because pullNow()'s check-and-apply requires it — the
             // application scope's own dispatcher is Default.
             appScope.launch(Dispatchers.Main) {
-                runCatching { notificationSettingsSync.pullNow() }
+                runCatching { notificationSettingsSync.pullNow(knownRevision = result.currentRevision) }
                     .onFailure { e ->
                         if (e is CancellationException) throw e
                         Log.w(TAG, "[Sync] notification settings pull failed: ${e.logSummary()}")
