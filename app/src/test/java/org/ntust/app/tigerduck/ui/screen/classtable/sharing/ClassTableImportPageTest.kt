@@ -2,6 +2,9 @@ package org.ntust.app.tigerduck.ui.screen.classtable.sharing
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -140,6 +143,28 @@ class ClassTableImportPageTest {
         composeRule.waitForIdle()
 
         assertEquals(1, closed)
+    }
+
+    @Test
+    fun `a link that replaces a link's import keeps the new one open`() {
+        val first = linkedModel()
+        first.scanned(code)
+        var current by mutableStateOf(first)
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(current, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.waitForIdle()
+
+        // As linkedImport does: the import on screen is called off, and the link's own takes its place.
+        composeRule.runOnIdle {
+            first.cancel()
+            current = linkedModel().also { it.scanned(code) }
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(0, closed)
+        composeRule.onNodeWithText(app.getString(R.string.action_import)).assertExists()
     }
 
     private fun linkedModel() = ClassTableImportModel(

@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -93,9 +94,21 @@ fun ClassTableImportHost(viewModel: ClassTableImportViewModel, onImported: () ->
  * offers while the person is being saved; [onFinished] is the import done, saved or called off by
  * a sign-in change.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ClassTableImportPage(
+    model: ClassTableImportModel,
+    onClose: () -> Unit,
+    onFinished: () -> Unit,
+    onPickPicture: () -> Unit,
+) {
+    // Keyed by the import: a link's import takes the place of the one on screen, and read for a
+    // frame through the old one's state, called off, the new one would be closed with it.
+    key(model) { ImportPage(model, onClose, onFinished, onPickPicture) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImportPage(
     model: ClassTableImportModel,
     onClose: () -> Unit,
     onFinished: () -> Unit,

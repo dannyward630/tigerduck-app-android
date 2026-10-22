@@ -112,7 +112,7 @@ class ClassTableImportViewModel @Inject constructor(
             // as one held for a sign-in is at a sign-out.
             if (!stillCurrent()) return null
             open()?.cancel()
-            return next().also { it.scanned(text) }
+            return next().also { it.linkOpened(text) }
         }
     }
 

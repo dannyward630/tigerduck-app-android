@@ -105,6 +105,16 @@ class ShareCodeLinkTest {
     }
 
     @Test
+    fun `a link on the share host that the decoder does not take says the code is damaged`() = runTest {
+        val link = links[0].replaceFirst("://share.tigerduck.app/", "://share.tigerduck.app:443/", ignoreCase = true)
+        assertNotNull(take(link))
+
+        val opened = openLink(link)
+
+        assertEquals(ClassTableImportModel.Prompt.Invalid, opened.state.value.prompt)
+    }
+
+    @Test
     fun `a link whose account signs out while the store is read opens nothing`() = runTest {
         val open = model()
         var signedIn = true

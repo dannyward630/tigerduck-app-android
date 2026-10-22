@@ -115,6 +115,15 @@ class ClassTableImportModel(
     }
 
     /**
+     * The code a link opened, read as [scanned] reads one, except that a link the decoder does not
+     * take says the code is damaged: a link's page has no camera to try another code with.
+     */
+    fun linkOpened(text: String) {
+        if (scanned(text)) return
+        _state.update { it.copy(prompt = Prompt.Invalid, tookCode = true) }
+    }
+
+    /**
      * The QR codes found in a picture, or the one a scanner that stops after one code read: the
      * first share code, or a prompt when there is none.
      */
