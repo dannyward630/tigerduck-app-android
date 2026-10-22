@@ -387,6 +387,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        // A language change lands here, as the manifest handles locale: relabel the shortcut.
+        LibraryQrShortcut.publish(this)
         // Foldable unfold / external display attach changes smallestScreenWidthDp.
         // Re-evaluate so "auto" mode flips to/from sensor as the form factor changes.
         if (appState.rotationMode == AppPreferences.ROTATION_MODE_AUTO) {

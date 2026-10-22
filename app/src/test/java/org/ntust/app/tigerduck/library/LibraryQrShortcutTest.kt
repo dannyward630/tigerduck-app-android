@@ -45,6 +45,33 @@ class LibraryQrShortcutTest {
     }
 
     @Test
+    fun `publishing again in another language relabels the shortcut`() {
+        LibraryQrShortcut.publish(context)
+        val chinese = context.createConfigurationContext(
+            android.content.res.Configuration(context.resources.configuration).apply { setLocale(java.util.Locale.TAIWAN) },
+        )
+
+        LibraryQrShortcut.publish(chinese)
+
+        val label = ShortcutManagerCompat.getDynamicShortcuts(context).single { it.id == LibraryQrShortcut.ID }.shortLabel
+        assertEquals(chinese.getString(R.string.library_virtual_pass_title), label.toString())
+    }
+
+    /**
+     * A language change reaches MainActivity as a configuration change, as the manifest handles
+     * `locale`, not as a new onCreate: the shortcut is relabelled there too.
+     */
+    @Test
+    fun `the app's page publishes the shortcut again when the language changes`() {
+        val source = File(appDir(), "src/main/java/org/ntust/app/tigerduck/MainActivity.kt").readText()
+        val start = source.indexOf("override fun onConfigurationChanged(")
+        assertTrue("MainActivity has no onConfigurationChanged", start >= 0)
+        val body = source.substring(start, source.indexOf("\n    }\n", start))
+
+        assertTrue(body.contains("LibraryQrShortcut.publish(this)"))
+    }
+
+    @Test
     fun `the Quick Settings tile is declared for the system to bind`() {
         val manifest = File(appDir(), "src/main/AndroidManifest.xml").readText()
         val service = Regex("""<service[^>]*android:name="org\.ntust\.app\.tigerduck\.library\.LibraryQrTileService"[\s\S]*?</service>""")
