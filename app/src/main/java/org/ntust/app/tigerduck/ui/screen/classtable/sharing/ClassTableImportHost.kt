@@ -108,6 +108,10 @@ internal fun ClassTableImportPage(
     }
     // Not while the person is being written: the import then ends saved, and closes itself.
     val close: () -> Unit = { if (!model.state.value.isSaving) onClose() }
+    val latestOnClose by rememberUpdatedState(onClose)
+    LaunchedEffect(state.isLinkDone) {
+        if (state.isLinkDone) latestOnClose()
+    }
 
     Dialog(
         onDismissRequest = close,
@@ -134,25 +138,28 @@ internal fun ClassTableImportPage(
                     )
                 },
                 bottomBar = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .windowInsetsPadding(WindowInsets.navigationBars)
-                            .padding(bottom = 24.dp, top = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        FilledTonalButton(
-                            onClick = onPickPicture,
-                            enabled = state.isIdle,
-                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    // A link's page has nothing to pick: the code came with it.
+                    if (!state.fromLink) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .windowInsetsPadding(WindowInsets.navigationBars)
+                                .padding(bottom = 24.dp, top = 12.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                Icons.Outlined.PhotoLibrary,
-                                contentDescription = null,
-                                modifier = Modifier.size(ButtonDefaults.IconSize),
-                            )
-                            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                            Text(stringResource(R.string.class_table_import_choose_photo))
+                            FilledTonalButton(
+                                onClick = onPickPicture,
+                                enabled = state.isIdle,
+                                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                            ) {
+                                Icon(
+                                    Icons.Outlined.PhotoLibrary,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                                )
+                                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                                Text(stringResource(R.string.class_table_import_choose_photo))
+                            }
                         }
                     }
                 },
@@ -163,7 +170,10 @@ internal fun ClassTableImportPage(
                         .padding(padding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    QrScannerCamera(onScanned = model::scanned, modifier = Modifier.fillMaxSize())
+                    // Not for a link: no one came to scan, so the camera is not asked for.
+                    if (!state.fromLink) {
+                        QrScannerCamera(onScanned = model::scanned, modifier = Modifier.fillMaxSize())
+                    }
                     // An update has no confirm dialog to wait in, so it waits here, as a picture does.
                     if (state.isReadingImage || (state.isLookingUp && state.pending == null)) {
                         CircularProgressIndicator()

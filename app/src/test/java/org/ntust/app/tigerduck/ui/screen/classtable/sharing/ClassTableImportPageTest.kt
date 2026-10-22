@@ -92,6 +92,60 @@ class ClassTableImportPageTest {
         composeRule.onNodeWithText(app.getString(R.string.class_table_import_failed)).assertExists()
         composeRule.onNodeWithText(app.getString(R.string.share_code_needs_update_message)).assertExists()
     }
+
+    @Test
+    fun `a scanned code called off leaves the scanner open for another`() {
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(model, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { model.imageRead(listOf(code)) }
+
+        composeRule.onNodeWithText(app.getString(R.string.action_cancel)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(0, closed)
+        composeRule.onNodeWithText(app.getString(R.string.class_table_import_choose_photo)).assertExists()
+    }
+
+    @Test
+    fun `a link's import offers no photo and closes once its code is called off`() {
+        val linked = linkedModel()
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(linked, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { linked.scanned(code) }
+
+        composeRule.onNodeWithText(app.getString(R.string.class_table_import_choose_photo)).assertDoesNotExist()
+        assertEquals(0, closed)
+
+        composeRule.onNodeWithText(app.getString(R.string.action_cancel)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun `a link whose code a newer app wrote closes with its prompt`() {
+        val linked = linkedModel()
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(linked, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { linked.scanned("HTTPS://SHARE.TIGERDUCK.APP/FRIEND/1.B11300001") }
+        assertEquals(0, closed)
+
+        composeRule.onNodeWithText(app.getString(R.string.action_confirm)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, closed)
+    }
+
+    private fun linkedModel() = ClassTableImportModel(
+        store, { "B11300000" }, { true }, { _, _ -> listOf(Course(courseNo = "MA1010001", courseName = "Calculus")) }, scope,
+        fromLink = true,
+    )
 }
 
 /** Holds what is dispatched to it until [release] runs it, as a busy I/O thread would. */
