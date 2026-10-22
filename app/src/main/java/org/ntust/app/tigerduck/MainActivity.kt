@@ -41,6 +41,7 @@ import org.ntust.app.tigerduck.analytics.AnalyticsLogger
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
+import org.ntust.app.tigerduck.library.LibraryQrShortcut
 import org.ntust.app.tigerduck.liveactivity.LiveActivityManager
 import org.ntust.app.tigerduck.network.ApiVersionGate
 import org.ntust.app.tigerduck.network.MoodleTokenService
@@ -165,6 +166,8 @@ class MainActivity : AppCompatActivity() {
         // manifest's configChanges, so a dark-mode switch recreates this
         // Activity — and HyperOS raises the prompt again on every request.
         if (savedInstanceState == null) requestNotificationPermissionIfNeeded()
+        // Here rather than at the app's start: the Activity has the app's own language.
+        LibraryQrShortcut.publish(this)
         // Only schedule on the first Activity creation. WorkManager.UPDATE would
         // be idempotent, but re-enqueuing on every rotation/config change is
         // wasted work (and thrashes WorkManager's internal bookkeeping DB).

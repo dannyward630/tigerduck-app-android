@@ -242,6 +242,19 @@
                 android:resource="@xml/widget_library_shortcut_info" />
         </receiver>
 
+        <!-- The Quick Settings tile that opens the library QR, beside the launcher shortcut
+             LibraryQrShortcut publishes. -->
+        <service
+            android:name="org.ntust.app.tigerduck.library.LibraryQrTileService"
+            android:exported="true"
+            android:icon="@drawable/widget_library_icon"
+            android:label="@string/library_virtual_pass_title"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- App provides its own WorkManager configuration via Configuration.Provider
              so Hilt's worker factory is used. Disable the default initializer. -->
         <provider
