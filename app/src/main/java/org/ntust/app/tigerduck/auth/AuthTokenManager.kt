@@ -360,8 +360,9 @@ class AuthTokenManager(
                 RefreshOutcome.NoReply -> DepartingRefresh.NoReply
                 // A 5xx: the same token goes out on a later try, this send counted.
                 RefreshOutcome.Unavailable -> DepartingRefresh.Unavailable
-                // Turned away or never sent: the same token goes out on a later try, uncounted.
-                RefreshOutcome.Unused -> DepartingRefresh.Unused
+                // Turned away or never sent: the same token goes out on a later try, uncounted. A
+                // departing send is never counted on disk, so the disk cannot refuse it.
+                RefreshOutcome.Unused, RefreshOutcome.Uncounted -> DepartingRefresh.Unused
             }
         }
     }
@@ -610,6 +611,14 @@ class AuthTokenManager(
                 refreshPausedAt = now()
                 return null
             }
+            RefreshOutcome.Uncounted -> {
+                // The token cannot go out uncounted, and a sign-in sends none: on a full disk the
+                // refresh would otherwise fail every time and leave no session once the access
+                // token ran out. Kept for a later refresh when the sign-in fails too.
+                if (signInAutomatically()) return accessTokenIfSignedIn(signIn)
+                refreshPausedAt = now()
+                return null
+            }
             RefreshOutcome.NoReply, RefreshOutcome.Refused -> Unit
         }
         if (signInAutomatically()) return accessTokenIfSignedIn(signIn)
@@ -639,15 +648,16 @@ class AuthTokenManager(
      * a fresh pair, and takes any later send of it as reuse, so a resend that
      * fails too is a failed refresh, never a token kept for later. After a
      * counted send the resend could be that later send. A resend the backend
-     * did not use ([RefreshOutcome.Unused]) leaves the token that send, kept
-     * for a later refresh.
+     * did not use ([RefreshOutcome.Unused]), or one the disk would not count
+     * and so never sent ([RefreshOutcome.Uncounted]), leaves the token that
+     * send, kept for a later refresh.
      */
     private fun sendWithOneResend(refreshToken: String, sends: Int, signIn: Int, base: String): RefreshOutcome {
         val first = send(refreshToken, sends, signIn, base)
         val mayResend = sends + 1 < MAX_REFRESH_TOKEN_SENDS && signIn == signInGeneration
         if (first != RefreshOutcome.NoReply || !mayResend) return first
         return when (val second = send(refreshToken, sends + 1, signIn, base)) {
-            is RefreshOutcome.Refreshed, RefreshOutcome.Unused -> second
+            is RefreshOutcome.Refreshed, RefreshOutcome.Unused, RefreshOutcome.Uncounted -> second
             else -> RefreshOutcome.Refused
         }
     }
@@ -672,7 +682,7 @@ class AuthTokenManager(
         if (!countSends(refreshToken, sendsBefore + 1, signIn)) {
             // Counted in memory only, a restart would forget it; put back there too.
             countSends(refreshToken, sendsBefore, signIn)
-            return RefreshOutcome.Unused
+            return RefreshOutcome.Uncounted
         }
         val progress = SendProgress()
         return try {
@@ -786,11 +796,17 @@ class AuthTokenManager(
         data object Unavailable : RefreshOutcome
 
         /**
-         * A 429, or a send that never left the device or was not counted on
-         * disk: the backend did not use the token, which is kept for a later
-         * refresh without the send counted.
+         * A 429, or a send that never left the device: the backend did not
+         * use the token, which is kept for a later refresh without the send
+         * counted.
          */
         data object Unused : RefreshOutcome
+
+        /**
+         * A send the disk would not count, which therefore never went out:
+         * the token is kept, and the app signs in instead.
+         */
+        data object Uncounted : RefreshOutcome
 
         /** Anything else, a 401 among them: the app signs in again, as after every failed refresh before. */
         data object Refused : RefreshOutcome
