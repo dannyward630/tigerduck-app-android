@@ -412,6 +412,7 @@ class PushApiClient @Inject constructor(
             // Recorded under the sign-in lock, so a sign-out's clear cannot
             // fall between the check and the record; see UploadLedger.sendIfDue.
             ifCurrent = { record -> authTokenManager.runIfSignedIn(signIn, record) },
+            signIn = signIn,
         ) {
             val request = Request.Builder()
                 .url("$base/sync/assignments/upload")
@@ -420,7 +421,7 @@ class PushApiClient @Inject constructor(
                 .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw PushApiException("uploadAssignments failed: HTTP ${response.code}")
+                    throw PushApiException("uploadAssignments failed: HTTP ${response.code}", response.code)
                 }
             }
         }
@@ -485,6 +486,7 @@ class PushApiClient @Inject constructor(
             // fall between the check and the record; see UploadLedger.sendIfDue.
             ifCurrent = { record -> authTokenManager.runIfSignedIn(startedIn, record) },
             always = resend || forceKeys.isNotEmpty(),
+            signIn = startedIn,
         ) {
             val request = Request.Builder()
                 .url("$base/sync/courses/upload")
@@ -493,7 +495,7 @@ class PushApiClient @Inject constructor(
                 .build()
             accepted = uploadCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw PushApiException("uploadCourses failed: HTTP ${response.code}")
+                    throw PushApiException("uploadCourses failed: HTTP ${response.code}", response.code)
                 }
                 // A 2xx with an unreadable body (a captive portal, a proxy) is
                 // still an upload that landed; it just cannot say what was accepted.

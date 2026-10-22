@@ -17,6 +17,13 @@ import java.security.MessageDigest
 internal const val UNCHANGED_UPLOAD_INTERVAL_MS = 6 * 60 * 60 * 1000L
 
 /**
+ * How long a list the server turned away, with an HTTP error, waits before it goes again. Not
+ * recorded, it went again on every fetch, sync and push that came along, each answered the same
+ * way. A list sent with `always` does not wait.
+ */
+internal const val REFUSED_UPLOAD_PAUSE_MS = 60_000L
+
+/**
  * Whether a list with [fingerprint] goes up: a list other than the one the
  * server last accepted ([acceptedFingerprint], at [acceptedAtMs]), or the same
  * one once [UNCHANGED_UPLOAD_INTERVAL_MS] has passed, or a clock that moved
@@ -71,6 +78,13 @@ internal class UploadLedger(
     private val mutex = Mutex()
 
     /**
+     * Under [mutex]: each list the server turned away in the last
+     * [REFUSED_UPLOAD_PAUSE_MS], by the sign-in it was sent under and its
+     * fingerprint, with when the answer came.
+     */
+    private val refused = HashMap<String, Long>()
+
+    /**
      * Runs [send] for a list with [fingerprint] when it is due, or whatever
      * the ledger holds when [always] (a forced re-add, a term the server has
      * emptied), and once [send] returns records it as accepted through
@@ -80,18 +94,33 @@ internal class UploadLedger(
      * recording after left a gap a sign-out fell into: its clearing of the
      * ledger landed between the two, and the departing account's list stayed
      * for the next account to skip. Returns whether it sent. A [send] that
-     * throws records nothing.
+     * throws records nothing; one the server turned away
+     * ([PushApiException.statusCode]) holds the same list back for
+     * [REFUSED_UPLOAD_PAUSE_MS] from the answer, unless [always], while
+     * [signIn], the sign-in it was sent under, stands.
      */
     suspend fun sendIfDue(
         fingerprint: String,
         ifCurrent: (record: () -> Unit) -> Unit,
         always: Boolean = false,
+        signIn: Int = 0,
         send: suspend () -> Unit,
     ): Boolean =
         mutex.withLock {
             val now = clock()
-            if (!always && !uploadIsDue(store.fingerprint, store.acceptedAtMs, fingerprint, now)) return@withLock false
-            send()
+            val refusalKey = "$signIn:$fingerprint"
+            // Measured from the refusal, so a clock set back does not stretch the pause.
+            refused.entries.removeAll { (_, at) -> now - at !in 0 until REFUSED_UPLOAD_PAUSE_MS }
+            if (!always) {
+                if (!uploadIsDue(store.fingerprint, store.acceptedAtMs, fingerprint, now)) return@withLock false
+                if (refusalKey in refused) return@withLock false
+            }
+            try {
+                send()
+            } catch (e: PushApiException) {
+                if (e.statusCode != null) refused[refusalKey] = clock()
+                throw e
+            }
             ifCurrent { store.record(fingerprint, now) }
             true
         }
@@ -102,7 +131,10 @@ internal class UploadLedger(
      * upload out across the reset would record, after it, a list the reset
      * has just taken off the server, and the upload that follows the reset,
      * usually that same list, would then wait six hours while the server
-     * holds the reset's tombstones.
+     * holds the reset's tombstones. It forgets the lists the server turned
+     * away, too, for the same reason.
      */
-    suspend fun <T> holdingUploads(block: suspend () -> T): T = mutex.withLock { block() }
+    suspend fun <T> holdingUploads(block: suspend () -> T): T = mutex.withLock {
+        block().also { refused.clear() }
+    }
 }

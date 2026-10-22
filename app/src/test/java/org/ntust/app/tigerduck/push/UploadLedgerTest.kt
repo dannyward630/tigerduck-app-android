@@ -69,6 +69,66 @@ class UploadLedgerTest {
     }
 
     @Test
+    fun `a list the server turned away waits a minute before it goes again, another list not at all`() = runTest {
+        runCatching { ledger.sendIfDue(fingerprint("[a]"), { it() }) { throw PushApiException("HTTP 500", 500) } }
+
+        assertFalse(upload("[a]"))
+        assertTrue(upload("[b]"))
+        now += REFUSED_UPLOAD_PAUSE_MS - 1
+        assertFalse(upload("[a]"))
+        now += 1
+        assertTrue(upload("[a]"))
+    }
+
+    private suspend fun refuse(list: String, signIn: Int = 0, takesMs: Long = 0) = runCatching {
+        ledger.sendIfDue(fingerprint(list), { it() }, signIn = signIn) {
+            now += takesMs
+            throw PushApiException("HTTP 500", 500)
+        }
+    }
+
+    @Test
+    fun `the minute runs from the refusal's answer, not from the send`() = runTest {
+        refuse("[a]", takesMs = 55_000)
+
+        now += 10_000
+
+        assertFalse(upload("[a]"))
+    }
+
+    @Test
+    fun `each list the server turned away waits its own minute`() = runTest {
+        refuse("[a]")
+        refuse("[b]")
+
+        assertFalse(upload("[a]"))
+        assertFalse(upload("[b]"))
+    }
+
+    @Test
+    fun `a term reset forgets the refusals, so the list after it goes`() = runTest {
+        refuse("[a]")
+
+        ledger.holdingUploads { }
+
+        assertTrue(upload("[a]"))
+    }
+
+    @Test
+    fun `a refusal under one sign-in does not hold the next one's list`() = runTest {
+        refuse("[a]", signIn = 1)
+
+        assertTrue(ledger.sendIfDue(fingerprint("[a]"), { it() }, signIn = 2) { sends++ })
+    }
+
+    @Test
+    fun `a list sent always goes after a refusal`() = runTest {
+        runCatching { ledger.sendIfDue(fingerprint("[a]"), { it() }) { throw PushApiException("HTTP 500", 500) } }
+
+        assertTrue(ledger.sendIfDue(fingerprint("[a]"), { it() }, always = true) { sends++ })
+    }
+
+    @Test
     fun `an upload that outlived a sign-out records nothing`() = runTest {
         upload("[a]", current = false)
 
