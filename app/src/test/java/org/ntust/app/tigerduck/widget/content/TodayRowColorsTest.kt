@@ -14,7 +14,9 @@ import org.ntust.app.tigerduck.widget.WidgetTheme
 /**
  * Covers [todayRowFill] and its text colors: a class that is on takes its
  * course's own color with white text under TigerDuck, and the class table's
- * pastel with dark text under TAT, while a row not on keeps the surface.
+ * pastel with dark text under TAT. A row not on keeps the surface under
+ * TigerDuck; under TAT it takes the paler pastel of a card that steps back,
+ * as Home's cards do, so every course shows its color.
  */
 class TodayRowColorsTest {
 
@@ -48,13 +50,20 @@ class TodayRowColorsTest {
     }
 
     @Test
-    fun `a row not on keeps the surface and the theme's text under either style`() {
-        listOf(tigerDuck, tat).forEach { style ->
-            listOf(lightTheme, darkTheme).forEach { theme ->
-                assertEquals(theme.surface, todayRowFill(calculus, false, theme, style, courseColors))
-                assertEquals(theme.onSurface, todayRowTextColor(false, theme, style))
-                assertEquals(theme.onSurfaceVariant, todayRowSecondaryTextColor(false, theme, style))
-            }
+    fun `TigerDuck keeps the surface and the theme's text for a row not on`() {
+        listOf(lightTheme, darkTheme).forEach { theme ->
+            assertEquals(theme.surface, todayRowFill(calculus, false, theme, tigerDuck, courseColors))
+            assertEquals(theme.onSurface, todayRowTextColor(false, theme, tigerDuck))
+            assertEquals(theme.onSurfaceVariant, todayRowSecondaryTextColor(false, theme, tigerDuck))
+        }
+    }
+
+    @Test
+    fun `TAT fills a row not on with the paler pastel in either theme, in dark text`() {
+        listOf(lightTheme, darkTheme).forEach { theme ->
+            assertEquals(light.pastel(0.82f), todayRowFill(calculus, false, theme, tat, courseColors))
+            assertEquals(VisualStylePolicy.TextOnPastel, todayRowTextColor(false, theme, tat))
+            assertEquals(VisualStylePolicy.TextOnPastelSecondary, todayRowSecondaryTextColor(false, theme, tat))
         }
     }
 }
