@@ -264,28 +264,54 @@ class CredentialManager private constructor(
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
                 )
             }
-            return try {
-                Opened(attempt(), encrypted = true, recreated = false)
-            } catch (e: Exception) {
-                // A corrupted prefs file (e.g. after a system restore onto a
-                // device whose keystore doesn't hold the original master key)
-                // makes `create` throw permanently. Wipe and retry once so the
-                // user only loses their stored credentials, not the whole app.
-                android.util.Log.w(
-                    "CredentialManager",
-                    "EncryptedSharedPreferences unusable; resetting: ${e.logSummary()}"
-                )
-                runCatching { context.deleteSharedPreferences(PREFS_NAME) }
-                try {
-                    Opened(attempt(), encrypted = true, recreated = true)
-                } catch (retry: Exception) {
-                    android.util.Log.e(
-                        "CredentialManager",
-                        "EncryptedSharedPreferences retry failed: ${retry.logSummary()}"
-                    )
-                    throw SecurityException("Cannot create encrypted credential storage", retry)
-                }
-            }
+            val (prefs, recreated) = openOrReset(
+                attempt = ::attempt,
+                reset = { runCatching { context.deleteSharedPreferences(PREFS_NAME) } },
+            )
+            return Opened(prefs, encrypted = true, recreated = recreated)
         }
+    }
+}
+
+/** How many times the store is opened before it is deleted, and the pause between the tries. */
+private const val OPEN_TRIES = 3
+private const val OPEN_RETRY_PAUSE_MS = 200L
+
+/**
+ * Opens the credential store with [attempt], [OPEN_TRIES] times [OPEN_RETRY_PAUSE_MS] apart, and
+ * only then lets [reset] delete it and opens it once more; says whether it had to. The keystore
+ * can refuse a call for a moment, busy or still starting after a boot, and deleting the store
+ * then signed the user out for nothing. A corrupted file (e.g. after a system restore onto a
+ * device whose keystore doesn't hold the original master key) refuses every try, so the user
+ * loses only their stored credentials, not the whole app.
+ */
+internal fun <T> openOrReset(
+    attempt: () -> T,
+    reset: () -> Unit,
+    pause: (Long) -> Unit = { Thread.sleep(it) },
+): Pair<T, Boolean> {
+    var failure: Exception? = null
+    repeat(OPEN_TRIES) { index ->
+        if (index > 0) pause(OPEN_RETRY_PAUSE_MS)
+        try {
+            return attempt() to false
+        } catch (e: Exception) {
+            failure = e
+        }
+    }
+    val last = checkNotNull(failure)
+    android.util.Log.w(
+        "CredentialManager",
+        "EncryptedSharedPreferences unusable; resetting: ${last.logSummary()}"
+    )
+    reset()
+    return try {
+        attempt() to true
+    } catch (retry: Exception) {
+        android.util.Log.e(
+            "CredentialManager",
+            "EncryptedSharedPreferences retry failed: ${retry.logSummary()}"
+        )
+        throw SecurityException("Cannot create encrypted credential storage", retry)
     }
 }
