@@ -35,6 +35,7 @@ class SsoLoginLatchTest {
 
     private lateinit var latch: PersistedStoredPasswordLatch
     private lateinit var service: SsoLoginService
+    private lateinit var sessionManager: NtustSessionManager
     private var stored: Pair<String, String>? = STUDENT to PASSWORD
     private var clock = 1_800_000_000_000L
 
@@ -52,7 +53,7 @@ class SsoLoginLatchTest {
         val latchPrefs = context.getSharedPreferences("sso-latch-test", Context.MODE_PRIVATE)
         latchPrefs.edit().clear().commit()
         latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) { stored }
-        val sessionManager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
+        sessionManager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
         val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain.request()) }.build()
         service = SsoLoginService(sessionManager, latch) { school }
     }
@@ -165,6 +166,32 @@ class SsoLoginLatchTest {
         assertEquals(1, posts.size)
         assertEquals(0, latch.refusals.value)
         assertFalse(latch.isRejected)
+    }
+
+    @Test
+    fun `a sign-in again empties the session before its visit, and the school's yes ends the refusals`() = runTest {
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        clock += 10_000
+        accepts = true
+        sessionManager.markLoginSuccess()
+        val sessionAtFirstVisit = mutableListOf<Long>()
+        onVisit = { if (it == 0) sessionAtFirstVisit += sessionManager.loginTimestampMs }
+
+        assertTrue(service.signInAgain(SERVICE, STUDENT, PASSWORD))
+
+        assertEquals(listOf(0L), sessionAtFirstVisit)
+        assertEquals(1, posts.size)
+        assertEquals(0, latch.refusals.value)
+    }
+
+    @Test
+    fun `a sign-in again still waits out a refusal's wait`() = runTest {
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+
+        val failure = runCatching { service.signInAgain(SERVICE, STUDENT, PASSWORD) }.exceptionOrNull()
+
+        assertTrue("got $failure", failure is SsoLoginError.LoginFailed)
+        assertEquals(0, posts.size)
     }
 
     private fun answer(request: Request): Response {

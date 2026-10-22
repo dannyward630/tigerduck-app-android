@@ -151,6 +151,7 @@ class AuthService @Inject constructor(
                 ssoLoginService.ensureServiceLogin(SSO_SERVICE_URL, studentId, password)
             }
         },
+        signInAgainToSchool = { studentId, password -> ssoLoginService.signInAgain(SSO_SERVICE_URL, studentId, password) },
         // A library-only demo sign-in may still be standing in; see
         // [org.ntust.app.tigerduck.demo.DemoAccount.signOutLibrary].
         afterLibrarySignIn = { demoAccount.signOutLibrary() },
@@ -311,14 +312,15 @@ class AuthService @Inject constructor(
 
     /**
      * The try [StoredPasswordRetry] makes once a refusal of the stored password has waited its
-     * turn: the school's sign-in where its session is gone, a Moodle token where none is stored,
+     * turn: the stored password posted to the school, past a warm session, which says nothing
+     * about it ([SchoolSignIn.storedAgain]), a Moodle token where none is stored,
      * then the backend's ([retryStoredPasswordChain]). True once it ran to the end, and with
      * nothing to try.
      */
     internal suspend fun retryStoredPassword(): Boolean {
         if (demoAccount.isActive || credentials.ntustStudentId == null) return true
         return retryStoredPasswordChain(
-            signInToSchool = ::ensureAuthenticated,
+            signInToSchool = ::signInAgainToSchool,
             moodleTokenMissing = { credentials.moodleToken.isNullOrEmpty() },
             renewMoodleToken = { moodleTokenService.renewToken(null) },
             // Past the pause after a failed sign-in only with the Moodle token it lacked, which
@@ -328,6 +330,18 @@ class AuthService @Inject constructor(
                 if (renewedToken) authTokenManager.signInIfSignedOutNow() else authTokenManager.signInIfSignedOut()
             },
         )
+    }
+
+    /** [ensureAuthenticated] for the retry of a refused stored password: it posts, warm session or not. */
+    private suspend fun signInAgainToSchool(): Boolean = loginMutex.withLock {
+        if (demoAccount.isActive) return@withLock false
+        try {
+            schoolSignIn.storedAgain()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
     }
 
     suspend fun ensureAuthenticated(): Boolean = loginMutex.withLock {

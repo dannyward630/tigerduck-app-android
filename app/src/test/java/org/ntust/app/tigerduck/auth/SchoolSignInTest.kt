@@ -76,6 +76,7 @@ class SchoolSignInTest {
     private var storedPassword: String? = "pw"
     private var warm = false
     private var schoolSignIns = 0
+    private var signInsAgain = 0
     private var librarySignIns = 0
 
     /** Runs while the SSO step is out. */
@@ -111,6 +112,10 @@ class SchoolSignInTest {
         signInToSchool = { _, _, _ ->
             schoolSignIns++
             duringSchoolSignIn()
+            true
+        },
+        signInAgainToSchool = { _, _ ->
+            signInsAgain++
             true
         },
         afterLibrarySignIn = {},
@@ -214,6 +219,30 @@ class SchoolSignInTest {
         warm = true
         assertTrue(signIn.stored())
         assertEquals(1, schoolSignIns)
+    }
+
+    /**
+     * A retry of a refused password asks the school again, as only its answer to a post says
+     * whether the password works: a warm session says nothing about it.
+     */
+    @Test
+    fun `a sign-in again past a warm session posts the stored password, and leaves the library alone`() = runTest {
+        warm = true
+
+        assertTrue(signIn.storedAgain())
+
+        assertEquals(1, signInsAgain)
+        assertEquals(0, schoolSignIns)
+        assertEquals(0, librarySignIns)
+    }
+
+    @Test
+    fun `no stored account signs nothing in again`() = runTest {
+        storedPassword = null
+
+        assertFalse(signIn.storedAgain())
+
+        assertEquals(0, signInsAgain)
     }
 
     /**
