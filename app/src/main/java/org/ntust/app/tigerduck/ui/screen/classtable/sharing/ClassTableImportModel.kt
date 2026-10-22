@@ -34,6 +34,11 @@ class ClassTableImportModel(
      */
     private val lookup: suspend (semester: String, courseNos: List<String>) -> List<Course>,
     private val scope: CoroutineScope,
+    /**
+     * Opened by a link rather than the import menu: the page shows no camera or photo button, as
+     * no one came to scan, and closes once the link's code is done with, saved or not.
+     */
+    fromLink: Boolean = false,
 ) {
     /** What a lookup imports: the code, and the nickname a new person is saved under. */
     data class ImportJob(val code: ClassTableShareCode, val nickname: String)
@@ -72,13 +77,19 @@ class ClassTableImportModel(
         val isReadingImage: Boolean = false,
         /** Set once the person is saved, or once the account signed out meanwhile; the import closes then. */
         val isFinished: Boolean = false,
+        val fromLink: Boolean = false,
+        /** Set once a code was taken, so a link's page is not done before its code is read. */
+        val tookCode: Boolean = false,
     ) {
         val isIdle: Boolean get() = prompt == null && pending == null && !isLookingUp && !isReadingImage && !isFinished
 
         val canImport: Boolean get() = nickname.isNotBlank() && !isLookingUp && !isFinished
+
+        /** A link's code is done with, called off or refused: its page closes rather than turn into a scanner. */
+        val isLinkDone: Boolean get() = fromLink && tookCode && isIdle
     }
 
-    private val _state = MutableStateFlow(State())
+    private val _state = MutableStateFlow(State(fromLink = fromLink))
     val state: StateFlow<State> = _state.asStateFlow()
 
     private var lookupJob: Job? = null
@@ -99,7 +110,17 @@ class ClassTableImportModel(
             Reading.NeedsUpdate -> _state.update { it.copy(prompt = Prompt.NeedsUpdate) }
             is Reading.Code -> open(reading.code)
         }
+        _state.update { it.copy(tookCode = true) }
         return true
+    }
+
+    /**
+     * The code a link opened, read as [scanned] reads one, except that a link the decoder does not
+     * take says the code is damaged: a link's page has no camera to try another code with.
+     */
+    fun linkOpened(text: String) {
+        if (scanned(text)) return
+        _state.update { it.copy(prompt = Prompt.Invalid, tookCode = true) }
     }
 
     /**

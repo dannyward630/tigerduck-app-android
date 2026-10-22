@@ -63,19 +63,20 @@ class ClassTableImportViewModel @Inject constructor(
         pendingLink?.cancel()
         val asOpened = sameSignIn({ authService.authState.value }, { authService.storedStudentId })
         pendingLink = viewModelScope.launch {
-            linkedImport(store, { _session.value }, ::newSession, text, asOpened)?.let { _session.value = it }
+            linkedImport(store, { _session.value }, { newSession(fromLink = true) }, text, asOpened)?.let { _session.value = it }
         }
     }
 
     // A link still waiting for the store's first read; a sign-out calls it off with the import.
     private var pendingLink: Job? = null
 
-    private fun newSession() = ClassTableImportModel(
+    private fun newSession(fromLink: Boolean = false) = ClassTableImportModel(
         store = store,
         signedInStudentId = { authService.storedStudentId },
         isCurrent = sameSignIn({ authService.authState.value }, { authService.storedStudentId }),
         lookup = lookup::courses,
         scope = viewModelScope,
+        fromLink = fromLink,
     )
 
     internal companion object {
@@ -111,7 +112,7 @@ class ClassTableImportViewModel @Inject constructor(
             // as one held for a sign-in is at a sign-out.
             if (!stillCurrent()) return null
             open()?.cancel()
-            return next().also { it.scanned(text) }
+            return next().also { it.linkOpened(text) }
         }
     }
 
