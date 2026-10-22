@@ -30,10 +30,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
@@ -129,7 +131,7 @@ fun OutlinedAccountIdField(
 
     var isFocused by remember { mutableStateOf(false) }
     // Null until the user taps the toggle; see [usesStandardKeyboard].
-    var standardKeyboardChoice by remember { mutableStateOf<Boolean?>(null) }
+    var standardKeyboardChoice by rememberStandardKeyboardChoice()
     val useStandardKeyboard = useStandardKeyboardOverride
         ?: usesStandardKeyboard(standardKeyboardChoice, hardwareKeyboardInUse())
 
@@ -383,6 +385,13 @@ private fun Context.findActivity(): Activity? {
  * one, which goes again once the touch keyboard is back, unless the user chose it.
  */
 internal fun usesStandardKeyboard(chosen: Boolean?, hardwareKeyboard: Boolean): Boolean = chosen ?: hardwareKeyboard
+
+/**
+ * The user's choice with the toggle, null until they tap it. Saved: a keyboard attached or taken
+ * away recreates the activity, and a choice lost there would hand the field back to the keyboard.
+ */
+@Composable
+internal fun rememberStandardKeyboardChoice(): MutableState<Boolean?> = rememberSaveable { mutableStateOf(null) }
 
 /**
  * Whether a hardware keyboard is attached and not tucked away, as the configuration says: a

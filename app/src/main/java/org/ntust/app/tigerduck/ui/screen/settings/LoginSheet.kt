@@ -60,6 +60,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.ui.component.OutlinedAccountIdField
 import org.ntust.app.tigerduck.ui.component.usesStandardKeyboard
 import org.ntust.app.tigerduck.ui.component.hardwareKeyboardInUse
+import org.ntust.app.tigerduck.ui.component.rememberStandardKeyboardChoice
 import org.ntust.app.tigerduck.ui.component.PasswordTrailingIcons
 import org.ntust.app.tigerduck.ui.component.SecureScreen
 
@@ -124,7 +125,7 @@ fun LoginSheet(
     // popup approach got fiddly inside Compose `Dialog` (IME insets,
     // window-z ordering, position math).
     // Null until the user taps the toggle; see [usesStandardKeyboard].
-    var standardKeyboardChoice by rememberSaveable { mutableStateOf<Boolean?>(null) }
+    var standardKeyboardChoice by rememberStandardKeyboardChoice()
     val useStandardKeyboard = usesStandardKeyboard(standardKeyboardChoice, hardwareKeyboardInUse())
 
     val passwordFocusRequester = remember { FocusRequester() }

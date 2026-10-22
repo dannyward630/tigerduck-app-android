@@ -7,6 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.MutableState
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +40,22 @@ class AccountIdFieldKeyboardTest {
     fun `the user's choice stands whatever keyboard is in use`() {
         assertTrue(usesStandardKeyboard(chosen = true, hardwareKeyboard = false))
         assertFalse(usesStandardKeyboard(chosen = false, hardwareKeyboard = true))
+    }
+
+    /**
+     * A keyboard attached or taken away recreates the activity, as the manifest does not handle
+     * the change, and the user's choice has to come through it.
+     */
+    @Test
+    fun `the user's choice comes through the activity being recreated`() {
+        val restoration = StateRestorationTester(composeRule)
+        var choice: MutableState<Boolean?>? = null
+        restoration.setContent { choice = rememberStandardKeyboardChoice() }
+        composeRule.runOnIdle { choice!!.value = false }
+
+        restoration.emulateSavedInstanceStateRestore()
+
+        composeRule.runOnIdle { assertEquals(false, choice!!.value) }
     }
 
     @Test
