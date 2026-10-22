@@ -38,6 +38,8 @@ internal class SchoolSignIn(
     private val sessionIsWarm: () -> Boolean,
     /** The SSO step; [typed] for credentials just entered — see [org.ntust.app.tigerduck.network.SsoLoginService.signIn]. */
     private val signInToSchool: suspend (studentId: String, password: String, typed: Boolean) -> Boolean,
+    /** The SSO step past a warm session; see [org.ntust.app.tigerduck.network.SsoLoginService.signInAgain]. */
+    private val signInAgainToSchool: suspend (studentId: String, password: String, stillRefused: () -> Boolean) -> Boolean,
     private val afterLibrarySignIn: () -> Unit,
 ) {
     /** A sign-in with credentials just entered. Throws what the SSO step throws; the library step only logs. */
@@ -67,6 +69,19 @@ internal class SchoolSignIn(
         val password = password() ?: return false
         if (sessionIsWarm()) return true
         return signInToSchool(studentId.trim().uppercase(), password, false)
+    }
+
+    /**
+     * The stored account posted to the school whatever the session: the retry of a refused
+     * password, which a warm session says nothing about, as only the school's answer to a post
+     * does. False without one. True without a post once [stillRefused] says the refusal is gone,
+     * as a sign-in by hand the retry waited behind settles it. Signs nothing in to the library.
+     */
+    suspend fun storedAgain(stillRefused: () -> Boolean): Boolean {
+        if (!stillRefused()) return true
+        val studentId = studentId() ?: return false
+        val password = password() ?: return false
+        return signInAgainToSchool(studentId.trim().uppercase(), password, stillRefused)
     }
 
     private suspend fun signInToLibrary(studentId: String, password: String, libraryAccount: Int, school: Int) {

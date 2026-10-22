@@ -54,7 +54,7 @@ class StoredPasswordRetry internal constructor(
 
 /**
  * One try of the stored password, down the chain a typed sign-in runs: [signInToSchool], which
- * posts the password where the school's session is gone, then [renewMoodleToken] where none is
+ * posts the password to the school, warm session or not, then [renewMoodleToken] where none is
  * stored, then [signInToBackend], told whether this try got the Moodle token. Signs nothing out.
  * It stops at the first step that fails, a refusal the latch counts included, and says whether it
  * ran to the end.

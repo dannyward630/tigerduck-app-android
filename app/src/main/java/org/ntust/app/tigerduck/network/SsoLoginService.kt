@@ -113,6 +113,22 @@ class SsoLoginService internal constructor(
     }
 
     /**
+     * [ensureServiceLogin] past the session the jar holds, for the retry of a refused stored
+     * password: a session still live lets [ensureServiceLogin] through without a post, which says
+     * nothing about the password, so the jar is emptied first, under the same lock, and the
+     * school's answer to the post is what the latch records. A refusal's wait still holds it back.
+     *
+     * [stillRefused] is asked once the lock is held: an automatic sign-in that held it first, and
+     * that the school took, settles the refusal, and this then keeps its session and posts nothing.
+     */
+    suspend fun signInAgain(serviceUrl: String, studentId: String, password: String, stillRefused: () -> Boolean): Boolean =
+        loginMutex.withLock {
+            if (!stillRefused()) return@withLock true
+            sessionManager.invalidateSession()
+            logIn(serviceUrl, studentId, password)
+        }
+
+    /**
      * A sign-in with credentials just entered. [ensureServiceLogin] takes a
      * session the jar already holds as signed in, without submitting the
      * credentials; that is right for the account re-logging itself in, and
