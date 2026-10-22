@@ -74,9 +74,11 @@ internal class SchoolSignIn(
     /**
      * The stored account posted to the school whatever the session: the retry of a refused
      * password, which a warm session says nothing about, as only the school's answer to a post
-     * does. False without one. Signs nothing in to the library.
+     * does. False without one. True without a post once [stillRefused] says the refusal is gone,
+     * as a sign-in by hand the retry waited behind settles it. Signs nothing in to the library.
      */
-    suspend fun storedAgain(): Boolean {
+    suspend fun storedAgain(stillRefused: () -> Boolean): Boolean {
+        if (!stillRefused()) return true
         val studentId = studentId() ?: return false
         val password = password() ?: return false
         return signInAgainToSchool(studentId.trim().uppercase(), password)

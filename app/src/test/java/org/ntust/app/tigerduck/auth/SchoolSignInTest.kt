@@ -229,18 +229,30 @@ class SchoolSignInTest {
     fun `a sign-in again past a warm session posts the stored password, and leaves the library alone`() = runTest {
         warm = true
 
-        assertTrue(signIn.storedAgain())
+        assertTrue(signIn.storedAgain(stillRefused = { true }))
 
         assertEquals(1, signInsAgain)
         assertEquals(0, schoolSignIns)
         assertEquals(0, librarySignIns)
     }
 
+    /**
+     * A sign-in by hand that the retry waited behind has settled the password already: posting
+     * it again would only throw away the session that sign-in just made.
+     */
+    @Test
+    fun `a sign-in again whose refusal is gone by the time it runs posts nothing`() = runTest {
+        assertTrue(signIn.storedAgain(stillRefused = { false }))
+
+        assertEquals(0, signInsAgain)
+        assertEquals(0, schoolSignIns)
+    }
+
     @Test
     fun `no stored account signs nothing in again`() = runTest {
         storedPassword = null
 
-        assertFalse(signIn.storedAgain())
+        assertFalse(signIn.storedAgain(stillRefused = { true }))
 
         assertEquals(0, signInsAgain)
     }

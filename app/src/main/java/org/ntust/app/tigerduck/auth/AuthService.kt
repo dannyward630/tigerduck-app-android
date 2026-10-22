@@ -333,14 +333,21 @@ class AuthService @Inject constructor(
     }
 
     /** [ensureAuthenticated] for the retry of a refused stored password: it posts, warm session or not. */
-    private suspend fun signInAgainToSchool(): Boolean = loginMutex.withLock {
-        if (demoAccount.isActive) return@withLock false
-        try {
-            schoolSignIn.storedAgain()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (_: Exception) {
-            false
+    private suspend fun signInAgainToSchool(): Boolean {
+        // Read before the lock: a sign-in by hand this try waits behind clears the refusal, and
+        // moves the generation, by the time the lock is held.
+        val refused = storedPasswordLatch.generation
+        return loginMutex.withLock {
+            if (demoAccount.isActive) return@withLock false
+            try {
+                schoolSignIn.storedAgain(stillRefused = {
+                    storedPasswordLatch.generation == refused && storedPasswordLatch.refusals.value > 0
+                })
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
         }
     }
 
