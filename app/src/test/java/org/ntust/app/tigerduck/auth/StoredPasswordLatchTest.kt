@@ -36,7 +36,7 @@ class StoredPasswordLatchTest {
         prefs.edit().clear().commit()
     }
 
-    private fun latch() = PersistedStoredPasswordLatch(prefs) { stored }
+    private fun latch() = PersistedStoredPasswordLatch(prefs, now = { 1_800_000_000_000L }) { stored }
 
     @Test
     fun `a refusal latches with the school's message, and a later process still sees it`() {

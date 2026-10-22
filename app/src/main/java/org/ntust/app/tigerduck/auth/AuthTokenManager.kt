@@ -201,6 +201,16 @@ class AuthTokenManager(
     suspend fun signInAgain(): Boolean = signInAutomatically()
 
     /**
+     * As [signInIfSignedOut], without waiting out the pause after a failed sign-in: for the try of
+     * a stored password the school refused ([StoredPasswordRetry]), which its own schedule paces
+     * and which may have just got the Moodle token the failed one lacked.
+     */
+    suspend fun signInIfSignedOutNow(): Boolean {
+        if (!isLoggedIn) signInAutomatically(waitOutPause = false)
+        return isLoggedIn
+    }
+
+    /**
      * Runs the interactive sign-in's [signIn], which calls [login] with the
      * generation it is given, and says whether it signed in. It never waits
      * for the pause. An automatic sign-in that starts meanwhile waits for it
@@ -224,7 +234,7 @@ class AuthTokenManager(
      * student and per IP, and a campus network puts many students behind one
      * IP.
      */
-    private suspend fun signInAutomatically(): Boolean {
+    private suspend fun signInAutomatically(waitOutPause: Boolean = true): Boolean {
         val signInWith = signInWithStoredAccount ?: return false
         val attempt = CompletableDeferred<Boolean>()
         val signIn: Int
@@ -233,7 +243,7 @@ class AuthTokenManager(
             // Before the credentials, which the sign-in reads.
             signIn = generation
             signInUnderWay ?: run {
-                if (isSignInPaused()) return false
+                if (waitOutPause && isSignInPaused()) return false
                 signInUnderWay = attempt
                 _lastSignInFailed.value = false
                 null

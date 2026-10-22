@@ -89,7 +89,7 @@ class MoodleTokenServiceLatchTest {
 
     /** A service and latch as a fresh process has them, over the same persisted latch. */
     private fun TestScope.service(): Pair<MoodleTokenService, PersistedStoredPasswordLatch> {
-        val latch = PersistedStoredPasswordLatch(latchPrefs) {
+        val latch = PersistedStoredPasswordLatch(latchPrefs, now = { 1_800_000_000_000L }) {
             val id = tokens.studentId
             val password = tokens.password
             if (id == null || password == null) null else id to password

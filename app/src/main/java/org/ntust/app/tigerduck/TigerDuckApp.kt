@@ -10,6 +10,7 @@ import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.auth.AccountSessionEffects
 import org.ntust.app.tigerduck.auth.AuthService
+import org.ntust.app.tigerduck.auth.StoredPasswordRetry
 import org.ntust.app.tigerduck.data.DataMigration
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
@@ -77,6 +78,9 @@ class TigerDuckApp : Application(), Configuration.Provider {
     lateinit var accountSessionEffects: AccountSessionEffects
 
     @Inject
+    lateinit var storedPasswordRetry: StoredPasswordRetry
+
+    @Inject
     lateinit var librarySession: org.ntust.app.tigerduck.library.LibrarySession
 
     @Inject
@@ -137,6 +141,8 @@ class TigerDuckApp : Application(), Configuration.Provider {
         }
         // The background sync, reminders, notifications and Live Update follow the sign-in from every page.
         accountSessionEffects.start(appScope)
+        // A stored password the school refused goes again once its wait is over.
+        storedPasswordRetry.start(appScope)
         // The dot hides itself while signed out, but the tracker is
         // process-wide: a status written before logout would still be here
         // for the next account to inherit, green from the moment the dot

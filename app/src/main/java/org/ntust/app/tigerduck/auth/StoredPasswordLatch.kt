@@ -19,38 +19,68 @@ import javax.inject.Singleton
 
 /**
  * The school refused the stored password in a sign-in the user did not start. Each refusal counts
- * toward the account's lockout, which keeps the student out of every school system, so from then
- * on no automatic sign-in posts that password: not the SSO sign-ins the pages and the background
- * sync make, and not the Moodle token harvest. It lifts when a sign-in by hand stores the password
- * the school took, which is how a changed password gets in, and on sign-out. The iPhone app keeps the same latch
- * (`SSOLoginService.storedPasswordRejected`).
+ * toward the account's lockout, which keeps the student out of every school system, so the next
+ * automatic post of that password waits [StoredPasswordSchedule.delayMs] after the last refusal:
+ * not the SSO sign-ins the pages and the background sync make, and not the Moodle token harvest.
+ * [StoredPasswordRetry] tries it again when the wait is over. A post the school takes ends the
+ * count, as a sign-in by hand that stores the password the school took does, which is how a
+ * changed password gets in, and a sign-out. The iPhone app keeps the same count
+ * (`SSOLoginService.storedPasswordRefusals`, tigerduck-app/tigerduck-app#768).
  *
- * One for the whole app, and kept across restarts: a process the background sync starts must not
- * try the password again either. It holds a flag and the school's message, never the password or
- * anything made from it.
+ * One for the whole app, and kept across restarts: a process the background sync starts must wait
+ * too. It holds a count, a time and the school's message, never the password or anything made
+ * from it.
  */
 interface StoredPasswordLatch {
-    /** Null while automatic sign-ins may post the stored password; otherwise the refusal. */
+    /**
+     * The first of the refusals in a row, for the banner, which shows while it holds; null once
+     * the school takes the password again.
+     */
     val rejection: StateFlow<Rejection?>
 
     /** Whether a refusal holds for the stored account: never with none stored. */
     val isRejected: Boolean get() = rejection.value != null
 
+    /** The refusals in a row since the school last took the password: 0 with none. */
+    val refusals: StateFlow<Int>
+
+    /**
+     * Moves with every refusal counted and every end of the count. What a wait keys on: a clear
+     * and a new refusal can bring [refusals] back to the value it had before anyone looked.
+     */
+    val changes: StateFlow<Int>
+
+    /**
+     * When an automatic post of the stored password may go next, which is now or earlier once the
+     * wait is over; null while no refusal holds, or no account is stored.
+     */
+    fun retryAt(): Long?
+
+    /** Whether an automatic post of the stored password has to wait now. */
+    fun postMustWait(): Boolean
+
     /**
      * Moved by [clear]. An automatic sign-in reads it before it posts the password and hands it to
-     * [markRejected], so a refusal that arrives after the user signed in again, or signed out,
-     * latches nothing.
+     * [markRejected] or [markAccepted], so an answer that arrives after the user signed in again,
+     * or signed out, counts for nothing.
      */
     val generation: Int
 
     /**
-     * Latches after the school refused [password] for [studentId] in a sign-in the user did not
-     * start, which read [generation] before it posted them. [reason] is the school's message, when
-     * the page carried one. Nothing latches once [clear] has run since, or when the stored account
-     * is no longer this one: a sign-in with a new password can finish while one with the old
-     * password is still under way. While a refusal holds, it stays as it is.
+     * Counts a refusal of [password] for [studentId] in a sign-in the user did not start, which
+     * read [generation] before it posted them. [reason] is the school's message, when the page
+     * carried one. Nothing counts once [clear] has run since, or when the stored account is no
+     * longer this one: a sign-in with a new password can finish while one with the old password is
+     * still under way. A refusal that follows others keeps their [rejection].
      */
     fun markRejected(generation: Int, studentId: String, password: String, reason: String?)
+
+    /**
+     * Ends the count after the school took [password] for [studentId] in a sign-in the user did not
+     * start, under the same rules as [markRejected]. Only for a post: a live session that let a
+     * sign-in through without one says nothing of the password.
+     */
+    fun markAccepted(generation: Int, studentId: String, password: String)
 
     /** When a sign-in the user made stores the password the school took, and on sign-out. */
     fun clear()
@@ -60,30 +90,58 @@ interface StoredPasswordLatch {
 
     /**
      * Held by every automatic post of the stored password, the SSO sign-ins' and the Moodle token
-     * renewal's alike, from its last look at the latch right before the post until it has read
-     * the school's answer and latched any refusal ([postAutomatically]): a refusal one of them
-     * gets lands before the next one looks, never while it is already posting. A sign-in the user
-     * makes never takes it.
+     * renewal's alike, from its last look at the count right before the post until it has read
+     * the school's answer and counted it ([postAutomatically]): a refusal one of them gets lands
+     * before the next one looks, never while it is already posting. A sign-in the user makes never
+     * takes it.
      */
     val automaticPosts: Mutex
 
     /**
-     * One refusal. Not a data class: two refusals with the same message are still two, and a
+     * One run of refusals. Not a data class: two runs with the same message are still two, and a
      * banner closed for one shows again for the next.
      */
     class Rejection(val reason: String?)
 }
 
 /**
+ * The waits between automatic posts of a stored password the school refused: 10 seconds, 1 minute
+ * and 5 minutes after the first three refusals in a row, then 6 hours each time, so a password
+ * changed elsewhere goes out four times a day. As on the iPhone (`storedPasswordRetryDelay`).
+ */
+internal object StoredPasswordSchedule {
+    private val QUICK_RETRIES_MS = longArrayOf(10_000L, 60_000L, 5 * 60_000L)
+    private const val SLOW_RETRY_MS = 6 * 60 * 60_000L
+
+    /** How many of the quick waits there are, which a device the old latch held has spent. */
+    val quickRetries: Int get() = QUICK_RETRIES_MS.size
+
+    /** The wait after the [refusals]th refusal in a row. */
+    fun delayMs(refusals: Int): Long =
+        if (refusals > QUICK_RETRIES_MS.size) SLOW_RETRY_MS else QUICK_RETRIES_MS[maxOf(refusals, 1) - 1]
+
+    /**
+     * When the next post may go after [refusals] in a row, the last at [refusedAt], or null with
+     * none. Measured from that refusal, so a clock set back before it lets the post go at [now]
+     * rather than stretching the wait.
+     */
+    fun retryAt(refusals: Int, refusedAt: Long, now: Long): Long? = when {
+        refusals <= 0 -> null
+        refusedAt > now -> now
+        else -> refusedAt + delayMs(refusals)
+    }
+}
+
+/**
  * Runs [post], an automatic sign-in's post of the stored password through to reading the school's
  * answer, holding [StoredPasswordLatch.automaticPosts], and only for credentials still worth
  * posting. The look that counts is this one, made holding the lock, so no other automatic post's
- * refusal can land between it and this post. [post] latches a refusal it gets before it returns.
+ * refusal can land between it and this post. [post] counts the answer it gets before it returns.
  *
- * Not at all while a refusal holds: [refused] makes the error then. Nor once [studentId] and
- * [password] are no longer the stored account's, or [generation], read before the sign-in began,
- * has moved: a sign-in by hand stored another password, or the account signed out, while this one
- * was on its way. [stale] makes the error then.
+ * Not at all while a refusal's wait holds: [refused] makes the error then. Nor once [studentId]
+ * and [password] are no longer the stored account's, or [generation], read before the sign-in
+ * began, has moved: a sign-in by hand stored another password, or the account signed out, while
+ * this one was on its way. [stale] makes the error then.
  */
 internal suspend fun <T> StoredPasswordLatch.postAutomatically(
     generation: Int,
@@ -93,7 +151,7 @@ internal suspend fun <T> StoredPasswordLatch.postAutomatically(
     stale: () -> Exception,
     post: suspend () -> T,
 ): T = automaticPosts.withLock {
-    rejection.value?.let { throw refused(it) }
+    if (postMustWait()) throw refused(rejection.value ?: StoredPasswordLatch.Rejection(null))
     if (this.generation != generation || !isStoredAccount(studentId, password)) throw stale()
     post()
 }
@@ -105,7 +163,7 @@ internal suspend fun <T> StoredPasswordLatch.postAutomatically(
 internal interface PasswordPosting {
     suspend fun <T> post(send: suspend () -> T): T
 
-    /** For credentials the user just typed: posted as they are, whatever the latch holds. */
+    /** For credentials the user just typed: posted as they are, whatever the count holds. */
     object Typed : PasswordPosting {
         override suspend fun <T> post(send: suspend () -> T): T = send()
     }
@@ -113,18 +171,19 @@ internal interface PasswordPosting {
 
 /**
  * Runs [harvest], a Moodle token harvest the user did not start, which posts the stored
- * [password] to NTUST's SSO with the [PasswordPosting] it is handed: not at all while the latch is
- * set, and latching when SSO refuses the password it posted. That posting takes
- * [StoredPasswordLatch.automaticPosts] and checks the latch again right before the password goes
- * out ([postAutomatically]), so a refusal another sign-in latched meanwhile stops it too. The
- * harvest a sign-in the user makes posts with [PasswordPosting.Typed].
+ * [password] to NTUST's SSO with the [PasswordPosting] it is handed: not at all while a refusal's
+ * wait holds, counting a refusal of the password it posted, and ending the count when SSO takes
+ * it. That posting takes [StoredPasswordLatch.automaticPosts] and checks the count again right
+ * before the password goes out ([postAutomatically]), so a refusal another sign-in counted
+ * meanwhile stops it too. A harvest that gets its token from a live session posts nothing and
+ * leaves the count. The harvest a sign-in the user makes posts with [PasswordPosting.Typed].
  */
 internal suspend fun <T> StoredPasswordLatch.guardAutomaticHarvest(
     studentId: String,
     password: String,
     harvest: suspend (posting: PasswordPosting) -> T,
 ): T {
-    rejection.value?.let { throw MoodleWebserviceError.SsoLoginRejected(it.reason) }
+    if (postMustWait()) throw MoodleWebserviceError.SsoLoginRejected(rejection.value?.reason)
     val before = generation
     val latch = this
     return harvest(object : PasswordPosting {
@@ -138,7 +197,7 @@ internal suspend fun <T> StoredPasswordLatch.guardAutomaticHarvest(
                 stale = { MoodleWebserviceError.MissingStoredCredentials() },
             ) {
                 try {
-                    send()
+                    send().also { latch.markAccepted(before, studentId, password) }
                 } catch (e: MoodleWebserviceError.SsoLoginRejected) {
                     latch.markRejected(before, studentId, password, e.reason)
                     throw e
@@ -148,12 +207,13 @@ internal suspend fun <T> StoredPasswordLatch.guardAutomaticHarvest(
 }
 
 /**
- * [StoredPasswordLatch] in its own preferences file, as a flag and a nullable message: a missing
- * key reads as not latched, so the file needs no migration.
+ * [StoredPasswordLatch] in its own preferences file, as a count, a time and a nullable message: a
+ * missing key reads as no refusal.
  */
 @Singleton
 class PersistedStoredPasswordLatch internal constructor(
     private val prefs: SharedPreferences,
+    private val now: () -> Long = System::currentTimeMillis,
     /** The stored student ID and password, or null with none stored. */
     private val storedAccount: () -> Pair<String, String>?,
 ) : StoredPasswordLatch {
@@ -161,7 +221,7 @@ class PersistedStoredPasswordLatch internal constructor(
     @Inject
     constructor(@ApplicationContext context: Context, credentials: CredentialManager) : this(
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE),
-        {
+        storedAccount = {
             val studentId = credentials.ntustStudentId
             val password = credentials.ntustPassword
             if (studentId == null || password == null) null else studentId to password
@@ -173,18 +233,36 @@ class PersistedStoredPasswordLatch internal constructor(
 
     override val automaticPosts = Mutex()
 
+    private val _refusals = MutableStateFlow(takeUpLatch(prefs))
+    override val refusals: StateFlow<Int> = _refusals.asStateFlow()
+
+    private val _changes = MutableStateFlow(0)
+    override val changes: StateFlow<Int> = _changes.asStateFlow()
+
+    private var refusedAt = prefs.getLong(KEY_REFUSED_AT, 0L)
+
     private val _rejection = MutableStateFlow(
-        if (prefs.getBoolean(KEY_REJECTED, false)) {
-            StoredPasswordLatch.Rejection(prefs.getString(KEY_REASON, null))
-        } else {
-            null
-        },
+        if (_refusals.value > 0) StoredPasswordLatch.Rejection(prefs.getString(KEY_REASON, null)) else null,
     )
     override val rejection: StateFlow<StoredPasswordLatch.Rejection?> = _rejection.asStateFlow()
 
     // The refusal was of the stored password; with no account stored, there is none to refuse,
     // whatever a sign-out that never ran its clear left behind.
     override val isRejected: Boolean get() = _rejection.value != null && storedAccount() != null
+
+    override fun retryAt(): Long? {
+        if (storedAccount() == null) return null
+        return synchronized(lock) { StoredPasswordSchedule.retryAt(_refusals.value, refusedAt, now()) }
+    }
+
+    override fun postMustWait(): Boolean {
+        if (storedAccount() == null) return false
+        return synchronized(lock) {
+            val at = now()
+            val retryAt = StoredPasswordSchedule.retryAt(_refusals.value, refusedAt, at)
+            retryAt != null && retryAt > at
+        }
+    }
 
     override val generation: Int get() = synchronized(lock) { currentGeneration }
 
@@ -195,18 +273,35 @@ class PersistedStoredPasswordLatch internal constructor(
         reason: String?,
     ) {
         synchronized(lock) {
-            // One already holds: a new one would show a banner the user closed again.
-            if (_rejection.value != null) return
             if (generation != currentGeneration) return
             if (!isStoredAccount(studentId, password)) return
+            val count = _refusals.value + 1
+            val at = now()
+            // One already holds: its message stays, as a new one would show a banner the user
+            // closed again.
+            val held = _rejection.value
             val message = reason?.trim()?.take(MAX_REASON_LENGTH)?.takeIf { it.isNotEmpty() }
             // Written through before anything reads it: a process the system ends right
-            // after must not start the next one unlatched.
+            // after must not start the next one without the wait.
             prefs.edit().apply {
-                putBoolean(KEY_REJECTED, true)
-                if (message == null) remove(KEY_REASON) else putString(KEY_REASON, message)
+                putInt(KEY_REFUSALS, count)
+                putLong(KEY_REFUSED_AT, at)
+                if (held == null) {
+                    if (message == null) remove(KEY_REASON) else putString(KEY_REASON, message)
+                }
             }.commit()
-            _rejection.value = StoredPasswordLatch.Rejection(message)
+            refusedAt = at
+            if (held == null) _rejection.value = StoredPasswordLatch.Rejection(message)
+            _refusals.value = count
+            _changes.value++
+        }
+    }
+
+    override fun markAccepted(generation: Int, studentId: String, password: String) {
+        synchronized(lock) {
+            if (generation != currentGeneration) return
+            if (!isStoredAccount(studentId, password)) return
+            forget()
         }
     }
 
@@ -218,21 +313,48 @@ class PersistedStoredPasswordLatch internal constructor(
     override fun clear() {
         synchronized(lock) {
             currentGeneration++
-            if (_rejection.value == null && !prefs.contains(KEY_REJECTED)) return
-            prefs.edit().remove(KEY_REJECTED).remove(KEY_REASON).apply()
-            _rejection.value = null
+            forget()
         }
+    }
+
+    private fun forget() {
+        if (_refusals.value == 0 && _rejection.value == null && !prefs.contains(KEY_REFUSALS)) return
+        prefs.edit().remove(KEY_REFUSALS).remove(KEY_REFUSED_AT).remove(KEY_REASON).apply()
+        refusedAt = 0L
+        _rejection.value = null
+        _refusals.value = 0
+        _changes.value++
     }
 
     private fun normalized(studentId: String) = studentId.trim().uppercase()
 
     private companion object {
         const val PREFS_NAME = "tigerduck_auth"
-        const val KEY_REJECTED = "stored_password_rejected"
+        const val KEY_REFUSALS = "stored_password_refusals"
+        const val KEY_REFUSED_AT = "stored_password_refused_at"
         const val KEY_REASON = "stored_password_rejected_reason"
+
+        /** Before the retries, a refusal held every automatic post until the user signed in again. */
+        const val KEY_LATCHED = "stored_password_rejected"
 
         // The school's message is a line or two; anything longer is not one.
         const val MAX_REASON_LENGTH = 200
+
+        /**
+         * The refusals stored, after moving a latch from a build before the retries onto them with
+         * the quick ones spent: one try at once, then one every 6 hours, as on the iPhone
+         * (`StoredPasswordLatchRetryMigration`).
+         */
+        fun takeUpLatch(prefs: SharedPreferences): Int {
+            if (!prefs.getBoolean(KEY_LATCHED, false)) return prefs.getInt(KEY_REFUSALS, 0)
+            val refusals = StoredPasswordSchedule.quickRetries
+            prefs.edit()
+                .remove(KEY_LATCHED)
+                .putInt(KEY_REFUSALS, refusals)
+                .putLong(KEY_REFUSED_AT, 0L)
+                .commit()
+            return refusals
+        }
     }
 }
 

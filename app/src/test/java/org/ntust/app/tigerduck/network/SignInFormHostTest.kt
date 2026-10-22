@@ -53,7 +53,7 @@ class SignInFormHostTest {
     private fun latch(): PersistedStoredPasswordLatch {
         val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("form-host-test", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
-        return PersistedStoredPasswordLatch(prefs) { STUDENT to PASSWORD }
+        return PersistedStoredPasswordLatch(prefs, now = { 1_800_000_000_000L }) { STUDENT to PASSWORD }
     }
 
     private fun ssoLogin(action: String): SsoLoginService {

@@ -309,6 +309,27 @@ class AuthService @Inject constructor(
         }
     }
 
+    /**
+     * The try [StoredPasswordRetry] makes once a refusal of the stored password has waited its
+     * turn: the school's sign-in where its session is gone, a Moodle token where none is stored,
+     * then the backend's ([retryStoredPasswordChain]). True once it ran to the end, and with
+     * nothing to try.
+     */
+    internal suspend fun retryStoredPassword(): Boolean {
+        if (demoAccount.isActive || credentials.ntustStudentId == null) return true
+        return retryStoredPasswordChain(
+            signInToSchool = ::ensureAuthenticated,
+            moodleTokenMissing = { credentials.moodleToken.isNullOrEmpty() },
+            renewMoodleToken = { moodleTokenService.renewToken(null) },
+            // Past the pause after a failed sign-in only with the Moodle token it lacked, which
+            // this try's harvest, paced by the refusals' own schedule, has just got: any other
+            // try waits it out, as the backend takes 5 logins per 15 minutes.
+            signInToBackend = { renewedToken ->
+                if (renewedToken) authTokenManager.signInIfSignedOutNow() else authTokenManager.signInIfSignedOut()
+            },
+        )
+    }
+
     suspend fun ensureAuthenticated(): Boolean = loginMutex.withLock {
         // No session to build: every caller then reads its cache, which is
         // where the demo data is.

@@ -173,7 +173,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
         }
 
         if (coursesOk && assignmentsOk) return Result.success()
-        return resultForFailedSync(triggered, runAttemptCount, passwordRejected = storedPasswordLatch.isRejected)
+        return resultForFailedSync(triggered, runAttemptCount, passwordRejected = storedPasswordLatch.postMustWait())
     }
 
     private suspend fun syncOverridesFromBackend() {
@@ -686,7 +686,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
         ): ListenableWorker.Result =
             // A retry could only fail the same way: once the school refused
             // the stored password, no automatic sign-in posts it until the
-            // user signs in again (StoredPasswordLatch).
+            // refusal's wait is over, which StoredPasswordRetry keeps.
             if (passwordRejected || (triggered && runAttemptCount >= TRIGGERED_RETRIES)) {
                 ListenableWorker.Result.success()
             } else {

@@ -87,7 +87,7 @@ class TypedAccountSignInTest {
         val context = RuntimeEnvironment.getApplication()
         val latchPrefs = context.getSharedPreferences("typed-sign-in-test", Context.MODE_PRIVATE)
         latchPrefs.edit().clear().commit()
-        latch = PersistedStoredPasswordLatch(latchPrefs) { stored }
+        latch = PersistedStoredPasswordLatch(latchPrefs, now = { 1_800_000_000_000L }) { stored }
         latch.markRejected(latch.generation, STUDENT, OLD_PASSWORD, "Wrong account or password")
         val sessionManager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
         val client = OkHttpClient.Builder().addInterceptor { chain -> answer(chain.request()) }.build()
