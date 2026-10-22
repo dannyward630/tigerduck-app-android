@@ -99,6 +99,8 @@ class DebugFixtureStore @Inject constructor(
      */
     fun clearSchool() {
         if (!libraryFakeSignedIn) return clear()
+        // The demo sign-in shows the library under the demo student ID, which goes below.
+        if (libraryUsername == null) libraryUsername = studentIdOverride
         val library = listOf(KEY_QR_CONTENT, KEY_QR_FAKE_SIGNED_IN, KEY_LIBRARY_USERNAME)
         prefs.edit().apply { prefs.all.keys.filter { it !in library }.forEach(::remove) }.apply()
     }
