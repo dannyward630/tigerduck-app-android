@@ -91,7 +91,7 @@ abstract class BaseClassTableWidget(
                     when (layout) {
                         WidgetLayout.Week -> WeekGridContent(s, colors, style, tapAction)
                         WidgetLayout.Today -> TodayListContent(s, colors, style, tapAction)
-                        WidgetLayout.NextClass -> NextClassContent(s, colors, tapAction)
+                        WidgetLayout.NextClass -> NextClassContent(s, colors, style, tapAction)
                     }
                 }
             }

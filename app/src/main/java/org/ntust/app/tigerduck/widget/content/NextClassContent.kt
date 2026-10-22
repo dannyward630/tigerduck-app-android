@@ -29,17 +29,57 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.shared.Course
+import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
+import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy.CourseColorStyle
+import org.ntust.app.tigerduck.ui.theme.pastelOutline
 import org.ntust.app.tigerduck.widget.CourseBlock
 import org.ntust.app.tigerduck.widget.WidgetColors
 import org.ntust.app.tigerduck.widget.WidgetState
+import org.ntust.app.tigerduck.widget.widgetCourseColor
+
+/**
+ * The colors the Next Class widget draws [shown], the course it is about, in. Under TAT the widget
+ * is that course's card, as Home's time machine card is: the class table's pastel, light in either
+ * theme, with dark text, and the badge and the progress in the course's own darker line. Under
+ * TigerDuck, or with no course to show, the theme's.
+ */
+internal fun nextClassColors(
+    shown: Course?,
+    colors: WidgetColors,
+    style: VisualStylePolicy,
+    courseColors: Map<String, Color>,
+): WidgetColors {
+    if (shown == null || style.courseColorStyle != CourseColorStyle.Pastel) return colors
+    val courseColor = widgetCourseColor(shown, courseColors, isDark = false)
+    val fill = style.courseCardFill(courseColor, tintAlpha = 1f, muted = false, surface = colors.surface, isDark = false)
+    return WidgetColors(
+        isDark = false,
+        background = fill,
+        surface = fill,
+        onSurface = style.courseCardTextColor(colors.onSurface),
+        onSurfaceVariant = style.courseCardSecondaryTextColor(colors.onSurface),
+        highlight = courseColor.pastelOutline(),
+        emptyCell = VisualStylePolicy.TextOnPastel.copy(alpha = 0.12f),
+    )
+}
+
+/** The course the widget is about: the first class in session, else the next one. */
+internal fun nextClassShownCourse(state: WidgetState): Course? = when {
+    !state.isLoggedIn -> null
+    state.ongoingBlocks.isNotEmpty() -> state.ongoingBlocks.first().course
+    state.nextTodayBlock != null -> state.nextTodayBlock.course
+    else -> state.tomorrowFirstCourseNo?.let { no -> state.courses.find { it.courseNo == no } }
+}
 
 @Composable
-fun NextClassContent(state: WidgetState, colors: WidgetColors, tapAction: Action) {
+fun NextClassContent(state: WidgetState, colors: WidgetColors, style: VisualStylePolicy, tapAction: Action) {
     val height = LocalSize.current.height
     val compact = height < 90.dp
+    val drawn = nextClassColors(nextClassShownCourse(state), colors, style, state.courseColors)
 
-    if (compact) CompactLayout(state, colors, tapAction)
-    else FullLayout(state, colors, tapAction)
+    if (compact) CompactLayout(state, drawn, tapAction)
+    else FullLayout(state, drawn, tapAction)
 }
 
 @Composable
