@@ -33,6 +33,7 @@ import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.auth.isSessionRefused
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
@@ -310,7 +311,7 @@ class HomeBackendSync @Inject constructor(
         } catch (e: Exception) {
             ServerStatusTracker.set(ServerStatus.FAILED, ServerKind.BACKEND)
             prefs.setLastSyncSource(SyncSource.LOCAL)
-            if (!retried && (e.message?.contains("401") == true || e.message?.contains("session_revoked") == true)) {
+            if (!retried && e.isSessionRefused()) {
                 // Delegates to AuthService so the relogin harvests a fresh
                 // Moodle token — the backend rejects stale stored tokens with
                 // 401 invalid_token.
