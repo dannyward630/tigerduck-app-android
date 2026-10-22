@@ -173,46 +173,24 @@ class CredentialManager private constructor(
     private var schoolAccount = 0
 
     /**
-     * Moved by each school sign-out. The school sign-in reads it before its
-     * SSO step, and its own library step stores nothing once it has moved
-     * (see [isSchoolAccount]). Only that step: a sign-in with another
-     * student's stored library credentials, which the sign-out keeps, still
-     * stores its token or its refusal, as on the iPhone.
+     * Moved by each school sign-out, so work begun for the school account,
+     * such as a bulletin fetch, stores nothing once it has left (see
+     * [isSchoolAccount]). The library account is not touched by it.
      */
     val schoolAccountGeneration: Int get() = libraryAccount.atomically { schoolAccount }
 
-    /**
-     * Whether no school sign-out has come since [read] was read from
-     * [schoolAccountGeneration]. Asked as the library step's answer is
-     * stored, under the same lock as the sign-out.
-     */
+    /** Whether no school sign-out has come since [read] was read from [schoolAccountGeneration]. */
     fun isSchoolAccount(read: Int): Boolean = libraryAccount.atomically { schoolAccount == read }
 
     /**
-     * The library sign-out a school sign-out makes: the library account goes
-     * when it is [ifSchoolAccount]'s, the departing student ID, compared as
-     * [sameStudentId] does; another student's stays. Either way the school
-     * sign-in's own library step, if still out, stores nothing. Atomic with
-     * the library's saves, so that step cannot store the departing account
-     * after this looked. Returns whether the library account went.
+     * A school sign-out's credentials: the school account goes, and the
+     * library account stays, whoever's it is, as each account signs in and
+     * out by itself. Moves [schoolAccountGeneration], under the library's
+     * lock as [isSchoolAccount] reads it.
      */
-    fun clearLibraryCredentials(ifSchoolAccount: String?): Boolean = libraryAccount.atomically {
-        schoolAccount++
-        val same = ifSchoolAccount != null && sameStudentId(libraryUsername, ifSchoolAccount)
-        if (same) clearLibraryCredentials()
-        same
-    }
-
-    /**
-     * A school sign-out's credentials: the school account goes, and the library
-     * account with it when it is the same student's, by the student ID read
-     * before the school's is wiped; see [clearLibraryCredentials]. Returns
-     * whether the library account went.
-     */
-    fun signOutSchoolAccount(): Boolean {
-        val departing = ntustStudentId
+    fun signOutSchoolAccount() {
         clearNtustCredentials()
-        return clearLibraryCredentials(ifSchoolAccount = departing)
+        libraryAccount.atomically { schoolAccount++ }
     }
 
     // ── School mail — its own account, never shared with the NTUST or library one ──

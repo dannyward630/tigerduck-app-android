@@ -35,8 +35,8 @@ import org.robolectric.annotation.Config
 /**
  * The sign-in with a password the user typed, against hand-made school pages, while the school's
  * refusal of the stored password is latched: the latch lifts only together with the store of the
- * new password, whenever the sign-in is cancelled, and the library signs in before the account
- * shows as signed in.
+ * new password, whenever the sign-in is cancelled, and nothing is signed in to the library: each
+ * account signs in by itself.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
@@ -61,8 +61,8 @@ class TypedAccountSignInTest {
     /** The steps of the sign-in, in order. */
     private val steps = mutableListOf<String>()
 
-    /** The library's sign-in. */
-    private var library: suspend () -> Unit = {}
+    /** What must hold before the account shows as signed in. */
+    private var prepare: suspend () -> Unit = {}
 
     /** Runs as the demo account signs in on the device. */
     private var onDemo: () -> Unit = {}
@@ -107,10 +107,6 @@ class TypedAccountSignInTest {
         },
         latch = latch,
         demoSignIn = { _, password -> (password == DEMO_PASSWORD).also { if (it) onDemo() } },
-        signInToLibrary = { _, _, _ ->
-            steps += "library"
-            library()
-        },
         markSignedIn = {
             signedIn = true
             steps += "shown"
@@ -120,7 +116,10 @@ class TypedAccountSignInTest {
     private suspend fun signIn(password: String = NEW_PASSWORD) = typedSignIn().signIn(
         STUDENT,
         password,
-        prepareSignedIn = {},
+        prepareSignedIn = {
+            steps += "prepare"
+            prepare()
+        },
     ) { _, _ ->
         steps += "rest"
         SignInAttempt.SIGNED_IN
@@ -138,14 +137,14 @@ class TypedAccountSignInTest {
 
     @Test
     fun `a sign-in cancelled after the school took the password keeps it, with no refusal held`() = runTest {
-        val libraryStarted = CompletableDeferred<Unit>()
-        // The library's sign-in, which the user leaves before it answers.
-        library = {
-            libraryStarted.complete(Unit)
+        val prepareStarted = CompletableDeferred<Unit>()
+        // The step before the account shows, which the user leaves before it is done.
+        prepare = {
+            prepareStarted.complete(Unit)
             awaitCancellation()
         }
         val job = launch { signIn() }
-        libraryStarted.await()
+        prepareStarted.await()
 
         job.cancelAndJoin()
 
@@ -179,11 +178,10 @@ class TypedAccountSignInTest {
     }
 
     @Test
-    fun `the library signs in after the store, before the account shows as signed in`() = runTest {
+    fun `a school sign-in signs nothing in to the library, and shows the account after the store`() = runTest {
         signIn()
 
-        // The watch is sent the library credentials the moment the account shows as signed in.
-        assertEquals(listOf("store", "library", "shown", "rest"), steps)
+        assertEquals(listOf("store", "prepare", "shown", "rest"), steps)
     }
 
     @Test
@@ -194,7 +192,7 @@ class TypedAccountSignInTest {
         assertEquals(emptyList<String>(), requests)
         assertEquals(STUDENT to DEMO_PASSWORD, stored)
         assertFalse(latch.isRejected)
-        assertEquals(listOf("store", "shown"), steps)
+        assertEquals(listOf("store", "prepare", "shown"), steps)
     }
 
     @Test
@@ -211,14 +209,14 @@ class TypedAccountSignInTest {
     }
 
     @Test
-    fun `a sign-out during the library sign-in keeps the account from showing as signed in`() = runTest {
-        library = { signOut() }
+    fun `a sign-out before the account shows keeps it from showing as signed in`() = runTest {
+        prepare = { signOut() }
 
         val outcome = signIn()
 
         assertEquals(TypedAccountSignIn.Outcome.NOT_SIGNED_IN, outcome)
         assertEquals(null, stored)
-        assertEquals(listOf("store", "library"), steps)
+        assertEquals(listOf("store", "prepare"), steps)
         assertFalse(signedIn)
     }
 
