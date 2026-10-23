@@ -5,7 +5,13 @@ import org.ntust.app.tigerduck.mail.store.MailStateStore
 class InMemoryMailStateStore : MailStateStore {
     override var displayName: String? = null
     override var notificationsEnabled: Boolean = true
+    /** Fires as [authFailed] is set, before it takes: a test acts while the account marks a refusal. */
+    @Volatile var onAuthFailedSet: ((Boolean) -> Unit)? = null
     override var authFailed: Boolean = false
+        set(value) {
+            onAuthFailedSet?.invoke(value)
+            field = value
+        }
     override var demoMailbox: Boolean = false
     /** Fires on every [inboxUidValidity] read, after the value was read: lets a test act between the read and what follows it. */
     var onUidValidityRead: (() -> Unit)? = null

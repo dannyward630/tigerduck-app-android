@@ -29,6 +29,7 @@ import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.mail.SentCopyNotice
 import org.ntust.app.tigerduck.mail.SentCopyOrigin
 import org.ntust.app.tigerduck.mail.SentCopyNotices
+import org.ntust.app.tigerduck.mail.SignInDuringRefusal
 import org.ntust.app.tigerduck.mail.MainDispatcherRule
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
@@ -515,6 +516,48 @@ class SchoolMailListViewModelTest {
         vm.setSearchText("")
 
         assertFalse(vm.state.value.searchIndexPartial)
+    }
+
+    // A rejection is marked in one step with a sign-in's move of the generation: the student
+    // signing in again while the list marks it keeps the sign-in the server just accepted.
+
+    @Test
+    fun `a page refused as the student signs in again leaves the new sign-in on`() {
+        repo.add("INBOX", mailSummary(1))
+        repo.loadError = MailError.AuthFailed()
+        val signIn = SignInDuringRefusal(account, state, server, "b10000001", "pw")
+
+        vm.load()
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a mark-read refused as the student signs in again leaves the new sign-in on`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.load()
+        repo.seenError = MailError.AuthFailed()
+        val signIn = SignInDuringRefusal(account, state, server, "b10000001", "pw")
+
+        vm.toggleRead(vm.state.value.displayed.single())
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a search refused as the student signs in again leaves the new sign-in on`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.load()
+        repo.searchError = MailError.AuthFailed()
+        val signIn = SignInDuringRefusal(account, state, server, "b10000001", "pw")
+        vm.setSearchText("期中")
+
+        vm.submitSearch()
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
     }
 
     @Test

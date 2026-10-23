@@ -17,6 +17,7 @@ import org.ntust.app.tigerduck.mail.InMemoryCredentialStore
 import org.ntust.app.tigerduck.mail.InMemoryMailStateStore
 import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.MailError
+import org.ntust.app.tigerduck.mail.SignInDuringRefusal
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
 import org.ntust.app.tigerduck.mail.schoolMailSite
@@ -332,6 +333,19 @@ class MailCheckerTest {
         assertFalse(account.authFailed.value)
         assertEquals(0, notifier.authFailures)
         assertEquals(CheckOutcome.NotSignedIn, outcome)
+    }
+
+    /** Marked in one step with a sign-in's move of the generation, as the list marks it. */
+    @Test
+    fun `a rejection marked as the student signs in again leaves the new sign-in on`() = runTest {
+        account.signIn("b10000001", "pw")
+        val c = checker(MailSessionFactory { _ -> throw MailError.AuthFailed() })
+        val signIn = SignInDuringRefusal(account, state, server, "b10000001", "pw")
+
+        c.check(CheckSource.ALARM)
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
     }
 
     /**

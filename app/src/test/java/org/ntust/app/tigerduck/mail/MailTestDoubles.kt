@@ -17,6 +17,10 @@ import org.ntust.app.tigerduck.mail.store.MailCredentialStore
 import org.ntust.app.tigerduck.mail.sync.MailBackgroundScheduler
 import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.concurrent.thread
 
 /**
  * Stands in for the app-wide `@ApplicationScope`: the only thing [MailAccount]
@@ -143,3 +147,50 @@ class FakeDemoGate(override var appDemoActive: Boolean = false) : MailDemoGate {
     override fun matches(studentId: String, password: String) = box.matches(studentId, password)
     override fun mailbox() = box
 }
+
+/**
+ * Signs [studentId] in again on [account], on threads of its own, from inside the account's mark
+ * of a refusal: as [state]'s authFailed is about to turn true. The mark goes on once the sign-in
+ * has got as far as it can -- signed in, or held at the account's lock, which a mark made in one
+ * step with a sign-in's move of the generation holds. [server] is the one it signs in to.
+ */
+class SignInDuringRefusal(
+    account: MailAccount,
+    state: InMemoryMailStateStore,
+    server: FakeMailServer,
+    studentId: String,
+    password: String,
+) {
+    @Volatile private var signIn: Thread? = null
+
+    init {
+        val signInThread = AtomicReference<Thread?>(null)
+        state.onAuthFailedSet = { failed ->
+            if (failed) {
+                state.onAuthFailedSet = null
+                server.onListFolders = { signInThread.set(Thread.currentThread()) }
+                val done = CountDownLatch(1)
+                signIn = thread {
+                    try {
+                        runBlocking { account.signIn(studentId, password) }
+                    } finally {
+                        done.countDown()
+                    }
+                }
+                val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
+                while (done.count > 0 && signInThread.get()?.state != Thread.State.BLOCKED) {
+                    check(System.nanoTime() < deadline) { "the sign-in got nowhere" }
+                    Thread.onSpinWait()
+                }
+            }
+        }
+    }
+
+    /** Waits for the sign-in to end, and fails if the refusal never came to be marked. */
+    fun join() {
+        val started = checkNotNull(signIn) { "no refusal was marked" }
+        started.join(5_000)
+        check(!started.isAlive) { "the sign-in never ended" }
+    }
+}
+
