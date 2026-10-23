@@ -128,6 +128,8 @@ class LibraryPassStateTest {
 
         assertFalse(pass.isLoggedIn.value)
         assertNull(pass.errors.value)
+        assertFalse(pass.waitingToRetry.value)
+        pass.retryNow()
         advanceTimeBy(600_000)
         runCurrent()
         assertEquals(1, fetched)

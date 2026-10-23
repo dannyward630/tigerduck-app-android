@@ -4,6 +4,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -227,6 +228,8 @@ class LibraryQRCycleTest {
         val reply = CompletableDeferred<Unit>()
         outstanding = reply
 
+        // Twice in one frame, then again once the request is out.
+        cycle.retryNow()
         cycle.retryNow()
         runCurrent()
         cycle.retryNow()
@@ -237,6 +240,27 @@ class LibraryQRCycleTest {
         runCurrent()
         assertEquals("image of code-1", cycle.image.value)
         assertEquals(listOf(0L, 0L), fetchedAt)
+    }
+
+    /**
+     * As on the main thread, where the cancelled wait ends and the new request goes out inside
+     * the tap: the wait after a retry that fails too still offers Retry, and still ends.
+     */
+    @Test
+    fun `a retry that fails at once waits again when dispatch is eager`() = runTest(UnconfinedTestDispatcher()) {
+        answers += listOf(fail(), fail())
+        val cycle = cycle()
+        cycle.start()
+        assertTrue(cycle.waitingToRetry.value)
+
+        cycle.retryNow()
+        assertTrue(cycle.waitingToRetry.value)
+        assertEquals(listOf(0L, 0L), fetchedAt)
+
+        advanceTimeBy(60_000)
+        runCurrent()
+        assertEquals(listOf(0L, 0L, 60_000L), fetchedAt)
+        assertFalse(cycle.waitingToRetry.value)
     }
 
     @Test
