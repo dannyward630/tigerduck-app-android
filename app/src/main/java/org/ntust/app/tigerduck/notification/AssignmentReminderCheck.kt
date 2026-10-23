@@ -56,7 +56,8 @@ class AssignmentReminderCheck @Inject constructor(
             listOf(assignment), dataCache.loadIgnoredCourses(), dataCache.currentSemesterCode(),
         )
         return CachedReminderAssignment(
-            dueAtMs = assignment.dueDate.time,
+            // As the scheduler armed it, an extension included, or every reminder would read as moved.
+            dueAtMs = assignment.studentDueDate.time,
             submitted = assignment.isCompleted,
             markedDone = assignmentId in dataCache.loadMarkedCompletedAssignments(),
             ignored = assignmentId in dataCache.loadIgnoredAssignments(),

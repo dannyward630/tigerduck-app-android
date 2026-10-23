@@ -232,6 +232,10 @@ class MoodleService @Inject constructor(
             key = { AssignmentsKey(it, courseIds) },
         ) { fetchAssignmentsRound(courseIds) }
         val coursesById = relevant.associateBy { it.id }
+        // An extension found before: kept for an assignment this round did not ask about.
+        val cachedExtensions = dataCache.loadAssignments()
+            .mapNotNull { a -> a.extensionDueDate?.let { a.assignmentId to it } }
+            .toMap()
 
         // Flatten the nested course→assignments response.
         val assignments = round.courses
@@ -256,6 +260,9 @@ class MoodleService @Inject constructor(
                     cutoffDate = a.cutoffdate?.takeIf { it > 0 }?.let { Date(it * 1000) },
                     submittedAt = submittedAt,
                     semester = currentSemester,
+                    extensionDueDate = extensionDueDate(
+                        a.id, a.id in round.statuses, round.statuses[a.id]?.lastattempt, cachedExtensions,
+                    ),
                 )
             }
         val statuses = round.statuses.mapNotNull { (id, status) ->
@@ -585,6 +592,22 @@ class MoodleService @Inject constructor(
          * [lastAttempt] says — null when its status call failed. Submitted
          * when the student's own submission or their team's is (issue #222).
          */
+        /**
+         * The extension assignment [id] runs to: as Moodle's [lastAttempt] says when this round
+         * [asked] about it, none included, else as [cached] last had it, as a round that skipped the
+         * status call, or whose call failed, keeps a confirmed submission.
+         */
+        internal fun extensionDueDate(
+            id: Int,
+            asked: Boolean,
+            lastAttempt: MoodleSubmissionLastAttempt?,
+            cached: Map<String, Date>,
+        ): Date? = if (asked) {
+            lastAttempt?.extensionduedate?.takeIf { it > 0 }?.let { Date(it * 1000) }
+        } else {
+            cached[id.toString()]
+        }
+
         internal fun submissionState(
             id: Int,
             confirmed: Map<Int, Date>,

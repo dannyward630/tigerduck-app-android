@@ -41,6 +41,17 @@ data class MoodleSectionRow(val kind: Kind, val count: Int, val hasUnread: Boole
  */
 data class MoodleAssignmentEntry(val record: MoodleAssignmentRecord, val listed: Assignment?) {
     val assignmentId: String get() = record.assignId.toString()
+
+    /**
+     * The due time the student is held to, Unix seconds, 0 for an undated one: the record's, else
+     * Home's row's, or the extension the row knows the student was granted, which runs later.
+     */
+    val studentDueSeconds: Long
+        get() {
+            val own = record.dueDate.takeIf { it > 0 } ?: listed?.dueDate?.let { it.time / 1000 } ?: return 0
+            val extension = listed?.extensionDueDate?.let { it.time / 1000 } ?: return own
+            return maxOf(own, extension)
+        }
 }
 
 object MoodleAssignmentEntries {
@@ -92,13 +103,13 @@ object MoodleAssignmentLists {
     fun rows(entries: List<MoodleAssignmentEntry>, nowMs: Long): List<Row> {
         val nowSeconds = nowMs / 1000
         val ordered = entries.withIndex()
-        fun isPast(entry: MoodleAssignmentEntry) = entry.record.dueDate > 0 && entry.record.dueDate < nowSeconds
+        fun isPast(entry: MoodleAssignmentEntry) = entry.studentDueSeconds > 0 && entry.studentDueSeconds < nowSeconds
         val toCome = ordered.filter { !isPast(it.value) }.sortedWith(
-            compareBy<IndexedValue<MoodleAssignmentEntry>> { it.value.record.dueDate.takeIf { d -> d > 0 } ?: Long.MAX_VALUE }
+            compareBy<IndexedValue<MoodleAssignmentEntry>> { it.value.studentDueSeconds.takeIf { d -> d > 0 } ?: Long.MAX_VALUE }
                 .thenBy { it.index },
         )
         val past = ordered.filter { isPast(it.value) }.sortedWith(
-            compareByDescending<IndexedValue<MoodleAssignmentEntry>> { it.value.record.dueDate }.thenBy { it.index },
+            compareByDescending<IndexedValue<MoodleAssignmentEntry>> { it.value.studentDueSeconds }.thenBy { it.index },
         )
         return (toCome + past).map { (_, entry) ->
             Row(entry, entry.listed?.let { shownStatus(it, nowMs) })

@@ -39,4 +39,13 @@ class CalendarMoodleRowsTest {
             withMoodleRows(listOf(school, moodleRow("1"), holiday), emptyList()),
         )
     }
+
+    @Test
+    fun `an extended assignment sits on the calendar on its extension`() {
+        val extended = assignment("2").copy(extensionDueDate = Date(86_400_000))
+
+        val rows = withMoodleRows(emptyList(), listOf(extended))
+
+        assertEquals(listOf(Date(86_400_000)), rows.map { it.date })
+    }
 }

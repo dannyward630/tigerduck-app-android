@@ -397,6 +397,8 @@ class PushApiClient @Inject constructor(
                 "course_no" to a.courseNo,
                 "course_name" to a.courseName,
                 "title" to a.title,
+                // The assignment's own date, not the student's extension: the backend times its
+                // reminders by it, and an extension there is its own change (tigerduck-backend#82).
                 "due_at" to iso8601.format(a.dueDate),
                 "moodle_url" to a.moodleUrl,
                 "is_submitted" to a.isCompleted,

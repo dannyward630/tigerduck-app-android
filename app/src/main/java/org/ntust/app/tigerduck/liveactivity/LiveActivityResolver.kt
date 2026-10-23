@@ -45,9 +45,9 @@ class LiveActivityResolver {
         if (preferences.showAssignment) {
             val urgent = assignments
                 .asSequence()
-                .filter { !it.isCompleted && it.dueDate.after(now) }
-                .filter { (it.dueDate.time - now.time) / 1000 <= preferences.assignmentLeadTimeSec }
-                .minByOrNull { it.dueDate }
+                .filter { !it.isCompleted && it.studentDueDate.after(now) }
+                .filter { (it.studentDueDate.time - now.time) / 1000 <= preferences.assignmentLeadTimeSec }
+                .minByOrNull { it.studentDueDate }
             if (urgent != null) return assignmentSnapshot(urgent, accentHex, duringClass = current != null)
         }
 
@@ -182,7 +182,7 @@ class LiveActivityResolver {
             subtitle = a.courseName,
             locationText = null,
             instructor = null,
-            countdownTarget = a.dueDate,
+            countdownTarget = a.studentDueDate,
             progress = null,
             accentHex = accentHex,
             sourceId = "assignment-${a.assignmentId}",

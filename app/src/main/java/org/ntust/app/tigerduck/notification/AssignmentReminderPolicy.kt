@@ -107,6 +107,8 @@ object AssignmentReminderPolicy {
             !open -> ReminderDropReason.UNKNOWN_STATUS
             attempt.submissionsenabled == false -> ReminderDropReason.SUBMISSIONS_DISABLED
             attempt.locked == true -> ReminderDropReason.LOCKED
+            // [dueAtMs] is the student's own date as the cache has it, an extension it knows of
+            // included: one later still is news to the cache, and the next fetch arms for it.
             extendedToMs > dueAtMs -> ReminderDropReason.EXTENDED
             else -> null
         }

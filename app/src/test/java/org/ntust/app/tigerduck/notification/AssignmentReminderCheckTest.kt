@@ -330,4 +330,17 @@ class AssignmentReminderCheckTest {
         const val DAY_MS = 24 * 60 * 60 * 1000L
         const val SUBMITTED_AT_SECONDS = 1_760_400_000L
     }
+
+    @Test
+    fun `a reminder armed for an extension shows, not dropped as a changed or extended due date`() = runBlocking {
+        val extension = AppClock.nowMillis() + 5 * DAY_MS
+        val assignment = dueInThreeDays("20977").copy(extensionDueDate = Date(extension))
+        armAll(assignment)
+
+        moodle = {
+            """{"lastattempt":{"submissionsenabled":true,"locked":false,"extensionduedate":${extension / 1000}},"warnings":[]}"""
+        }
+
+        assertEquals(ReminderVerdict.Show, check.verdict("20977", extension))
+    }
 }

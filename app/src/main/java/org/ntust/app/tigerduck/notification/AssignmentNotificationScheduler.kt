@@ -63,7 +63,7 @@ class AssignmentNotificationScheduler @Inject constructor(
         for (assignment in assignments) {
             if (assignment.isCompleted) continue
             val applicable = offsets
-                .map { it to assignment.dueDate.time - it.milliseconds }
+                .map { it to assignment.studentDueDate.time - it.milliseconds }
                 .filter { it.second > now }
             for ((offset, triggerTime) in applicable) {
                 pending.add(
@@ -71,7 +71,7 @@ class AssignmentNotificationScheduler @Inject constructor(
                         assignmentId = assignment.assignmentId,
                         offset = offset,
                         triggerTime = triggerTime,
-                        dueAt = assignment.dueDate.time,
+                        dueAt = assignment.studentDueDate.time,
                         title = assignment.title,
                         courseName = assignment.courseName,
                     )
