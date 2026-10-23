@@ -813,7 +813,8 @@ class MailRepository @Inject constructor(
         val generation = account.accountGeneration
         // The account the write is made as, read together with its state's clear count: the
         // session below is held as that account, and its set is the one read and recorded into.
-        val owner = account.snapshot() ?: throw MailError.Protocol("not signed in")
+        // On the IO dispatcher, as every read of the credentials here is: it decrypts the password.
+        val owner = withContext(Dispatchers.IO) { account.snapshot() } ?: throw MailError.Protocol("not signed in")
         val clears = owner.clears
         val cached = cachedPage(folder)
         val cachedValidity = cached?.uidValidity
@@ -867,7 +868,7 @@ class MailRepository @Inject constructor(
      */
     private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long, clears: Int) {
         try {
-            val now = account.snapshot()?.takeIf { it.clears == clears } ?: return
+            val now = withContext(Dispatchers.IO) { account.snapshot() }?.takeIf { it.clears == clears } ?: return
             withSession({ state.clears == clears }, now) { session ->
                 if (session.refreshFlags(folder, listOf(uid))[uid]?.deleted == true) {
                     state.setOwnedDeletedIf(folder, validity, state.ownedDeleted(folder, validity) + uid, clears)

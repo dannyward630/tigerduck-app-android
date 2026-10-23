@@ -421,6 +421,26 @@ class MailRepositoryTest {
         assertTrue("the first student's flagged mail was recorded as the next one's", state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
     }
 
+    /**
+     * The account a move is made as is read off the caller's thread, which for the list and the
+     * mail screen is the main one: reading it decrypts the password from the credential store.
+     */
+    @Test
+    fun `a move reads the account it is made as off the caller's thread`() = runTest {
+        val uid = server.deliver("a")
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.loadPage("INBOX", null)
+        val caller = Thread.currentThread()
+        val readOn = java.util.concurrent.CopyOnWriteArrayList<Thread>()
+        credentials.onPasswordRead = { readOn += Thread.currentThread() }
+
+        repo.move("INBOX", uid, "回收筒")
+        credentials.onPasswordRead = null
+
+        assertTrue(readOn.isNotEmpty())
+        assertTrue("the password was decrypted on the caller's thread", readOn.none { it == caller })
+    }
+
     /** As above, with another student signing in: their state takes nothing of the first one's. */
     @Test
     fun `a list move that fails as another student signs in records nothing`() = runTest {
