@@ -343,7 +343,9 @@ class MailReadableHtmlTest {
 
     @Test
     fun `a color that inherits is the parent's, and fixing goes on below it`() {
-        for (keyword in listOf("inherit", "currentColor", "unset")) {
+        // revert and revert-layer fall back to the browser's own color, which for text that is no
+        // link is the parent's.
+        for (keyword in listOf("inherit", "currentColor", "unset", "revert", "revert-layer")) {
             val page = readable(
                 """<div style="color: #333333"><p style="color: $keyword"><span style="background-color: #ffff00">a</span></p>""" +
                     """<span style="color: $keyword; background-color: #ffff00">b</span></div>""",

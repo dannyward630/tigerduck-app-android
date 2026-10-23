@@ -454,6 +454,12 @@ class MailReadableHtml(private val html: String) {
         /** On `color`, keywords that draw the text in its parent's color. */
         private val INHERITING_KEYWORDS = setOf("inherit", "currentcolor", "unset")
 
+        /**
+         * On `color`, keywords that fall back to the browser's own color: the parent's, as the
+         * browser sets none on text, but its link color on a link.
+         */
+        private val REVERTING_KEYWORDS = setOf("revert", "revert-layer")
+
         /** On `background-color`, keywords that leave no background: its initial value is transparent. */
         private val INITIAL_KEYWORDS = setOf("initial", "unset")
 
@@ -566,9 +572,11 @@ class MailReadableHtml(private val html: String) {
         private fun sentColor(element: Element, style: Style): Sent? {
             val decl = style.effective("color")
             if (decl != null) {
+                val keyword = decl.value.lowercase(Locale.ROOT)
+                val link = element.normalName() == "a" && element.hasAttr("href")
                 return Sent(
                     color = parse(decl.value, legacy = false),
-                    inherits = decl.value.lowercase(Locale.ROOT) in INHERITING_KEYWORDS,
+                    inherits = keyword in INHERITING_KEYWORDS || (keyword in REVERTING_KEYWORDS && !link),
                     attribute = "style",
                     value = style.text,
                     range = decl.valueRange,

@@ -147,7 +147,11 @@ fun SchoolMailMessageScreen(
     // Compose-observable value MainActivity mirrors that resolved theme into, so this stays
     // in lockstep with the colors right next to it instead of just the OS half of the time.
     val isDark = TigerDuckTheme.isDarkMode
-    val appTheme = MailHtmlTheme(background = cs.surface.toCssHex(), foreground = cs.onSurface.toCssHex(), isDark = isDark)
+    // Remembered: building it finds the link color that reads on the surface, a search not worth
+    // repeating on every recomposition.
+    val appTheme = remember(cs.surface, cs.onSurface, isDark) {
+        MailHtmlTheme(background = cs.surface.toCssHex(), foreground = cs.onSurface.toCssHex(), isDark = isDark)
+    }
     // Only a dark app has a darker page to leave: in light theme the surface already is one, and
     // the item is not offered. A choice made in dark theme comes back if the app turns dark again.
     // MailHtmlTheme.page decides it, for this frame and for the document the view model draws.
