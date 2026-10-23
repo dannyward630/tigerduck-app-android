@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.mail.sync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -17,6 +18,7 @@ import org.ntust.app.tigerduck.mail.InMemoryCredentialStore
 import org.ntust.app.tigerduck.mail.InMemoryMailStateStore
 import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.MailError
+import org.ntust.app.tigerduck.mail.cancelAndJoinBlocking
 import org.ntust.app.tigerduck.mail.signInDuringRefusal
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
@@ -35,6 +37,13 @@ import kotlin.concurrent.thread
 class MailCheckerTest {
     @get:Rule val tmp = TemporaryFolder()
 
+    // What the account and the notices launch, joined before TemporaryFolder deletes the cache
+    // a sign-out may still be wiping there.
+    private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
+
     private val server = FakeMailServer()
     private val state = InMemoryMailStateStore()
     private val notifier = RecordingNotifier()
@@ -42,7 +51,7 @@ class MailCheckerTest {
     private var now = 1_000_000L
     private val credentialStore = InMemoryCredentialStore()
     private val account by lazy {
-        MailAccount(credentialStore, state, server.factory(), MailCache(tmp.root), FakeDemoGate(), schoolMailSite(), scheduler, notifier, testApplicationScope())
+        MailAccount(credentialStore, state, server.factory(), MailCache(tmp.root), FakeDemoGate(), schoolMailSite(), scheduler, notifier, appScope)
     }
 
     private fun checker(

@@ -14,6 +14,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -51,6 +52,13 @@ import kotlin.concurrent.thread
 class MailRepositoryTest {
     @get:Rule val tmp = TemporaryFolder()
 
+    // What the account launches, joined before TemporaryFolder deletes the cache a sign-out may
+    // still be wiping there.
+    private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
+
     private val server = FakeMailServer()
     private val state = InMemoryMailStateStore()
     private val credentials = InMemoryCredentialStore()
@@ -81,7 +89,9 @@ class MailRepositoryTest {
         val searchIndex = InMemoryMailSearchIndex()
         val indexScheduler = RecordingIndexScheduler()
         val notifier = RecordingNotifier()
-        val account = MailAccount(credentials, state, accountSessions, cache, demo, schoolMailSite(), RecordingScheduler(), notifier, scope)
+        // Its sign-out's cache wipe runs on the IO dispatcher, which the test's own scope does not
+        // wait for once the test ends: [appScope] does, before TemporaryFolder deletes the cache.
+        val account = MailAccount(credentials, state, accountSessions, cache, demo, schoolMailSite(), RecordingScheduler(), notifier, appScope)
         val repository = MailRepository(
             account, sessions, cache, state,
             MailSender(MessageBuilder(), transport, pause = {}), MessageBuilder(), demo, wrapIndex(searchIndex), indexScheduler, scope,

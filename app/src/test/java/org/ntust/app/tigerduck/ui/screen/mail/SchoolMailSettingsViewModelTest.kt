@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.ui.screen.mail
 import android.app.Application
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -16,6 +17,7 @@ import org.ntust.app.tigerduck.mail.InMemoryCredentialStore
 import org.ntust.app.tigerduck.mail.InMemoryMailStateStore
 import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.MainDispatcherRule
+import org.ntust.app.tigerduck.mail.cancelAndJoinBlocking
 import org.ntust.app.tigerduck.mail.model.MailBody
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
@@ -32,6 +34,13 @@ class SchoolMailSettingsViewModelTest {
 
     @get:Rule val main = MainDispatcherRule()
     @get:Rule val tmp = TemporaryFolder()
+
+    // What the account and the notices launch, joined before TemporaryFolder deletes the cache
+    // a sign-out may still be wiping there.
+    private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
 
     private val state = InMemoryMailStateStore().apply {
         displayName = "中文名"
@@ -59,13 +68,13 @@ class SchoolMailSettingsViewModelTest {
 
     private fun account() = MailAccount(
         credentials, state, server.factory(), cache, demo, schoolMailSite(),
-        RecordingScheduler(), RecordingNotifier(), testApplicationScope(),
+        RecordingScheduler(), RecordingNotifier(), appScope,
     )
 
     private fun signIn(studentId: String, password: String) = runBlocking {
         val account = MailAccount(
             credentials, state, server.factory(), cache, demo, schoolMailSite(),
-            RecordingScheduler(), RecordingNotifier(), testApplicationScope(),
+            RecordingScheduler(), RecordingNotifier(), appScope,
         )
         val error = withTimeout(5_000) { account.signIn(studentId, password) }
         assertNull("the sign-in fixture must succeed", error)
