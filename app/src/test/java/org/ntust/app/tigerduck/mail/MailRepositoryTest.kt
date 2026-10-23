@@ -1003,6 +1003,43 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a visit's download not started yet when the mail is deleted downloads nothing`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val owner = setup.account.ownAddress!!.lowercase()
+        repo.acquire()
+
+        // Deleted on the test's thread, which the visit's download waits for to start.
+        runBlocking { repo.deleteSearchIndex() }
+        runCurrent()
+        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
+
+        assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+    }
+
+    @Test
+    fun `a background download that waited out the deletion downloads nothing`() = runTest {
+        server.deliver("期中考")
+        val held = HeldListing()
+        val setup = TestSetup(backgroundScope, held.factory)
+        val repo = setup.signedIn()
+        val owner = setup.account.ownAddress!!.lowercase()
+        repo.acquire()
+        runCurrent()
+        withContext(Dispatchers.Default) { assertTrue(held.holding.await(5, TimeUnit.SECONDS)) }
+        // The worker the visit asked for, waiting for the lock the visit's download holds.
+        val worker = launch(Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) { repo.updateSearchIndex() }
+
+        repo.deleteSearchIndex()
+        held.release.countDown()
+        worker.join()
+        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
+
+        assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+    }
+
+    @Test
     fun `deleting the downloaded mail while the background download is out leaves nothing of it`() = runTest {
         server.deliver("期中考")
         val held = HeldListing()

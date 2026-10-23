@@ -742,17 +742,23 @@ class MailRepository @Inject constructor(
      * waits out the download that visit runs in the app, and would otherwise run every folder
      * again the moment that one got through.
      */
-    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) = indexing.withLock {
-        if (indexDue()) downloadIndex(stillWanted)
+    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
+        // Read before the wait for the lock, as a visit reads it before its download starts.
+        val asked = indexEpoch.get()
+        indexing.withLock { if (indexDue()) downloadIndex(asked, stillWanted) }
     }
 
     /**
+     * Nothing once the downloaded mail has been deleted since the download was [asked] for, at
+     * that [indexEpoch]: one that waited out the deletion must not download it all again, which
+     * only the mail screen opened afterwards does.
+     *
      * A password the server rejects stops it, and every login after it, as the list's own
      * requests do (spec §7.4): the background download and the one in the app both come here.
      */
-    private suspend fun downloadIndex(stillWanted: () -> Boolean = { true }) {
+    private suspend fun downloadIndex(asked: Int, stillWanted: () -> Boolean = { true }) {
         if (account.isDemo || state.authFailed) return
-        val owner = withContext(Dispatchers.IO) { indexOwnerNow() } ?: return
+        val owner = withContext(Dispatchers.IO) { indexOwnerNow() }?.takeIf { it.epoch == asked } ?: return
         try {
             // The folder list a first run resolves is the account's request too.
             downloadEveryFolder(owner) { stillWanted() && stillIndexOwner(owner) }
@@ -962,6 +968,8 @@ class MailRepository @Inject constructor(
         // when the system next runs the background download, which some phones hold back for
         // minutes. That one still finishes what this leaves, should the app go.
         indexScheduler.request()
+        // Read now, not once the download starts: see [downloadIndex].
+        val asked = indexEpoch.get()
         scope.launch {
             if (!indexing.tryLock()) return@launch
             // This one, never a later visit's that found it under way: deleting the downloaded
@@ -969,7 +977,7 @@ class MailRepository @Inject constructor(
             inAppIndexing = coroutineContext[Job]
             try {
                 // Asked again: another download can have got through while this one waited.
-                if (indexDue()) downloadIndex()
+                if (indexDue()) downloadIndex(asked)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: MailError) {
