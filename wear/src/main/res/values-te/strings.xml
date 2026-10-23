@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">ఈ జోడింపును తెరవాలా?</string>
     <string name="school_mail_save_draft">డ్రాఫ్ట్ సేవ్ చేయండి</string>
     <string name="school_mail_saved">సేవ్ చేయబడింది</string>
-    <string name="school_mail_search_index_partial">ఇమెయిల్ ఇంకా డౌన్‌లోడ్ అవుతోంది. కొన్ని పాత ఇమెయిల్‌లు శోధనలో కనిపించకపోవచ్చు.</string>
+    <string name="school_mail_search_index_partial">ఇంకా అన్ని ఇమెయిల్‌లు డౌన్‌లోడ్ కాలేదు. కొన్ని పాత ఇమెయిల్‌లు శోధనలో కనిపించకపోవచ్చు.</string>
     <string name="school_mail_search_local_only">సర్వర్ ఈ శోధనను అమలు చేయలేదు. లోడ్ చేసిన ఇమెయిల్ నుండి మాత్రమే సరిపోలికలు చూపిస్తోంది.</string>
     <string name="school_mail_search_prompt">ఇమెయిల్ శోధించండి</string>
     <string name="school_mail_send">పంపు</string>

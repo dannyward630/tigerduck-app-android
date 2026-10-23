@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Buka lampiran ini?</string>
     <string name="school_mail_save_draft">Simpan draf</string>
     <string name="school_mail_saved">Disimpan</string>
-    <string name="school_mail_search_index_partial">E-mel masih dimuat turun. Carian mungkin tidak menemui beberapa e-mel lama.</string>
+    <string name="school_mail_search_index_partial">Belum semua e-mel dimuat turun. Carian mungkin tidak menemui beberapa e-mel lama.</string>
     <string name="school_mail_search_local_only">Pelayan tidak dapat menjalankan carian ini. Hanya memaparkan hasil daripada e-mel yang telah dimuatkan.</string>
     <string name="school_mail_search_prompt">Cari e-mel</string>
     <string name="school_mail_send">Hantar</string>

@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Deze bijlage openen?</string>
     <string name="school_mail_save_draft">Concept opslaan</string>
     <string name="school_mail_saved">Opgeslagen</string>
-    <string name="school_mail_search_index_partial">Mail wordt nog gedownload. Zoeken vindt sommige oudere mail misschien niet.</string>
+    <string name="school_mail_search_index_partial">Nog niet alle mail is gedownload. Zoeken vindt sommige oudere mail misschien niet.</string>
     <string name="school_mail_search_local_only">De server kan deze zoekopdracht niet uitvoeren. Alleen resultaten uit al geladen mail worden getoond.</string>
     <string name="school_mail_search_prompt">Mail doorzoeken</string>
     <string name="school_mail_send">Verzenden</string>

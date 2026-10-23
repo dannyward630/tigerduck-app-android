@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Želite odpreti to prilogo?</string>
     <string name="school_mail_save_draft">Shrani osnutek</string>
     <string name="school_mail_saved">Shranjeno</string>
-    <string name="school_mail_search_index_partial">Pošta se še prenaša. Iskanje morda ne bo našlo nekaterih starejših sporočil.</string>
+    <string name="school_mail_search_index_partial">Vsa pošta še ni prenesena. Iskanje morda ne bo našlo nekaterih starejših sporočil.</string>
     <string name="school_mail_search_local_only">Strežnik ne podpira tega iskanja. Prikazani so rezultati samo iz že naloženih sporočil.</string>
     <string name="school_mail_search_prompt">Iskanje po pošti</string>
     <string name="school_mail_send">Pošlji</string>

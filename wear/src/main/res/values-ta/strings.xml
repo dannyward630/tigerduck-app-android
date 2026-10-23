@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">இந்த இணைப்பைத் திறக்கவா?</string>
     <string name="school_mail_save_draft">வரைவைச் சேமி</string>
     <string name="school_mail_saved">சேமிக்கப்பட்டது</string>
-    <string name="school_mail_search_index_partial">மின்னஞ்சல் இன்னும் பதிவிறக்கப்படுகிறது. சில பழைய மின்னஞ்சல்கள் தேடலில் கிடைக்காமல் போகலாம்.</string>
+    <string name="school_mail_search_index_partial">இன்னும் எல்லா மின்னஞ்சல்களும் பதிவிறக்கப்படவில்லை. சில பழைய மின்னஞ்சல்கள் தேடலில் கிடைக்காமல் போகலாம்.</string>
     <string name="school_mail_search_local_only">சர்வரால் இந்தத் தேடலை இயக்க முடியவில்லை. ஏற்றப்பட்ட மின்னஞ்சலில் இருந்து பொருந்துபவை மட்டும் காட்டப்படுகின்றன.</string>
     <string name="school_mail_search_prompt">மின்னஞ்சலைத் தேடு</string>
     <string name="school_mail_send">அனுப்பு</string>

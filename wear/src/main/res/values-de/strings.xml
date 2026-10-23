@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Diesen Anhang öffnen?</string>
     <string name="school_mail_save_draft">Entwurf speichern</string>
     <string name="school_mail_saved">Gespeichert</string>
-    <string name="school_mail_search_index_partial">E-Mails werden noch heruntergeladen. Die Suche findet einige ältere E-Mails vielleicht noch nicht.</string>
+    <string name="school_mail_search_index_partial">Noch sind nicht alle E-Mails heruntergeladen. Die Suche findet einige ältere E-Mails vielleicht noch nicht.</string>
     <string name="school_mail_search_local_only">Der Server kann diese Suche nicht ausführen. Es werden nur Treffer aus bereits geladenen E-Mails angezeigt.</string>
     <string name="school_mail_search_prompt">E-Mails durchsuchen</string>
     <string name="school_mail_send">Senden</string>

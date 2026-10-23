@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Abrir este anexo?</string>
     <string name="school_mail_save_draft">Guardar rascunho</string>
     <string name="school_mail_saved">Guardado</string>
-    <string name="school_mail_search_index_partial">O correio ainda está a ser transferido. A pesquisa pode não encontrar algumas mensagens mais antigas.</string>
+    <string name="school_mail_search_index_partial">Ainda não foi transferido todo o correio. A pesquisa pode não encontrar algumas mensagens mais antigas.</string>
     <string name="school_mail_search_local_only">O servidor não consegue executar esta pesquisa. A mostrar resultados apenas do correio já carregado.</string>
     <string name="school_mail_search_prompt">Pesquisar correio</string>
     <string name="school_mail_send">Enviar</string>

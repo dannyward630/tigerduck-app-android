@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">เปิดไฟล์แนบนี้หรือไม่?</string>
     <string name="school_mail_save_draft">บันทึกแบบร่าง</string>
     <string name="school_mail_saved">บันทึกแล้ว</string>
-    <string name="school_mail_search_index_partial">กำลังดาวน์โหลดอีเมลอยู่ การค้นหาอาจไม่พบอีเมลเก่าบางฉบับ</string>
+    <string name="school_mail_search_index_partial">ยังดาวน์โหลดอีเมลไม่ครบ การค้นหาอาจไม่พบอีเมลเก่าบางฉบับ</string>
     <string name="school_mail_search_local_only">เซิร์ฟเวอร์ไม่รองรับการค้นหานี้ กำลังแสดงผลลัพธ์จากอีเมลที่โหลดแล้วเท่านั้น</string>
     <string name="school_mail_search_prompt">ค้นหาอีเมล</string>
     <string name="school_mail_send">ส่ง</string>

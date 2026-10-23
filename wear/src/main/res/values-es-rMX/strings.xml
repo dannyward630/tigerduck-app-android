@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">¿Abrir este adjunto?</string>
     <string name="school_mail_save_draft">Guardar borrador</string>
     <string name="school_mail_saved">Guardado</string>
-    <string name="school_mail_search_index_partial">Aún se está descargando el correo. Es posible que la búsqueda no encuentre algunos mensajes antiguos.</string>
+    <string name="school_mail_search_index_partial">Todavía no se ha descargado todo el correo. Es posible que la búsqueda no encuentre algunos mensajes antiguos.</string>
     <string name="school_mail_search_local_only">El servidor no puede realizar esta búsqueda. Solo se muestran resultados del correo ya cargado.</string>
     <string name="school_mail_search_prompt">Buscar correo</string>
     <string name="school_mail_send">Enviar</string>

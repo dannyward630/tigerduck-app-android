@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">ಈ ಲಗತ್ತನ್ನು ತೆರೆಯಬೇಕೇ?</string>
     <string name="school_mail_save_draft">ಡ್ರಾಫ್ಟ್ ಉಳಿಸಿ</string>
     <string name="school_mail_saved">ಉಳಿಸಲಾಗಿದೆ</string>
-    <string name="school_mail_search_index_partial">ಇಮೇಲ್ ಇನ್ನೂ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ. ಹುಡುಕಾಟದಲ್ಲಿ ಕೆಲವು ಹಳೆಯ ಇಮೇಲ್‌ಗಳು ಸಿಗದಿರಬಹುದು.</string>
+    <string name="school_mail_search_index_partial">ಇನ್ನೂ ಎಲ್ಲಾ ಇಮೇಲ್‌ಗಳು ಡೌನ್‌ಲೋಡ್ ಆಗಿಲ್ಲ. ಹುಡುಕಾಟದಲ್ಲಿ ಕೆಲವು ಹಳೆಯ ಇಮೇಲ್‌ಗಳು ಸಿಗದಿರಬಹುದು.</string>
     <string name="school_mail_search_local_only">ಸರ್ವರ್ ಈ ಹುಡುಕಾಟವನ್ನು ಚಲಾಯಿಸಲಾಗುವುದಿಲ್ಲ. ಲೋಡ್ ಆದ ಇಮೇಲ್‌ನಿಂದ ಮಾತ್ರ ಹೊಂದಾಣಿಕೆಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ.</string>
     <string name="school_mail_search_prompt">ಇಮೇಲ್ ಹುಡುಕಿ</string>
     <string name="school_mail_send">ಕಳುಹಿಸಿ</string>

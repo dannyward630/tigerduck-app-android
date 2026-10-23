@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Да отворим овај прилог?</string>
     <string name="school_mail_save_draft">Сачувај нацрт</string>
     <string name="school_mail_saved">Сачувано</string>
-    <string name="school_mail_search_index_partial">Пошта се још преузима. Претрага можда неће пронаћи неке старије поруке.</string>
+    <string name="school_mail_search_index_partial">Још није преузета сва пошта. Претрага можда неће пронаћи неке старије поруке.</string>
     <string name="school_mail_search_local_only">Сервер не подржава ову претрагу. Приказују се резултати само из учитаних порука.</string>
     <string name="school_mail_search_prompt">Претражи пошту</string>
     <string name="school_mail_send">Пошаљи</string>

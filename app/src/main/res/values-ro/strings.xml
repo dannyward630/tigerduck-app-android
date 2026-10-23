@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Deschizi acest atașament?</string>
     <string name="school_mail_save_draft">Salvează ciorna</string>
     <string name="school_mail_saved">Salvat</string>
-    <string name="school_mail_search_index_partial">E-mailurile încă se descarcă. Căutarea s-ar putea să nu găsească unele e-mailuri mai vechi.</string>
+    <string name="school_mail_search_index_partial">Nu toate e-mailurile au fost descărcate încă. Căutarea s-ar putea să nu găsească unele e-mailuri mai vechi.</string>
     <string name="school_mail_search_local_only">Serverul nu poate efectua această căutare. Se afișează doar rezultatele din e-mailurile deja încărcate.</string>
     <string name="school_mail_search_prompt">Caută în e-mailuri</string>
     <string name="school_mail_send">Trimite</string>

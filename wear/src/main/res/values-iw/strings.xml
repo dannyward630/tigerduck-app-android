@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">לפתוח את הקובץ המצורף הזה?</string>
     <string name="school_mail_save_draft">שמור טיוטה</string>
     <string name="school_mail_saved">נשמר</string>
-    <string name="school_mail_search_index_partial">הדואר עדיין בהורדה. ייתכן שהחיפוש לא ימצא חלק מההודעות הישנות.</string>
+    <string name="school_mail_search_index_partial">עדיין לא כל הדואר הורד. ייתכן שהחיפוש לא ימצא חלק מההודעות הישנות.</string>
     <string name="school_mail_search_local_only">השרת אינו יכול להריץ את החיפוש הזה. מוצגות התוצאות מההודעות שכבר נטענו בלבד.</string>
     <string name="school_mail_search_prompt">חיפוש בדואר</string>
     <string name="school_mail_send">שלח</string>

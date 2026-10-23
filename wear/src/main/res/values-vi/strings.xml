@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Mở tệp đính kèm này?</string>
     <string name="school_mail_save_draft">Lưu thư nháp</string>
     <string name="school_mail_saved">Đã lưu</string>
-    <string name="school_mail_search_index_partial">Thư vẫn đang được tải xuống. Tìm kiếm có thể không thấy một số thư cũ hơn.</string>
+    <string name="school_mail_search_index_partial">Chưa tải xuống hết thư. Tìm kiếm có thể không thấy một số thư cũ hơn.</string>
     <string name="school_mail_search_local_only">Máy chủ không thể thực hiện tìm kiếm này. Chỉ hiển thị kết quả từ thư đã tải.</string>
     <string name="school_mail_search_prompt">Tìm kiếm thư</string>
     <string name="school_mail_send">Gửi</string>

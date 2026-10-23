@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Öppna den här bilagan?</string>
     <string name="school_mail_save_draft">Spara utkast</string>
     <string name="school_mail_saved">Sparat</string>
-    <string name="school_mail_search_index_partial">Mejlen laddas fortfarande ned. Sökningen hittar kanske inte några äldre mejl.</string>
+    <string name="school_mail_search_index_partial">All mejl är inte nedladdad än. Sökningen hittar kanske inte några äldre mejl.</string>
     <string name="school_mail_search_local_only">Servern kan inte köra den här sökningen. Visar bara träffar från redan inläst mejl.</string>
     <string name="school_mail_search_prompt">Sök i mejl</string>
     <string name="school_mail_send">Skicka</string>

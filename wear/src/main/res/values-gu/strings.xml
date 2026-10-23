@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">આ એટેચમેન્ટ ખોલવું છે?</string>
     <string name="school_mail_save_draft">ડ્રાફ્ટ સેવ કરો</string>
     <string name="school_mail_saved">સેવ થયું</string>
-    <string name="school_mail_search_index_partial">મેઇલ હજી ડાઉનલોડ થઈ રહ્યા છે. સર્ચમાં કેટલાક જૂના મેઇલ ન મળે એવું બની શકે.</string>
+    <string name="school_mail_search_index_partial">હજી બધા મેઇલ ડાઉનલોડ થયા નથી. સર્ચમાં કેટલાક જૂના મેઇલ ન મળે એવું બની શકે.</string>
     <string name="school_mail_search_local_only">સર્વર આ સર્ચ ચલાવી શકતું નથી. ફક્ત લોડ થયેલા મેઇલમાંથી મેળ બતાવવામાં આવી રહ્યા છે.</string>
     <string name="school_mail_search_prompt">મેઇલ સર્ચ કરો</string>
     <string name="school_mail_send">મોકલો</string>
