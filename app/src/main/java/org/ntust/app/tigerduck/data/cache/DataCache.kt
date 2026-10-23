@@ -669,28 +669,47 @@ class DataCache @Inject constructor(
     }
 
     /**
-     * [semester]'s courses a course selection answer brought back that no
-     * snapshot fetched since has listed; see [liftHandAddedHides].
+     * [semester]'s courses a course selection answer brought back that the
+     * snapshot fetched at [fetchedAtMs] has to leave be: none fetched before
+     * it had listed them since; see [liftHandAddedHides].
      */
-    suspend fun restoredCoursesIn(semester: String): Set<String> {
+    suspend fun restoredCoursesIn(semester: String, fetchedAtMs: Long): Set<String> {
         val prefix = CourseTombstoneKeys.key(semester, "")
-        return loadRestoredCourses().keys.filter { it.startsWith(prefix) }.mapTo(mutableSetOf()) { it.removePrefix(prefix) }
+        return loadRestoredCourses()
+            .filter { (key, course) -> key.startsWith(prefix) && (course.listedAt == null || fetchedAtMs < course.listedAt) }
+            .keys.mapTo(mutableSetOf()) { it.removePrefix(prefix) }
     }
 
     /**
-     * Lets go of the courses brought back in [semester] that [listed], the
-     * course numbers of a snapshot fetched at [fetchedAtMs], holds, when it
-     * was fetched after they came back: the upload that names them has
-     * landed, and their absence is a delete elsewhere again. An older
-     * snapshot may still list the row their delete took off.
+     * Notes the courses brought back in [semester] that [listed], the course
+     * numbers of a snapshot fetched at [fetchedAtMs], holds, when it was
+     * fetched after they came back: the upload that names them has landed,
+     * and to that snapshot and every later one their absence is a delete
+     * elsewhere again. A sync still reconciling an older one leaves them be;
+     * a hold listed more than [RESTORED_LISTED_GRACE_MS] before the snapshot
+     * goes, as no sync is that far behind. An older snapshot may still list
+     * the row their delete took off.
      */
     suspend fun restoredCoursesListed(semester: String, listed: Collection<String>, fetchedAtMs: Long) =
         courseHidesMutex.withLock {
             val restored = loadRestoredCourses()
             val keys = listed.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
-            val kept = restored.filter { (key, restoredAt) -> key !in keys || restoredAt >= fetchedAtMs }
-            if (kept != restored) saveToUserData(kept, RESTORED_COURSES_FILE)
+            val updated = restored.mapNotNull { (key, course) ->
+                val listedAt = course.listedAt
+                when {
+                    listedAt != null && fetchedAtMs - listedAt > RESTORED_LISTED_GRACE_MS -> null
+                    listedAt == null && key in keys && fetchedAtMs > course.restoredAt -> key to course.copy(listedAt = fetchedAtMs)
+                    else -> key to course
+                }
+            }.toMap()
+            if (updated != restored) saveToUserData(updated, RESTORED_COURSES_FILE)
         }
+
+    /**
+     * A course a course selection answer brought back: when (epoch millis),
+     * and when the first snapshot fetched since that lists it was fetched.
+     */
+    data class RestoredCourse(val restoredAt: Long, val listedAt: Long?)
 
     /** The marked hides, as `<semester>:<courseNo>` keys; see [markDeletedCourse]. */
     private suspend fun loadHandAddedHides(): Set<String> {
@@ -698,14 +717,11 @@ class DataCache @Inject constructor(
         return loadFromUserData<List<String?>>(type, HAND_ADDED_HIDES_FILE).orEmpty().filterNotNullTo(mutableSetOf())
     }
 
-    /**
-     * The courses being brought back, as `<semester>:<courseNo>` keys, each
-     * with when it was brought back (epoch millis); see [restoredCoursesIn].
-     */
-    private suspend fun loadRestoredCourses(): Map<String, Long> {
-        val type = object : TypeToken<Map<String?, Long?>>() {}.type
-        return loadFromUserData<Map<String?, Long?>>(type, RESTORED_COURSES_FILE).orEmpty()
-            .mapNotNull { (key, restoredAt) -> if (key == null || restoredAt == null) null else key to restoredAt }
+    /** The courses being brought back, by `<semester>:<courseNo>` key; see [restoredCoursesIn]. */
+    private suspend fun loadRestoredCourses(): Map<String, RestoredCourse> {
+        val type = object : TypeToken<Map<String?, RestoredCourse?>>() {}.type
+        return loadFromUserData<Map<String?, RestoredCourse?>>(type, RESTORED_COURSES_FILE).orEmpty()
+            .mapNotNull { (key, course) -> if (key == null || course == null) null else key to course }
             .toMap()
     }
 
@@ -737,7 +753,7 @@ class DataCache @Inject constructor(
         if (lifted.isEmpty()) return@withLock
         // Ahead of the hides: one held while its hide still stands is let go by the next write.
         val restoredAt = System.currentTimeMillis()
-        saveToUserData(loadRestoredCourses() + lifted.associateWith { restoredAt }, RESTORED_COURSES_FILE)
+        saveToUserData(loadRestoredCourses() + lifted.associateWith { RestoredCourse(restoredAt, listedAt = null) }, RESTORED_COURSES_FILE)
         writeDeletedCourseNos(hides - lifted)
     }
 
@@ -1346,6 +1362,9 @@ class DataCache @Inject constructor(
 
         private const val HAND_ADDED_HIDES_FILE = "hand_added_hides.json"
         private const val RESTORED_COURSES_FILE = "restored_courses.json"
+
+        /** As CourseSyncReconciler's for reset stamps: an overlapping sync's snapshot is seconds behind, never a minute. */
+        private const val RESTORED_LISTED_GRACE_MS = 60_000L
         private const val SELECTION_ROSTERS_FILE = "selection_rosters.json"
 
         private const val MOODLE_DIR = "moodle"

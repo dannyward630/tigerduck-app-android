@@ -298,7 +298,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
         if (semester in stale) return
         val localCourses = dataCache.loadCourses(semester)
         // After the courses: see CourseSyncReconciler.withoutRestored.
-        val restored = dataCache.restoredCoursesIn(semester)
+        val restored = dataCache.restoredCoursesIn(semester, result.fetchedAtMs)
         val stored = CourseSyncReconciler.withoutRestored(semester, dataCache.loadDeletedCourseNos(), restored)
         val storedKnown = dataCache.loadServerKnownNos()
         // A course reset made on another device, which this worker leaves to

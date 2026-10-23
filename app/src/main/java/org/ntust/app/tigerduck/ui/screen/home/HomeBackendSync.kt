@@ -488,7 +488,7 @@ class HomeBackendSync @Inject constructor(
         for (semester in semesters) {
             val localCourses = dataCache.loadCourses(semester)
             // After the courses: see CourseSyncReconciler.withoutRestored.
-            val restored = dataCache.restoredCoursesIn(semester)
+            val restored = dataCache.restoredCoursesIn(semester, result.fetchedAtMs)
             tombstones = CourseSyncReconciler.withoutRestored(semester, tombstones, restored)
             tombstonesBefore = CourseSyncReconciler.withoutRestored(semester, tombstonesBefore, restored)
             val tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones)

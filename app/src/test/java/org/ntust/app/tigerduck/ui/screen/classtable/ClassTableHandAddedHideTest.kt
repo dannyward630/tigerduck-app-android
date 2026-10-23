@@ -55,7 +55,7 @@ class ClassTableHandAddedHideTest {
     /** The sync's reconcile as HomeBackendSync stores it, for a tombstone another device wrote for [course]. */
     private suspend fun tombstonedElsewhere(course: Course) {
         val localCourses = cache.loadCourses(TERM)
-        val restored = cache.restoredCoursesIn(TERM)
+        val restored = cache.restoredCoursesIn(TERM, Long.MAX_VALUE)
         val stored = CourseSyncReconciler.withoutRestored(TERM, cache.loadDeletedCourseNos(), restored)
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = TERM,
@@ -84,7 +84,7 @@ class ClassTableHandAddedHideTest {
         beforeCommit: suspend () -> Unit = {},
     ) {
         val localCourses = cache.loadCourses(TERM)
-        val restored = cache.restoredCoursesIn(TERM)
+        val restored = cache.restoredCoursesIn(TERM, fetchedAtMs)
         val stored = CourseSyncReconciler.withoutRestored(TERM, hides ?: cache.loadDeletedCourseNos(), restored)
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = TERM,
@@ -331,6 +331,27 @@ class ClassTableHandAddedHideTest {
 
         assertEquals(setOf(handAdded.courseNo), hidden())
         assertEquals(listOf(enrolled.courseNo, MERGED), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+    }
+
+    @Test
+    fun `a newer sync that finds a brought-back course listed leaves an older sync its hold`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        // Home's sync fetches its snapshot and reads the hides, then waits while the rest happens.
+        val olderFetchedAt = System.currentTimeMillis() - 1_000
+        val read = cache.loadDeletedCourseNos()
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+        // The background sync's snapshot, fetched since, lists the course: its upload landed.
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = System.currentTimeMillis() + 1_000)
+
+        // Home's older snapshot, from before the upload, does not list it.
+        syncListing(enrolled.courseNo, hides = read, fetchedAtMs = olderFetchedAt)
+
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+        assertEquals(emptySet<String>(), hidden())
     }
 
     @Test
