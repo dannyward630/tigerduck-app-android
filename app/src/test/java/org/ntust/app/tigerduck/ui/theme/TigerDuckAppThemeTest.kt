@@ -83,6 +83,19 @@ class TigerDuckAppThemeTest {
         assertEquals(VisualPreset.TigerDuck, seen?.preset)
     }
 
+    @Config(sdk = [31])
+    @Test
+    fun `the wallpaper's colors leave the picked style in place`() {
+        var seen: VisualStylePolicy? = null
+        composeRule.setContent {
+            TigerDuckAppTheme(darkTheme = true, useDynamicColor = true, visualPreset = VisualPreset.Tat) {
+                seen = LocalVisualStylePolicy.current
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(VisualPreset.Tat, seen?.preset)
+    }
+
     @Test
     fun `the root theme uses accentColor when useDynamicColor is false`() {
         assertEquals(orange, scheme(darkTheme = false, useDynamicColor = false).primary)
