@@ -101,6 +101,8 @@ class SchoolMailListViewModel @Inject constructor(
         val searchLocalOnly: Boolean = false,
         /** A search under way: one [runSearch] that has not ended, and is still the latest. */
         val isSearching: Boolean = false,
+        /** A further page of the latest search's matches on its way ([loadMoreSearchResults]). */
+        val isPagingSearch: Boolean = false,
         /**
          * When the folders on screen last had their newest page fetched -- for All mail the older
          * of its two -- or 0 while one of them never has. For the sync dot's "Last synced" row;
@@ -109,7 +111,7 @@ class SchoolMailListViewModel @Inject constructor(
         val fetchedAt: Long = 0L,
     ) {
         /** A search under way, or a further page of its matches on its way: the search field spins. */
-        val searchBusy: Boolean get() = isSearching || (isPaginating && searchResults != null)
+        val searchBusy: Boolean get() = isSearching || isPagingSearch
 
         val displayed: List<MailRow>
             get() = (searchResults ?: messages).let { list -> if (unreadOnly) list.filter { !it.summary.flags.seen } else list }
@@ -517,7 +519,7 @@ class SchoolMailListViewModel @Inject constructor(
         searchGeneration++
         unfetchedMatches = emptyMap()
         // A search still out is nobody's now, so its end must not be waited on to stop the spinner.
-        _state.update { it.copy(isSearching = false) }
+        _state.update { it.copy(isSearching = false, isPagingSearch = false) }
     }
 
     fun submitSearch() {
@@ -1017,7 +1019,7 @@ class SchoolMailListViewModel @Inject constructor(
         val selection = _state.value.selected
         val search = searchGeneration
         val generation = account.accountGeneration
-        _state.update { it.copy(isPaginating = true) }
+        _state.update { it.copy(isPaginating = true, isPagingSearch = true) }
         try {
             var walkedBack = 0
             while (true) {
@@ -1063,7 +1065,8 @@ class SchoolMailListViewModel @Inject constructor(
                 walkedBack++
             }
         } finally {
-            _state.update { it.copy(isPaginating = false) }
+            // A page of a search since replaced leaves the spinner to the search that replaced it.
+            _state.update { it.copy(isPaginating = false, isPagingSearch = it.isPagingSearch && search != searchGeneration) }
         }
     }
 

@@ -503,6 +503,27 @@ class SchoolMailListViewModelTest {
     }
 
     @Test
+    fun `a page of an old search still on its way leaves the newer search's field still once it ends`() {
+        repo.pageSize = 2
+        repo.add("INBOX", *(1L..120L).map { mailSummary(it, subject = "期中考 $it") }.toTypedArray())
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val gate = CompletableDeferred<Unit>()
+        repo.searchPageGate = gate
+        vm.loadMoreIfNeeded(vm.state.value.displayed.last())
+
+        repo.searchPageGate = null
+        vm.setSearchText("考 1")
+        vm.submitSearch()
+        assertFalse("the newer search has ended", vm.state.value.searchBusy)
+
+        gate.complete(Unit)
+        assertFalse(vm.state.value.searchBusy)
+    }
+
+    @Test
     fun `the list paging back on its own leaves the search field still`() {
         val paging = SchoolMailListViewModel.UiState(isPaginating = true)
         assertFalse(paging.searchBusy)
