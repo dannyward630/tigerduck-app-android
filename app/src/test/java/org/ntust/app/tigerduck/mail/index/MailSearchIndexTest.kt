@@ -53,8 +53,8 @@ class MailSearchIndexTest {
             ),
         )
 
-        assertEquals(listOf(4L, 3L, 2L), index.search(me, "INBOX", "公告"))
-        assertEquals(listOf(1L), index.search(me, "INBOX", "期中考"))
+        assertEquals(listOf(4L, 3L, 2L), index.search(me, "INBOX", 7, "公告"))
+        assertEquals(listOf(1L), index.search(me, "INBOX", 7, "期中考"))
     }
 
     @Test
@@ -67,9 +67,9 @@ class MailSearchIndexTest {
             ),
         )
 
-        assertEquals(listOf(1L), index.search(me, "INBOX", "moodle"))
-        assertEquals(listOf(2L), index.search(me, "INBOX", "100%"))
-        assertEquals(listOf(2L), index.search(me, "INBOX", "file_name"))
+        assertEquals(listOf(1L), index.search(me, "INBOX", 7, "moodle"))
+        assertEquals(listOf(2L), index.search(me, "INBOX", 7, "100%"))
+        assertEquals(listOf(2L), index.search(me, "INBOX", 7, "file_name"))
     }
 
     @Test
@@ -77,8 +77,8 @@ class MailSearchIndexTest {
         seed("INBOX", Entry(1, "a@example.com", "公告", ""))
         seed("寄件備份匣", Entry(1, "me@example.com", "公告回覆", ""))
 
-        assertEquals(listOf(1L), index.search(me, "寄件備份匣", "回覆"))
-        assertEquals(emptyList<Long>(), index.search(me, "INBOX", "回覆"))
+        assertEquals(listOf(1L), index.search(me, "寄件備份匣", 7, "回覆"))
+        assertEquals(emptyList<Long>(), index.search(me, "INBOX", 7, "回覆"))
     }
 
     @Test
@@ -89,6 +89,16 @@ class MailSearchIndexTest {
 
         assertEquals(8L, index.uidValidity(me, "INBOX"))
         assertEquals(emptySet<Long>(), index.uids(me, "INBOX"))
+    }
+
+    @Test
+    fun `under another UIDVALIDITY a search finds nothing and flags change nothing`() {
+        seed(entries = arrayOf(Entry(1, "a@example.com", "公告", "")))
+
+        assertEquals(emptyList<Long>(), index.search(me, "INBOX", 8, "公告"))
+        index.updateFlags(me, "INBOX", 8, mapOf(1L to MailFlags.NONE.copy(seen = true)), current)
+
+        assertFalse(index.summaries(me, "INBOX", 7, listOf(1L)).getValue(1L).flags.seen)
     }
 
     @Test
@@ -115,7 +125,7 @@ class MailSearchIndexTest {
         seed(entries = arrayOf(Entry(1, "a@example.com", "公告", ""), Entry(2, "b@example.com", "公告", "")))
 
         index.remove(me, "INBOX", listOf(1L)) { false }
-        index.updateFlags(me, "INBOX", mapOf(2L to MailFlags.NONE.copy(seen = true))) { false }
+        index.updateFlags(me, "INBOX", 7, mapOf(2L to MailFlags.NONE.copy(seen = true))) { false }
 
         val stored = index.summaries(me, "INBOX", 7, listOf(1L, 2L))
         assertEquals(setOf(1L, 2L), stored.keys)
@@ -136,11 +146,11 @@ class MailSearchIndexTest {
         seed(entries = arrayOf(Entry(1, "a@example.com", "公告", "")))
         val next = "b10000002@example.com"
 
-        assertEquals(emptyList<Long>(), index.search(next, "INBOX", "公告"))
+        assertEquals(emptyList<Long>(), index.search(next, "INBOX", 7, "公告"))
         assertTrue(index.open(next, "INBOX", 7, current))
         assertEquals(emptySet<Long>(), index.uids(next, "INBOX"))
         assertFalse("the one that left adds nothing", index.add(me, "INBOX", 7, listOf(Entry(2, "b@example.com", "公告", "")), current))
-        assertEquals(emptyList<Long>(), index.search(me, "INBOX", "公告"))
+        assertEquals(emptyList<Long>(), index.search(me, "INBOX", 7, "公告"))
     }
 
     @Test
@@ -158,7 +168,7 @@ class MailSearchIndexTest {
     fun `a mail read elsewhere reads as read, and one deleted there leaves`() {
         seed(entries = arrayOf(Entry(1, "a@example.com", "期中考", ""), Entry(2, "b@example.com", "公告", "")))
 
-        index.updateFlags(me, "INBOX", mapOf(1L to MailFlags.NONE.copy(seen = true), 2L to MailFlags.NONE.copy(deleted = true)), current)
+        index.updateFlags(me, "INBOX", 7, mapOf(1L to MailFlags.NONE.copy(seen = true), 2L to MailFlags.NONE.copy(deleted = true)), current)
 
         val stored = index.summaries(me, "INBOX", 7, listOf(1L, 2L))
         assertTrue(stored.getValue(1L).flags.seen)
@@ -173,7 +183,7 @@ class MailSearchIndexTest {
         index.clear()
 
         assertNull(index.uidValidity(me, "INBOX"))
-        assertEquals(emptyList<Long>(), index.search(me, "INBOX", "公告"))
-        assertEquals(emptyList<Long>(), index.search(me, "寄件備份匣", "公告"))
+        assertEquals(emptyList<Long>(), index.search(me, "INBOX", 7, "公告"))
+        assertEquals(emptyList<Long>(), index.search(me, "寄件備份匣", 7, "公告"))
     }
 }

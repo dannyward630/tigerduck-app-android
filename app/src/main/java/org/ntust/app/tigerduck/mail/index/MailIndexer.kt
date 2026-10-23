@@ -77,11 +77,14 @@ internal class MailIndexer(
         val current = { stillWanted() && stillOwner(plan.owner) }
         for (batch in plan.missing.take(limit).chunked(BATCH)) {
             val entries = sessions.run(current) { s ->
+                // Recreated since the plan, the folder's UIDs name other mail: the next run plans
+                // it again, which empties its index.
+                if (s.uidValidity(plan.folder) != plan.uidValidity) return@run null
                 val texts = s.fetchSearchTexts(plan.folder, batch)
                 s.fetchByUids(plan.folder, batch).map {
                     MailSearchIndex.Entry(it.uid, senderOf(it), it.subject, texts[it.uid].orEmpty(), it)
                 }
-            }
+            } ?: return false
             if (!index.add(plan.owner.address, plan.folder, plan.uidValidity, entries, current)) return false
             // The batch is done with, mail since deleted included, which the next run will not see.
             onAdded(batch.size)
@@ -97,8 +100,11 @@ internal class MailIndexer(
         val current = { stillWanted() && stillOwner(plan.owner) }
         val downloaded = index.uids(plan.owner.address, plan.folder).toList()
         for (chunk in downloaded.chunked(FLAGS_BATCH)) {
-            val flags = sessions.run(current) { s -> s.refreshFlags(plan.folder, chunk) }
-            index.updateFlags(plan.owner.address, plan.folder, flags, current)
+            val flags = sessions.run(current) { s ->
+                // As in [fill]: the UIDs of a folder recreated since name other mail.
+                if (s.uidValidity(plan.folder) == plan.uidValidity) s.refreshFlags(plan.folder, chunk) else null
+            } ?: return
+            index.updateFlags(plan.owner.address, plan.folder, plan.uidValidity, flags, current)
         }
     }
 

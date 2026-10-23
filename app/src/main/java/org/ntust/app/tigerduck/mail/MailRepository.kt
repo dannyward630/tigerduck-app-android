@@ -328,7 +328,7 @@ class MailRepository @Inject constructor(
     private fun markSeenInIndex(owner: MailIndexer.Owner, folder: String, uid: Long, seen: Boolean) {
         val validity = searchIndex.uidValidity(owner.address, folder) ?: return
         val summary = searchIndex.summaries(owner.address, folder, validity, listOf(uid))[uid] ?: return
-        searchIndex.updateFlags(owner.address, folder, mapOf(uid to summary.flags.copy(seen = seen))) { stillIndexOwner(owner) }
+        searchIndex.updateFlags(owner.address, folder, validity, mapOf(uid to summary.flags.copy(seen = seen))) { stillIndexOwner(owner) }
     }
 
     /**
@@ -649,13 +649,20 @@ class MailRepository @Inject constructor(
         // The rest of what the index lacks comes in the background, the first run all of it.
         indexScheduler.request()
         indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
-        val matches = withContext(Dispatchers.IO) { indexOwner()?.let { searchIndex.search(it, folder, q) }.orEmpty() }
+        // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
+        val (indexedUnder, matches) = withContext(Dispatchers.IO) {
+            val owner = indexOwner() ?: return@withContext null to emptyList()
+            val validity = searchIndex.uidValidity(owner, folder) ?: return@withContext null to emptyList()
+            validity to searchIndex.search(owner, folder, validity, q)
+        }
         // Newest first, so the first page is the newest matches and the rest page back. One hold
         // of the connection, so the page and the UIDVALIDITY are the server's at the same time.
         return withSession(stillWanted) { session ->
             val validity = session.uidValidity(folder)
-            val newest = matches.take(PAGE_SIZE)
-            SearchOutcome.Server(session.fetchByUids(folder, newest), matches.drop(newest.size), validity)
+            // The folder recreated since the index answered: the matches' UIDs name other mail.
+            val found = if (validity == indexedUnder) matches else emptyList()
+            val newest = found.take(PAGE_SIZE)
+            SearchOutcome.Server(session.fetchByUids(folder, newest), found.drop(newest.size), validity)
         }
     }
 

@@ -51,17 +51,21 @@ interface MailSearchIndex {
     /** Drops [uids], gone from the server, from [folder], unless [stillCurrent] says the account left. */
     fun remove(owner: String, folder: String, uids: Collection<Long>, stillCurrent: () -> Boolean)
 
-    /** The UIDs, newest first, of [owner]'s mail in [folder] whose sender, subject or text holds [query]. */
-    fun search(owner: String, folder: String, query: String): List<Long>
+    /**
+     * The UIDs, newest first, of [owner]'s mail in [folder] whose sender, subject or text holds
+     * [query]; none unless the folder is indexed under [uidValidity], which they only name mail in.
+     */
+    fun search(owner: String, folder: String, uidValidity: Long, query: String): List<Long>
 
     /** The summaries of those of [uids] downloaded into [folder] under [uidValidity], by UID. */
     fun summaries(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>): Map<Long, MailSummary>
 
     /**
-     * Brings the flags of [folder]'s downloaded mail to [flags], as the server has them now; mail
-     * flagged `\Deleted` leaves it. Nothing changes once [stillCurrent] says the account left.
+     * Brings the flags of [folder]'s mail downloaded under [uidValidity] to [flags], as the server
+     * has them now; mail flagged `\Deleted` leaves it. Nothing changes once [stillCurrent] says the
+     * account left.
      */
-    fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>, stillCurrent: () -> Boolean)
+    fun updateFlags(owner: String, folder: String, uidValidity: Long, flags: Map<Long, MailFlags>, stillCurrent: () -> Boolean)
 
     /** Empties it, for a sign-out or the user deleting it, and gives back the disk it took. */
     fun clear()
@@ -182,8 +186,8 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
     }
 
     @Synchronized
-    override fun search(owner: String, folder: String, query: String): List<Long> {
-        if (query.isEmpty() || ownerLocked() != owner) return emptyList()
+    override fun search(owner: String, folder: String, uidValidity: Long, query: String): List<Long> {
+        if (query.isEmpty() || ownerLocked() != owner || validityLocked(folder) != uidValidity) return emptyList()
         // LIKE ignores case for ASCII, as the server's search did; % and _ in what was typed are
         // matched as themselves.
         val pattern = "%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
@@ -215,9 +219,15 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
     }
 
     @Synchronized
-    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>, stillCurrent: () -> Boolean) {
-        if (flags.isEmpty() || !stillCurrent() || ownerLocked() != owner) return
-        val stored = validityLocked(folder)?.let { summariesLocked(folder, flags.keys) }.orEmpty()
+    override fun updateFlags(
+        owner: String,
+        folder: String,
+        uidValidity: Long,
+        flags: Map<Long, MailFlags>,
+        stillCurrent: () -> Boolean,
+    ) {
+        if (flags.isEmpty() || !stillCurrent()) return
+        val stored = summaries(owner, folder, uidValidity, flags.keys)
         transaction {
             stored.values.forEach { summary ->
                 val now = flags[summary.uid] ?: return@forEach
@@ -237,9 +247,6 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
             }
         }
     }
-
-    private fun summariesLocked(folder: String, uids: Collection<Long>): Map<Long, MailSummary> =
-        summaries(ownerLocked() ?: return emptyMap(), folder, validityLocked(folder) ?: return emptyMap(), uids)
 
     // A row a later layout cannot read is treated as not downloaded, and fetched again.
     private fun summaryOf(json: String): MailSummary? =

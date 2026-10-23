@@ -1,6 +1,8 @@
 package org.ntust.app.tigerduck.mail.index
 
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.mail.FakeMailServer
@@ -23,6 +25,16 @@ class MailIndexerTest {
 
     private val me = "b10000001@mail.ntust.edu.tw"
 
+    /** An indexer whose account never changes. */
+    private fun indexer() = MailIndexer(index, sessions, owner = { MailIndexer.Owner(me, 1) }, stillOwner = { true })
+
+    /** [folder] deleted and created again on the server: a new UIDVALIDITY, and its UIDs from 1 again. */
+    private fun recreate(folder: String = "INBOX") {
+        server.folders.getValue(folder).clear()
+        server.uidValidity++
+        server.nextUid = 1
+    }
+
     @Test
     fun `a run whose account changed right after it was read writes nothing`() = runTest {
         server.deliver("期中考")
@@ -37,5 +49,33 @@ class MailIndexerTest {
         runCatching { indexer.plan("INBOX")?.let { indexer.fill(it) } }
 
         assertTrue(index.uids(me, "INBOX").isEmpty())
+    }
+
+    @Test
+    fun `mail fetched once the folder was recreated is not filed as the mail planned`() = runTest {
+        server.deliver("舊信")
+        val indexer = indexer()
+        val plan = indexer.plan("INBOX")!!
+        recreate()
+        server.deliver("新信")
+
+        assertFalse("cut short, for the next run to plan again", indexer.fill(plan))
+
+        assertEquals(emptyList<Long>(), index.search(me, "INBOX", plan.uidValidity, "新信"))
+    }
+
+    @Test
+    fun `flags read once the folder was recreated are not the downloaded mail's`() = runTest {
+        server.deliver("舊信")
+        val indexer = indexer()
+        val plan = indexer.plan("INBOX")!!
+        indexer.fill(plan)
+        val validity = server.uidValidity
+        recreate()
+        server.deliver("新信", seen = true)
+
+        indexer.refreshFlags(plan)
+
+        assertFalse(index.summaries(me, "INBOX", validity, listOf(1L)).getValue(1L).flags.seen)
     }
 }

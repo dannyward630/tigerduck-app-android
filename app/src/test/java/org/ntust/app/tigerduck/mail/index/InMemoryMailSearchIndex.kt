@@ -19,6 +19,9 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     /** Fires once [clear] has emptied it: a test waits on the clear a sign-in runs on its own. */
     @Volatile var onClear: (() -> Unit)? = null
 
+    /** Fires as a search starts: a test changes the server between the index's answer and its use. */
+    @Volatile var onSearch: (() -> Unit)? = null
+
     @Synchronized
     override fun uidValidity(owner: String, folder: String): Long? = if (this.owner == owner) validities[folder] else null
 
@@ -70,8 +73,9 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     }
 
     @Synchronized
-    override fun search(owner: String, folder: String, query: String): List<Long> {
-        if (query.isEmpty() || this.owner != owner) return emptyList()
+    override fun search(owner: String, folder: String, uidValidity: Long, query: String): List<Long> {
+        onSearch?.invoke()
+        if (query.isEmpty() || this.owner != owner || validities[folder] != uidValidity) return emptyList()
         fun String.holds() = asciiLower().contains(query.asciiLower())
         return mail[folder].orEmpty().values
             .filter { it.sender.holds() || it.subject.holds() || it.body.holds() }
@@ -87,12 +91,18 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     }
 
     @Synchronized
-    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>, stillCurrent: () -> Boolean) {
+    override fun updateFlags(
+        owner: String,
+        folder: String,
+        uidValidity: Long,
+        flags: Map<Long, MailFlags>,
+        stillCurrent: () -> Boolean,
+    ) {
         if (!stillCurrent()) {
             refusedWrites++
             return
         }
-        if (this.owner != owner) return
+        if (this.owner != owner || validities[folder] != uidValidity) return
         val box = mail[folder] ?: return
         flags.forEach { (uid, now) ->
             val entry = box[uid] ?: return@forEach

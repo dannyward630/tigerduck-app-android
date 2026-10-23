@@ -528,6 +528,29 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `matches found before the folder was recreated are not fetched as its new mail`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+        setup.searchIndex.onSearch = {
+            setup.searchIndex.onSearch = null
+            // Recreated between the index's answer and the fetch of its matches, with other mail
+            // under the same UID.
+            server.folders.getValue("INBOX").clear()
+            server.uidValidity++
+            server.nextUid = 1
+            server.deliver("other")
+        }
+
+        val outcome = repo.search("INBOX", "期中") as SearchOutcome.Server
+
+        assertEquals(emptyList<String>(), outcome.messages.map { it.subject })
+        assertEquals(emptyList<Long>(), outcome.remaining)
+        assertEquals(server.uidValidity, outcome.uidValidity)
+    }
+
+    @Test
     fun `the background download indexes every folder`() = runTest {
         server.deliver("收件 公告")
         server.deliver("寄出 公告", folder = "寄件備份匣")
@@ -539,7 +562,7 @@ class MailRepositoryTest {
         val owner = setup.account.ownAddress!!.lowercase()
 
         listOf("INBOX", "寄件備份匣", "草稿匣").forEach { folder ->
-            assertEquals(folder, 1, setup.searchIndex.search(owner, folder, "公告").size)
+            assertEquals(folder, 1, setup.searchIndex.search(owner, folder, server.uidValidity, "公告").size)
         }
     }
 
