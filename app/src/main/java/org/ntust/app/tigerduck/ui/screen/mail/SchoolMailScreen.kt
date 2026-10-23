@@ -362,14 +362,6 @@ fun SchoolMailScreen(
                         state.loadState is SchoolMailListViewModel.LoadState.Loaded -> ServerStatus.OK
                         else -> ServerStatus.UNKNOWN
                     }
-                    // The download of every mail for search, which the first time takes a while.
-                    indexProgress?.let { progress ->
-                        Text(
-                            indexProgressText(progress),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                     SyncStatusDot(
                         status = mailStatus,
                         label = stringResource(R.string.feature_school_mail),
@@ -378,8 +370,11 @@ fun SchoolMailScreen(
                         // this dot uses -- not the student ID, which is an identity and says
                         // nothing about whether anything is reaching the server. The specific
                         // failure still has a home: the list itself shows the error.
-                        text = statusText(mailStatus),
-                        isLoading = isLoading,
+                        //
+                        // While every mail downloads for search, which the first time takes a
+                        // while, the dot syncs and the row says how far it has come.
+                        text = indexProgress?.let(::indexProgressText) ?: statusText(mailStatus),
+                        isLoading = isLoading || indexProgress != null,
                         syncedAtMs = state.fetchedAt,
                     )
                     IconButton(onClick = { viewModel.setUnreadOnly(!state.unreadOnly) }) {
@@ -796,7 +791,7 @@ private fun SchoolMailLoginCard(
     }
 }
 
-/** [progress] as the header shows it: mail downloaded for search, of how many it lacked, as "120/3,456". */
+/** [progress] as the sync dot's popup shows it: mail downloaded for search, of how many it lacked, as "120/3,456". */
 internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Locale.getDefault()): String {
     val number = NumberFormat.getIntegerInstance(locale)
     return number.format(progress.done) + "/" + number.format(progress.total)
