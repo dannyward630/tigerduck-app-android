@@ -56,7 +56,12 @@ class MailRepositoryTest {
     private val credentials = InMemoryCredentialStore()
     private val demo = FakeDemoGate()
     private val sent = mutableListOf<String>()
-    private val transport = MailTransport { _, message -> sent += message.messageId }
+    /** Thrown by the SMTP send instead of sending, as a server refusing its login does. */
+    @Volatile private var smtpRefusal: MailError? = null
+    private val transport = MailTransport { _, message ->
+        smtpRefusal?.let { throw it }
+        sent += message.messageId
+    }
 
     private suspend fun TestSetup.signedIn(studentId: String = "b10000001", password: String = "pw"): MailRepository {
         account.signIn(studentId, password)
@@ -1005,6 +1010,25 @@ class MailRepositoryTest {
         assertTrue(runCatching { repo.send(mail, null) }.exceptionOrNull() is MailError.AuthFailed)
 
         assertTrue("spec §7.4: no SMTP login with the rejected password", sent.isEmpty())
+    }
+
+    @Test
+    fun `an SMTP login refused for the student signed in since the send began is theirs`() = runTest {
+        server.passwords["B10000002"] = "pw"
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val mail = OutgoingMail(repo.selfAddress(), listOf(MailAddress(null, "a@x.tw")), emptyList(), emptyList(), "s", "b")
+        // Another student signs in as the send looks the sent folder up; the SMTP login then
+        // goes out as them, and the server refuses it.
+        server.onListFolders = {
+            server.onListFolders = null
+            runBlocking { setup.account.signIn("b10000002", "pw") }
+        }
+        smtpRefusal = MailError.AuthFailed()
+
+        assertTrue(runCatching { repo.send(mail, null) }.exceptionOrNull() is MailError.AuthFailed)
+
+        assertTrue("spec §7.4: their rejected password reaches the account", setup.account.authFailed.value)
     }
 
     @Test

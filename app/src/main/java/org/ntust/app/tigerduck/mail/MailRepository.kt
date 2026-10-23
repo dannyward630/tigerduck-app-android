@@ -874,7 +874,15 @@ class MailRepository @Inject constructor(
         // concurrent connections, so a second one is most likely to be refused exactly when the
         // mail screen is open and holding the first.
         val result = withContext(Dispatchers.IO) {
-            sender.send(credentials(), mail, sent) { block -> withSession(block = block) }
+            // The account the SMTP login goes out as, read with its sign-in: a refusal of that
+            // login is that sign-in's (spec §7.4), whichever one the screen that asked opened under.
+            val signedIn = account.snapshot() ?: throw MailError.Protocol("not signed in")
+            try {
+                sender.send(signedIn.credentials, mail, sent) { block -> withSession(block = block) }
+            } catch (e: MailError.AuthFailed) {
+                account.onAuthFailure(signedIn.generation)
+                throw e
+            }
         }
         answered?.let { (folder, uid) ->
             val marked = try {
