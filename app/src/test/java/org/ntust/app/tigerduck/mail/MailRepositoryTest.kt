@@ -919,6 +919,60 @@ class MailRepositoryTest {
         assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late))
     }
 
+    /**
+     * A clock that, the first time a pass reads it -- as it notes it got through, its folders all
+     * planned and filled -- has mail come in past what a search catches up on, and runs that
+     * search: a gap found while the pass is still open, whose own request for a run the pass
+     * already under way stands for. Answers the mail that came.
+     */
+    private fun gapDuringThePass(repo: MailRepository): () -> List<Long> {
+        var late = emptyList<Long>()
+        var searching = true
+        repo.clock = {
+            if (searching) {
+                searching = false
+                late = (1..MailRepository.SEARCH_CATCH_UP + 5).map { server.deliver("期中考 $it") }
+                runBlocking { repo.search("INBOX", "期中") }
+            }
+            1_000_000L
+        }
+        return { late.also { assertFalse("no search ran during the pass", searching) } }
+    }
+
+    @Test
+    fun `a gap a search finds while the background run is under way is downloaded before that run ends`() = runTest {
+        server.deliver("期中考 0")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val late = gapDuringThePass(repo)
+
+        repo.updateSearchIndex()
+
+        assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late()))
+    }
+
+    @Test
+    fun `a gap a search finds while the download in the app is under way is downloaded before it ends`() = runTest {
+        server.deliver("期中考 0")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val late = gapDuringThePass(repo)
+
+        visit(repo)
+
+        assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late()))
+    }
+
+    @Test
+    fun `a pass with no gap found while it ran downloads once`() = runTest {
+        server.deliver("期中考 0")
+        val repo = TestSetup(backgroundScope).signedIn()
+
+        repo.updateSearchIndex()
+
+        assertEquals("planned once", server.folders.size, server.undeletedUidsCalls)
+    }
+
     @Test
     fun `a first search of a folder its catch-up downloads whole misses nothing`() = runTest {
         repeat(3) { server.deliver("期中考 $it") }

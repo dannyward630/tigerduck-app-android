@@ -811,7 +811,15 @@ class MailRepository @Inject constructor(
         val owner = withContext(Dispatchers.IO) { indexOwnerNow() }?.takeIf { it.epoch == asked } ?: return
         try {
             // The folder list a first run resolves is the account's request too.
-            downloadEveryFolder(owner) { stillWanted() && stillIndexOwner(owner) }
+            val current = { stillWanted() && stillIndexOwner(owner) }
+            // Again while a search found mail missing as this ran: this planned before that mail
+            // came, and the run the search asked for was this one -- the background run's request
+            // keeps the one already under way, and the download in the app runs one at a time.
+            // Only for a gap found since the pass began, which only a search makes, so it ends.
+            do {
+                val gaps = gapsFound.get()
+                downloadEveryFolder(owner, gaps, current)
+            } while (gapsFound.get() != gaps && current())
         } catch (e: MailError.AuthFailed) {
             // Unless the account that was refused has left since: its rejection must not stop the
             // next one, whose password the server has not seen.
@@ -820,9 +828,8 @@ class MailRepository @Inject constructor(
         }
     }
 
-    private suspend fun downloadEveryFolder(owner: MailIndexer.Owner, stillWanted: () -> Boolean) {
-        // Read before any folder is planned: see [gapsFound].
-        val gaps = gapsFound.get()
+    /** One pass over every folder, planned once a search had found [gaps] gaps ([gapsFound]). */
+    private suspend fun downloadEveryFolder(owner: MailIndexer.Owner, gaps: Int, stillWanted: () -> Boolean) {
         val folders = folders(stillWanted)
         val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
         // Every folder's count first, for the progress to have one total from the start.
