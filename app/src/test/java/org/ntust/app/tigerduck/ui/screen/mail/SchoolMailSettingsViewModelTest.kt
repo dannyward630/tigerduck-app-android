@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.ui.screen.mail
 import android.app.Application
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -16,6 +17,7 @@ import org.ntust.app.tigerduck.mail.InMemoryCredentialStore
 import org.ntust.app.tigerduck.mail.InMemoryMailStateStore
 import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.MainDispatcherRule
+import org.ntust.app.tigerduck.mail.cancelAndJoinBlocking
 import org.ntust.app.tigerduck.mail.model.MailBody
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
@@ -24,11 +26,21 @@ import org.ntust.app.tigerduck.mail.sync.ExactAlarmAccess
 import org.ntust.app.tigerduck.mail.testApplicationScope
 import org.ntust.app.tigerduck.notification.SystemPermissions
 import java.io.File
+import org.ntust.app.tigerduck.mail.FakeSchoolMailRepository
 import org.ntust.app.tigerduck.mail.schoolMailSite
 
 class SchoolMailSettingsViewModelTest {
+    private val repository = FakeSchoolMailRepository()
+
     @get:Rule val main = MainDispatcherRule()
     @get:Rule val tmp = TemporaryFolder()
+
+    // What the account and the notices launch, joined before TemporaryFolder deletes the cache
+    // a sign-out may still be wiping there.
+    private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
 
     private val state = InMemoryMailStateStore().apply {
         displayName = "中文名"
@@ -50,19 +62,19 @@ class SchoolMailSettingsViewModelTest {
         // cache walk stays synchronous under the test. The permission check reads the stub SDK
         // level, which predates the notification permission, so it never touches the context.
         return SchoolMailSettingsViewModel(
-            state, scheduler, ExactAlarmAccess { false }, cache, main.dispatcher, account, SystemPermissions(Application()),
+            state, scheduler, ExactAlarmAccess { false }, cache, repository, main.dispatcher, account, SystemPermissions(Application()),
         )
     }
 
     private fun account() = MailAccount(
         credentials, state, server.factory(), cache, demo, schoolMailSite(),
-        RecordingScheduler(), RecordingNotifier(), testApplicationScope(),
+        RecordingScheduler(), RecordingNotifier(), appScope,
     )
 
     private fun signIn(studentId: String, password: String) = runBlocking {
         val account = MailAccount(
             credentials, state, server.factory(), cache, demo, schoolMailSite(),
-            RecordingScheduler(), RecordingNotifier(), testApplicationScope(),
+            RecordingScheduler(), RecordingNotifier(), appScope,
         )
         val error = withTimeout(5_000) { account.signIn(studentId, password) }
         assertNull("the sign-in fixture must succeed", error)
@@ -146,5 +158,18 @@ class SchoolMailSettingsViewModelTest {
     fun `the demo mailbox counts as signed in`() {
         signIn(demo.box.studentId.orEmpty(), demo.box.password.orEmpty())
         assertTrue(viewModel().signedIn.value)
+    }
+
+    @Test
+    fun `the mail kept on the phone is measured apart from the cache, and deleting it empties the row`() {
+        repository.searchIndexBytes = 7_000_000L
+        val vm = viewModel()
+        vm.refreshCacheSize()
+        assertEquals(7_000_000L, vm.storageBytes.value)
+
+        vm.deleteStorage()
+
+        assertEquals(1, repository.searchIndexDeletes)
+        assertEquals(0L, vm.storageBytes.value)
     }
 }

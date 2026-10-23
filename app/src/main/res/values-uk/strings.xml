@@ -31,6 +31,7 @@
     <string name="action_allow">Дозволити</string>
     <string name="action_back">Назад</string>
     <string name="action_cancel">Скасувати</string>
+    <string name="action_change">Змінити</string>
     <string name="action_clear_text">Очистити текст</string>
     <string name="action_close">Закрити</string>
     <string name="action_confirm">Підтвердити</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Рожевий</string>
     <string name="color_name_purple">Фіолетовий</string>
     <string name="color_name_red">Червоний</string>
+    <string name="color_name_wallpaper">Кольори шпалер</string>
     <string name="color_picker_apply">Застосувати</string>
     <string name="color_picker_custom">Власний</string>
     <string name="color_picker_presets_note">Готові кольори</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Відкрити це вкладення?</string>
     <string name="school_mail_save_draft">Зберегти чернетку</string>
     <string name="school_mail_saved">Збережено</string>
+    <string name="school_mail_search_index_partial">Ще не вся пошта завантажена. Пошук може не знайти деякі старіші листи.</string>
     <string name="school_mail_search_local_only">Сервер не підтримує цей пошук. Показано збіги лише із завантаженої пошти.</string>
     <string name="school_mail_search_prompt">Пошук пошти</string>
     <string name="school_mail_send">Надіслати</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Логін і пароль мають збігатися з обліковими даними системи університету. TigerDuck зберігає цей пароль лише в зашифрованому вигляді на цьому пристрої й ніколи його не вивантажує.</string>
     <string name="school_mail_sign_in_prompt_title">Увійти в університетську пошту</string>
     <string name="school_mail_source_failed">Не вдалося завантажити вихідний код.</string>
+    <string name="school_mail_storage_delete_message">Ваша пошта залишається на сервері університету. Вона завантажиться знову, коли ви наступного разу відкриєте Університетську пошту, а доти пошук може знайти не все.</string>
+    <string name="school_mail_storage_delete_title">Видалити завантажену пошту?</string>
+    <string name="school_mail_storage_footer">Завантажується, щоб ви могли шукати в усій пошті й прокручувати її без очікування.</string>
+    <string name="school_mail_storage_title">Завантажена пошта</string>
     <string name="school_mail_subject">Тема</string>
     <string name="school_mail_to">Кому</string>
     <string name="school_mail_too_large">Вкладення перевищують ліміт 50 МБ</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Стиль інтерфейсу</string>
     <string name="settings_whats_new">Що нового</string>
     <string name="share_code_needs_update_message">Цей код для обміну потребує новішої версії додатка.</string>
+    <string name="sign_in_change_account_title">Змінити обліковий запис</string>
     <string name="sign_in_password">Пароль</string>
     <string name="sign_in_student_id">Студентський ID</string>
     <string name="source_code_picker_current_app_badge">Поточний застосунок</string>

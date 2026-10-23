@@ -31,6 +31,7 @@
     <string name="action_allow">Permitir</string>
     <string name="action_back">Voltar</string>
     <string name="action_cancel">Cancelar</string>
+    <string name="action_change">Mudar</string>
     <string name="action_clear_text">Limpar texto</string>
     <string name="action_close">Fechar</string>
     <string name="action_confirm">Confirmar</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Cor-de-rosa</string>
     <string name="color_name_purple">Roxo</string>
     <string name="color_name_red">Vermelho</string>
+    <string name="color_name_wallpaper">Cores da imagem de fundo</string>
     <string name="color_picker_apply">Aplicar</string>
     <string name="color_picker_custom">Personalizada</string>
     <string name="color_picker_presets_note">Cores predefinidas</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Abrir este anexo?</string>
     <string name="school_mail_save_draft">Guardar rascunho</string>
     <string name="school_mail_saved">Guardado</string>
+    <string name="school_mail_search_index_partial">Ainda não foi transferido todo o correio. A pesquisa pode não encontrar algumas mensagens mais antigas.</string>
     <string name="school_mail_search_local_only">O servidor não consegue executar esta pesquisa. A mostrar resultados apenas do correio já carregado.</string>
     <string name="school_mail_search_prompt">Pesquisar correio</string>
     <string name="school_mail_send">Enviar</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">O teu número de estudante e palavra-passe devem ser os mesmos do sistema da universidade. O TigerDuck só guarda esta palavra-passe encriptada neste dispositivo e nunca a carrega para a internet.</string>
     <string name="school_mail_sign_in_prompt_title">Iniciar sessão no correio universitário</string>
     <string name="school_mail_source_failed">Não foi possível carregar o código-fonte.</string>
+    <string name="school_mail_storage_delete_message">O teu correio continua no servidor da universidade. Será transferido novamente da próxima vez que abrires o Correio universitário e, até lá, a pesquisa pode não encontrar parte dele.</string>
+    <string name="school_mail_storage_delete_title">Eliminar o correio transferido?</string>
+    <string name="school_mail_storage_footer">É transferido para poderes pesquisar em todo o teu correio e percorrê-lo sem esperar.</string>
+    <string name="school_mail_storage_title">Correio transferido</string>
     <string name="school_mail_subject">Assunto</string>
     <string name="school_mail_to">Para</string>
     <string name="school_mail_too_large">Os anexos excedem o limite de 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Estilo de interface</string>
     <string name="settings_whats_new">O que há de novo</string>
     <string name="share_code_needs_update_message">Este código de partilha precisa de uma versão mais recente da aplicação.</string>
+    <string name="sign_in_change_account_title">Mudar de conta</string>
     <string name="sign_in_password">Palavra-passe</string>
     <string name="sign_in_student_id">Número de aluno</string>
     <string name="source_code_picker_current_app_badge">App atual</string>

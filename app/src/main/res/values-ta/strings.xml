@@ -31,6 +31,7 @@
     <string name="action_allow">அனுமதி</string>
     <string name="action_back">பின்செல்</string>
     <string name="action_cancel">ரத்துசெய்</string>
+    <string name="action_change">மாற்று</string>
     <string name="action_clear_text">உரையை அழி</string>
     <string name="action_close">மூடு</string>
     <string name="action_confirm">உறுதிப்படுத்து</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">இளஞ்சிவப்பு</string>
     <string name="color_name_purple">ஊதா</string>
     <string name="color_name_red">சிவப்பு</string>
+    <string name="color_name_wallpaper">வால்பேப்பர் நிறங்கள்</string>
     <string name="color_picker_apply">பயன்படுத்து</string>
     <string name="color_picker_custom">தனிப்பயன்</string>
     <string name="color_picker_presets_note">முன்னமைவு நிறங்கள்</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">இந்த இணைப்பைத் திறக்கவா?</string>
     <string name="school_mail_save_draft">வரைவைச் சேமி</string>
     <string name="school_mail_saved">சேமிக்கப்பட்டது</string>
+    <string name="school_mail_search_index_partial">இன்னும் எல்லா மின்னஞ்சல்களும் பதிவிறக்கப்படவில்லை. சில பழைய மின்னஞ்சல்கள் தேடலில் கிடைக்காமல் போகலாம்.</string>
     <string name="school_mail_search_local_only">சர்வரால் இந்தத் தேடலை இயக்க முடியவில்லை. ஏற்றப்பட்ட மின்னஞ்சலில் இருந்து பொருந்துபவை மட்டும் காட்டப்படுகின்றன.</string>
     <string name="school_mail_search_prompt">மின்னஞ்சலைத் தேடு</string>
     <string name="school_mail_send">அனுப்பு</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">உங்கள் ID மற்றும் கடவுச்சொல் கல்வி அமைப்பில் உள்ளதைப் போலவே இருக்க வேண்டும். TigerDuck இந்தக் கடவுச்சொல்லை இந்தச் சாதனத்தில் மறையாக்கம் செய்து மட்டுமே சேமிக்கும், ஒருபோதும் பதிவேற்றாது.</string>
     <string name="school_mail_sign_in_prompt_title">பள்ளி மின்னஞ்சலில் உள்நுழைக</string>
     <string name="school_mail_source_failed">மூலத்தை ஏற்ற முடியவில்லை.</string>
+    <string name="school_mail_storage_delete_message">உங்கள் மின்னஞ்சல் பள்ளியின் சேவையகத்திலேயே இருக்கும். அடுத்த முறை பள்ளி மின்னஞ்சலைத் திறக்கும்போது அது மீண்டும் பதிவிறக்கப்படும், அதுவரை தேடலில் சில கிடைக்காமல் போகலாம்.</string>
+    <string name="school_mail_storage_delete_title">பதிவிறக்கிய மின்னஞ்சலை நீக்கவா?</string>
+    <string name="school_mail_storage_footer">எல்லா மின்னஞ்சல்களிலும் தேடவும் காத்திருக்காமல் உருட்டவும் இவை பதிவிறக்கப்படுகின்றன.</string>
+    <string name="school_mail_storage_title">பதிவிறக்கிய மின்னஞ்சல்</string>
     <string name="school_mail_subject">பொருள்</string>
     <string name="school_mail_to">பெறுநர்</string>
     <string name="school_mail_too_large">இணைப்புகள் 50 MB வரம்பை மீறுகின்றன</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">இடைமுக பாணி</string>
     <string name="settings_whats_new">புதிய அம்சங்கள்</string>
     <string name="share_code_needs_update_message">இந்தப் பகிர்வுக் குறியீட்டுக்கு ஆப்பின் புதிய பதிப்பு தேவை.</string>
+    <string name="sign_in_change_account_title">கணக்கை மாற்று</string>
     <string name="sign_in_password">பாஸ்வேர்ட்</string>
     <string name="sign_in_student_id">மாணவர் ID</string>
     <string name="source_code_picker_current_app_badge">தற்போதைய செயலி</string>

@@ -64,8 +64,12 @@ data class MailSummary(
  * everything a row leads to -- opening it, marking it read, moving or deleting it -- addresses
  * [folder], never whichever folder chip happens to be selected. [key] is that (folder, uid)
  * identity as a single string, for list keys and for finding a row again after an update.
+ *
+ * [uidValidity] is the UIDVALIDITY the row was read under, a page's or a search's, or null where
+ * nothing said: a UID means that mail only under it, so a delete or move of the row is checked
+ * against it, and refused without one. Held in memory alone; no row is ever persisted.
  */
-data class MailRow(val folder: String, val summary: MailSummary) {
+data class MailRow(val folder: String, val summary: MailSummary, val uidValidity: Long? = null) {
     val uid: Long get() = summary.uid
 
     val key: String get() = key(folder, uid)

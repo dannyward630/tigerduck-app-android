@@ -31,6 +31,7 @@
     <string name="action_allow">اجازت دیں</string>
     <string name="action_back">واپس</string>
     <string name="action_cancel">منسوخ کریں</string>
+    <string name="action_change">تبدیل کریں</string>
     <string name="action_clear_text">متن صاف کریں</string>
     <string name="action_close">بند کریں</string>
     <string name="action_confirm">تصدیق کریں</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">گلابی</string>
     <string name="color_name_purple">بنفشی</string>
     <string name="color_name_red">سرخ</string>
+    <string name="color_name_wallpaper">وال پیپر کے رنگ</string>
     <string name="color_picker_apply">لگائیں</string>
     <string name="color_picker_custom">کسٹم</string>
     <string name="color_picker_presets_note">پیش سیٹ رنگ</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">کیا یہ منسلکہ کھولیں؟</string>
     <string name="school_mail_save_draft">مسودہ محفوظ کریں</string>
     <string name="school_mail_saved">محفوظ ہو گیا</string>
+    <string name="school_mail_search_index_partial">ابھی تمام ای میل ڈاؤن لوڈ نہیں ہوئی۔ تلاش میں کچھ پرانی ای میل شاید نہ ملیں۔</string>
     <string name="school_mail_search_local_only">سرور یہ تلاش نہیں چلا سکتا۔ صرف لوڈ شدہ ای میل سے نتائج دکھائے جا رہے ہیں۔</string>
     <string name="school_mail_search_prompt">ای میل تلاش کریں</string>
     <string name="school_mail_send">بھیجیں</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">آپ کا ID اور پاس ورڈ اکیڈمک سسٹم جیسا ہی ہونا چاہیے۔ TigerDuck اس پاس ورڈ کو صرف اس ڈیوائس پر خفیہ کر کے محفوظ رکھتا ہے، کبھی اپ لوڈ نہیں کرتا۔</string>
     <string name="school_mail_sign_in_prompt_title">اسکول ای میل میں سائن ان کریں</string>
     <string name="school_mail_source_failed">سورس لوڈ نہیں ہو سکا۔</string>
+    <string name="school_mail_storage_delete_message">آپ کی ای میل اسکول کے سرور پر ہی رہتی ہے۔ اگلی بار اسکول ای میل کھولنے پر یہ دوبارہ ڈاؤن لوڈ ہوگی، تب تک تلاش میں کچھ ای میل شاید نہ ملیں۔</string>
+    <string name="school_mail_storage_delete_title">ڈاؤن لوڈ کی گئی ای میل حذف کریں؟</string>
+    <string name="school_mail_storage_footer">یہ ڈاؤن لوڈ کی جاتی ہیں تاکہ آپ اپنی تمام ای میل میں تلاش کر سکیں اور انتظار کے بغیر اسکرول کر سکیں۔</string>
+    <string name="school_mail_storage_title">ڈاؤن لوڈ کی گئی ای میل</string>
     <string name="school_mail_subject">موضوع</string>
     <string name="school_mail_to">وصول کنندہ</string>
     <string name="school_mail_too_large">منسلکات 50 MB کی حد سے تجاوز کر گئے ہیں</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">انٹرفیس اسٹائل</string>
     <string name="settings_whats_new">کیا نیا ہے</string>
     <string name="share_code_needs_update_message">اس شیئر کوڈ کے لیے ایپ کا نیا ورژن درکار ہے۔</string>
+    <string name="sign_in_change_account_title">اکاؤنٹ تبدیل کریں</string>
     <string name="sign_in_password">پاس ورڈ</string>
     <string name="sign_in_student_id">طالب علم کی شناخت</string>
     <string name="source_code_picker_current_app_badge">موجودہ ایپ</string>

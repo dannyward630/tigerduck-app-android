@@ -31,6 +31,7 @@
     <string name="action_allow">Cho phép</string>
     <string name="action_back">Quay lại</string>
     <string name="action_cancel">Hủy</string>
+    <string name="action_change">Đổi</string>
     <string name="action_clear_text">Xóa văn bản</string>
     <string name="action_close">Đóng</string>
     <string name="action_confirm">Xác nhận</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Hồng</string>
     <string name="color_name_purple">Tím</string>
     <string name="color_name_red">Đỏ</string>
+    <string name="color_name_wallpaper">Màu hình nền</string>
     <string name="color_picker_apply">Áp dụng</string>
     <string name="color_picker_custom">Tùy chỉnh</string>
     <string name="color_picker_presets_note">Màu có sẵn</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Mở tệp đính kèm này?</string>
     <string name="school_mail_save_draft">Lưu thư nháp</string>
     <string name="school_mail_saved">Đã lưu</string>
+    <string name="school_mail_search_index_partial">Chưa tải xuống hết thư. Tìm kiếm có thể không thấy một số thư cũ hơn.</string>
     <string name="school_mail_search_local_only">Máy chủ không thể thực hiện tìm kiếm này. Chỉ hiển thị kết quả từ thư đã tải.</string>
     <string name="school_mail_search_prompt">Tìm kiếm thư</string>
     <string name="school_mail_send">Gửi</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Mã số và mật khẩu của bạn nên giống với hệ thống của trường. TigerDuck chỉ lưu mật khẩu này ở dạng mã hóa trên thiết bị này và không bao giờ tải lên.</string>
     <string name="school_mail_sign_in_prompt_title">Đăng nhập Email trường</string>
     <string name="school_mail_source_failed">Không thể tải mã nguồn.</string>
+    <string name="school_mail_storage_delete_message">Thư của bạn vẫn còn trên máy chủ của trường. Thư sẽ được tải xuống lại vào lần tới bạn mở Email trường, và trước đó, tìm kiếm có thể không thấy một số thư.</string>
+    <string name="school_mail_storage_delete_title">Xóa thư đã tải xuống?</string>
+    <string name="school_mail_storage_footer">Được tải xuống để bạn có thể tìm kiếm trong toàn bộ thư và cuộn xem mà không phải chờ.</string>
+    <string name="school_mail_storage_title">Thư đã tải xuống</string>
     <string name="school_mail_subject">Chủ đề</string>
     <string name="school_mail_to">Đến</string>
     <string name="school_mail_too_large">Tệp đính kèm vượt quá giới hạn 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Giao diện</string>
     <string name="settings_whats_new">Có gì mới</string>
     <string name="share_code_needs_update_message">Mã chia sẻ này cần phiên bản ứng dụng mới hơn.</string>
+    <string name="sign_in_change_account_title">Đổi tài khoản</string>
     <string name="sign_in_password">Mật khẩu</string>
     <string name="sign_in_student_id">Mã số sinh viên</string>
     <string name="source_code_picker_current_app_badge">Ứng dụng hiện tại</string>

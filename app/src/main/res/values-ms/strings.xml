@@ -31,6 +31,7 @@
     <string name="action_allow">Benarkan</string>
     <string name="action_back">Kembali</string>
     <string name="action_cancel">Batal</string>
+    <string name="action_change">Tukar</string>
     <string name="action_clear_text">Padam teks</string>
     <string name="action_close">Tutup</string>
     <string name="action_confirm">Sahkan</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Merah jambu</string>
     <string name="color_name_purple">Ungu</string>
     <string name="color_name_red">Merah</string>
+    <string name="color_name_wallpaper">Warna kertas dinding</string>
     <string name="color_picker_apply">Guna</string>
     <string name="color_picker_custom">Tersuai</string>
     <string name="color_picker_presets_note">Warna praset</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Buka lampiran ini?</string>
     <string name="school_mail_save_draft">Simpan draf</string>
     <string name="school_mail_saved">Disimpan</string>
+    <string name="school_mail_search_index_partial">Belum semua e-mel dimuat turun. Carian mungkin tidak menemui beberapa e-mel lama.</string>
     <string name="school_mail_search_local_only">Pelayan tidak dapat menjalankan carian ini. Hanya memaparkan hasil daripada e-mel yang telah dimuatkan.</string>
     <string name="school_mail_search_prompt">Cari e-mel</string>
     <string name="school_mail_send">Hantar</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">ID dan kata laluan anda perlu sama seperti sistem sekolah. TigerDuck hanya menyimpan kata laluan ini dalam bentuk disulitkan pada peranti ini dan tidak sekali-kali memuat naiknya.</string>
     <string name="school_mail_sign_in_prompt_title">Log masuk ke e-mel sekolah</string>
     <string name="school_mail_source_failed">Tidak dapat memuatkan kod sumber.</string>
+    <string name="school_mail_storage_delete_message">E-mel anda kekal di pelayan sekolah. E-mel akan dimuat turun semula apabila anda membuka E-mel sekolah pada kali seterusnya, dan sehingga itu, carian mungkin tidak menemui sebahagiannya.</string>
+    <string name="school_mail_storage_delete_title">Padam e-mel yang dimuat turun?</string>
+    <string name="school_mail_storage_footer">Dimuat turun supaya anda boleh mencari dalam semua e-mel anda dan menatalnya tanpa menunggu.</string>
+    <string name="school_mail_storage_title">E-mel yang dimuat turun</string>
     <string name="school_mail_subject">Subjek</string>
     <string name="school_mail_to">Kepada</string>
     <string name="school_mail_too_large">Lampiran melebihi had 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Gaya antara muka</string>
     <string name="settings_whats_new">Apa yang baharu</string>
     <string name="share_code_needs_update_message">Kod perkongsian ini memerlukan versi aplikasi yang lebih baharu.</string>
+    <string name="sign_in_change_account_title">Tukar akaun</string>
     <string name="sign_in_password">Kata laluan</string>
     <string name="sign_in_student_id">ID pelajar</string>
     <string name="source_code_picker_current_app_badge">App ini</string>

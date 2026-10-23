@@ -31,6 +31,7 @@
     <string name="action_allow">ਆਗਿਆ ਦਿਓ</string>
     <string name="action_back">ਵਾਪਸ</string>
     <string name="action_cancel">ਰੱਦ ਕਰੋ</string>
+    <string name="action_change">ਬਦਲੋ</string>
     <string name="action_clear_text">ਟੈਕਸਟ ਸਾਫ਼ ਕਰੋ</string>
     <string name="action_close">ਬੰਦ ਕਰੋ</string>
     <string name="action_confirm">ਪੁਸ਼ਟੀ ਕਰੋ</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">ਗੁਲਾਬੀ</string>
     <string name="color_name_purple">ਜਾਮਣੀ</string>
     <string name="color_name_red">ਲਾਲ</string>
+    <string name="color_name_wallpaper">ਵਾਲਪੇਪਰ ਦੇ ਰੰਗ</string>
     <string name="color_picker_apply">ਲਾਗੂ ਕਰੋ</string>
     <string name="color_picker_custom">ਕਸਟਮ</string>
     <string name="color_picker_presets_note">ਪ੍ਰੀਸੈੱਟ ਰੰਗ</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">ਇਹ ਅਟੈਚਮੈਂਟ ਖੋਲ੍ਹਣਾ ਹੈ?</string>
     <string name="school_mail_save_draft">ਡਰਾਫਟ ਸੇਵ ਕਰੋ</string>
     <string name="school_mail_saved">ਸੇਵ ਹੋ ਗਿਆ</string>
+    <string name="school_mail_search_index_partial">ਹਾਲੇ ਸਾਰੀ ਮੇਲ ਡਾਊਨਲੋਡ ਨਹੀਂ ਹੋਈ। ਖੋਜ ਵਿੱਚ ਕੁਝ ਪੁਰਾਣੀ ਮੇਲ ਸ਼ਾਇਦ ਨਾ ਮਿਲੇ।</string>
     <string name="school_mail_search_local_only">ਸਰਵਰ ਇਹ ਖੋਜ ਨਹੀਂ ਚਲਾ ਸਕਦਾ। ਸਿਰਫ਼ ਲੋਡ ਕੀਤੀ ਮੇਲ ਵਿੱਚੋਂ ਮੇਲ ਖਾਂਦੇ ਨਤੀਜੇ ਦਿਖਾਏ ਜਾ ਰਹੇ ਹਨ।</string>
     <string name="school_mail_search_prompt">ਮੇਲ ਖੋਜੋ</string>
     <string name="school_mail_send">ਭੇਜੋ</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">ਤੁਹਾਡੀ ID ਅਤੇ ਪਾਸਵਰਡ ਅਕਾਦਮਿਕ ਸਿਸਟਮ ਵਾਲਾ ਹੀ ਹੋਣਾ ਚਾਹੀਦਾ ਹੈ। TigerDuck ਇਸ ਪਾਸਵਰਡ ਨੂੰ ਸਿਰਫ਼ ਇਸ ਡਿਵਾਈਸ \'ਤੇ ਐਨਕ੍ਰਿਪਟ ਕਰਕੇ ਰੱਖਦਾ ਹੈ ਅਤੇ ਕਦੇ ਅੱਪਲੋਡ ਨਹੀਂ ਕਰਦਾ।</string>
     <string name="school_mail_sign_in_prompt_title">ਸਕੂਲ ਮੇਲ ਵਿੱਚ ਸਾਈਨ ਇਨ ਕਰੋ</string>
     <string name="school_mail_source_failed">ਸੋਰਸ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ।</string>
+    <string name="school_mail_storage_delete_message">ਤੁਹਾਡੀ ਮੇਲ ਸਕੂਲ ਦੇ ਸਰਵਰ \'ਤੇ ਹੀ ਰਹਿੰਦੀ ਹੈ। ਅਗਲੀ ਵਾਰ ਸਕੂਲ ਮੇਲ ਖੋਲ੍ਹਣ \'ਤੇ ਇਹ ਮੁੜ ਡਾਊਨਲੋਡ ਹੋਵੇਗੀ, ਉਦੋਂ ਤੱਕ ਖੋਜ ਵਿੱਚ ਕੁਝ ਮੇਲ ਸ਼ਾਇਦ ਨਾ ਮਿਲੇ।</string>
+    <string name="school_mail_storage_delete_title">ਡਾਊਨਲੋਡ ਕੀਤੀ ਮੇਲ ਮਿਟਾਉਣੀ ਹੈ?</string>
+    <string name="school_mail_storage_footer">ਇਹ ਡਾਊਨਲੋਡ ਕੀਤੀ ਜਾਂਦੀ ਹੈ ਤਾਂ ਜੋ ਤੁਸੀਂ ਆਪਣੀ ਸਾਰੀ ਮੇਲ ਖੋਜ ਸਕੋ ਅਤੇ ਬਿਨਾਂ ਉਡੀਕ ਕੀਤੇ ਸਕ੍ਰੋਲ ਕਰ ਸਕੋ।</string>
+    <string name="school_mail_storage_title">ਡਾਊਨਲੋਡ ਕੀਤੀ ਮੇਲ</string>
     <string name="school_mail_subject">ਵਿਸ਼ਾ</string>
     <string name="school_mail_to">ਪ੍ਰਤੀ</string>
     <string name="school_mail_too_large">ਅਟੈਚਮੈਂਟ 50 MB ਦੀ ਸੀਮਾ ਤੋਂ ਵੱਧ ਹਨ</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">ਇੰਟਰਫੇਸ ਸ਼ੈਲੀ</string>
     <string name="settings_whats_new">ਕੀ ਨਵਾਂ ਹੈ</string>
     <string name="share_code_needs_update_message">ਇਸ ਸ਼ੇਅਰ ਕੋਡ ਲਈ ਐਪ ਦਾ ਨਵਾਂ ਸੰਸਕਰਣ ਲੋੜੀਂਦਾ ਹੈ।</string>
+    <string name="sign_in_change_account_title">ਖਾਤਾ ਬਦਲੋ</string>
     <string name="sign_in_password">ਪਾਸਵਰਡ</string>
     <string name="sign_in_student_id">ਵਿਦਿਆਰਥੀ ID</string>
     <string name="source_code_picker_current_app_badge">ਮੌਜੂਦਾ ਐਪ</string>

@@ -31,6 +31,7 @@
     <string name="action_allow">Рұқсат беру</string>
     <string name="action_back">Артқа</string>
     <string name="action_cancel">Болдырмау</string>
+    <string name="action_change">Өзгерту</string>
     <string name="action_clear_text">Мәтінді тазалау</string>
     <string name="action_close">Жабу</string>
     <string name="action_confirm">Растау</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Қызғылт</string>
     <string name="color_name_purple">Күлгін</string>
     <string name="color_name_red">Қызыл</string>
+    <string name="color_name_wallpaper">Тұсқағаз түстері</string>
     <string name="color_picker_apply">Қолдану</string>
     <string name="color_picker_custom">Өзгертілетін</string>
     <string name="color_picker_presets_note">Алдын ала орнатылған түстер</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Бұл тіркеме ашылсын ба?</string>
     <string name="school_mail_save_draft">Жобаны сақтау</string>
     <string name="school_mail_saved">Сақталды</string>
+    <string name="school_mail_search_index_partial">Барлық хаттар әлі жүктелмеді. Іздеу кейбір ескі хаттарды таппауы мүмкін.</string>
     <string name="school_mail_search_local_only">Сервер бұл іздеуді орындай алмайды. Тек жүктелген хаттардан ғана нәтиже көрсетілуде.</string>
     <string name="school_mail_search_prompt">Хаттарды іздеу</string>
     <string name="school_mail_send">Жіберу</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Студент ID және құпия сөзіңіз мектеп жүйесіндегімен бірдей болуы керек. TigerDuck қолданбасы бұл құпия сөзді тек осы құрылғыда шифрланған түрде сақтайды және ешқашан жүктемейді.</string>
     <string name="school_mail_sign_in_prompt_title">Мектеп поштасына кіру</string>
     <string name="school_mail_source_failed">Бастапқы кодты жүктеу мүмкін болмады.</string>
+    <string name="school_mail_storage_delete_message">Хаттарыңыз мектеп серверінде қалады. Мектеп поштасын келесі жолы ашқанда олар қайта жүктеледі, оған дейін іздеу кейбірін таппауы мүмкін.</string>
+    <string name="school_mail_storage_delete_title">Жүктеп алынған хаттарды жою керек пе?</string>
+    <string name="school_mail_storage_footer">Барлық хаттарыңыздан іздеп, оларды күтпестен қарап шығу үшін жүктеп алынады.</string>
+    <string name="school_mail_storage_title">Жүктеп алынған хаттар</string>
     <string name="school_mail_subject">Тақырып</string>
     <string name="school_mail_to">Кімге</string>
     <string name="school_mail_too_large">Тіркемелер 50 МБ шегінен асып кетті</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Интерфейс стилі</string>
     <string name="settings_whats_new">Жаңалықтар</string>
     <string name="share_code_needs_update_message">Бұл бөлісу кодына қолданбаның жаңарақ нұсқасы қажет.</string>
+    <string name="sign_in_change_account_title">Тіркелгіні өзгерту</string>
     <string name="sign_in_password">Құпия сөз</string>
     <string name="sign_in_student_id">Студент ID</string>
     <string name="source_code_picker_current_app_badge">Ағымдағы қосымша</string>

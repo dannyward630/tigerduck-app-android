@@ -31,6 +31,7 @@
     <string name="action_allow">Leyfa</string>
     <string name="action_back">Til baka</string>
     <string name="action_cancel">Hætta við</string>
+    <string name="action_change">Skipta</string>
     <string name="action_clear_text">Hreinsa texta</string>
     <string name="action_close">Loka</string>
     <string name="action_confirm">Staðfesta</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Bleikur</string>
     <string name="color_name_purple">Fjólublár</string>
     <string name="color_name_red">Rauður</string>
+    <string name="color_name_wallpaper">Litir veggfóðurs</string>
     <string name="color_picker_apply">Beita</string>
     <string name="color_picker_custom">Sérsniðið</string>
     <string name="color_picker_presets_note">Forstilltir litir</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Opna þetta viðhengi?</string>
     <string name="school_mail_save_draft">Vista drög</string>
     <string name="school_mail_saved">Vistað</string>
+    <string name="school_mail_search_index_partial">Ekki er búið að sækja allan póst. Leitin gæti misst af einhverjum eldri pósti.</string>
     <string name="school_mail_search_local_only">Þjónninn getur ekki keyrt þessa leit. Aðeins niðurstöður úr þegar sóttum pósti eru sýndar.</string>
     <string name="school_mail_search_prompt">Leita í pósti</string>
     <string name="school_mail_send">Senda</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Námsmannsnúmerið og lykilorðið þitt eiga að vera þau sömu og í kerfi skólans. TigerDuck geymir þetta lykilorð aðeins dulkóðað á þessu tæki og sendir það aldrei upp á netið.</string>
     <string name="school_mail_sign_in_prompt_title">Skrá sig inn í Skólapóst</string>
     <string name="school_mail_source_failed">Ekki tókst að hlaða inn frumkóðanum.</string>
+    <string name="school_mail_storage_delete_message">Pósturinn þinn verður áfram á netþjóni skólans. Hann verður sóttur aftur næst þegar þú opnar Skólapóst og þangað til gæti leitin misst af hluta hans.</string>
+    <string name="school_mail_storage_delete_title">Eyða sóttum pósti?</string>
+    <string name="school_mail_storage_footer">Sóttur svo þú getir leitað í öllum póstinum þínum og flett í honum án biðar.</string>
+    <string name="school_mail_storage_title">Sóttur póstur</string>
     <string name="school_mail_subject">Efni</string>
     <string name="school_mail_to">Til</string>
     <string name="school_mail_too_large">Viðhengi fara yfir 50 MB mörkin</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Viðmótsstíll</string>
     <string name="settings_whats_new">Hvað er nýtt</string>
     <string name="share_code_needs_update_message">Þessi deilikóði þarfnast nýrri útgáfu af forritinu.</string>
+    <string name="sign_in_change_account_title">Skipta um aðgang</string>
     <string name="sign_in_password">Lykilorð</string>
     <string name="sign_in_student_id">Nemandanúmer</string>
     <string name="source_code_picker_current_app_badge">Þetta app</string>

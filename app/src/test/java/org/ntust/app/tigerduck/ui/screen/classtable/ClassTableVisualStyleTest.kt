@@ -57,6 +57,7 @@ import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.model.TimetablePeriod
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
+import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import org.ntust.app.tigerduck.ui.theme.VisualPreset
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
@@ -235,6 +236,42 @@ class ClassTableVisualStyleTest {
     @Test
     fun `TAT outlines a required course's tile in the pastel outline`() {
         outlinedSoloCell(VisualPreset.Tat, requiredCalculus, outlineRequired = true)
+        val image = pixels()
+        assertNear("outline", calculusColour.pastelOutline(), image[outlineAt(1f), outlineAt(cellHeight / 2f)])
+        assertNear("fill", calculusColour.pastel(), image[outlineAt(8f), outlineAt(8f)])
+    }
+
+    /**
+     * As [outlinedSoloCell] under TAT, but inside the root theme with the
+     * wallpaper's colors on: they recolor the accent, and a course keeps its
+     * own color.
+     */
+    private fun outlinedTatCellUnderWallpaper(dark: Boolean) {
+        TigerDuckTheme.setDarkMode(dark)
+        composeRule.setContent {
+            TigerDuckAppTheme(darkTheme = dark, useDynamicColor = true, visualPreset = VisualPreset.Tat) {
+                CompositionLocalProvider(LocalDensity provides Density(outlineDensity, 1f)) {
+                    Box(Modifier.size(width.dp, cellHeight.dp).background(Color.White)) {
+                        SoloCellContent(requiredCalculus, spanCount = 1, outlineRequired = true)
+                    }
+                }
+            }
+        }
+    }
+
+    @Config(sdk = [31])
+    @Test
+    fun `under the wallpaper's light colors a TAT tile keeps its pastel and outline`() {
+        outlinedTatCellUnderWallpaper(dark = false)
+        val image = pixels()
+        assertNear("outline", calculusColour.pastelOutline(), image[outlineAt(1f), outlineAt(cellHeight / 2f)])
+        assertNear("fill", calculusColour.pastel(), image[outlineAt(8f), outlineAt(8f)])
+    }
+
+    @Config(sdk = [31])
+    @Test
+    fun `under the wallpaper's dark colors a TAT tile keeps the light pastel and outline`() {
+        outlinedTatCellUnderWallpaper(dark = true)
         val image = pixels()
         assertNear("outline", calculusColour.pastelOutline(), image[outlineAt(1f), outlineAt(cellHeight / 2f)])
         assertNear("fill", calculusColour.pastel(), image[outlineAt(8f), outlineAt(8f)])

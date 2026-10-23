@@ -31,6 +31,7 @@
     <string name="action_allow">Tillad</string>
     <string name="action_back">Tilbage</string>
     <string name="action_cancel">Annuller</string>
+    <string name="action_change">Skift</string>
     <string name="action_clear_text">Ryd tekst</string>
     <string name="action_close">Luk</string>
     <string name="action_confirm">Bekræft</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Lyserød</string>
     <string name="color_name_purple">Lilla</string>
     <string name="color_name_red">Rød</string>
+    <string name="color_name_wallpaper">Baggrundsfarver</string>
     <string name="color_picker_apply">Anvend</string>
     <string name="color_picker_custom">Brugerdefineret</string>
     <string name="color_picker_presets_note">Forudindstillede farver</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Åbn denne vedhæftning?</string>
     <string name="school_mail_save_draft">Gem kladde</string>
     <string name="school_mail_saved">Gemt</string>
+    <string name="school_mail_search_index_partial">Ikke al mail er downloadet endnu. Søgningen finder måske ikke nogle ældre mails.</string>
     <string name="school_mail_search_local_only">Serveren kan ikke udføre denne søgning. Viser kun resultater fra allerede indlæst mail.</string>
     <string name="school_mail_search_prompt">Søg i mail</string>
     <string name="school_mail_send">Send</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Dit studienummer og din adgangskode skal være de samme som til skolens system. TigerDuck gemmer kun denne adgangskode krypteret på denne enhed og uploader den aldrig.</string>
     <string name="school_mail_sign_in_prompt_title">Log ind på Skolemail</string>
     <string name="school_mail_source_failed">Kildekoden kunne ikke indlæses.</string>
+    <string name="school_mail_storage_delete_message">Din mail bliver på skolens server. Den downloades igen, næste gang du åbner Skolemail, og indtil da finder søgningen måske ikke det hele.</string>
+    <string name="school_mail_storage_delete_title">Vil du slette downloadet mail?</string>
+    <string name="school_mail_storage_footer">Downloades, så du kan søge i al din mail og rulle gennem den uden at vente.</string>
+    <string name="school_mail_storage_title">Downloadet mail</string>
     <string name="school_mail_subject">Emne</string>
     <string name="school_mail_to">Til</string>
     <string name="school_mail_too_large">Vedhæftninger overskrider grænsen på 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Interface stil</string>
     <string name="settings_whats_new">Nyheder</string>
     <string name="share_code_needs_update_message">Denne delingskode kræver en nyere version af appen.</string>
+    <string name="sign_in_change_account_title">Skift konto</string>
     <string name="sign_in_password">Adgangskode</string>
     <string name="sign_in_student_id">Student-ID</string>
     <string name="source_code_picker_current_app_badge">Denne app</string>

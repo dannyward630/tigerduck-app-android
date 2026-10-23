@@ -1,8 +1,8 @@
 package org.ntust.app.tigerduck.mail
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -48,26 +48,23 @@ class MailAccount @Inject constructor(
      * One event per [signOut], for cleanup that must run on every one of
      * them. [signedIn] can't carry that: a StateFlow hands a collector only
      * the latest value, so a sign-in and a sign-out that both land before it
-     * next runs read as no change at all. Buffered so [signOut] never
-     * suspends; a subscriber that falls behind still gets one, which is all
-     * cleanup needs.
+     * next runs read as no change at all. Each carries the address of the
+     * account that left, null for a sign-out with none signed in: cleanup that
+     * runs late must not take what the next account has made since, nor keep
+     * what an account that left made. Buffered without limit, so [signOut]
+     * never suspends and a subscriber that falls behind still gets every one.
      */
-    private val _signOuts = MutableSharedFlow<Unit>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
-    val signOuts: SharedFlow<Unit> = _signOuts.asSharedFlow()
+    private val _signOuts = MutableSharedFlow<String?>(extraBufferCapacity = Int.MAX_VALUE)
+    val signOuts: SharedFlow<String?> = _signOuts.asSharedFlow()
 
     /**
      * One event each time [signIn] puts another student in place of the signed-in one without a
      * [signOut] in between, as the sign-in sheet shown after a rejected password allows. Cleanup
      * that must not carry one student's state over to the next listens to this beside [signOuts].
+     * Each carries the address of the student who left, and is buffered, as [signOuts] is.
      */
-    private val _studentChanges = MutableSharedFlow<Unit>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
-    val studentChanges: SharedFlow<Unit> = _studentChanges.asSharedFlow()
+    private val _studentChanges = MutableSharedFlow<String?>(extraBufferCapacity = Int.MAX_VALUE)
+    val studentChanges: SharedFlow<String?> = _studentChanges.asSharedFlow()
 
     private val _authFailed = MutableStateFlow(state.authFailed)
     val authFailed: StateFlow<Boolean> = _authFailed.asStateFlow()
@@ -81,17 +78,34 @@ class MailAccount @Inject constructor(
     private val accountLock = Any()
 
     /**
+     * Runs right before a sign-in or a sign-out waits for the account's lock: a test's way of
+     * knowing one has got there while something else holds it. Null in the app.
+     */
+    @VisibleForTesting
+    @Volatile
+    internal var onLockWait: (() -> Unit)? = null
+
+    /** Whether the calling thread holds the account's lock: a test's way of telling a step made under it. */
+    @VisibleForTesting
+    internal fun holdsLock(): Boolean = Thread.holdsLock(accountLock)
+
+    /**
      * Moved by every sign-in and sign-out. Work that reads the account through [snapshot] and then
      * runs on compares this with the snapshot's: once it has moved, the work holds an account
      * that left, even when the same student has signed in again since.
      */
     val accountGeneration: Int get() = generation.get()
 
-    /** The signed-in account and its [accountGeneration], read together; null while signed out. */
-    class Snapshot(val generation: Int, val credentials: MailCredentials)
+    /**
+     * The signed-in account and its [accountGeneration], read together; null while signed out.
+     * [clears] is the state's [MailStateStore.clears] read with them: a sign-in resets the state in
+     * the same hold that puts its credentials in place ([save]), so the count is always that of
+     * [credentials]' student, never the next one's.
+     */
+    class Snapshot(val generation: Int, val credentials: MailCredentials, val clears: Int)
 
     fun snapshot(): Snapshot? = synchronized(accountLock) {
-        credentialsOrNull()?.let { Snapshot(generation.get(), it) }
+        credentialsOrNull()?.let { Snapshot(generation.get(), it, state.clears) }
     }
 
     /**
@@ -120,16 +134,16 @@ class MailAccount @Inject constructor(
         if (demo.matches(creds.studentId, password)) {
             if (!sameStudent) cache.clearAll()
             if (replacing) leaveStudent()
-            resetState(sameStudent)
-            state.demoMailbox = true
-            state.displayName = keptName ?: demo.mailbox().displayName
-            save(creds)
+            save(creds, sameStudent) {
+                state.demoMailbox = true
+                state.displayName = keptName ?: demo.mailbox().displayName
+            }
             notifier.cancelAuthFailure()
             return@withContext null
         }
         if (demo.appDemoActive) return@withContext MailError.AuthFailed()
 
-        try {
+        val fill = try {
             sessions.open(creds).use { session ->
                 val folders = MailFolders.resolve(session.listFolders())
                 val status = session.status(folders.nameOf(SpecialFolder.INBOX) ?: "INBOX")
@@ -138,15 +152,17 @@ class MailAccount @Inject constructor(
                 }
                 if (!sameStudent) cache.clearAll()
                 if (replacing) leaveStudent()
-                resetState(sameStudent)
-                state.inboxUidValidity = status.uidValidity
-                state.inboxSeenUidNext = status.uidNext
-                state.displayName = keptName ?: name
+                val fresh: () -> Unit = {
+                    state.inboxUidValidity = status.uidValidity
+                    state.inboxSeenUidNext = status.uidNext
+                    state.displayName = keptName ?: name
+                }
+                fresh
             }
         } catch (e: Exception) {
             return@withContext MailErrors.classify(e)
         }
-        save(creds)
+        save(creds, sameStudent, fill)
         notifier.cancelAuthFailure()
         scheduler.schedule()
         null
@@ -158,7 +174,7 @@ class MailAccount @Inject constructor(
      * student's mail with this one's UIDs.
      */
     private fun leaveStudent() {
-        _studentChanges.tryEmit(Unit)
+        _studentChanges.tryEmit(ownAddress)
         notifier.cancelAll()
     }
 
@@ -175,29 +191,60 @@ class MailAccount @Inject constructor(
     fun signOut() {
         scheduler.cancel()
         // Together, so a snapshot holds the departing account with its own generation or nothing.
-        synchronized(accountLock) {
-            generation.incrementAndGet()
-            credentials.clearMailCredentials()
+        onLockWait?.invoke()
+        val departing = synchronized(accountLock) {
+            ownAddress.also {
+                generation.incrementAndGet()
+                credentials.clearMailCredentials()
+            }
         }
         state.clear()
         _signedIn.value = false
         _authFailed.value = false
-        _signOuts.tryEmit(Unit)
+        _signOuts.tryEmit(departing)
         scope.launch(Dispatchers.IO) {
             cache.clearAll()
             notifier.cancelAll()
         }
     }
 
-    /** The server rejected the stored password: stop everything, never retry (spec §7.4). */
+    /**
+     * The server rejected the stored password: stop everything, never retry (spec §7.4). A request
+     * that met the rejection marks it with [onAuthFailure] for the sign-in it was sent under.
+     */
     fun onAuthFailure() {
         state.authFailed = true
         _authFailed.value = true
         scheduler.cancel()
     }
 
-    private fun save(creds: MailCredentials) {
+    /**
+     * [onAuthFailure] for a login sent under the sign-in at [generation], unless another sign-in or
+     * a sign-out has come since -- even the same student's with the same password, which the
+     * server has just accepted. Read, marked and the checks cancelled under the lock a sign-in and
+     * a sign-out move the generation under, so neither can come in between: not even to schedule
+     * the next sign-in's checks before this cancels them. Says whether it marked the account.
+     */
+    fun onAuthFailure(generation: Int): Boolean = synchronized(accountLock) {
+        if (this.generation.get() != generation) return@synchronized false
+        state.authFailed = true
+        _authFailed.value = true
+        scheduler.cancel()
+        true
+    }
+
+    /**
+     * Puts [creds] in place with the state reset for them ([resetState]) and [fill]ed in, in one hold
+     * of [accountLock] with the generation's move. Resetting first and switching the credentials
+     * later left a moment when the departing student's credentials stood beside the next one's
+     * fresh state, and a write that started then recorded its flagged mail as the next one's
+     * ([MailStateStore.setOwnedDeletedIf]); a [snapshot] now holds one student's of both.
+     */
+    private fun save(creds: MailCredentials, sameStudent: Boolean, fill: () -> Unit) {
+        onLockWait?.invoke()
         synchronized(accountLock) {
+            resetState(sameStudent)
+            fill()
             generation.incrementAndGet()
             credentials.mailStudentId = creds.studentId
             credentials.mailPassword = creds.password

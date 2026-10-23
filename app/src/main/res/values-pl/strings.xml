@@ -31,6 +31,7 @@
     <string name="action_allow">Zezwól</string>
     <string name="action_back">Wstecz</string>
     <string name="action_cancel">Anuluj</string>
+    <string name="action_change">Zmień</string>
     <string name="action_clear_text">Wyczyść tekst</string>
     <string name="action_close">Zamknij</string>
     <string name="action_confirm">Potwierdź</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Różowy</string>
     <string name="color_name_purple">Fioletowy</string>
     <string name="color_name_red">Czerwony</string>
+    <string name="color_name_wallpaper">Kolory tapety</string>
     <string name="color_picker_apply">Zastosuj</string>
     <string name="color_picker_custom">Niestandardowy</string>
     <string name="color_picker_presets_note">Kolory predefiniowane</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Otworzyć ten załącznik?</string>
     <string name="school_mail_save_draft">Zapisz kopię roboczą</string>
     <string name="school_mail_saved">Zapisano</string>
+    <string name="school_mail_search_index_partial">Nie cała poczta jest jeszcze pobrana. Wyszukiwanie może nie znaleźć niektórych starszych wiadomości.</string>
     <string name="school_mail_search_local_only">Serwer nie obsługuje tego wyszukiwania. Pokazano wyniki tylko z wczytanej poczty.</string>
     <string name="school_mail_search_prompt">Szukaj w poczcie</string>
     <string name="school_mail_send">Wyślij</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Twój login i hasło powinny być takie same jak w systemie uczelnianym. TigerDuck przechowuje to hasło wyłącznie w postaci zaszyfrowanej na tym urządzeniu i nigdy go nie przesyła.</string>
     <string name="school_mail_sign_in_prompt_title">Zaloguj się do poczty uczelnianej</string>
     <string name="school_mail_source_failed">Nie udało się wczytać kodu źródłowego.</string>
+    <string name="school_mail_storage_delete_message">Poczta pozostaje na serwerze uczelni. Zostanie pobrana ponownie przy następnym otwarciu Poczty uczelnianej, a do tego czasu wyszukiwanie może nie znaleźć części wiadomości.</string>
+    <string name="school_mail_storage_delete_title">Usunąć pobraną pocztę?</string>
+    <string name="school_mail_storage_footer">Jest pobierana, aby można było przeszukiwać całą pocztę i przewijać ją bez czekania.</string>
+    <string name="school_mail_storage_title">Pobrana poczta</string>
     <string name="school_mail_subject">Temat</string>
     <string name="school_mail_to">Do</string>
     <string name="school_mail_too_large">Załączniki przekraczają limit 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Styl interfejsu</string>
     <string name="settings_whats_new">Co nowego</string>
     <string name="share_code_needs_update_message">Ten kod udostępniania wymaga nowszej wersji aplikacji.</string>
+    <string name="sign_in_change_account_title">Zmień konto</string>
     <string name="sign_in_password">Hasło</string>
     <string name="sign_in_student_id">Numer studenta</string>
     <string name="source_code_picker_current_app_badge">Ta aplikacja</string>

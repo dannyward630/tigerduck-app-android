@@ -31,6 +31,7 @@
     <string name="action_allow">Erlauben</string>
     <string name="action_back">Zurück</string>
     <string name="action_cancel">Abbrechen</string>
+    <string name="action_change">Ändern</string>
     <string name="action_clear_text">Text löschen</string>
     <string name="action_close">Schließen</string>
     <string name="action_confirm">Bestätigen</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Pink</string>
     <string name="color_name_purple">Violett</string>
     <string name="color_name_red">Rot</string>
+    <string name="color_name_wallpaper">Hintergrundfarben</string>
     <string name="color_picker_apply">Anwenden</string>
     <string name="color_picker_custom">Benutzerdefiniert</string>
     <string name="color_picker_presets_note">Voreingestellte Farben</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Diesen Anhang öffnen?</string>
     <string name="school_mail_save_draft">Entwurf speichern</string>
     <string name="school_mail_saved">Gespeichert</string>
+    <string name="school_mail_search_index_partial">Noch sind nicht alle E-Mails heruntergeladen. Die Suche findet einige ältere E-Mails vielleicht noch nicht.</string>
     <string name="school_mail_search_local_only">Der Server kann diese Suche nicht ausführen. Es werden nur Treffer aus bereits geladenen E-Mails angezeigt.</string>
     <string name="school_mail_search_prompt">E-Mails durchsuchen</string>
     <string name="school_mail_send">Senden</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Matrikelnummer und Passwort entsprechen denen des Hochschulsystems. TigerDuck speichert dieses Passwort nur verschlüsselt auf diesem Gerät und lädt es niemals hoch.</string>
     <string name="school_mail_sign_in_prompt_title">Bei Uni-Mail anmelden</string>
     <string name="school_mail_source_failed">Der Quelltext konnte nicht geladen werden.</string>
+    <string name="school_mail_storage_delete_message">Deine E-Mails bleiben auf dem Server der Uni. Sie werden beim nächsten Öffnen von Uni-Mail erneut heruntergeladen, bis dahin findet die Suche vielleicht nicht alles.</string>
+    <string name="school_mail_storage_delete_title">Heruntergeladene E-Mails löschen?</string>
+    <string name="school_mail_storage_footer">Werden heruntergeladen, damit du alle E-Mails durchsuchen und ohne Warten durchblättern kannst.</string>
+    <string name="school_mail_storage_title">Heruntergeladene E-Mails</string>
     <string name="school_mail_subject">Betreff</string>
     <string name="school_mail_to">An</string>
     <string name="school_mail_too_large">Anhänge überschreiten das Limit von 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Schnittstellenstil</string>
     <string name="settings_whats_new">Was gibt es Neues</string>
     <string name="share_code_needs_update_message">Dieser Freigabecode erfordert eine neuere Version der App.</string>
+    <string name="sign_in_change_account_title">Konto ändern</string>
     <string name="sign_in_password">Passwort</string>
     <string name="sign_in_student_id">Matrikelnummer</string>
     <string name="source_code_picker_current_app_badge">Diese App</string>

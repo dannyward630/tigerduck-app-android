@@ -31,6 +31,7 @@
     <string name="action_allow">Luba</string>
     <string name="action_back">Tagasi</string>
     <string name="action_cancel">Tühista</string>
+    <string name="action_change">Vaheta</string>
     <string name="action_clear_text">Kustuta tekst</string>
     <string name="action_close">Sulge</string>
     <string name="action_confirm">Kinnita</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Roosa</string>
     <string name="color_name_purple">Lilla</string>
     <string name="color_name_red">Punane</string>
+    <string name="color_name_wallpaper">Taustapildi värvid</string>
     <string name="color_picker_apply">Rakenda</string>
     <string name="color_picker_custom">Kohandatud</string>
     <string name="color_picker_presets_note">Eelseadistatud värvid</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Kas avada see manus?</string>
     <string name="school_mail_save_draft">Salvesta mustand</string>
     <string name="school_mail_saved">Salvestatud</string>
+    <string name="school_mail_search_index_partial">Kõiki kirju pole veel alla laaditud. Otsing ei pruugi mõnda vanemat kirja leida.</string>
     <string name="school_mail_search_local_only">Server ei toeta seda otsingut. Kuvatakse tulemusi ainult juba laaditud kirjadest.</string>
     <string name="school_mail_search_prompt">Otsi kirju</string>
     <string name="school_mail_send">Saada</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Sinu üliõpilase ID ja parool peaksid olema samad, mis koolisüsteemis. TigerDuck hoiab seda parooli ainult krüpteeritult selles seadmes ega laadi seda kunagi üles.</string>
     <string name="school_mail_sign_in_prompt_title">Logi sisse kooli e-posti</string>
     <string name="school_mail_source_failed">Lähtekoodi ei õnnestunud laadida.</string>
+    <string name="school_mail_storage_delete_message">Su kirjad jäävad kooli serverisse. Need laaditakse uuesti alla, kui avad järgmine kord Kooli e-posti, ja seni ei pruugi otsing kõike leida.</string>
+    <string name="school_mail_storage_delete_title">Kas kustutada allalaaditud kirjad?</string>
+    <string name="school_mail_storage_footer">Laaditakse alla, et saaksid kõigist kirjadest otsida ja neid ootamata sirvida.</string>
+    <string name="school_mail_storage_title">Allalaaditud kirjad</string>
     <string name="school_mail_subject">Teema</string>
     <string name="school_mail_to">Kellele</string>
     <string name="school_mail_too_large">Manused ületavad 50 MB piirangu</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Liidese stiil</string>
     <string name="settings_whats_new">Mis on uut</string>
     <string name="share_code_needs_update_message">See jagamiskood vajab rakenduse uuemat versiooni.</string>
+    <string name="sign_in_change_account_title">Konto vahetamine</string>
     <string name="sign_in_password">Parool</string>
     <string name="sign_in_student_id">Üliõpilase ID</string>
     <string name="source_code_picker_current_app_badge">Praegune rakendus</string>

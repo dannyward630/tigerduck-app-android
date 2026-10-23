@@ -31,6 +31,7 @@
     <string name="action_allow">મંજૂરી આપો</string>
     <string name="action_back">પાછળ</string>
     <string name="action_cancel">રદ કરો</string>
+    <string name="action_change">બદલો</string>
     <string name="action_clear_text">ટેક્સ્ટ સાફ કરો</string>
     <string name="action_close">બંધ કરો</string>
     <string name="action_confirm">પુષ્ટિ કરો</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">ગુલાબી</string>
     <string name="color_name_purple">જાંબલી</string>
     <string name="color_name_red">લાલ</string>
+    <string name="color_name_wallpaper">વૉલપેપરના રંગો</string>
     <string name="color_picker_apply">લાગુ કરો</string>
     <string name="color_picker_custom">કસ્ટમ</string>
     <string name="color_picker_presets_note">પ્રી-સેટ રંગ</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">આ એટેચમેન્ટ ખોલવું છે?</string>
     <string name="school_mail_save_draft">ડ્રાફ્ટ સેવ કરો</string>
     <string name="school_mail_saved">સેવ થયું</string>
+    <string name="school_mail_search_index_partial">હજી બધા મેઇલ ડાઉનલોડ થયા નથી. સર્ચમાં કેટલાક જૂના મેઇલ ન મળે એવું બની શકે.</string>
     <string name="school_mail_search_local_only">સર્વર આ સર્ચ ચલાવી શકતું નથી. ફક્ત લોડ થયેલા મેઇલમાંથી મેળ બતાવવામાં આવી રહ્યા છે.</string>
     <string name="school_mail_search_prompt">મેઇલ સર્ચ કરો</string>
     <string name="school_mail_send">મોકલો</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">તમારું ID અને પાસવર્ડ શૈક્ષણિક સિસ્ટમ જેવું જ હોવું જોઈએ. TigerDuck આ પાસવર્ડને ફક્ત આ ડિવાઇસ પર એન્ક્રિપ્ટ કરીને રાખે છે અને ક્યારેય અપલોડ કરતું નથી.</string>
     <string name="school_mail_sign_in_prompt_title">શાળા મેઇલમાં સાઇન ઇન કરો</string>
     <string name="school_mail_source_failed">સોર્સ લોડ થઈ શક્યું નહીં.</string>
+    <string name="school_mail_storage_delete_message">તમારા મેઇલ શાળાના સર્વર પર જ રહેશે. આગલી વખતે તમે શાળા મેઇલ ખોલશો ત્યારે તે ફરી ડાઉનલોડ થશે, ત્યાં સુધી સર્ચમાં કેટલાક મેઇલ ન મળે એવું બની શકે.</string>
+    <string name="school_mail_storage_delete_title">ડાઉનલોડ કરેલા મેઇલ ડિલીટ કરવા છે?</string>
+    <string name="school_mail_storage_footer">ડાઉનલોડ કરેલા રહે છે, જેથી તમે બધા મેઇલમાં સર્ચ કરી શકો અને રાહ જોયા વગર સ્ક્રોલ કરી શકો.</string>
+    <string name="school_mail_storage_title">ડાઉનલોડ કરેલા મેઇલ</string>
     <string name="school_mail_subject">વિષય</string>
     <string name="school_mail_to">પ્રતિ</string>
     <string name="school_mail_too_large">એટેચમેન્ટ 50 MB ની મર્યાદા કરતાં વધુ છે</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">ઇન્ટરફેસ શૈલી</string>
     <string name="settings_whats_new">શું નવું છે</string>
     <string name="share_code_needs_update_message">આ શેર કોડ માટે એપનું નવું સંસ્કરણ જરૂરી છે.</string>
+    <string name="sign_in_change_account_title">એકાઉન્ટ બદલો</string>
     <string name="sign_in_password">પાસવર્ડ</string>
     <string name="sign_in_student_id">સ્ટુડન્ટ ID</string>
     <string name="source_code_picker_current_app_badge">વર્તમાન એપ</string>

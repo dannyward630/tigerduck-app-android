@@ -302,8 +302,10 @@ fun SettingsScreen(
                             // when the user toggles the color theme.
                             AccentColorSwatches(
                                 selectedHex = accentColorHex,
+                                followsWallpaper = viewModel.appState.usesWallpaperColors,
                                 isDark = TigerDuckTheme.isDarkMode,
-                                onSelect = { viewModel.appState.accentColorHex = it },
+                                onSelect = { viewModel.appState.pickAccentColor(it) },
+                                onSelectWallpaper = { viewModel.appState.pickWallpaperColors() },
                             )
                         }
                     }

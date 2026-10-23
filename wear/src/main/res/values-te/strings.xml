@@ -31,6 +31,7 @@
     <string name="action_allow">అనుమతించు</string>
     <string name="action_back">వెనక్కి</string>
     <string name="action_cancel">రద్దు చేయండి</string>
+    <string name="action_change">మార్చండి</string>
     <string name="action_clear_text">వచనాన్ని క్లియర్ చేయండి</string>
     <string name="action_close">మూసివేయండి</string>
     <string name="action_confirm">నిర్ధారించండి</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">పింక్</string>
     <string name="color_name_purple">ఊదా</string>
     <string name="color_name_red">ఎరుపు</string>
+    <string name="color_name_wallpaper">వాల్‌పేపర్ రంగులు</string>
     <string name="color_picker_apply">వర్తింపజేయి</string>
     <string name="color_picker_custom">కస్టమ్</string>
     <string name="color_picker_presets_note">ప్రీసెట్ రంగులు</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">ఈ జోడింపును తెరవాలా?</string>
     <string name="school_mail_save_draft">డ్రాఫ్ట్ సేవ్ చేయండి</string>
     <string name="school_mail_saved">సేవ్ చేయబడింది</string>
+    <string name="school_mail_search_index_partial">ఇంకా అన్ని ఇమెయిల్‌లు డౌన్‌లోడ్ కాలేదు. కొన్ని పాత ఇమెయిల్‌లు శోధనలో కనిపించకపోవచ్చు.</string>
     <string name="school_mail_search_local_only">సర్వర్ ఈ శోధనను అమలు చేయలేదు. లోడ్ చేసిన ఇమెయిల్ నుండి మాత్రమే సరిపోలికలు చూపిస్తోంది.</string>
     <string name="school_mail_search_prompt">ఇమెయిల్ శోధించండి</string>
     <string name="school_mail_send">పంపు</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">మీ ID మరియు పాస్‌వర్డ్ అకాడెమిక్ సిస్టమ్‌లో ఉన్నట్లే ఉండాలి. TigerDuck ఈ పాస్‌వర్డ్‌ను ఈ పరికరంలో ఎన్‌క్రిప్ట్ చేసి మాత్రమే నిల్వ చేస్తుంది, ఎప్పుడూ అప్‌లోడ్ చేయదు.</string>
     <string name="school_mail_sign_in_prompt_title">స్కూల్ ఇమెయిల్‌లో సైన్ ఇన్ చేయండి</string>
     <string name="school_mail_source_failed">మూలాన్ని లోడ్ చేయలేకపోయింది.</string>
+    <string name="school_mail_storage_delete_message">మీ ఇమెయిల్ స్కూల్ సర్వర్‌లోనే ఉంటుంది. తర్వాతిసారి స్కూల్ ఇమెయిల్ తెరిచినప్పుడు అది మళ్లీ డౌన్‌లోడ్ అవుతుంది, అప్పటివరకు శోధనలో కొన్ని కనిపించకపోవచ్చు.</string>
+    <string name="school_mail_storage_delete_title">డౌన్‌లోడ్ చేసిన ఇమెయిల్‌ను తొలగించాలా?</string>
+    <string name="school_mail_storage_footer">మీరు అన్ని ఇమెయిల్‌లలో శోధించడానికి, వేచి ఉండకుండా స్క్రోల్ చేయడానికి ఇవి డౌన్‌లోడ్ అవుతాయి.</string>
+    <string name="school_mail_storage_title">డౌన్‌లోడ్ చేసిన ఇమెయిల్</string>
     <string name="school_mail_subject">విషయం</string>
     <string name="school_mail_to">స్వీకర్త</string>
     <string name="school_mail_too_large">జోడింపులు 50 MB పరిమితిని దాటాయి</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">ఇంటర్‌ఫేస్ స్టైల్</string>
     <string name="settings_whats_new">కొత్తేమిటి</string>
     <string name="share_code_needs_update_message">ఈ షేర్ కోడ్‌కు యాప్ యొక్క కొత్త వెర్షన్ అవసరం.</string>
+    <string name="sign_in_change_account_title">ఖాతాను మార్చండి</string>
     <string name="sign_in_password">పాస్‌వర్డ్</string>
     <string name="sign_in_student_id">స్టూడెంట్ ID</string>
     <string name="source_code_picker_current_app_badge">ప్రస్తుత యాప్</string>

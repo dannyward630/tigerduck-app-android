@@ -31,6 +31,7 @@
     <string name="action_allow">Toestaan</string>
     <string name="action_back">Terug</string>
     <string name="action_cancel">Annuleren</string>
+    <string name="action_change">Wijzigen</string>
     <string name="action_clear_text">Tekst wissen</string>
     <string name="action_close">Sluiten</string>
     <string name="action_confirm">Bevestigen</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Roze</string>
     <string name="color_name_purple">Paars</string>
     <string name="color_name_red">Rood</string>
+    <string name="color_name_wallpaper">Achtergrondkleuren</string>
     <string name="color_picker_apply">Toepassen</string>
     <string name="color_picker_custom">Aangepast</string>
     <string name="color_picker_presets_note">Vooraf ingestelde kleuren</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Deze bijlage openen?</string>
     <string name="school_mail_save_draft">Concept opslaan</string>
     <string name="school_mail_saved">Opgeslagen</string>
+    <string name="school_mail_search_index_partial">Nog niet alle mail is gedownload. Zoeken vindt sommige oudere mail misschien niet.</string>
     <string name="school_mail_search_local_only">De server kan deze zoekopdracht niet uitvoeren. Alleen resultaten uit al geladen mail worden getoond.</string>
     <string name="school_mail_search_prompt">Mail doorzoeken</string>
     <string name="school_mail_send">Verzenden</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Je studentnummer en wachtwoord zijn dezelfde als voor het systeem van de school. TigerDuck bewaart dit wachtwoord alleen versleuteld op dit apparaat en uploadt het nooit.</string>
     <string name="school_mail_sign_in_prompt_title">Aanmelden bij Schoolmail</string>
     <string name="school_mail_source_failed">De broncode kon niet worden geladen.</string>
+    <string name="school_mail_storage_delete_message">Je mail blijft op de server van school staan. Hij wordt opnieuw gedownload als je Schoolmail de volgende keer opent, en tot die tijd vindt zoeken misschien niet alles.</string>
+    <string name="school_mail_storage_delete_title">Gedownloade mail verwijderen?</string>
+    <string name="school_mail_storage_footer">Wordt gedownload zodat je in al je mail kunt zoeken en er zonder wachten doorheen kunt scrollen.</string>
+    <string name="school_mail_storage_title">Gedownloade mail</string>
     <string name="school_mail_subject">Onderwerp</string>
     <string name="school_mail_to">Aan</string>
     <string name="school_mail_too_large">Bijlagen overschrijden de limiet van 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Interfacestijl</string>
     <string name="settings_whats_new">Wat is er nieuw</string>
     <string name="share_code_needs_update_message">Voor deze deelcode is een nieuwere versie van de app nodig.</string>
+    <string name="sign_in_change_account_title">Account wijzigen</string>
     <string name="sign_in_password">Wachtwoord</string>
     <string name="sign_in_student_id">Studentnummer</string>
     <string name="source_code_picker_current_app_badge">Deze app</string>

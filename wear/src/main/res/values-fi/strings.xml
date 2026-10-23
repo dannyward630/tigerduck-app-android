@@ -31,6 +31,7 @@
     <string name="action_allow">Salli</string>
     <string name="action_back">Takaisin</string>
     <string name="action_cancel">Peruuta</string>
+    <string name="action_change">Vaihda</string>
     <string name="action_clear_text">Tyhjennä teksti</string>
     <string name="action_close">Sulje</string>
     <string name="action_confirm">Vahvista</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Vaaleanpunainen</string>
     <string name="color_name_purple">Violetti</string>
     <string name="color_name_red">Punainen</string>
+    <string name="color_name_wallpaper">Taustakuvan värit</string>
     <string name="color_picker_apply">Käytä</string>
     <string name="color_picker_custom">Mukautettu</string>
     <string name="color_picker_presets_note">Oletusvärit</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Avataanko tämä liite?</string>
     <string name="school_mail_save_draft">Tallenna luonnos</string>
     <string name="school_mail_saved">Tallennettu</string>
+    <string name="school_mail_search_index_partial">Kaikkia viestejä ei ole vielä ladattu. Haku ei ehkä löydä joitakin vanhempia viestejä.</string>
     <string name="school_mail_search_local_only">Palvelin ei voi suorittaa tätä hakua. Näytetään osumat vain ladatuista viesteistä.</string>
     <string name="school_mail_search_prompt">Hae viestejä</string>
     <string name="school_mail_send">Lähetä</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Opiskelijanumerosi ja salasanasi tulee olla samat kuin koulun järjestelmässä. TigerDuck tallentaa tämän salasanan vain salattuna tälle laitteelle eikä koskaan lataa sitä palvelimelle.</string>
     <string name="school_mail_sign_in_prompt_title">Kirjaudu koulusähköpostiin</string>
     <string name="school_mail_source_failed">Lähdettä ei voitu ladata.</string>
+    <string name="school_mail_storage_delete_message">Viestisi pysyvät koulun palvelimella. Ne ladataan uudelleen, kun avaat Koulusähköpostin seuraavan kerran, ja siihen asti haku ei ehkä löydä kaikkea.</string>
+    <string name="school_mail_storage_delete_title">Poistetaanko ladatut viestit?</string>
+    <string name="school_mail_storage_footer">Ladataan, jotta voit hakea kaikista viesteistäsi ja selata niitä odottamatta.</string>
+    <string name="school_mail_storage_title">Ladatut viestit</string>
     <string name="school_mail_subject">Aihe</string>
     <string name="school_mail_to">Vastaanottaja</string>
     <string name="school_mail_too_large">Liitteet ylittävät 50 Mt:n rajan</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Käyttöliittymän tyyli</string>
     <string name="settings_whats_new">Mitä uutta</string>
     <string name="share_code_needs_update_message">Tämä jakokoodi vaatii sovelluksen uudemman version.</string>
+    <string name="sign_in_change_account_title">Vaihda tili</string>
     <string name="sign_in_password">Salasana</string>
     <string name="sign_in_student_id">Opiskelijanumero</string>
     <string name="source_code_picker_current_app_badge">Tämä sovellus</string>

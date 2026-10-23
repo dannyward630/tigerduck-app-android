@@ -1,10 +1,12 @@
 package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,18 +35,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.FilterAltOff
 import androidx.compose.material.icons.filled.Mail
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -79,6 +83,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -104,6 +109,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.mail.MailDevServerSettings
 import org.ntust.app.tigerduck.mail.imap.FolderSelection
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.MailRow
 import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.warning.MailWarnings
@@ -115,6 +121,7 @@ import org.ntust.app.tigerduck.ui.component.SearchDrawer
 import org.ntust.app.tigerduck.ui.component.SecureScreen
 import org.ntust.app.tigerduck.ui.component.ServerStatus
 import org.ntust.app.tigerduck.ui.component.SyncStatusDot
+import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.component.TigerPullToRefresh
 import org.ntust.app.tigerduck.ui.component.listTopAnchor
 import org.ntust.app.tigerduck.ui.component.readToggleIcon
@@ -122,6 +129,7 @@ import org.ntust.app.tigerduck.ui.component.rememberAppBarState
 import org.ntust.app.tigerduck.ui.component.rememberChromeContentPadding
 import org.ntust.app.tigerduck.ui.component.rememberSearchRevealState
 import org.ntust.app.tigerduck.ui.component.scrollbar
+import org.ntust.app.tigerduck.ui.component.SearchFieldIcon
 import org.ntust.app.tigerduck.ui.component.searchClearIcon
 import org.ntust.app.tigerduck.ui.component.statusText
 import org.ntust.app.tigerduck.ui.screen.settings.LoginSheet
@@ -129,6 +137,8 @@ import org.ntust.app.tigerduck.ui.screen.settings.signInFieldValue
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import java.text.NumberFormat
+import java.util.Locale
 
 /** Spec §6.2 — the Announcements list pattern, over the school inbox. */
 @Composable
@@ -144,6 +154,7 @@ fun SchoolMailScreen(
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
     val authFailed by viewModel.authFailed.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val indexProgress by viewModel.searchIndexProgress.collectAsStateWithLifecycle()
     val sentCopyNotice by viewModel.sentCopyNotice.collectAsStateWithLifecycle()
     val showAuthFailedBanner by viewModel.showAuthFailedBanner.collectAsStateWithLifecycle()
     val signingIn by accountViewModel.signingIn.collectAsStateWithLifecycle()
@@ -293,6 +304,9 @@ fun SchoolMailScreen(
                 val displayed = state.displayed
                 val failed = state.loadState as? SchoolMailListViewModel.LoadState.Failed
                 when {
+                    // A search under way with nothing found yet shows nothing, its field's spinner
+                    // aside: not the mail from before it, nor "no mail" before it has looked.
+                    displayed.isEmpty() && state.isSearching -> Unit
                     displayed.isEmpty() && failed != null -> item(key = "failed") {
                         Box(Modifier.fillParentMaxHeight(0.6f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                             EmptyStateView(
@@ -318,6 +332,7 @@ fun SchoolMailScreen(
                             SwipeableMailCard(
                                 row = row,
                                 mailDomain = viewModel.mailDomain,
+                                writing = row.key in state.writing,
                                 // The row's own folder decides everything, never the selected chip:
                                 // opened from All mail, a Sent mail has to behave exactly as it
                                 // would had the user opened Sent itself.
@@ -326,6 +341,8 @@ fun SchoolMailScreen(
                                     else onOpenMessage(row.folder, row.uid)
                                 },
                                 onToggleRead = { viewModel.toggleRead(row) },
+                                onMove = { viewModel.requestMove(row) },
+                                onDelete = { viewModel.delete(row) },
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
                             )
                         }
@@ -363,8 +380,11 @@ fun SchoolMailScreen(
                         // this dot uses -- not the student ID, which is an identity and says
                         // nothing about whether anything is reaching the server. The specific
                         // failure still has a home: the list itself shows the error.
-                        text = statusText(mailStatus),
-                        isLoading = isLoading,
+                        //
+                        // While every mail downloads for search, which the first time takes a
+                        // while, the dot syncs and the row says how far it has come.
+                        text = indexProgress?.let(::indexProgressText) ?: statusText(mailStatus),
+                        isLoading = isLoading || indexProgress != null,
                         syncedAtMs = state.fetchedAt,
                     )
                     IconButton(onClick = { viewModel.setUnreadOnly(!state.unreadOnly) }) {
@@ -399,7 +419,7 @@ fun SchoolMailScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp)
                             .onFocusChanged { searchFocused = it.isFocused },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        leadingIcon = { SearchFieldIcon(searching = state.searchBusy) },
                         trailingIcon = searchClearIcon(state.searchText) { viewModel.setSearchText("") },
                         placeholder = { Text(stringResource(R.string.school_mail_search_prompt)) },
                         singleLine = true,
@@ -409,9 +429,13 @@ fun SchoolMailScreen(
                     )
                 }
                 FolderChips(state = state, onSelect = viewModel::selectFolder)
-                if (state.searchLocalOnly) {
+                searchNote(
+                    searched = state.searchResults != null,
+                    loadedOnly = state.searchLocalOnly,
+                    partial = state.searchIndexPartial,
+                )?.let { note ->
                     Text(
-                        stringResource(R.string.school_mail_search_local_only),
+                        stringResource(note),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -441,6 +465,39 @@ fun SchoolMailScreen(
             onDismiss = { showReauthSheet = false },
             footer = { ForgotMailPasswordLink(browserPreference) },
         )
+    }
+
+    state.pendingDelete?.let { pending ->
+        // The question a delete from the trash asks is the harder one, and its button says so.
+        TigerDuckDialog(
+            onDismissRequest = { viewModel.confirmDelete(false) },
+            title = stringResource(if (pending.permanently) R.string.school_mail_delete_forever_title else R.string.school_mail_delete_confirm_title),
+            message = stringResource(if (pending.permanently) R.string.school_mail_delete_forever_message else R.string.school_mail_delete_confirm_message),
+            confirmText = stringResource(R.string.school_mail_delete),
+            onConfirm = { viewModel.confirmDelete(true) },
+            dismissText = stringResource(R.string.action_cancel),
+            confirmColors = if (pending.permanently) {
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                )
+            } else {
+                ButtonDefaults.buttonColors()
+            },
+        )
+    }
+    state.pendingMove?.let { pending ->
+        TigerDuckDialog(
+            onDismissRequest = { viewModel.dismissMove() },
+            title = stringResource(R.string.school_mail_move_to),
+            dismissText = stringResource(R.string.action_cancel),
+        ) {
+            pending.targets.forEach { target ->
+                TextButton(onClick = { viewModel.moveTo(target.folder) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(target.kind?.let { stringResource(it.labelRes()) } ?: target.folder)
+                }
+            }
+        }
     }
 }
 
@@ -500,14 +557,42 @@ fun SpecialFolder.labelRes(): Int = when (this) {
     SpecialFolder.TRASH -> R.string.school_mail_folder_trash
 }
 
-/** Mirrors Announcements' BulletinCard: 12dp surfaceVariant card, 7dp unread dot, SemiBold when unread. */
+/**
+ * Mirrors Announcements' BulletinCard: 12dp surfaceVariant card, 7dp unread dot, SemiBold when unread.
+ *
+ * [onLongClickLabel] is what TalkBack says a long press does, offered with [onLongClick].
+ */
 @Composable
-internal fun MailCard(message: MailSummary, mailDomain: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun MailCard(
+    message: MailSummary,
+    mailDomain: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
+    enabled: Boolean = true,
+) {
     val cs = MaterialTheme.colorScheme
     val unread = !message.flags.seen
-    // [modifier] lands on the same layout node as Surface's own clickable, so semantics set on
-    // it merge into the single card node an accessibility service focuses.
-    Surface(onClick = onClick, shape = RoundedCornerShape(12.dp), color = cs.surfaceVariant, modifier = modifier.fillMaxWidth()) {
+    val shape = RoundedCornerShape(12.dp)
+    // [modifier] lands on the same layout node as the card's clickable, so semantics set on it
+    // merge into the single card node an accessibility service focuses. Clipped ahead of the
+    // clickable, or its ripple fills the square corners: Surface clips only what it draws, after
+    // every modifier passed to it.
+    Surface(
+        shape = shape,
+        color = cs.surfaceVariant,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .combinedClickable(
+                enabled = enabled,
+                role = Role.Button,
+                onLongClickLabel = onLongClickLabel,
+                onLongClick = onLongClick,
+                onClick = onClick,
+            ),
+    ) {
         Column(Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (unread) {
@@ -561,55 +646,99 @@ internal fun MailCard(message: MailSummary, mailDomain: String, onClick: () -> U
 }
 
 /**
- * Same gesture as SwipeableBulletinCard: either direction toggles read (100dp threshold, 0.6×
- * damping) -- plus a custom accessibility action carrying the same label, because an
- * accessibility service cannot perform a drag and read state is functional, not decorative.
- * Without it the card's only reachable action was opening the mail.
+ * The gesture of SwipeableBulletinCard (100dp threshold, 0.6× damping), split by direction as the
+ * iPhone's list is: the leading swipe, a drag to the right in a left-to-right layout, toggles read,
+ * and the trailing swipe, to the left, asks to delete; a right-to-left layout mirrors both. A long
+ * press opens the two as a menu, with Move to… between them. Both swipes are custom accessibility
+ * actions as well, under the labels their icons announce, because an accessibility service cannot
+ * perform a drag.
+ *
+ * [writing] while the mail's delete or move is still out ([SchoolMailListViewModel.UiState.writing]):
+ * the card is dimmed and offers nothing, not even a tap into a mail on its way out of the folder,
+ * until the write ends and the card leaves the list or, the write having failed, comes back.
  */
 @Composable
-private fun SwipeableMailCard(
+internal fun SwipeableMailCard(
     row: MailRow,
     mailDomain: String,
+    writing: Boolean,
     onClick: () -> Unit,
     onToggleRead: () -> Unit,
+    onMove: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val message = row.summary
     val latestToggle by rememberUpdatedState(onToggleRead)
+    val latestDelete by rememberUpdatedState(onDelete)
+    val latestMove by rememberUpdatedState(onMove)
     val thresholdPx = with(LocalDensity.current) { 100.dp.toPx() }
     // Keyed on (folder, uid): two folders can hand out the same UID, and a swipe in progress
     // must not carry over to the other mail when the list re-merges.
     val offset = remember(row.key) { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    val icon = readToggleIcon(isRead = message.flags.seen)
-    val iconDescription = stringResource(if (message.flags.seen) R.string.school_mail_mark_unread else R.string.school_mail_mark_read)
-    // The same localized label the swipe icon announces: what the toggle is about to do.
-    val readActions = remember(iconDescription) {
-        listOf(CustomAccessibilityAction(iconDescription) { latestToggle(); true })
+    // The drag handler below starts again whenever either changes -- the activity takes a change
+    // of language, and so of layout direction, without being recreated -- and a drag it was in the
+    // middle of ends without its onDragEnd or onDragCancel. So the card is put back at rest here,
+    // which also stops a fling-out still running before it acts on a card that no longer offers it.
+    LaunchedEffect(writing, isRtl) { offset.snapTo(0f) }
+    val isRead = message.flags.seen
+    val readIcon = readToggleIcon(isRead = isRead)
+    val readDescription = stringResource(if (isRead) R.string.school_mail_mark_unread else R.string.school_mail_mark_read)
+    val deleteDescription = stringResource(R.string.school_mail_delete)
+
+    val accessibilityActions = remember(readDescription, deleteDescription, writing) {
+        if (writing) {
+            emptyList()
+        } else {
+            listOf(
+                CustomAccessibilityAction(readDescription) { latestToggle(); true },
+                CustomAccessibilityAction(deleteDescription) { latestDelete(); true },
+            )
+        }
     }
 
-    Box(modifier.fillMaxWidth()) {
+    var menuOpen by remember { mutableStateOf(false) }
+
+    Box(modifier.fillMaxWidth().alpha(if (writing) ContentAlpha.DISABLED else 1f)) {
         val progress = (abs(offset.value) / thresholdPx).coerceIn(0f, 1f)
         if (offset.value != 0f) {
+            val isLeading = offset.value > 0f
             Box(
                 Modifier.matchParentSize().padding(horizontal = 20.dp),
-                contentAlignment = if (offset.value > 0f) Alignment.CenterStart else Alignment.CenterEnd,
+                contentAlignment = if (isLeading) Alignment.CenterStart else Alignment.CenterEnd,
             ) {
-                Icon(icon, iconDescription, tint = Color(0xFF34C759), modifier = Modifier.size(26.dp).alpha(progress).scale(0.5f + 0.5f * progress))
+                if (isLeading) {
+                    Icon(
+                        readIcon,
+                        readDescription,
+                        tint = Color(0xFF34C759),
+                        modifier = Modifier.size(26.dp).alpha(progress).scale(0.5f + 0.5f * progress),
+                    )
+                } else {
+                    Icon(
+                        Icons.Filled.Delete,
+                        deleteDescription,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(26.dp).alpha(progress).scale(0.5f + 0.5f * progress),
+                    )
+                }
             }
         }
         Box(
             Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(offset.value.roundToInt(), 0) }
-                .pointerInput(row.key) {
+                .pointerInput(row.key, writing, isRtl) {
+                    if (writing) return@pointerInput
                     detectHorizontalDragGestures(
                         onDragEnd = {
                             scope.launch {
                                 if (abs(offset.value) >= thresholdPx) {
-                                    offset.animateTo(if (offset.value > 0) 2000f else -2000f, tween(200))
-                                    latestToggle()
+                                    val isLeading = offset.value > 0f
+                                    offset.animateTo(if (isLeading) 2000f else -2000f, tween(200))
+                                    if (isLeading) latestToggle() else latestDelete()
                                     offset.snapTo(0f)
                                 } else {
                                     offset.animateTo(0f, spring())
@@ -627,9 +756,46 @@ private fun SwipeableMailCard(
             MailCard(
                 message,
                 mailDomain,
-                onClick,
-                modifier = Modifier.semantics { customActions = readActions },
+                onClick = onClick,
+                onLongClick = { menuOpen = true },
+                // The long press opens the same actions as the mail's own ⋮ button.
+                onLongClickLabel = stringResource(R.string.school_mail_message_actions),
+                enabled = !writing,
+                modifier = Modifier.semantics { customActions = accessibilityActions },
             )
+            DropdownMenu(
+                expanded = menuOpen && !writing,
+                onDismissRequest = { menuOpen = false },
+                shape = RoundedCornerShape(12.dp),
+            ) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(if (isRead) R.string.school_mail_mark_unread else R.string.school_mail_mark_read)) },
+                    onClick = {
+                        menuOpen = false
+                        latestToggle()
+                    },
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.school_mail_move_to)) },
+                    onClick = {
+                        menuOpen = false
+                        latestMove()
+                    },
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            stringResource(R.string.school_mail_delete),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    },
+                    onClick = {
+                        menuOpen = false
+                        latestDelete()
+                    },
+                )
+            }
         }
     }
 }
@@ -780,3 +946,23 @@ private fun SchoolMailLoginCard(
         }
     }
 }
+
+/** [progress] as the sync dot's popup shows it: mail downloaded for search, of how many it lacked, as "120/3,456". */
+internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Locale.getDefault()): String {
+    val number = NumberFormat.getIntegerInstance(locale)
+    return number.format(progress.done) + "/" + number.format(progress.total)
+}
+
+/**
+ * The line under the search field when a search may have missed mail: one that could read only
+ * the loaded mail, or one [partial], run before every mail was downloaded. The search's own
+ * answer, kept until it runs again: the download getting through since changes nothing on screen.
+ */
+@StringRes
+internal fun searchNote(searched: Boolean, loadedOnly: Boolean, partial: Boolean): Int? = when {
+    !searched -> null
+    loadedOnly -> R.string.school_mail_search_local_only
+    partial -> R.string.school_mail_search_index_partial
+    else -> null
+}
+

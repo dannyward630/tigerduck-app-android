@@ -2,11 +2,13 @@ package org.ntust.app.tigerduck.mail
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import org.ntust.app.tigerduck.mail.compose.OutgoingMail
 import org.ntust.app.tigerduck.mail.imap.ResolvedFolders
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.model.MailBody
@@ -26,6 +28,24 @@ class FakeSchoolMailRepository : SchoolMailRepository {
 
     /** Set, [setSeen] waits on it after reading the account: the write held on the connection while the test acts. */
     var seenGate: CompletableDeferred<Unit>? = null
+
+    /**
+     * Set, [move] and [delete] wait on it once sent, as [seenGate] holds [setSeen]: the command out
+     * on the connection, its answer held while the test acts.
+     */
+    var writeGate: CompletableDeferred<Unit>? = null
+
+    /**
+     * Set, [move] and [delete] wait on it before their `stillWanted` is asked: the write queued
+     * behind the session another request holds, not sent yet.
+     */
+    var writeQueueGate: CompletableDeferred<Unit>? = null
+
+    /** Set, [deletesPermanently] waits on it first: the CREATE and LIST a missing trash costs, held out while the test acts. */
+    var trashGate: CompletableDeferred<Unit>? = null
+
+    /** How many times [deletesPermanently] went to the server; one refused by its `stillWanted` is not counted. */
+    var trashQuestionsSent = 0
 
     /**
      * Set, [loadPage] waits on it once its page is built, after [onLoaded]: the answer held on its
@@ -110,6 +130,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     var seenError: MailError? = null
     val seenCalls = mutableListOf<Triple<String, Long, Boolean>>()
     val moved = mutableListOf<Triple<String, Long, String>>()
+
+    /** The UID [move] files the next mail under in its target, well above any a test adds. */
+    private var movedUids = 90_000L
     val deleted = mutableListOf<Pair<String, Long>>()
 
     /**
@@ -337,24 +360,58 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         _changes.emit(MailChange.Seen(folder, uid, seen, generation))
     }
 
-    override suspend fun move(folder: String, uid: Long, target: String) {
+    override suspend fun move(folder: String, uid: Long, target: String, uidValidity: Long?, stillWanted: () -> Boolean) {
         val generation = generation()
+        writeQueueGate?.await()
+        unlessAbandoned(stillWanted)
+        refuseUnder(uidValidity)
+        writeGate?.await()
         foldersTouched += folder
         foldersTouched += target
         moveError?.let { throw it }
         moved += Triple(folder, uid, target)
+        val moving = mail[folder]?.firstOrNull { it.uid == uid }
         mail[folder]?.removeAll { it.uid == uid }
+        // Filed in the target under a UID of the target's own, as the server does: what a list of
+        // the target can only fetch ([MailChange.Changed] below).
+        moving?.let { mail.getOrPut(target) { mutableListOf() } += it.copy(uid = movedUids++) }
         _changes.emit(MailChange.Removed(folder, uid, generation))
         _changes.emit(MailChange.Changed(target, generation))
     }
 
-    /** Mirrors the real repository: permanent inside the trash, and permanent everywhere when the account has no trash folder and none could be created. */
-    override suspend fun deletesPermanently(folder: String) =
-        touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
+    /**
+     * As the server answers a write's SELECT: a UID read under another UIDVALIDITY than the
+     * folders have now ([pageValidity]) names another mail, and nothing is sent.
+     */
+    private fun refuseUnder(uidValidity: Long?) {
+        if (uidValidity != null && uidValidity != pageValidity) {
+            writesRefused++
+            throw MailError.FolderChanged()
+        }
+    }
 
-    override suspend fun delete(folder: String, uid: Long) {
+    /** Fires inside [delete], before [deleteError]: a test acts while the delete is out. */
+    var onDelete: (() -> Unit)? = null
+
+    /** How many writes [refuseUnder] turned away: the server, not the caller, deciding a UID is stale. */
+    var writesRefused = 0
+
+    /** Mirrors the real repository: permanent inside the trash, and permanent everywhere when the account has no trash folder and none could be created. */
+    override suspend fun deletesPermanently(folder: String, stillWanted: () -> Boolean): Boolean {
+        trashGate?.await()
+        unlessAbandoned(stillWanted)
+        trashQuestionsSent++
+        return touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
+    }
+
+    override suspend fun delete(folder: String, uid: Long, uidValidity: Long?, stillWanted: () -> Boolean) {
         val generation = generation()
+        writeQueueGate?.await()
+        unlessAbandoned(stillWanted)
+        refuseUnder(uidValidity)
+        writeGate?.await()
         foldersTouched += folder
+        onDelete?.invoke()
         deleteError?.let { throw it }
         deleted += folder to uid
         mail[folder]?.removeAll { it.uid == uid }
@@ -370,10 +427,16 @@ class FakeSchoolMailRepository : SchoolMailRepository {
      */
     var searchErrorFolder: String? = null
 
+    /** The UIDVALIDITY a server search reports its matches under; null for a server that does not say. */
+    var searchValidity: Long? = 1
+
     /** How many times [search] went out, failed or not; [searchesSent] names them in order. */
     var searchCalls = 0
 
     /** While set, [search] suspends on it once the SEARCH went out, before it answers or fails: a search still out while the test acts. */
+    /** Whether [search] says the index held every mail of the folder, as its outcome's [SearchOutcome.Server.complete]. */
+    var searchComplete = true
+
     var searchGate: CompletableDeferred<Unit>? = null
 
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
@@ -391,7 +454,7 @@ class FakeSchoolMailRepository : SchoolMailRepository {
             return cachedPages[folder].let { cached -> SearchOutcome.LoadedOnly(cached?.messages.orEmpty().filter { query in it.subject }, cached?.uidValidity) }
         }
         // Paged like the real repository: the newest [pageSize] matches, the rest left to fetch.
-        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = 1)
+        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = searchValidity, complete = searchComplete)
     }
 
     /** Every `(folder, uids)` handed to [searchPage], in order -- asked for, whether or not it then went out. */
@@ -406,8 +469,29 @@ class FakeSchoolMailRepository : SchoolMailRepository {
      */
     var searchPageGate: CompletableDeferred<Unit>? = null
 
-    /** The UIDVALIDITY [searchPage] reports; the search itself always reports 1. */
+    /** The UIDVALIDITY [searchPage] reports; the search itself reports [searchValidity]. */
     var searchPageValidity = 1L
+
+    /** How many times the search index was asked to catch up with the server. */
+    var searchIndexUpdates = 0
+
+    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
+        searchIndexUpdates++
+    }
+
+    override val searchIndexProgress = MutableStateFlow<MailIndexProgress?>(null)
+
+    /** What the mail downloaded for search takes, as the settings page reads it. */
+    var searchIndexBytes = 0L
+
+    override suspend fun searchIndexBytes(): Long = searchIndexBytes
+
+    var searchIndexDeletes = 0
+
+    override suspend fun deleteSearchIndex() {
+        searchIndexDeletes++
+        searchIndexBytes = 0L
+    }
 
     override suspend fun searchPage(folder: String, uids: List<Long>, stillWanted: () -> Boolean): SearchPage {
         foldersTouched += folder
@@ -421,9 +505,13 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     var rawSourceError: MailError? = null
     var rawSourceCalls = 0
 
+    /** Fires inside [rawSource], before [rawSourceError]: a test acts while the fetch is out. */
+    var onRawSource: (() -> Unit)? = null
+
     override suspend fun rawSource(folder: String, uid: Long): String {
         foldersTouched += folder
         rawSourceCalls++
+        onRawSource?.invoke()
         rawSourceError?.let { throw it }
         return raw
     }

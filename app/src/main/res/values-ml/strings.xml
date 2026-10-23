@@ -31,6 +31,7 @@
     <string name="action_allow">അനുവദിക്കുക</string>
     <string name="action_back">തിരിച്ച്</string>
     <string name="action_cancel">റദ്ദാക്കുക</string>
+    <string name="action_change">മാറ്റുക</string>
     <string name="action_clear_text">ടെക്സ്റ്റ് മായ്ക്കുക</string>
     <string name="action_close">അടക്കുക</string>
     <string name="action_confirm">സ്ഥിരീകരിക്കുക</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">പിങ്ക്</string>
     <string name="color_name_purple">പർപ്പിൾ</string>
     <string name="color_name_red">ചുവപ്പ്</string>
+    <string name="color_name_wallpaper">വാൾപേപ്പർ നിറങ്ങൾ</string>
     <string name="color_picker_apply">പ്രയോഗിക്കുക</string>
     <string name="color_picker_custom">ഇഷ്ടാനുസൃതം</string>
     <string name="color_picker_presets_note">മുൻനിശ്ചിത നിറങ്ങൾ</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">ഈ അറ്റാച്ച്‌മെന്റ് തുറക്കണോ?</string>
     <string name="school_mail_save_draft">ഡ്രാഫ്റ്റ് സേവ് ചെയ്യുക</string>
     <string name="school_mail_saved">സേവ് ചെയ്തു</string>
+    <string name="school_mail_search_index_partial">എല്ലാ ഇമെയിലുകളും ഇനിയും ഡൗൺലോഡ് ചെയ്തിട്ടില്ല. ചില പഴയ ഇമെയിലുകൾ തിരയലിൽ കണ്ടെത്തിയേക്കില്ല.</string>
     <string name="school_mail_search_local_only">സെർവറിന് ഈ തിരയൽ നടത്താനാകില്ല. ലോഡ് ചെയ്ത ഇമെയിലിൽ നിന്നുള്ള പൊരുത്തങ്ങൾ മാത്രം കാണിക്കുന്നു.</string>
     <string name="school_mail_search_prompt">ഇമെയിൽ തിരയുക</string>
     <string name="school_mail_send">അയയ്ക്കുക</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">നിങ്ങളുടെ ID യും പാസ്‌വേഡും അക്കാദമിക് സിസ്റ്റത്തിലേതു പോലെ തന്നെ ആയിരിക്കണം. TigerDuck ഈ പാസ്‌വേഡ് ഈ ഉപകരണത്തിൽ എൻക്രിപ്റ്റ് ചെയ്ത് മാത്രം സൂക്ഷിക്കുന്നു, ഒരിക്കലും അപ്‌ലോഡ് ചെയ്യില്ല.</string>
     <string name="school_mail_sign_in_prompt_title">സ്കൂൾ ഇമെയിലിൽ സൈൻ ഇൻ ചെയ്യുക</string>
     <string name="school_mail_source_failed">സോഴ്‌സ് ലോഡ് ചെയ്യാനായില്ല.</string>
+    <string name="school_mail_storage_delete_message">നിങ്ങളുടെ ഇമെയിൽ സ്കൂളിന്റെ സെർവറിൽ തന്നെ ഉണ്ടാകും. അടുത്ത തവണ സ്കൂൾ ഇമെയിൽ തുറക്കുമ്പോൾ അത് വീണ്ടും ഡൗൺലോഡ് ചെയ്യും, അതുവരെ തിരയലിൽ ചിലത് കണ്ടെത്തിയേക്കില്ല.</string>
+    <string name="school_mail_storage_delete_title">ഡൗൺലോഡ് ചെയ്ത ഇമെയിൽ ഇല്ലാതാക്കണോ?</string>
+    <string name="school_mail_storage_footer">എല്ലാ ഇമെയിലുകളിലും തിരയാനും കാത്തിരിക്കാതെ സ്ക്രോൾ ചെയ്യാനും ഇവ ഡൗൺലോഡ് ചെയ്യുന്നു.</string>
+    <string name="school_mail_storage_title">ഡൗൺലോഡ് ചെയ്ത ഇമെയിൽ</string>
     <string name="school_mail_subject">വിഷയം</string>
     <string name="school_mail_to">സ്വീകർത്താവ്</string>
     <string name="school_mail_too_large">അറ്റാച്ച്‌മെന്റുകൾ 50 MB പരിധി കടന്നു</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">ഇന്റർഫേസ് ശൈലി</string>
     <string name="settings_whats_new">പുതിയതെന്ത്</string>
     <string name="share_code_needs_update_message">ഈ പങ്കിടൽ കോഡിന് ആപ്പിന്റെ പുതിയ പതിപ്പ് ആവശ്യമാണ്.</string>
+    <string name="sign_in_change_account_title">അക്കൗണ്ട് മാറ്റുക</string>
     <string name="sign_in_password">പാസ്‌വേഡ്</string>
     <string name="sign_in_student_id">വിദ്യാർഥി ഐഡി</string>
     <string name="source_code_picker_current_app_badge">നിലവിലെ ആപ്പ്</string>

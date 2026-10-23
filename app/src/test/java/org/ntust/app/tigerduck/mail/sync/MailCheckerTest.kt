@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.mail.sync
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -17,6 +18,8 @@ import org.ntust.app.tigerduck.mail.InMemoryCredentialStore
 import org.ntust.app.tigerduck.mail.InMemoryMailStateStore
 import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.MailError
+import org.ntust.app.tigerduck.mail.cancelAndJoinBlocking
+import org.ntust.app.tigerduck.mail.signInDuringRefusal
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
 import org.ntust.app.tigerduck.mail.schoolMailSite
@@ -34,6 +37,13 @@ import kotlin.concurrent.thread
 class MailCheckerTest {
     @get:Rule val tmp = TemporaryFolder()
 
+    // What the account and the notices launch, joined before TemporaryFolder deletes the cache
+    // a sign-out may still be wiping there.
+    private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
+
     private val server = FakeMailServer()
     private val state = InMemoryMailStateStore()
     private val notifier = RecordingNotifier()
@@ -41,7 +51,7 @@ class MailCheckerTest {
     private var now = 1_000_000L
     private val credentialStore = InMemoryCredentialStore()
     private val account by lazy {
-        MailAccount(credentialStore, state, server.factory(), MailCache(tmp.root), FakeDemoGate(), schoolMailSite(), scheduler, notifier, testApplicationScope())
+        MailAccount(credentialStore, state, server.factory(), MailCache(tmp.root), FakeDemoGate(), schoolMailSite(), scheduler, notifier, appScope)
     }
 
     private fun checker(
@@ -332,6 +342,19 @@ class MailCheckerTest {
         assertFalse(account.authFailed.value)
         assertEquals(0, notifier.authFailures)
         assertEquals(CheckOutcome.NotSignedIn, outcome)
+    }
+
+    /** Marked in one step with a sign-in's move of the generation, as the list marks it. */
+    @Test
+    fun `a rejection marked as the student signs in again leaves the new sign-in on`() = runTest {
+        account.signIn("b10000001", "pw")
+        val c = checker(MailSessionFactory { _ -> throw MailError.AuthFailed() })
+        val signIn = signInDuringRefusal(account, state, "b10000001", "pw")
+
+        c.check(CheckSource.ALARM)
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
     }
 
     /**

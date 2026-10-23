@@ -31,6 +31,7 @@
     <string name="action_allow">Izinkan</string>
     <string name="action_back">Kembali</string>
     <string name="action_cancel">Batal</string>
+    <string name="action_change">Ganti</string>
     <string name="action_clear_text">Hapus teks</string>
     <string name="action_close">Tutup</string>
     <string name="action_confirm">Konfirmasi</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Merah muda</string>
     <string name="color_name_purple">Ungu</string>
     <string name="color_name_red">Merah</string>
+    <string name="color_name_wallpaper">Warna wallpaper</string>
     <string name="color_picker_apply">Terapkan</string>
     <string name="color_picker_custom">Kustom</string>
     <string name="color_picker_presets_note">Warna preset</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Buka lampiran ini?</string>
     <string name="school_mail_save_draft">Simpan draf</string>
     <string name="school_mail_saved">Tersimpan</string>
+    <string name="school_mail_search_index_partial">Belum semua email diunduh. Pencarian mungkin tidak menemukan beberapa email lama.</string>
     <string name="school_mail_search_local_only">Server tidak dapat menjalankan pencarian ini. Hanya menampilkan hasil dari email yang sudah dimuat.</string>
     <string name="school_mail_search_prompt">Cari email</string>
     <string name="school_mail_send">Kirim</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">ID dan kata sandimu harus sama dengan sistem sekolah. TigerDuck hanya menyimpan kata sandi ini terenkripsi di perangkat ini dan tidak pernah mengunggahnya.</string>
     <string name="school_mail_sign_in_prompt_title">Masuk ke email sekolah</string>
     <string name="school_mail_source_failed">Tidak dapat memuat kode sumber.</string>
+    <string name="school_mail_storage_delete_message">Email kamu tetap ada di server sekolah. Email akan diunduh lagi saat kamu membuka Email sekolah berikutnya, dan sampai saat itu pencarian mungkin tidak menemukan sebagian di antaranya.</string>
+    <string name="school_mail_storage_delete_title">Hapus email yang diunduh?</string>
+    <string name="school_mail_storage_footer">Diunduh agar kamu bisa mencari di semua email dan menggulirnya tanpa menunggu.</string>
+    <string name="school_mail_storage_title">Email yang diunduh</string>
     <string name="school_mail_subject">Subjek</string>
     <string name="school_mail_to">Kepada</string>
     <string name="school_mail_too_large">Lampiran melebihi batas 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Gaya antarmuka</string>
     <string name="settings_whats_new">Apa yang baru</string>
     <string name="share_code_needs_update_message">Kode berbagi ini memerlukan versi aplikasi yang lebih baru.</string>
+    <string name="sign_in_change_account_title">Ganti akun</string>
     <string name="sign_in_password">Kata sandi</string>
     <string name="sign_in_student_id">NIM</string>
     <string name="source_code_picker_current_app_badge">App ini</string>

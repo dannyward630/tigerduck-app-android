@@ -31,6 +31,7 @@
     <string name="action_allow">Autoriser</string>
     <string name="action_back">Retour</string>
     <string name="action_cancel">Annuler</string>
+    <string name="action_change">Changer</string>
     <string name="action_clear_text">Effacer le texte</string>
     <string name="action_close">Fermer</string>
     <string name="action_confirm">Confirmer</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Rose</string>
     <string name="color_name_purple">Violet</string>
     <string name="color_name_red">Rouge</string>
+    <string name="color_name_wallpaper">Couleurs du fond d\'écran</string>
     <string name="color_picker_apply">Appliquer</string>
     <string name="color_picker_custom">Personnalisée</string>
     <string name="color_picker_presets_note">Couleurs prédéfinies</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Ouvrir cette pièce jointe ?</string>
     <string name="school_mail_save_draft">Enregistrer le brouillon</string>
     <string name="school_mail_saved">Enregistré</string>
+    <string name="school_mail_search_index_partial">Tous les messages ne sont pas encore téléchargés. La recherche risque de ne pas trouver certains messages plus anciens.</string>
     <string name="school_mail_search_local_only">Le serveur ne peut pas effectuer cette recherche. Seuls les résultats des messages déjà chargés sont affichés.</string>
     <string name="school_mail_search_prompt">Rechercher des messages</string>
     <string name="school_mail_send">Envoyer</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Votre numéro d\'étudiant et votre mot de passe doivent être identiques à ceux du système universitaire. TigerDuck stocke ce mot de passe uniquement de façon chiffrée sur cet appareil et ne le transmet jamais en ligne.</string>
     <string name="school_mail_sign_in_prompt_title">Se connecter à la messagerie universitaire</string>
     <string name="school_mail_source_failed">Impossible de charger le code source.</string>
+    <string name="school_mail_storage_delete_message">Vos messages restent sur le serveur de l\'université. Ils seront téléchargés à nouveau la prochaine fois que vous ouvrirez Messagerie universitaire et, d\'ici là, la recherche risque de ne pas tout trouver.</string>
+    <string name="school_mail_storage_delete_title">Supprimer les messages téléchargés ?</string>
+    <string name="school_mail_storage_footer">Ils sont téléchargés pour que vous puissiez rechercher dans tous vos messages et les faire défiler sans attendre.</string>
+    <string name="school_mail_storage_title">Messages téléchargés</string>
     <string name="school_mail_subject">Objet</string>
     <string name="school_mail_to">À</string>
     <string name="school_mail_too_large">Les pièces jointes dépassent la limite de 50 Mo</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Style d’interface utilisateur</string>
     <string name="settings_whats_new">Quoi de neuf</string>
     <string name="share_code_needs_update_message">Ce code de partage nécessite une version plus récente de l\'application.</string>
+    <string name="sign_in_change_account_title">Changer de compte</string>
     <string name="sign_in_password">Mot de passe</string>
     <string name="sign_in_student_id">Numéro d\'étudiant</string>
     <string name="source_code_picker_current_app_badge">App actuelle</string>

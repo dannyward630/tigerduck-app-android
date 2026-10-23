@@ -31,6 +31,7 @@
     <string name="action_allow">Tillat</string>
     <string name="action_back">Tilbake</string>
     <string name="action_cancel">Avbryt</string>
+    <string name="action_change">Bytt</string>
     <string name="action_clear_text">Tøm tekst</string>
     <string name="action_close">Lukk</string>
     <string name="action_confirm">Bekreft</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Rosa</string>
     <string name="color_name_purple">Lilla</string>
     <string name="color_name_red">Rød</string>
+    <string name="color_name_wallpaper">Bakgrunnsfarger</string>
     <string name="color_picker_apply">Bruk</string>
     <string name="color_picker_custom">Egendefinert</string>
     <string name="color_picker_presets_note">Forhåndsinnstilte farger</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Åpne dette vedlegget?</string>
     <string name="school_mail_save_draft">Lagre kladd</string>
     <string name="school_mail_saved">Lagret</string>
+    <string name="school_mail_search_index_partial">Ikke all e-post er lastet ned ennå. Søket finner kanskje ikke noe av den eldre e-posten.</string>
     <string name="school_mail_search_local_only">Serveren kan ikke utføre dette søket. Viser bare treff fra allerede innlastet e-post.</string>
     <string name="school_mail_search_prompt">Søk i e-post</string>
     <string name="school_mail_send">Send</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Studentnummeret og passordet ditt skal være det samme som i skolens system. TigerDuck lagrer dette passordet bare kryptert på denne enheten og laster det aldri opp.</string>
     <string name="school_mail_sign_in_prompt_title">Logg på Skolepost</string>
     <string name="school_mail_source_failed">Kildekoden kunne ikke lastes inn.</string>
+    <string name="school_mail_storage_delete_message">E-posten din blir værende på skolens server. Den lastes ned igjen neste gang du åpner Skolepost, og frem til da finner søket kanskje ikke alt.</string>
+    <string name="school_mail_storage_delete_title">Vil du slette nedlastet e-post?</string>
+    <string name="school_mail_storage_footer">Lastes ned så du kan søke i all e-posten din og bla i den uten å vente.</string>
+    <string name="school_mail_storage_title">Nedlastet e-post</string>
     <string name="school_mail_subject">Emne</string>
     <string name="school_mail_to">Til</string>
     <string name="school_mail_too_large">Vedlegg overskrider grensen på 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Grensesnittsstil</string>
     <string name="settings_whats_new">Hva er nytt</string>
     <string name="share_code_needs_update_message">Denne delingskoden krever en nyere versjon av appen.</string>
+    <string name="sign_in_change_account_title">Bytt konto</string>
     <string name="sign_in_password">Passord</string>
     <string name="sign_in_student_id">Studentnummer</string>
     <string name="source_code_picker_current_app_badge">Denne appen</string>

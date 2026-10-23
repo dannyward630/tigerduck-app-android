@@ -31,6 +31,7 @@
     <string name="action_allow">Engedélyezés</string>
     <string name="action_back">Vissza</string>
     <string name="action_cancel">Mégse</string>
+    <string name="action_change">Csere</string>
     <string name="action_clear_text">Szöveg törlése</string>
     <string name="action_close">Bezárás</string>
     <string name="action_confirm">Megerősítés</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Rózsaszín</string>
     <string name="color_name_purple">Lila</string>
     <string name="color_name_red">Piros</string>
+    <string name="color_name_wallpaper">Háttérkép színei</string>
     <string name="color_picker_apply">Alkalmazás</string>
     <string name="color_picker_custom">Egyéni</string>
     <string name="color_picker_presets_note">Előre beállított színek</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Megnyitja ezt a mellékletet?</string>
     <string name="school_mail_save_draft">Piszkozat mentése</string>
     <string name="school_mail_saved">Mentve</string>
+    <string name="school_mail_search_index_partial">Még nem töltődött le minden levél. A keresés néhány régebbi levelet esetleg nem talál meg.</string>
     <string name="school_mail_search_local_only">A szerver nem tudja végrehajtani ezt a keresést. Csak a már betöltött üzenetek közötti találatok jelennek meg.</string>
     <string name="school_mail_search_prompt">Üzenetek keresése</string>
     <string name="school_mail_send">Küldés</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">A hallgatói azonosítónak és a jelszónak meg kell egyeznie az egyetemi rendszerben használttal. A TigerDuck alkalmazás ezt a jelszót csak titkosítva tárolja ezen az eszközön, és soha nem tölti fel.</string>
     <string name="school_mail_sign_in_prompt_title">Bejelentkezés az iskolai postába</string>
     <string name="school_mail_source_failed">Nem sikerült betölteni a forrást.</string>
+    <string name="school_mail_storage_delete_message">A levelei az iskola szerverén maradnak. A következő alkalommal, amikor megnyitja az Iskolai postát, újra letöltődnek, addig a keresés nem biztos, hogy mindent megtalál.</string>
+    <string name="school_mail_storage_delete_title">Törli a letöltött leveleket?</string>
+    <string name="school_mail_storage_footer">A levelek letöltődnek, hogy az összesben kereshessen, és várakozás nélkül görgethesse őket.</string>
+    <string name="school_mail_storage_title">Letöltött levelek</string>
     <string name="school_mail_subject">Tárgy</string>
     <string name="school_mail_to">Címzett</string>
     <string name="school_mail_too_large">A mellékletek meghaladják az 50 MB-os korlátot</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Felület stílusa</string>
     <string name="settings_whats_new">Újdonságok</string>
     <string name="share_code_needs_update_message">Ehhez a megosztási kódhoz az alkalmazás újabb verziója szükséges.</string>
+    <string name="sign_in_change_account_title">Fiók cseréje</string>
     <string name="sign_in_password">Jelszó</string>
     <string name="sign_in_student_id">Hallgatói azonosító</string>
     <string name="source_code_picker_current_app_badge">Jelenlegi app</string>

@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -15,6 +16,13 @@ import org.ntust.app.tigerduck.mail.store.MailCache
 class SentCopyNoticesTest {
     @get:Rule val tmp = TemporaryFolder()
 
+    // What the account and the notices launch, joined before TemporaryFolder deletes the cache
+    // a sign-out may still be wiping there.
+    private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
+
     private val server = FakeMailServer().apply { passwords["B10000002"] = "pw2" }
     private lateinit var account: MailAccount
     private lateinit var notices: SentCopyNotices
@@ -22,7 +30,7 @@ class SentCopyNoticesTest {
     @Before
     fun setUp() {
         account = MailAccount(InMemoryCredentialStore(), InMemoryMailStateStore(), server.factory(), MailCache(tmp.root),
-            FakeDemoGate(), schoolMailSite(), RecordingScheduler(), RecordingNotifier(), testApplicationScope())
+            FakeDemoGate(), schoolMailSite(), RecordingScheduler(), RecordingNotifier(), appScope)
         runBlocking { account.signIn("b10000001", "pw") }
         // Unconfined, so a sign-out's cleanup has run by the time the call that caused it returns.
         notices = SentCopyNotices(account, CoroutineScope(SupervisorJob() + Dispatchers.Unconfined))

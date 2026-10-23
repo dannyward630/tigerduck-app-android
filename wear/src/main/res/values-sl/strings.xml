@@ -31,6 +31,7 @@
     <string name="action_allow">Dovoli</string>
     <string name="action_back">Nazaj</string>
     <string name="action_cancel">Prekliči</string>
+    <string name="action_change">Zamenjaj</string>
     <string name="action_clear_text">Počisti besedilo</string>
     <string name="action_close">Zapri</string>
     <string name="action_confirm">Potrdi</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Roza</string>
     <string name="color_name_purple">Vijolična</string>
     <string name="color_name_red">Rdeča</string>
+    <string name="color_name_wallpaper">Barve ozadja</string>
     <string name="color_picker_apply">Uporabi</string>
     <string name="color_picker_custom">Po meri</string>
     <string name="color_picker_presets_note">Privzete barve</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Želite odpreti to prilogo?</string>
     <string name="school_mail_save_draft">Shrani osnutek</string>
     <string name="school_mail_saved">Shranjeno</string>
+    <string name="school_mail_search_index_partial">Vsa pošta še ni prenesena. Iskanje morda ne bo našlo nekaterih starejših sporočil.</string>
     <string name="school_mail_search_local_only">Strežnik ne podpira tega iskanja. Prikazani so rezultati samo iz že naloženih sporočil.</string>
     <string name="school_mail_search_prompt">Iskanje po pošti</string>
     <string name="school_mail_send">Pošlji</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Vaša študentska številka in geslo morata biti enaka kot v šolskem sistemu. TigerDuck to geslo shrani šifrirano samo na tej napravi in ga nikoli ne naloži v splet.</string>
     <string name="school_mail_sign_in_prompt_title">Prijavite se v šolsko pošto</string>
     <string name="school_mail_source_failed">Izvorne kode ni bilo mogoče naložiti.</string>
+    <string name="school_mail_storage_delete_message">Vaša pošta ostane na strežniku šole. Znova se bo prenesla, ko boste naslednjič odprli Šolsko pošto, do takrat pa iskanje morda ne bo našlo vsega.</string>
+    <string name="school_mail_storage_delete_title">Želite izbrisati preneseno pošto?</string>
+    <string name="school_mail_storage_footer">Prenese se, da lahko iščete po vsej pošti in se po njej pomikate brez čakanja.</string>
+    <string name="school_mail_storage_title">Prenesena pošta</string>
     <string name="school_mail_subject">Zadeva</string>
     <string name="school_mail_to">Komu</string>
     <string name="school_mail_too_large">Priloge presegajo omejitev 50 MB</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Slog vmesnika</string>
     <string name="settings_whats_new">Kaj je novega</string>
     <string name="share_code_needs_update_message">Ta koda za deljenje zahteva novejšo različico aplikacije.</string>
+    <string name="sign_in_change_account_title">Zamenjava računa</string>
     <string name="sign_in_password">Geslo</string>
     <string name="sign_in_student_id">Študentska številka</string>
     <string name="source_code_picker_current_app_badge">Ta aplikacija</string>

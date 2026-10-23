@@ -31,6 +31,7 @@
     <string name="action_allow">Leisti</string>
     <string name="action_back">Atgal</string>
     <string name="action_cancel">Atšaukti</string>
+    <string name="action_change">Pakeisti</string>
     <string name="action_clear_text">Išvalyti tekstą</string>
     <string name="action_close">Uždaryti</string>
     <string name="action_confirm">Patvirtinti</string>
@@ -271,6 +272,7 @@
     <string name="color_name_pink">Rožinė</string>
     <string name="color_name_purple">Violetinė</string>
     <string name="color_name_red">Raudona</string>
+    <string name="color_name_wallpaper">Ekrano fono spalvos</string>
     <string name="color_picker_apply">Taikyti</string>
     <string name="color_picker_custom">Pasirinktinė</string>
     <string name="color_picker_presets_note">Iš anksto nustatytos spalvos</string>
@@ -809,6 +811,7 @@
     <string name="school_mail_risky_title">Atidaryti šį priedą?</string>
     <string name="school_mail_save_draft">Išsaugoti juodraštį</string>
     <string name="school_mail_saved">Išsaugota</string>
+    <string name="school_mail_search_index_partial">Dar ne visi laiškai atsisiųsti. Paieška gali nerasti kai kurių senesnių laiškų.</string>
     <string name="school_mail_search_local_only">Serveris negali atlikti šios paieškos. Rodomi tik jau įkeltų laiškų atitikmenys.</string>
     <string name="school_mail_search_prompt">Ieškoti laiškų</string>
     <string name="school_mail_send">Siųsti</string>
@@ -829,6 +832,10 @@
     <string name="school_mail_sign_in_note">Jūsų studento ID ir slaptažodis turėtų būti tokie patys kaip mokyklos sistemoje. TigerDuck šį slaptažodį saugo tik užšifruotą šiame įrenginyje ir niekada neįkelia į serverį.</string>
     <string name="school_mail_sign_in_prompt_title">Prisijunkite prie mokyklos pašto</string>
     <string name="school_mail_source_failed">Nepavyko įkelti pirminio kodo.</string>
+    <string name="school_mail_storage_delete_message">Jūsų laiškai lieka mokyklos serveryje. Jie bus atsisiųsti iš naujo, kai kitą kartą atidarysite Mokyklos paštą, o iki tol paieška gali rasti ne viską.</string>
+    <string name="school_mail_storage_delete_title">Ištrinti atsisiųstus laiškus?</string>
+    <string name="school_mail_storage_footer">Atsisiunčiami, kad galėtumėte ieškoti visuose laiškuose ir juos naršyti nelaukdami.</string>
+    <string name="school_mail_storage_title">Atsisiųsti laiškai</string>
     <string name="school_mail_subject">Tema</string>
     <string name="school_mail_to">Kam</string>
     <string name="school_mail_too_large">Priedai viršija 50 MB ribą</string>
@@ -1018,6 +1025,7 @@
     <string name="settings_visual_preset_label">Sąsajos stilius</string>
     <string name="settings_whats_new">Kas naujo</string>
     <string name="share_code_needs_update_message">Šiam bendrinimo kodui reikia naujesnės programėlės versijos.</string>
+    <string name="sign_in_change_account_title">Pakeisti paskyrą</string>
     <string name="sign_in_password">Slaptažodis</string>
     <string name="sign_in_student_id">Studento ID</string>
     <string name="source_code_picker_current_app_badge">Ši programa</string>
