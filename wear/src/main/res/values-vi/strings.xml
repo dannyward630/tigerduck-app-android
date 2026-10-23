@@ -346,6 +346,7 @@
     <string name="course_member_department_tx_short">Materials Science and Engineering</string>
     <string name="course_member_email">Email</string>
     <string name="course_member_groups">Nhóm</string>
+    <string name="course_member_profile_picture">Ảnh hồ sơ</string>
     <string name="course_members_auditors">Sinh viên dự thính</string>
     <string name="course_members_students">Sinh viên</string>
     <string name="course_members_tas">Trợ giảng</string>
@@ -441,6 +442,7 @@
     <string name="error_invalid_server_response">Phản hồi máy chủ không hợp lệ</string>
     <string name="error_library_credentials_not_found">Không tìm thấy thông tin đăng nhập thư viện</string>
     <string name="error_library_sign_in_failed_format">Đăng nhập thư viện thất bại: %1$@</string>
+    <string name="error_link_no_app">Không có ứng dụng nào mở được liên kết này</string>
     <string name="error_moodle_http_status_format">Moodle trả về trạng thái HTTP không mong đợi: %1$d</string>
     <string name="error_moodle_invalid_credentials">Moodle từ chối thông tin đăng nhập hiện tại.</string>
     <string name="error_moodle_invalid_token">Token Moodle không còn hiệu lực; cần cấp quyền lại.</string>
@@ -910,6 +912,9 @@
     <string name="settings_analytics_description">Chia sẻ dữ liệu sử dụng ẩn danh (trang đã truy cập, sử dụng widget) để giúp cải thiện TigerDuck</string>
     <string name="settings_analytics_enabled">Phân tích sử dụng</string>
     <string name="settings_api_endpoint">Điểm cuối API</string>
+    <string name="settings_api_endpoint_change_alert_confirm">Đổi</string>
+    <string name="settings_api_endpoint_change_alert_message">Sau khi đăng nhập, điểm cuối này sẽ nhận mã sinh viên và token Moodle của bạn. Tất cả tài khoản đang đăng nhập sẽ bị đăng xuất.</string>
+    <string name="settings_api_endpoint_change_alert_title">Đổi điểm cuối API?</string>
     <string name="settings_api_endpoint_change_title">Đổi điểm cuối</string>
     <string name="settings_api_endpoint_checking">Đang kiểm tra…</string>
     <string name="settings_api_endpoint_effective_title">Điểm cuối hiện tại</string>
@@ -980,7 +985,6 @@
     <string name="settings_pin_today_courses_on_class_table">Ghim môn học hôm nay lên đầu thời khoá biểu</string>
     <string name="settings_privacy_policy">Chính sách quyền riêng tư</string>
     <string name="settings_push_server_nav_label">Đẩy máy chủ</string>
-    <string name="settings_remember_bulletin_filter">Ghi nhớ bộ lọc bản tin</string>
     <string name="settings_reset_course_colors">Gán lại màu khóa học</string>
     <string name="settings_reset_course_colors_confirm_message">Mỗi khóa học sẽ nhận màu mới, không trùng — trước hết từ bảng màu định sẵn, sau đó ngẫu nhiên khi đã dùng hết.</string>
     <string name="settings_reset_course_colors_confirm_title">Gán lại màu khóa học?</string>
@@ -1013,6 +1017,7 @@
     <string name="settings_view_source_code">Xem mã nguồn</string>
     <string name="settings_visual_preset_label">Giao diện</string>
     <string name="settings_whats_new">Có gì mới</string>
+    <string name="share_code_needs_update_message">Mã chia sẻ này cần phiên bản ứng dụng mới hơn.</string>
     <string name="sign_in_password">Mật khẩu</string>
     <string name="sign_in_student_id">Mã số sinh viên</string>
     <string name="source_code_picker_current_app_badge">Ứng dụng hiện tại</string>
@@ -1054,12 +1059,10 @@
     <string name="sync_status_failed">Thất bại</string>
     <string name="sync_status_hours_ago_short">%1$d g trước</string>
     <string name="sync_status_just_now">Vừa xong</string>
-    <string name="sync_status_last_synced">Đồng bộ lần cuối</string>
     <string name="sync_status_last_updated">Cập nhật lần cuối</string>
     <string name="sync_status_minimal">Giới hạn</string>
     <string name="sync_status_minutes_ago_short">%1$d ph trước</string>
     <string name="sync_status_nav_label">Trạng thái TigerSync</string>
-    <string name="sync_status_never_synced">Chưa bao giờ đồng bộ</string>
     <string name="sync_status_never_updated">Chưa bao giờ cập nhật</string>
     <string name="sync_status_ok">Bình thường</string>
     <string name="sync_status_syncing">Đang đồng bộ…</string>
