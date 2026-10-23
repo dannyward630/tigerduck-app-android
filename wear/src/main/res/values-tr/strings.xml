@@ -272,6 +272,7 @@
     <string name="color_name_pink">Pembe</string>
     <string name="color_name_purple">Mor</string>
     <string name="color_name_red">Kırmızı</string>
+    <string name="color_name_wallpaper">Duvar kağıdı renkleri</string>
     <string name="color_picker_apply">Uygula</string>
     <string name="color_picker_custom">Özel</string>
     <string name="color_picker_presets_note">Hazır renkler</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">Bu ek açılsın mı?</string>
     <string name="school_mail_save_draft">Taslağı kaydet</string>
     <string name="school_mail_saved">Kaydedildi</string>
+    <string name="school_mail_search_index_partial">Postalar hâlâ indiriliyor. Arama bazı eski postaları bulamayabilir.</string>
     <string name="school_mail_search_local_only">Sunucu bu aramayı gerçekleştiremiyor. Yalnızca yüklenmiş postalardaki sonuçlar gösteriliyor.</string>
     <string name="school_mail_search_prompt">Postada ara</string>
     <string name="school_mail_send">Gönder</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">Öğrenci numaranız ve şifreniz okul sistemindekiyle aynı olmalıdır. TigerDuck uygulaması bu şifreyi yalnızca bu cihazda şifreli olarak saklar ve hiçbir zaman yüklemez.</string>
     <string name="school_mail_sign_in_prompt_title">Okul postasına giriş yapın</string>
     <string name="school_mail_source_failed">Kaynak yüklenemedi.</string>
+    <string name="school_mail_storage_delete_message">Postalarınız okulun sunucusunda kalır. Okul Postası\'nı bir sonraki açışınızda yeniden indirilir; o zamana kadar arama bazılarını bulamayabilir.</string>
+    <string name="school_mail_storage_delete_title">İndirilen postalar silinsin mi?</string>
+    <string name="school_mail_storage_footer">Tüm postalarınızda arama yapabilmeniz ve beklemeden kaydırabilmeniz için indirilir.</string>
+    <string name="school_mail_storage_title">İndirilen postalar</string>
     <string name="school_mail_subject">Konu</string>
     <string name="school_mail_to">Kime</string>
     <string name="school_mail_too_large">Ekler 50 MB sınırını aşıyor</string>

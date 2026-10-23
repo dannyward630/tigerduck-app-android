@@ -272,6 +272,7 @@
     <string name="color_name_pink">Roza</string>
     <string name="color_name_purple">Ljubičasta</string>
     <string name="color_name_red">Crvena</string>
+    <string name="color_name_wallpaper">Boje pozadine</string>
     <string name="color_picker_apply">Primijeni</string>
     <string name="color_picker_custom">Prilagođeno</string>
     <string name="color_picker_presets_note">Zadane boje</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">Otvoriti ovaj privitak?</string>
     <string name="school_mail_save_draft">Spremi skicu</string>
     <string name="school_mail_saved">Spremljeno</string>
+    <string name="school_mail_search_index_partial">Pošta se još preuzima. Pretraživanje možda neće pronaći neke starije poruke.</string>
     <string name="school_mail_search_local_only">Poslužitelj ne podržava ovu pretragu. Prikazuju se rezultati samo iz učitanih poruka.</string>
     <string name="school_mail_search_prompt">Pretraži poštu</string>
     <string name="school_mail_send">Pošalji</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">Vaš studentski broj i lozinka trebaju biti isti kao u školskom sustavu. TigerDuck tu lozinku pohranjuje samo šifrirano na ovom uređaju i nikada je ne učitava.</string>
     <string name="school_mail_sign_in_prompt_title">Prijavite se u školsku poštu</string>
     <string name="school_mail_source_failed">Izvorni kod nije moguće učitati.</string>
+    <string name="school_mail_storage_delete_message">Vaša pošta ostaje na poslužitelju škole. Ponovno će se preuzeti kad sljedeći put otvorite Školsku poštu, a dotad pretraživanje možda neće pronaći sve.</string>
+    <string name="school_mail_storage_delete_title">Izbrisati preuzetu poštu?</string>
+    <string name="school_mail_storage_footer">Preuzima se kako biste mogli pretraživati svu poštu i pregledavati je bez čekanja.</string>
+    <string name="school_mail_storage_title">Preuzeta pošta</string>
     <string name="school_mail_subject">Predmet</string>
     <string name="school_mail_to">Prima</string>
     <string name="school_mail_too_large">Privici prelaze ograničenje od 50 MB</string>
