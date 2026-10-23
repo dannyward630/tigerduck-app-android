@@ -358,10 +358,11 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         _changes.emit(MailChange.Seen(folder, uid, seen, generation))
     }
 
-    override suspend fun move(folder: String, uid: Long, target: String, stillWanted: () -> Boolean) {
+    override suspend fun move(folder: String, uid: Long, target: String, uidValidity: Long?, stillWanted: () -> Boolean) {
         val generation = generation()
         writeQueueGate?.await()
         unlessAbandoned(stillWanted)
+        refuseUnder(uidValidity)
         writeGate?.await()
         foldersTouched += folder
         foldersTouched += target
@@ -376,6 +377,14 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         _changes.emit(MailChange.Changed(target, generation))
     }
 
+    /**
+     * As the server answers a write's SELECT: a UID read under another UIDVALIDITY than the
+     * folders have now ([pageValidity]) names another mail, and nothing is sent.
+     */
+    private fun refuseUnder(uidValidity: Long?) {
+        if (uidValidity != null && uidValidity != pageValidity) throw MailError.FolderChanged()
+    }
+
     /** Mirrors the real repository: permanent inside the trash, and permanent everywhere when the account has no trash folder and none could be created. */
     override suspend fun deletesPermanently(folder: String, stillWanted: () -> Boolean): Boolean {
         trashGate?.await()
@@ -384,10 +393,11 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         return touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
     }
 
-    override suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean) {
+    override suspend fun delete(folder: String, uid: Long, uidValidity: Long?, stillWanted: () -> Boolean) {
         val generation = generation()
         writeQueueGate?.await()
         unlessAbandoned(stillWanted)
+        refuseUnder(uidValidity)
         writeGate?.await()
         foldersTouched += folder
         deleteError?.let { throw it }

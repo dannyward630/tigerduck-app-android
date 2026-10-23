@@ -2976,4 +2976,21 @@ class SchoolMailListViewModelTest {
         assertNull(vm.state.value.pendingDelete)
         assertNull(vm.state.value.actionError)
     }
+
+    @Test
+    fun `a delete or move asked before its folder was recreated, unseen by the list, is refused by the server`() {
+        val trash = repo.resolved.nameOf(SpecialFolder.TRASH)!!
+        repo.add(trash, mailSummary(7))
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        vm.selectFolder(FolderSelection.Real(trash))
+        vm.delete(vm.state.value.displayed.single())
+        // While the question is up the trash is recreated on the server, and no page of it has
+        // reached the list: only the server can tell.
+        repo.pageValidity = 2
+        vm.confirmDelete(true)
+        assertTrue("a permanent delete went out under another UIDVALIDITY", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+        assertTrue(vm.state.value.writing.isEmpty())
+    }
 }

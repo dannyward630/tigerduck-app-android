@@ -647,7 +647,7 @@ class SchoolMailListViewModel @Inject constructor(
     fun confirmDelete(confirm: Boolean) {
         val pending = _state.value.pendingDelete ?: return
         _state.update { it.copy(pendingDelete = null) }
-        if (confirm) write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted -> repository.delete(row.folder, row.uid, stillWanted) }
+        if (confirm) write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted -> repository.delete(row.folder, row.uid, pending.uidValidity, stillWanted) }
     }
 
     /**
@@ -695,7 +695,7 @@ class SchoolMailListViewModel @Inject constructor(
         val pending = _state.value.pendingMove ?: return
         _state.update { it.copy(pendingMove = null) }
         write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted ->
-            repository.move(row.folder, row.uid, target, stillWanted)
+            repository.move(row.folder, row.uid, target, pending.uidValidity, stillWanted)
             if (stillWanted() && target in _state.value.targets) refetch()
         }
     }
@@ -721,7 +721,9 @@ class SchoolMailListViewModel @Inject constructor(
      * the one the list had when the question was asked: the folder was recreated on the server
      * while the question was up -- a poll's page can land meanwhile -- and the UID names another
      * mail there. The repository's own check compares the server with its cache, which that page
-     * has replaced by then, so it would let the write through.
+     * has replaced by then, so it would let the write through. A folder recreated with no page of
+     * it on the list yet is refused by the server as the write selects it, since the write carries
+     * [uidValidity] there too ([SchoolMailRepository.move]).
      *
      * The row leaves the list through the repository's feed ([apply]), as a swipe's mark-read
      * changes it ([toggleRead]), and not here as well: a write held on the connection can end

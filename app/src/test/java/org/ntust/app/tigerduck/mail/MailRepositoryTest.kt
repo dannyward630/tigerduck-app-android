@@ -241,6 +241,45 @@ class MailRepositoryTest {
         assertEquals(listOf("a"), server.subjects("INBOX"))
     }
 
+    /**
+     * A folder recreated on the server after the caller read its UID, whose page has replaced the
+     * cache since: the cache now agrees with the server, so only the UIDVALIDITY the caller read
+     * the UID under can tell that the UID names another mail. Neither a move nor a delete -- in
+     * the trash, a permanent one -- touches it.
+     */
+    @Test
+    fun `a move or delete of a mail read before its folder was recreated touches the new folder's mail not at all`() = runTest {
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val trash = repo.folders().nameOf(SpecialFolder.TRASH)!!
+        val inboxUid = server.deliver("read before")
+        val trashUid = server.deliver("deleted before", folder = trash)
+        repo.loadPage("INBOX", null)
+        repo.loadPage(trash, null)
+        val read = server.uidValidity
+
+        // Both folders are recreated, and the same UIDs given to other mail.
+        server.uidValidity = read + 1
+        server.folders["INBOX"] = mutableListOf()
+        server.folders[trash] = mutableListOf()
+        server.nextUid = inboxUid
+        server.deliver("another")
+        server.nextUid = trashUid
+        server.deliver("another in the trash", folder = trash)
+        repo.loadPage("INBOX", null)
+        repo.loadPage(trash, null)
+
+        val moved = runCatching { repo.move("INBOX", inboxUid, trash, uidValidity = read) }
+        val deleted = runCatching { repo.delete(trash, trashUid, uidValidity = read) }
+
+        assertTrue(moved.exceptionOrNull() is MailError.FolderChanged)
+        assertTrue(deleted.exceptionOrNull() is MailError.FolderChanged)
+        assertEquals(listOf("another"), server.subjects("INBOX"))
+        assertEquals(listOf("another in the trash"), server.subjects(trash))
+        // The cache was of the folder as it is, and stays.
+        assertEquals(listOf("another"), repo.cachedPage("INBOX")!!.messages.map { it.subject })
+    }
+
     /** The folder list a first request resolves is a request too, and asked the same question. */
     @Test
     fun `a departed account's inbox status resolves no folders for the next one`() = runTest {

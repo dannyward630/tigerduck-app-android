@@ -156,14 +156,20 @@ interface SchoolMailRepository {
      * [stillWanted] as on [loadPage], for the COPY and STORE the move sends: a move confirmed for
      * one student that waited for the session while another signed in over them would otherwise
      * move a mail of theirs with the same UID.
+     *
+     * [uidValidity], when the caller has it, is the UIDVALIDITY [uid] was read under, checked
+     * against the server's as the folder is selected for the write ([MailSession.move]): a folder
+     * recreated since ends the call with [MailError.FolderChanged] and nothing sent, even when the
+     * cache has been replaced by a page of the new folder meanwhile, which the cache's own check
+     * would let through.
      */
-    suspend fun move(folder: String, uid: Long, target: String, stillWanted: () -> Boolean = { true })
+    suspend fun move(folder: String, uid: Long, target: String, uidValidity: Long? = null, stillWanted: () -> Boolean = { true })
 
     /** [stillWanted] as on [move], for the LIST and CREATE a missing trash costs. */
     suspend fun deletesPermanently(folder: String, stillWanted: () -> Boolean = { true }): Boolean
 
-    /** [stillWanted] as on [move]. */
-    suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean = { true })
+    /** [uidValidity] and [stillWanted] as on [move]. */
+    suspend fun delete(folder: String, uid: Long, uidValidity: Long? = null, stillWanted: () -> Boolean = { true })
 
     /** [stillWanted] as on [loadPage]. */
     suspend fun search(folder: String, query: String, stillWanted: () -> Boolean = { true }): SearchOutcome
@@ -445,7 +451,7 @@ class MailRepository @Inject constructor(
         _changes.emit(MailChange.Seen(folder, uid, seen, generation))
     }
 
-    override suspend fun move(folder: String, uid: Long, target: String, stillWanted: () -> Boolean) {
+    override suspend fun move(folder: String, uid: Long, target: String, uidValidity: Long?, stillWanted: () -> Boolean) {
         val generation = account.accountGeneration
         if (account.isDemo) {
             synchronized(demoFolders) {
@@ -457,7 +463,7 @@ class MailRepository @Inject constructor(
                 }
             }
         } else {
-            runExpunging(folder, uid, stillWanted) { session, owned -> session.move(folder, uid, target, owned) }
+            runExpunging(folder, uid, stillWanted) { session, owned -> session.move(folder, uid, target, owned, uidValidity) }
             removeCached(folder, uid, stillWanted)
         }
         _changes.emit(MailChange.Removed(folder, uid, generation))
@@ -500,13 +506,13 @@ class MailRepository @Inject constructor(
         return ensureFolder(SpecialFolder.TRASH, stillWanted)
     }
 
-    override suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean) {
+    override suspend fun delete(folder: String, uid: Long, uidValidity: Long?, stillWanted: () -> Boolean) {
         val generation = account.accountGeneration
-        trashFor(folder, stillWanted)?.let { return move(folder, uid, it, stillWanted) }
+        trashFor(folder, stillWanted)?.let { return move(folder, uid, it, uidValidity, stillWanted) }
         if (account.isDemo) {
             demoMutate(folder) { it.removeAll { m -> m.summary.uid == uid } }
         } else {
-            runExpunging(folder, uid, stillWanted) { session, owned -> session.deletePermanently(folder, uid, owned) }
+            runExpunging(folder, uid, stillWanted) { session, owned -> session.deletePermanently(folder, uid, owned, uidValidity) }
             removeCached(folder, uid, stillWanted)
         }
         _changes.emit(MailChange.Removed(folder, uid, generation))
@@ -759,7 +765,11 @@ class MailRepository @Inject constructor(
      *   cache is dropped and [MailError.FolderChanged] is thrown before
      *   anything is touched -- a stale cached UID must never be acted on, or
      *   keyed into the owned-\Deleted set, under a numbering the server has
-     *   since replaced.
+     *   since replaced. The UIDVALIDITY the caller read its UID under, which a
+     *   page of the new folder may have put in the cache as well by then, is
+     *   checked by [op]'s session as it selects the folder for the write
+     *   ([MailSession.move]). Either way [MailError.FolderChanged] means
+     *   nothing was sent, and a list of the folder is told to fetch it again.
      * - If [op] throws after possibly already landing its COPY + flag on the
      *   server, the UID is added to the owned-\Deleted set only when a fresh
      *   [MailSession.refreshFlags] confirms it is actually flagged \Deleted
@@ -792,11 +802,13 @@ class MailRepository @Inject constructor(
         val alreadyDeleted = cached?.messages?.firstOrNull { it.uid == uid }?.flags?.deleted == true
         var validity = 0L
         var attempted = false
+        var cacheStale = false
         try {
             withSession(stillWanted) { session ->
                 val serverValidity = session.status(folder).uidValidity
                 validity = serverValidity
                 if (cachedValidity != null && cachedValidity != serverValidity) {
+                    cacheStale = true
                     throw MailError.FolderChanged()
                 }
                 val owned = state.ownedDeleted(folder, serverValidity)
@@ -808,8 +820,10 @@ class MailRepository @Inject constructor(
                 state.setOwnedDeleted(folder, serverValidity, if (expunged) emptySet() else owned + uid)
             }
         } catch (e: MailError) {
-            if (!attempted && e is MailError.FolderChanged) {
-                withContext(Dispatchers.IO) { cache.deleteFolder(folder) }
+            if (e is MailError.FolderChanged) {
+                // Nothing was sent, so there is nothing to record. The cache goes only when it was
+                // the stale one: one the caller's UID was older than holds the folder as it is.
+                if (cacheStale) withContext(Dispatchers.IO) { cache.deleteFolder(folder) }
                 // A list of the folder holds rows of the mailbox the server has replaced.
                 _changes.emit(MailChange.Changed(folder, generation))
             } else if (attempted && !alreadyDeleted && e !is MailError.AuthFailed && e !is MailError.Certificate) {

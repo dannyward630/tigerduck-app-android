@@ -401,8 +401,9 @@ class AngusMailSession internal constructor(
         Unit
     }
 
-    override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>): Boolean = io {
+    override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long?): Boolean = io {
         val f = folder(folder, Folder.READ_WRITE)
+        requireUidValidity(f, uidValidity)
         val m = message(f, uid)
         // If copyMessages throws (e.g. target doesn't exist), we return here
         // and never reach setFlag below, so uid is not left \Deleted.
@@ -411,10 +412,19 @@ class AngusMailSession internal constructor(
         expungeIfOnlyOurs(f, ownedDeleted + uid)
     }
 
-    override fun deletePermanently(folder: String, uid: Long, ownedDeleted: Set<Long>): Boolean = io {
+    override fun deletePermanently(folder: String, uid: Long, ownedDeleted: Set<Long>, uidValidity: Long?): Boolean = io {
         val f = folder(folder, Folder.READ_WRITE)
+        requireUidValidity(f, uidValidity)
         message(f, uid).setFlag(Flags.Flag.DELETED, true)
         expungeIfOnlyOurs(f, ownedDeleted + uid)
+    }
+
+    /**
+     * The folder just selected for a write numbers its mail under [uidValidity], the one the
+     * caller read its UID under, or nothing is sent: under another the UID names another mail.
+     */
+    private fun requireUidValidity(f: IMAPFolder, uidValidity: Long?) {
+        if (uidValidity != null && f.uidValidity != uidValidity) throw MailError.FolderChanged()
     }
 
     override fun search(folder: String, query: String): List<Long> = io {
