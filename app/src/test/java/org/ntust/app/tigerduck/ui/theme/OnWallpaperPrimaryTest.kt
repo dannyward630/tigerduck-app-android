@@ -9,6 +9,9 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PixelMap
@@ -70,6 +73,7 @@ class OnWallpaperPrimaryTest {
             CalendarEvent("a", "Lab report", Date.from(day.atTime(23, 59).atZone(taipei).toInstant()), EventSource.MOODLE.raw),
             CalendarEvent("b", "Career fair", Date.from(day.atTime(9, 30).atZone(taipei).toInstant()), EventSource.SCHOOL.raw),
         )
+        var withEvents by mutableStateOf(false)
         TigerDuckTheme.setDarkMode(true)
         composeRule.setContent {
             TigerDuckAppTheme(darkTheme = true, useDynamicColor = true) {
@@ -77,18 +81,24 @@ class OnWallpaperPrimaryTest {
                     CalendarGrid(
                         monthDate = LocalDate.of(2026, 10, 1).toDate(),
                         selectedDate = day.toDate(),
-                        eventsByDay = mapOf(day to events),
+                        eventsByDay = if (withEvents) mapOf(day to events) else emptyMap(),
                         onDateSelected = {},
                     )
                 }
             }
         }
-
-        val cell = composeRule.onNodeWithContentDescription("Wednesday, October 14, 2026, 2 events")
+        val bare = composeRule.onNodeWithContentDescription("Wednesday, October 14, 2026, 0 events")
             .captureToImage().toPixelMap()
-        assertTrue("the cell is filled with the wallpaper's primary", cell.count(wallpaper.primary) > 0)
-        assertEquals("nothing on the cell is white", 0, cell.count(Color.White))
-        assertTrue("its number and dots are onPrimary", cell.count(wallpaper.onPrimary) > 0)
+        composeRule.runOnIdle { withEvents = true }
+        val dotted = composeRule.onNodeWithContentDescription("Wednesday, October 14, 2026, 2 events")
+            .captureToImage().toPixelMap()
+
+        assertTrue("the cell is filled with the wallpaper's primary", dotted.count(wallpaper.primary) > 0)
+        assertTrue("the day number is onPrimary", bare.count(wallpaper.onPrimary) > 0)
+        assertEquals("nothing on the cell is white", 0, dotted.count(Color.White))
+        // The two 4dp dots add their own onPrimary under the number.
+        val dots = dotted.count(wallpaper.onPrimary) - bare.count(wallpaper.onPrimary)
+        assertTrue("the dots add $dots onPrimary pixels", dots >= 8)
     }
 
     @Test
