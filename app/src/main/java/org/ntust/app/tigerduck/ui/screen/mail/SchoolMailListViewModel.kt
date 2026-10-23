@@ -28,6 +28,7 @@ import org.ntust.app.tigerduck.mail.SentCopyOrigin
 import org.ntust.app.tigerduck.mail.matchesLoadedMail
 import org.ntust.app.tigerduck.mail.imap.FolderSelection
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.MailPage
 import org.ntust.app.tigerduck.mail.model.MailRow
 import org.ntust.app.tigerduck.mail.model.MailSummary
@@ -143,6 +144,9 @@ class SchoolMailListViewModel @Inject constructor(
     }
 
     val signedIn: StateFlow<Boolean> = account.signedIn
+
+    /** How far the download of every mail into the search index has come; null when none is under way. */
+    val searchIndexProgress: StateFlow<MailIndexProgress?> = repository.searchIndexProgress
     val authFailed: StateFlow<Boolean> = account.authFailed
 
     /** The user closed the sign-in-failed banner; cleared each time [authFailed] changes. */

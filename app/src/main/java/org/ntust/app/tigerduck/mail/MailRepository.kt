@@ -6,8 +6,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.di.ApplicationScope
@@ -19,6 +22,7 @@ import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.ResolvedFolders
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.index.MailIndexScheduler
 import org.ntust.app.tigerduck.mail.index.MailIndexer
 import org.ntust.app.tigerduck.mail.index.MailSearchIndex
@@ -171,6 +175,9 @@ interface SchoolMailRepository {
      * Long: the first run fetches the text of the whole mailbox. [stillWanted] as on [loadPage].
      */
     suspend fun updateSearchIndex(stillWanted: () -> Boolean = { true })
+
+    /** How far [updateSearchIndex] has come while it downloads; null otherwise. */
+    val searchIndexProgress: StateFlow<MailIndexProgress?>
 
     /**
      * The summaries of [uids], matches [search] left in [SearchOutcome.Server.remaining]; mail gone
@@ -552,12 +559,29 @@ class MailRepository @Inject constructor(
         }
     }
 
+    private val _searchIndexProgress = MutableStateFlow<MailIndexProgress?>(null)
+    override val searchIndexProgress: StateFlow<MailIndexProgress?> = _searchIndexProgress.asStateFlow()
+
     override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
         if (account.isDemo || indexOwner() == null) return
         val folders = folders(stillWanted)
         val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
-        for (folder in first + (folders.special.values + folders.others).filter { it !in first }) {
-            indexer.update(folder, stillWanted = stillWanted)
+        // Every folder's count first, for the progress to have one total from the start.
+        val plans = (first + (folders.special.values + folders.others).filter { it !in first })
+            .mapNotNull { indexer.plan(it, stillWanted = stillWanted) }
+        val total = plans.sumOf { it.missing.size }
+        if (total == 0) return
+        var done = 0
+        _searchIndexProgress.value = MailIndexProgress(done, total)
+        try {
+            for (plan in plans) {
+                indexer.fill(plan, stillWanted = stillWanted) { added ->
+                    done += added
+                    _searchIndexProgress.value = MailIndexProgress(done, total)
+                }
+            }
+        } finally {
+            _searchIndexProgress.value = null
         }
     }
 

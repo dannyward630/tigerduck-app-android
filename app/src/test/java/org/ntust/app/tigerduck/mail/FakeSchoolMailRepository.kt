@@ -2,11 +2,13 @@ package org.ntust.app.tigerduck.mail
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import org.ntust.app.tigerduck.mail.compose.OutgoingMail
 import org.ntust.app.tigerduck.mail.imap.ResolvedFolders
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.model.MailBody
@@ -415,6 +417,8 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
         searchIndexUpdates++
     }
+
+    override val searchIndexProgress = MutableStateFlow<MailIndexProgress?>(null)
 
     override suspend fun searchPage(folder: String, uids: List<Long>, stillWanted: () -> Boolean): SearchPage {
         foldersTouched += folder

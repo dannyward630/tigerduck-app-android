@@ -104,6 +104,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.mail.MailDevServerSettings
 import org.ntust.app.tigerduck.mail.imap.FolderSelection
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.MailRow
 import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.warning.MailWarnings
@@ -129,6 +130,8 @@ import org.ntust.app.tigerduck.ui.screen.settings.signInFieldValue
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import java.text.NumberFormat
+import java.util.Locale
 
 /** Spec §6.2 — the Announcements list pattern, over the school inbox. */
 @Composable
@@ -144,6 +147,7 @@ fun SchoolMailScreen(
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
     val authFailed by viewModel.authFailed.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val indexProgress by viewModel.searchIndexProgress.collectAsStateWithLifecycle()
     val sentCopyNotice by viewModel.sentCopyNotice.collectAsStateWithLifecycle()
     val showAuthFailedBanner by viewModel.showAuthFailedBanner.collectAsStateWithLifecycle()
     val signingIn by accountViewModel.signingIn.collectAsStateWithLifecycle()
@@ -354,6 +358,14 @@ fun SchoolMailScreen(
                         failed != null || authFailed -> ServerStatus.FAILED
                         state.loadState is SchoolMailListViewModel.LoadState.Loaded -> ServerStatus.OK
                         else -> ServerStatus.UNKNOWN
+                    }
+                    // The download of every mail for search, which the first time takes a while.
+                    indexProgress?.let { progress ->
+                        Text(
+                            indexProgressText(progress),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     SyncStatusDot(
                         status = mailStatus,
@@ -779,4 +791,10 @@ private fun SchoolMailLoginCard(
             ForgotMailPasswordLink(browserPreference)
         }
     }
+}
+
+/** [progress] as the header shows it: mail downloaded for search, of how many it lacked, as "120/3,456". */
+internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Locale.getDefault()): String {
+    val number = NumberFormat.getIntegerInstance(locale)
+    return number.format(progress.done) + "/" + number.format(progress.total)
 }

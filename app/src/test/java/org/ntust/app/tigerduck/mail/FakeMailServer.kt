@@ -75,6 +75,9 @@ class FakeMailServer {
     /** How many times a session was actually asked for a mail's body. */
     var bodyFetches = 0
 
+    /** Fires inside a body fetch, before it answers: a test reads what is on screen while one is out. */
+    var onFetchBody: (() -> Unit)? = null
+
     /** When true, `fetchBody` throws a network error instead of returning the mail's body. */
     var failBodyFetch = false
     val passwords = mutableMapOf("B10000001" to "pw")
@@ -159,6 +162,7 @@ class FakeMailServer {
 
         override fun fetchBody(folder: String, uid: Long) = call {
             bodyFetches++
+            onFetchBody?.invoke()
             if (failBodyFetch) throw MailError.Network()
             find(folder, uid).body
         }

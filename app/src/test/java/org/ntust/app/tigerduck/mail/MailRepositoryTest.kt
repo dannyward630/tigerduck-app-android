@@ -28,6 +28,8 @@ import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
 import org.ntust.app.tigerduck.mail.index.InMemoryMailSearchIndex
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
+import org.ntust.app.tigerduck.mail.index.MailIndexer
 import org.ntust.app.tigerduck.mail.index.RecordingIndexScheduler
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
@@ -538,6 +540,36 @@ class MailRepositoryTest {
         listOf("INBOX", "寄件備份匣", "草稿匣").forEach { folder ->
             assertEquals(folder, 1, setup.searchIndex.search(owner, folder, "公告").size)
         }
+    }
+
+    @Test
+    fun `the background download tells how far it has come, of one total for every folder`() = runTest {
+        repeat(7) { server.deliver("收件 $it") }
+        server.deliver("寄出", folder = "寄件備份匣")
+        val repo = TestSetup(backgroundScope).signedIn()
+        val seen = mutableListOf<MailIndexProgress?>()
+        server.onFetchBody = { seen += repo.searchIndexProgress.value }
+
+        repo.updateSearchIndex()
+
+        assertEquals(8, seen.size)
+        assertTrue(seen.all { it?.total == 8 })
+        // A batch at a time: Inbox's two, then Sent's one.
+        assertEquals(listOf(0, MailIndexer.BATCH, 7), seen.map { it!!.done }.distinct())
+        assertNull("gone once it is done", repo.searchIndexProgress.value)
+    }
+
+    @Test
+    fun `a search catching up shows no download under way`() = runTest {
+        repeat(3) { server.deliver("期中考 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+        val seen = mutableListOf<MailIndexProgress?>()
+        server.onFetchBody = { seen += repo.searchIndexProgress.value }
+
+        repo.search("INBOX", "期中")
+
+        assertTrue(seen.isNotEmpty())
+        assertTrue(seen.all { it == null })
     }
 
     @Test
