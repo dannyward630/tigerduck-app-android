@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Ouvrir cette pièce jointe ?</string>
     <string name="school_mail_save_draft">Enregistrer le brouillon</string>
     <string name="school_mail_saved">Enregistré</string>
-    <string name="school_mail_search_index_partial">Les messages sont encore en cours de téléchargement. La recherche risque de ne pas trouver certains messages plus anciens.</string>
+    <string name="school_mail_search_index_partial">Tous les messages ne sont pas encore téléchargés. La recherche risque de ne pas trouver certains messages plus anciens.</string>
     <string name="school_mail_search_local_only">Le serveur ne peut pas effectuer cette recherche. Seuls les résultats des messages déjà chargés sont affichés.</string>
     <string name="school_mail_search_prompt">Rechercher des messages</string>
     <string name="school_mail_send">Envoyer</string>

@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Відкрити це вкладення?</string>
     <string name="school_mail_save_draft">Зберегти чернетку</string>
     <string name="school_mail_saved">Збережено</string>
-    <string name="school_mail_search_index_partial">Пошта ще завантажується. Пошук може не знайти деякі старіші листи.</string>
+    <string name="school_mail_search_index_partial">Ще не вся пошта завантажена. Пошук може не знайти деякі старіші листи.</string>
     <string name="school_mail_search_local_only">Сервер не підтримує цей пошук. Показано збіги лише із завантаженої пошти.</string>
     <string name="school_mail_search_prompt">Пошук пошти</string>
     <string name="school_mail_send">Надіслати</string>

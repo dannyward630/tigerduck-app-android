@@ -5,6 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -28,6 +29,9 @@ class MailAccountTest {
     private val cache by lazy { MailCache(tmp.root) }
 
     private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
 
     private fun account() = MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope)
 
@@ -122,6 +126,46 @@ class MailAccountTest {
         assertNull(account.signIn("b10000002", "pw"))
         assertEquals(1, notifier.cancelledAll)
         assertTrue("another student starts from the default", state.notificationsEnabled)
+    }
+
+    @Test
+    fun `a refusal of a login sent under a sign-in that has left marks nothing and stops nothing`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        val before = account.accountGeneration
+        // Signed in again, as the same student with the same password.
+        account.signIn("b10000001", "pw")
+
+        account.onAuthFailure(before)
+        assertFalse(account.authFailed.value)
+        assertEquals(0, scheduler.cancelled)
+
+        account.onAuthFailure(account.accountGeneration)
+        assertTrue(account.authFailed.value)
+        assertEquals(1, scheduler.cancelled)
+    }
+
+    /**
+     * A refusal marks the account and cancels its checks in one step with a sign-in's move of the
+     * generation: a sign-in that comes while the refusal is cancelling waits for it, and keeps the
+     * checks it then schedules.
+     */
+    @Test
+    fun `a sign-in during a refusal's cancel keeps the checks it schedules`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        // The student signs in again while the refusal cancels the checks.
+        val again = SignInAgain(account, "b10000001", "pw")
+        scheduler.onCancel = {
+            scheduler.onCancel = null
+            again.during()
+        }
+
+        account.onAuthFailure(account.accountGeneration)
+        again.join()
+
+        assertEquals("the new sign-in's checks are the last word", listOf("schedule", "cancel", "schedule"), scheduler.events.toList())
+        assertFalse(account.authFailed.value)
     }
 
     @Test

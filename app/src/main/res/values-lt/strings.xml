@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Atidaryti šį priedą?</string>
     <string name="school_mail_save_draft">Išsaugoti juodraštį</string>
     <string name="school_mail_saved">Išsaugota</string>
-    <string name="school_mail_search_index_partial">Laiškai vis dar atsisiunčiami. Paieška gali nerasti kai kurių senesnių laiškų.</string>
+    <string name="school_mail_search_index_partial">Dar ne visi laiškai atsisiųsti. Paieška gali nerasti kai kurių senesnių laiškų.</string>
     <string name="school_mail_search_local_only">Serveris negali atlikti šios paieškos. Rodomi tik jau įkeltų laiškų atitikmenys.</string>
     <string name="school_mail_search_prompt">Ieškoti laiškų</string>
     <string name="school_mail_send">Siųsti</string>

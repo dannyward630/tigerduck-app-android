@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Да отворя ли този прикачен файл?</string>
     <string name="school_mail_save_draft">Запази чернова</string>
     <string name="school_mail_saved">Запазено</string>
-    <string name="school_mail_search_index_partial">Пощата все още се изтегля. Търсенето може да не намери някои по-стари писма.</string>
+    <string name="school_mail_search_index_partial">Още не е изтеглена цялата поща. Търсенето може да не намери някои по-стари писма.</string>
     <string name="school_mail_search_local_only">Сървърът не поддържа това търсене. Показват се резултати само от вече заредените имейли.</string>
     <string name="school_mail_search_prompt">Търсене в пощата</string>
     <string name="school_mail_send">Изпрати</string>

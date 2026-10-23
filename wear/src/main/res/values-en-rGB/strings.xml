@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Open this attachment?</string>
     <string name="school_mail_save_draft">Save draft</string>
     <string name="school_mail_saved">Saved</string>
-    <string name="school_mail_search_index_partial">Still downloading mail. Search may miss some older mail.</string>
+    <string name="school_mail_search_index_partial">Not all mail is downloaded yet. Search may miss some older mail.</string>
     <string name="school_mail_search_local_only">The server can\'t run this search. Showing matches from loaded mail only.</string>
     <string name="school_mail_search_prompt">Search mail</string>
     <string name="school_mail_send">Send</string>

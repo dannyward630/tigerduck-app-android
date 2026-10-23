@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Avataanko tämä liite?</string>
     <string name="school_mail_save_draft">Tallenna luonnos</string>
     <string name="school_mail_saved">Tallennettu</string>
-    <string name="school_mail_search_index_partial">Viestejä ladataan vielä. Haku ei ehkä löydä joitakin vanhempia viestejä.</string>
+    <string name="school_mail_search_index_partial">Kaikkia viestejä ei ole vielä ladattu. Haku ei ehkä löydä joitakin vanhempia viestejä.</string>
     <string name="school_mail_search_local_only">Palvelin ei voi suorittaa tätä hakua. Näytetään osumat vain ladatuista viesteistä.</string>
     <string name="school_mail_search_prompt">Hae viestejä</string>
     <string name="school_mail_send">Lähetä</string>

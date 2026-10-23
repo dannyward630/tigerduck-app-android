@@ -29,6 +29,7 @@ import org.ntust.app.tigerduck.mail.SentCopyOrigin
 import org.ntust.app.tigerduck.mail.matchesLoadedMail
 import org.ntust.app.tigerduck.mail.imap.FolderSelection
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.MailPage
 import org.ntust.app.tigerduck.mail.model.MailRow
 import org.ntust.app.tigerduck.mail.model.MailSummary
@@ -114,6 +115,11 @@ class SchoolMailListViewModel @Inject constructor(
         val searchText: String = "",
         val searchResults: List<MailRow>? = null,
         val searchLocalOnly: Boolean = false,
+        /**
+         * The latest search ran before every mail of a folder it searched was downloaded, and may
+         * have missed older mail ([SearchOutcome.Server.complete]): so until the search runs again.
+         */
+        val searchIndexPartial: Boolean = false,
         /** A search under way: one [runSearch] that has not ended, and is still the latest. */
         val isSearching: Boolean = false,
         /** A further page of the latest search's matches on its way ([loadMoreSearchResults]). */
@@ -176,6 +182,9 @@ class SchoolMailListViewModel @Inject constructor(
     }
 
     val signedIn: StateFlow<Boolean> = account.signedIn
+
+    /** How far the download of every mail into the search index has come; null when none is under way. */
+    val searchIndexProgress: StateFlow<MailIndexProgress?> = repository.searchIndexProgress
     val authFailed: StateFlow<Boolean> = account.authFailed
 
     /** The user closed the sign-in-failed banner; cleared each time [authFailed] changes. */
@@ -502,7 +511,7 @@ class SchoolMailListViewModel @Inject constructor(
                 // The folders on screen are known now, and so is their date.
                 showFetchedAt()
             } catch (e: MailError) {
-                if (dropped(e, generation)) loadDropped() else fail(e)
+                if (dropped(e, generation)) loadDropped() else fail(e, generation)
                 return@launch
             }
             showCached()
@@ -545,7 +554,10 @@ class SchoolMailListViewModel @Inject constructor(
         forgetSearch()
         listGeneration++
         _state.update {
-            it.copy(selected = selection, messages = emptyList(), cursors = emptyMap(), searchResults = null, searchText = "", searchLocalOnly = false)
+            it.copy(
+                selected = selection, messages = emptyList(), cursors = emptyMap(), searchResults = null, searchText = "",
+                searchLocalOnly = false, searchIndexPartial = false,
+            )
         }
         // The new selection's own date, kept from its last fetch, until this one's lands.
         showFetchedAt()
@@ -565,7 +577,11 @@ class SchoolMailListViewModel @Inject constructor(
     fun setSearchText(text: String) {
         if (text.isBlank()) forgetSearch()
         _state.update {
-            if (text.isBlank()) it.copy(searchText = text, searchResults = null, searchLocalOnly = false) else it.copy(searchText = text)
+            if (text.isBlank()) {
+                it.copy(searchText = text, searchResults = null, searchLocalOnly = false, searchIndexPartial = false)
+            } else {
+                it.copy(searchText = text)
+            }
         }
     }
 
@@ -617,7 +633,7 @@ class SchoolMailListViewModel @Inject constructor(
                 // One swipe that didn't stick is not the page failing: the list on screen is
                 // exactly as good as it was a moment ago. Nor is it the next student's to see,
                 // once one has signed in over this one ([dropped]).
-                if (!dropped(e, generation)) actionFail(e)
+                if (!dropped(e, generation)) actionFail(e, generation)
             }
         }
     }
@@ -644,7 +660,7 @@ class SchoolMailListViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 val error = MailErrors.classify(e)
-                if (!dropped(error, generation)) actionFail(error)
+                if (!dropped(error, generation)) actionFail(error, generation)
             }
         }
     }
@@ -678,7 +694,7 @@ class SchoolMailListViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 val error = MailErrors.classify(e)
-                if (!dropped(error, generation)) actionFail(error)
+                if (!dropped(error, generation)) actionFail(error, generation)
             }
         }
     }
@@ -713,7 +729,7 @@ class SchoolMailListViewModel @Inject constructor(
      */
     private fun knowsVersionOf(row: MailRow): Boolean {
         if (row.uidValidity != null) return true
-        actionFail(MailError.FolderChanged())
+        actionFail(MailError.FolderChanged(), account.accountGeneration)
         return false
     }
 
@@ -750,7 +766,7 @@ class SchoolMailListViewModel @Inject constructor(
     private fun write(row: MailRow, generation: Int, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
         if (account.accountGeneration != generation || row.key in _state.value.writing) return
         if (row.uidValidity == null) {
-            actionFail(MailError.FolderChanged())
+            actionFail(MailError.FolderChanged(), account.accountGeneration)
             return
         }
         _state.update { it.copy(writing = it.writing + row.key) }
@@ -762,7 +778,7 @@ class SchoolMailListViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 val error = MailErrors.classify(e)
-                if (!dropped(error, generation)) actionFail(error)
+                if (!dropped(error, generation)) actionFail(error, generation)
             } finally {
                 if (forgotten == accountsForgotten) _state.update { it.copy(writing = it.writing - row.key) }
             }
@@ -904,7 +920,7 @@ class SchoolMailListViewModel @Inject constructor(
             return true
         } catch (e: MailError) {
             if (dropped(e, generation)) return false
-            fail(e)
+            fail(e, generation)
             return false
         }
     }
@@ -1083,7 +1099,7 @@ class SchoolMailListViewModel @Inject constructor(
             }
         } catch (e: MailError) {
             if (dropped(e, generation)) return
-            fail(e)
+            fail(e, generation)
         } finally {
             olderPageChanges = null
             _state.update { it.copy(isPaginating = false) }
@@ -1117,17 +1133,19 @@ class SchoolMailListViewModel @Inject constructor(
         forgetSearch()
         val search = searchGeneration
         if (query.isEmpty()) {
-            _state.update { it.copy(searchResults = null, searchLocalOnly = false) }
+            _state.update { it.copy(searchResults = null, searchLocalOnly = false, searchIndexPartial = false) }
             return
         }
         val generation = account.accountGeneration
         val since = changeSeq
-        _state.update { it.copy(isSearching = true) }
+        // Nothing on screen until its matches come: the mail shown before is no answer to it.
+        _state.update { it.copy(isSearching = true, searchResults = emptyList(), searchLocalOnly = false, searchIndexPartial = false) }
         try {
-            // One SEARCH per real folder, merged the same way the list itself is. A folder whose
-            // server refused the search, or could not be reached, still contributes its matches
-            // among the mail already loaded, and the "loaded only" note appears as soon as any
-            // one of them fell back.
+            // One search per real folder, in the search index on this phone, merged the same way
+            // the list itself is; the server fetches the matches it finds. A folder that could not
+            // be reached, or the demo mailbox, which has no index, still contributes its matches
+            // among the mail already loaded, and the "loaded only" note appears as soon as any one
+            // of them fell back.
             //
             // A failure is the search's, never the list's: the list it would replace is as good as
             // it was a moment ago, so it reaches [UiState.actionError] and not [UiState.loadState]
@@ -1161,8 +1179,8 @@ class SchoolMailListViewModel @Inject constructor(
                 } else {
                     try {
                         val outcome = repository.search(folder, query) { stillCurrent(selection, generation) && search == searchGeneration }
-                        // The server could not search: the repository's fallback knows only the
-                        // folder's cached newest page, while the list may have paged further, so
+                        // The demo mailbox: the repository's answer knows only the folder's
+                        // newest page, while the list may have paged further, so
                         // the matches are read from the rows it has loaded, as a failed folder's
                         // are -- but only rows read under the UIDVALIDITY that page has. A refresh
                         // can have cached a recreated folder's new page and then failed on another
@@ -1176,7 +1194,7 @@ class SchoolMailListViewModel @Inject constructor(
                     } catch (e: MailError) {
                         if (dropped(e, generation)) return
                         if (failure == null) failure = e
-                        if (e is MailError.AuthFailed) account.onAuthFailure()
+                        if (e is MailError.AuthFailed) account.onAuthFailure(generation)
                         if (endsServerSearch(e)) serverUnreachable = true
                         loadedMatches()
                     }
@@ -1188,7 +1206,7 @@ class SchoolMailListViewModel @Inject constructor(
                 // page stays failed for, and a rejected password reaches the account and the
                 // screen as it would have. Anything else -- a busy server behind a search the
                 // user has moved on from -- is not worth a toast.
-                failure?.takeIf { it is MailError.Certificate || it is MailError.AuthFailed }?.let(::searchFail)
+                failure?.takeIf { it is MailError.Certificate || it is MailError.AuthFailed }?.let { searchFail(it, generation) }
                 return
             }
             // Each row keeps the version of the folder its matches were read under.
@@ -1201,6 +1219,7 @@ class SchoolMailListViewModel @Inject constructor(
                 it.copy(
                     searchResults = ordered(selection, rows),
                     searchLocalOnly = outcomes.any { (_, outcome) -> outcome is SearchOutcome.LoadedOnly },
+                    searchIndexPartial = outcomes.any { (_, outcome) -> (outcome as? SearchOutcome.Server)?.complete == false },
                 )
             }
             // A folder the search read under another UIDVALIDITY than the list's rows of it: it was
@@ -1220,13 +1239,13 @@ class SchoolMailListViewModel @Inject constructor(
                 if (!stillCurrent(selection, generation) || search != searchGeneration) {
                     // As above: a failure that must stick is still this account's, and is shown.
                     if (account.accountGeneration == generation) {
-                        failure?.takeIf { it is MailError.Certificate || it is MailError.AuthFailed }?.let(::searchFail)
+                        failure?.takeIf { it is MailError.Certificate || it is MailError.AuthFailed }?.let { searchFail(it, generation) }
                     }
                     return
                 }
             }
             refetchIfChangedSince(outcomes.map { it.first }, since)
-            failure?.let(::searchFail)
+            failure?.let { searchFail(it, generation) }
             // Nothing on screen means no last row to scroll to, however many matches are left.
             // Unless the server's part of the search ended early: in All mail the inbox can have
             // answered, with matches left to fetch, before Sent found the connection gone or the
@@ -1273,7 +1292,7 @@ class SchoolMailListViewModel @Inject constructor(
                     val page = try {
                         repository.searchPage(folder, batch) { stillCurrent(selection, generation) && search == searchGeneration }
                     } catch (e: MailError) {
-                        if (!dropped(e, generation) && search == searchGeneration) searchFail(e)
+                        if (!dropped(e, generation) && search == searchGeneration) searchFail(e, generation)
                         return
                     }
                     if (!stillCurrent(selection, generation) || search != searchGeneration) return
@@ -1367,7 +1386,7 @@ class SchoolMailListViewModel @Inject constructor(
             // to the mail server could not be trusted, which on a campus network is exactly the
             // interception case worth interrupting for, and a toast that fades after a few
             // seconds every sixtieth second is something a user can miss indefinitely (§12.3).
-            if (e is MailError.Certificate) fail(e) else actionFail(e)
+            if (e is MailError.Certificate) fail(e, generation) else actionFail(e, generation)
         }
     }
 
@@ -1503,9 +1522,13 @@ class SchoolMailListViewModel @Inject constructor(
     private fun cursorsOf(pages: List<Pair<String, MailPage>>): Map<String, Int> =
         pages.mapNotNull { (folder, page) -> page.nextBeforeSeq?.let { folder to it } }.toMap()
 
-    /** A load failed: the page itself has nothing to show, so [LoadState.Failed] is the truth. */
-    private fun fail(error: MailError) {
-        if (error is MailError.AuthFailed) account.onAuthFailure()
+    /**
+     * A load failed: the page itself has nothing to show, so [LoadState.Failed] is the truth. A
+     * rejected password reaches the account for the sign-in at [generation], the one the request
+     * started under, in one step with any sign-in since (see [MailAccount.onAuthFailure]).
+     */
+    private fun fail(error: MailError, generation: Int) {
+        if (error is MailError.AuthFailed) account.onAuthFailure(generation)
         _state.update { it.copy(loadState = LoadState.Failed(error)) }
     }
 
@@ -1514,8 +1537,8 @@ class SchoolMailListViewModel @Inject constructor(
      * protection must not depend on which call happened to hit the rejected password -- but
      * [UiState.loadState] is deliberately left alone.
      */
-    private fun actionFail(error: MailError) {
-        if (error is MailError.AuthFailed) account.onAuthFailure()
+    private fun actionFail(error: MailError, generation: Int) {
+        if (error is MailError.AuthFailed) account.onAuthFailure(generation)
         _state.update { it.copy(actionError = error) }
     }
 
@@ -1524,8 +1547,8 @@ class SchoolMailListViewModel @Inject constructor(
      * but a certificate failure stays on screen the way the poll leaves it ([poll]): it is the
      * interception case, and a toast is easy to miss.
      */
-    private fun searchFail(error: MailError) {
-        if (error is MailError.Certificate) fail(error) else actionFail(error)
+    private fun searchFail(error: MailError, generation: Int) {
+        if (error is MailError.Certificate) fail(error, generation) else actionFail(error, generation)
     }
 
     /** A failure after which a search stops asking the server for the folders still to go. */

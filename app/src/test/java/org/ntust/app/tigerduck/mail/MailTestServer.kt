@@ -84,6 +84,9 @@ class MailTestServer : ExternalResource() {
         user.deliver(msg)
     }
 
+    /** Delivers [message] as it is, for a mail whose structure [deliver] cannot build. */
+    fun deliver(message: MimeMessage) = user.deliver(message)
+
     fun deliverEml(resource: String) {
         val stream = requireNotNull(javaClass.getResourceAsStream(resource)) { "missing $resource" }
         user.deliver(MimeMessage(Session.getInstance(Properties()), stream))

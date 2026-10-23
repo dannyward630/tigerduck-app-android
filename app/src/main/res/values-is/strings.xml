@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Opna þetta viðhengi?</string>
     <string name="school_mail_save_draft">Vista drög</string>
     <string name="school_mail_saved">Vistað</string>
-    <string name="school_mail_search_index_partial">Enn er verið að sækja póst. Leitin gæti misst af einhverjum eldri pósti.</string>
+    <string name="school_mail_search_index_partial">Ekki er búið að sækja allan póst. Leitin gæti misst af einhverjum eldri pósti.</string>
     <string name="school_mail_search_local_only">Þjónninn getur ekki keyrt þessa leit. Aðeins niðurstöður úr þegar sóttum pósti eru sýndar.</string>
     <string name="school_mail_search_prompt">Leita í pósti</string>
     <string name="school_mail_send">Senda</string>

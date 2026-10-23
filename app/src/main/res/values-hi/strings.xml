@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">यह अटैचमेंट खोलें?</string>
     <string name="school_mail_save_draft">ड्राफ़्ट सेव करें</string>
     <string name="school_mail_saved">सेव हो गया</string>
-    <string name="school_mail_search_index_partial">मेल अभी भी डाउनलोड हो रहे हैं। हो सकता है कि खोज में कुछ पुराने मेल न मिलें।</string>
+    <string name="school_mail_search_index_partial">अभी सभी मेल डाउनलोड नहीं हुए हैं। हो सकता है कि खोज में कुछ पुराने मेल न मिलें।</string>
     <string name="school_mail_search_local_only">सर्वर यह खोज नहीं कर सकता। सिर्फ़ लोड किए गए मेल में मिलान दिखाया जा रहा है।</string>
     <string name="school_mail_search_prompt">मेल खोजें</string>
     <string name="school_mail_send">भेजें</string>

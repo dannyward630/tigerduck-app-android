@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">हे अटॅचमेंट उघडायचे?</string>
     <string name="school_mail_save_draft">मसुदा जतन करा</string>
     <string name="school_mail_saved">जतन झाले</string>
-    <string name="school_mail_search_index_partial">मेल अजून डाउनलोड होत आहेत. शोधात काही जुने मेल सापडणार नाहीत असे होऊ शकते.</string>
+    <string name="school_mail_search_index_partial">अजून सर्व मेल डाउनलोड झालेले नाहीत. शोधात काही जुने मेल सापडणार नाहीत असे होऊ शकते.</string>
     <string name="school_mail_search_local_only">सर्व्हर हा शोध चालवू शकत नाही. फक्त लोड झालेल्या मेलमधील जुळणारे निकाल दाखवले जात आहेत.</string>
     <string name="school_mail_search_prompt">मेल शोधा</string>
     <string name="school_mail_send">पाठवा</string>

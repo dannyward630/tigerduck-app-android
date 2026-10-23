@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Otworzyć ten załącznik?</string>
     <string name="school_mail_save_draft">Zapisz kopię roboczą</string>
     <string name="school_mail_saved">Zapisano</string>
-    <string name="school_mail_search_index_partial">Poczta wciąż jest pobierana. Wyszukiwanie może nie znaleźć niektórych starszych wiadomości.</string>
+    <string name="school_mail_search_index_partial">Nie cała poczta jest jeszcze pobrana. Wyszukiwanie może nie znaleźć niektórych starszych wiadomości.</string>
     <string name="school_mail_search_local_only">Serwer nie obsługuje tego wyszukiwania. Pokazano wyniki tylko z wczytanej poczty.</string>
     <string name="school_mail_search_prompt">Szukaj w poczcie</string>
     <string name="school_mail_send">Wyślij</string>

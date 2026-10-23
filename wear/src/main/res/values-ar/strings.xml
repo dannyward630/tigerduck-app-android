@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">هل تريد فتح هذا المرفق؟</string>
     <string name="school_mail_save_draft">حفظ المسودة</string>
     <string name="school_mail_saved">تم الحفظ</string>
-    <string name="school_mail_search_index_partial">لا يزال البريد قيد التنزيل. قد لا يعثر البحث على بعض الرسائل الأقدم.</string>
+    <string name="school_mail_search_index_partial">لم يتم تنزيل كل البريد بعد. قد لا يعثر البحث على بعض الرسائل الأقدم.</string>
     <string name="school_mail_search_local_only">لا يمكن للخادم تنفيذ هذا البحث، سيتم عرض النتائج من الرسائل المحمَّلة فقط.</string>
     <string name="school_mail_search_prompt">البحث في البريد</string>
     <string name="school_mail_send">إرسال</string>

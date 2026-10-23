@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Vai atvērt šo pielikumu?</string>
     <string name="school_mail_save_draft">Saglabāt melnrakstu</string>
     <string name="school_mail_saved">Saglabāts</string>
-    <string name="school_mail_search_index_partial">Vēstules vēl tiek lejupielādētas. Meklēšana var neatrast dažas vecākas vēstules.</string>
+    <string name="school_mail_search_index_partial">Vēl nav lejupielādētas visas vēstules. Meklēšana var neatrast dažas vecākas vēstules.</string>
     <string name="school_mail_search_local_only">Serveris nevar veikt šo meklēšanu. Tiek rādīti rezultāti tikai no jau ielādētajām vēstulēm.</string>
     <string name="school_mail_search_prompt">Meklēt vēstules</string>
     <string name="school_mail_send">Sūtīt</string>

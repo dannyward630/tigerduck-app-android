@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import org.junit.After
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -13,12 +14,14 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.mail.FakeDemoGate
 import org.ntust.app.tigerduck.mail.FakeMailServer
+import org.ntust.app.tigerduck.mail.FakeSchoolMailRepository
 import org.ntust.app.tigerduck.mail.InMemoryCredentialStore
 import org.ntust.app.tigerduck.mail.InMemoryMailStateStore
 import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.MainDispatcherRule
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
+import org.ntust.app.tigerduck.mail.cancelAndJoinBlocking
 import org.ntust.app.tigerduck.mail.schoolMailSite
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.sync.ExactAlarmAccess
@@ -34,8 +37,17 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
 class SchoolMailSettingsPermissionTest {
+    private val repository = FakeSchoolMailRepository()
+
     @get:Rule val main = MainDispatcherRule()
     @get:Rule val tmp = TemporaryFolder()
+
+    // What the account and the notices launch, joined before TemporaryFolder deletes the cache
+    // a sign-out may still be wiping there.
+    private val appScope = testApplicationScope()
+
+    @After
+    fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
 
     private val context get() = RuntimeEnvironment.getApplication()
 
@@ -44,10 +56,10 @@ class SchoolMailSettingsPermissionTest {
         val cache = MailCache(tmp.root)
         val account = MailAccount(
             InMemoryCredentialStore(), state, FakeMailServer().factory(), cache, FakeDemoGate(), schoolMailSite(),
-            RecordingScheduler(), RecordingNotifier(), testApplicationScope(),
+            RecordingScheduler(), RecordingNotifier(), appScope,
         )
         return SchoolMailSettingsViewModel(
-            state, RecordingScheduler(), ExactAlarmAccess { true }, cache, main.dispatcher, account, SystemPermissions(context),
+            state, RecordingScheduler(), ExactAlarmAccess { true }, cache, repository, main.dispatcher, account, SystemPermissions(context),
         )
     }
 

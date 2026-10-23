@@ -24,6 +24,10 @@ import org.ntust.app.tigerduck.mail.SocketMailConnectionProbe
 import org.ntust.app.tigerduck.mail.compose.MessageBuilder
 import org.ntust.app.tigerduck.mail.imap.AngusMailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
+import org.ntust.app.tigerduck.mail.index.MailIndexScheduler
+import org.ntust.app.tigerduck.mail.index.MailSearchIndex
+import org.ntust.app.tigerduck.mail.index.SqliteMailSearchIndex
+import org.ntust.app.tigerduck.mail.index.WorkManagerMailIndexScheduler
 import org.ntust.app.tigerduck.mail.notify.AndroidMailNotifier
 import org.ntust.app.tigerduck.mail.notify.MailNotifier
 import org.ntust.app.tigerduck.mail.smtp.AngusMailTransport
@@ -102,6 +106,10 @@ object MailModule {
     fun state(@ApplicationContext context: Context): MailStateStore = SharedPrefsMailStateStore(context)
 
     @Provides
+    @Singleton
+    fun searchIndex(@ApplicationContext context: Context): MailSearchIndex = SqliteMailSearchIndex(context)
+
+    @Provides
     fun clock(): MailClock = MailClock { System.currentTimeMillis() }
 
     /**
@@ -134,6 +142,9 @@ abstract class MailBindings {
 
     @Binds
     abstract fun scheduler(impl: MailAlarmScheduler): MailBackgroundScheduler
+
+    @Binds
+    abstract fun indexScheduler(impl: WorkManagerMailIndexScheduler): MailIndexScheduler
 
     @Binds
     abstract fun exactAlarms(impl: MailAlarmScheduler): ExactAlarmAccess

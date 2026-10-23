@@ -29,6 +29,7 @@ import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.mail.SentCopyNotice
 import org.ntust.app.tigerduck.mail.SentCopyOrigin
 import org.ntust.app.tigerduck.mail.SentCopyNotices
+import org.ntust.app.tigerduck.mail.signInDuringRefusal
 import org.ntust.app.tigerduck.mail.MainDispatcherRule
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
@@ -480,6 +481,101 @@ class SchoolMailListViewModelTest {
         assertTrue(vm.state.value.chips.isNotEmpty())
         assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
         assertTrue(vm.state.value.loadState is SchoolMailListViewModel.LoadState.Loaded)
+    }
+
+    @Test
+    fun `a search run before every mail was downloaded says so until it runs again`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"), mailSummary(2, subject = "other"))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        repo.searchComplete = false
+        vm.setSearchText("期中")
+
+        vm.submitSearch()
+        assertTrue(vm.state.value.searchIndexPartial)
+        assertFalse(vm.state.value.searchLocalOnly)
+
+        // The download gets through meanwhile: the results on screen are still the partial search's.
+        repo.searchIndexProgress.value = null
+        assertTrue(vm.state.value.searchIndexPartial)
+
+        repo.searchComplete = true
+        vm.submitSearch()
+        assertFalse(vm.state.value.searchIndexPartial)
+    }
+
+    @Test
+    fun `clearing the search clears its note that it may have missed mail`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.load()
+        repo.searchComplete = false
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        assertTrue(vm.state.value.searchIndexPartial)
+
+        vm.setSearchText("")
+
+        assertFalse(vm.state.value.searchIndexPartial)
+    }
+
+    // A rejection is marked in one step with a sign-in's move of the generation: the student
+    // signing in again while the list marks it keeps the sign-in the server just accepted.
+
+    @Test
+    fun `a page refused as the student signs in again leaves the new sign-in on`() {
+        repo.add("INBOX", mailSummary(1))
+        repo.loadError = MailError.AuthFailed()
+        val signIn = signInDuringRefusal(account, state, "b10000001", "pw")
+
+        vm.load()
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a mark-read refused as the student signs in again leaves the new sign-in on`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.load()
+        repo.seenError = MailError.AuthFailed()
+        val signIn = signInDuringRefusal(account, state, "b10000001", "pw")
+
+        vm.toggleRead(vm.state.value.displayed.single())
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a search refused as the student signs in again leaves the new sign-in on`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.load()
+        repo.searchError = MailError.AuthFailed()
+        val signIn = signInDuringRefusal(account, state, "b10000001", "pw")
+        vm.setSearchText("期中")
+
+        vm.submitSearch()
+        signIn.join()
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a search under way shows no mail until its matches come`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"), mailSummary(2, subject = "other"))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        assertEquals(2, vm.state.value.displayed.size)
+        val gate = CompletableDeferred<Unit>()
+        repo.searchGate = gate
+        vm.setSearchText("期中")
+
+        vm.submitSearch()
+        assertEquals(0, vm.state.value.displayed.size)
+
+        repo.searchGate = null
+        gate.complete(Unit)
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
     }
 
     @Test

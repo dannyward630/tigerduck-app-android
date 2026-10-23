@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.mail.imap
 
 import org.ntust.app.tigerduck.mail.MailCredentials
+import org.ntust.app.tigerduck.mail.index.MailSearchText
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailBody
 import org.ntust.app.tigerduck.mail.model.MailFlags
@@ -66,8 +67,21 @@ interface MailSession : Closeable {
      */
     fun deletePermanently(folder: String, uid: Long, ownedDeleted: Set<Long>, uidValidity: Long? = null): Boolean
 
-    /** UIDs newest first. Throws [org.ntust.app.tigerduck.mail.MailError.SearchUnsupported] when the server can't. */
-    fun search(folder: String, query: String): List<Long>
+    /** The UIDs of [folder]'s mail not flagged `\Deleted`, in no particular order. */
+    fun undeletedUids(folder: String): List<Long>
+
+    /**
+     * Every UID of [folder], `\Deleted` mail included, in no particular order: the place of each,
+     * in ascending order, is its sequence number, which [fetchPage] pages by.
+     */
+    fun allUids(folder: String): List<Long>
+
+    /**
+     * What a search reads of each of [uids]: its text, plain or taken out of its HTML
+     * ([MailSearchText]), never its attachments or images. A mail gone since is left out.
+     */
+    fun fetchSearchTexts(folder: String, uids: List<Long>): Map<Long, String> =
+        uids.associateWith { MailSearchText.of(fetchBody(folder, it)) }
     fun append(folder: String, rfc822: ByteArray, flags: Set<AppendFlag>)
     fun hasRecentMessageId(folder: String, messageId: String, window: Int): Boolean
     fun newestSenderName(folder: String, address: String, window: Int): String?

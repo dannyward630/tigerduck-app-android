@@ -2,11 +2,13 @@ package org.ntust.app.tigerduck.mail
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import org.ntust.app.tigerduck.mail.compose.OutgoingMail
 import org.ntust.app.tigerduck.mail.imap.ResolvedFolders
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.model.MailBody
@@ -388,6 +390,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         }
     }
 
+    /** Fires inside [delete], before [deleteError]: a test acts while the delete is out. */
+    var onDelete: (() -> Unit)? = null
+
     /** How many writes [refuseUnder] turned away: the server, not the caller, deciding a UID is stale. */
     var writesRefused = 0
 
@@ -406,6 +411,7 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         refuseUnder(uidValidity)
         writeGate?.await()
         foldersTouched += folder
+        onDelete?.invoke()
         deleteError?.let { throw it }
         deleted += folder to uid
         mail[folder]?.removeAll { it.uid == uid }
@@ -428,6 +434,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     var searchCalls = 0
 
     /** While set, [search] suspends on it once the SEARCH went out, before it answers or fails: a search still out while the test acts. */
+    /** Whether [search] says the index held every mail of the folder, as its outcome's [SearchOutcome.Server.complete]. */
+    var searchComplete = true
+
     var searchGate: CompletableDeferred<Unit>? = null
 
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
@@ -445,7 +454,7 @@ class FakeSchoolMailRepository : SchoolMailRepository {
             return cachedPages[folder].let { cached -> SearchOutcome.LoadedOnly(cached?.messages.orEmpty().filter { query in it.subject }, cached?.uidValidity) }
         }
         // Paged like the real repository: the newest [pageSize] matches, the rest left to fetch.
-        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = searchValidity)
+        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = searchValidity, complete = searchComplete)
     }
 
     /** Every `(folder, uids)` handed to [searchPage], in order -- asked for, whether or not it then went out. */
@@ -463,6 +472,27 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     /** The UIDVALIDITY [searchPage] reports; the search itself reports [searchValidity]. */
     var searchPageValidity = 1L
 
+    /** How many times the search index was asked to catch up with the server. */
+    var searchIndexUpdates = 0
+
+    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
+        searchIndexUpdates++
+    }
+
+    override val searchIndexProgress = MutableStateFlow<MailIndexProgress?>(null)
+
+    /** What the mail downloaded for search takes, as the settings page reads it. */
+    var searchIndexBytes = 0L
+
+    override suspend fun searchIndexBytes(): Long = searchIndexBytes
+
+    var searchIndexDeletes = 0
+
+    override suspend fun deleteSearchIndex() {
+        searchIndexDeletes++
+        searchIndexBytes = 0L
+    }
+
     override suspend fun searchPage(folder: String, uids: List<Long>, stillWanted: () -> Boolean): SearchPage {
         foldersTouched += folder
         searchPages += folder to uids
@@ -475,9 +505,13 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     var rawSourceError: MailError? = null
     var rawSourceCalls = 0
 
+    /** Fires inside [rawSource], before [rawSourceError]: a test acts while the fetch is out. */
+    var onRawSource: (() -> Unit)? = null
+
     override suspend fun rawSource(folder: String, uid: Long): String {
         foldersTouched += folder
         rawSourceCalls++
+        onRawSource?.invoke()
         rawSourceError?.let { throw it }
         return raw
     }

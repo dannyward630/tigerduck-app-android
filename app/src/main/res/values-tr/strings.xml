@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Bu ek açılsın mı?</string>
     <string name="school_mail_save_draft">Taslağı kaydet</string>
     <string name="school_mail_saved">Kaydedildi</string>
-    <string name="school_mail_search_index_partial">Postalar hâlâ indiriliyor. Arama bazı eski postaları bulamayabilir.</string>
+    <string name="school_mail_search_index_partial">Postaların hepsi henüz indirilmedi. Arama bazı eski postaları bulamayabilir.</string>
     <string name="school_mail_search_local_only">Sunucu bu aramayı gerçekleştiremiyor. Yalnızca yüklenmiş postalardaki sonuçlar gösteriliyor.</string>
     <string name="school_mail_search_prompt">Postada ara</string>
     <string name="school_mail_send">Gönder</string>

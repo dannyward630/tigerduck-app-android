@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">این پیوست باز شود؟</string>
     <string name="school_mail_save_draft">ذخیرهٔ پیش‌نویس</string>
     <string name="school_mail_saved">ذخیره شد</string>
-    <string name="school_mail_search_index_partial">ایمیل‌ها هنوز در حال دانلود هستند. ممکن است جست‌وجو برخی ایمیل‌های قدیمی‌تر را پیدا نکند.</string>
+    <string name="school_mail_search_index_partial">هنوز همهٔ ایمیل‌ها دانلود نشده‌اند. ممکن است جست‌وجو برخی ایمیل‌های قدیمی‌تر را پیدا نکند.</string>
     <string name="school_mail_search_local_only">سرور نمی‌تواند این جست‌وجو را اجرا کند. فقط نتایج ایمیل‌های بارگذاری‌شده نمایش داده می‌شود.</string>
     <string name="school_mail_search_prompt">جست‌وجوی ایمیل</string>
     <string name="school_mail_send">ارسال</string>

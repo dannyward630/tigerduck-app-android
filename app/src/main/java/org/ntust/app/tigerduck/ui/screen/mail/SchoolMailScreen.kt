@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -108,6 +109,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.mail.MailDevServerSettings
 import org.ntust.app.tigerduck.mail.imap.FolderSelection
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.model.MailRow
 import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.warning.MailWarnings
@@ -135,6 +137,8 @@ import org.ntust.app.tigerduck.ui.screen.settings.signInFieldValue
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import java.text.NumberFormat
+import java.util.Locale
 
 /** Spec §6.2 — the Announcements list pattern, over the school inbox. */
 @Composable
@@ -150,6 +154,7 @@ fun SchoolMailScreen(
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
     val authFailed by viewModel.authFailed.collectAsStateWithLifecycle()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val indexProgress by viewModel.searchIndexProgress.collectAsStateWithLifecycle()
     val sentCopyNotice by viewModel.sentCopyNotice.collectAsStateWithLifecycle()
     val showAuthFailedBanner by viewModel.showAuthFailedBanner.collectAsStateWithLifecycle()
     val signingIn by accountViewModel.signingIn.collectAsStateWithLifecycle()
@@ -299,6 +304,9 @@ fun SchoolMailScreen(
                 val displayed = state.displayed
                 val failed = state.loadState as? SchoolMailListViewModel.LoadState.Failed
                 when {
+                    // A search under way with nothing found yet shows nothing, its field's spinner
+                    // aside: not the mail from before it, nor "no mail" before it has looked.
+                    displayed.isEmpty() && state.isSearching -> Unit
                     displayed.isEmpty() && failed != null -> item(key = "failed") {
                         Box(Modifier.fillParentMaxHeight(0.6f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                             EmptyStateView(
@@ -372,8 +380,11 @@ fun SchoolMailScreen(
                         // this dot uses -- not the student ID, which is an identity and says
                         // nothing about whether anything is reaching the server. The specific
                         // failure still has a home: the list itself shows the error.
-                        text = statusText(mailStatus),
-                        isLoading = isLoading,
+                        //
+                        // While every mail downloads for search, which the first time takes a
+                        // while, the dot syncs and the row says how far it has come.
+                        text = indexProgress?.let(::indexProgressText) ?: statusText(mailStatus),
+                        isLoading = isLoading || indexProgress != null,
                         syncedAtMs = state.fetchedAt,
                     )
                     IconButton(onClick = { viewModel.setUnreadOnly(!state.unreadOnly) }) {
@@ -418,9 +429,13 @@ fun SchoolMailScreen(
                     )
                 }
                 FolderChips(state = state, onSelect = viewModel::selectFolder)
-                if (state.searchLocalOnly) {
+                searchNote(
+                    searched = state.searchResults != null,
+                    loadedOnly = state.searchLocalOnly,
+                    partial = state.searchIndexPartial,
+                )?.let { note ->
                     Text(
-                        stringResource(R.string.school_mail_search_local_only),
+                        stringResource(note),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -931,3 +946,23 @@ private fun SchoolMailLoginCard(
         }
     }
 }
+
+/** [progress] as the sync dot's popup shows it: mail downloaded for search, of how many it lacked, as "120/3,456". */
+internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Locale.getDefault()): String {
+    val number = NumberFormat.getIntegerInstance(locale)
+    return number.format(progress.done) + "/" + number.format(progress.total)
+}
+
+/**
+ * The line under the search field when a search may have missed mail: one that could read only
+ * the loaded mail, or one [partial], run before every mail was downloaded. The search's own
+ * answer, kept until it runs again: the download getting through since changes nothing on screen.
+ */
+@StringRes
+internal fun searchNote(searched: Boolean, loadedOnly: Boolean, partial: Boolean): Int? = when {
+    !searched -> null
+    loadedOnly -> R.string.school_mail_search_local_only
+    partial -> R.string.school_mail_search_index_partial
+    else -> null
+}
+

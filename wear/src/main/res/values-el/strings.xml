@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Άνοιγμα αυτού του συνημμένου;</string>
     <string name="school_mail_save_draft">Αποθήκευση πρόχειρου</string>
     <string name="school_mail_saved">Αποθηκεύτηκε</string>
-    <string name="school_mail_search_index_partial">Τα email λαμβάνονται ακόμη. Η αναζήτηση ίσως δεν βρει ορισμένα παλαιότερα.</string>
+    <string name="school_mail_search_index_partial">Δεν έχουν ληφθεί ακόμη όλα τα email. Η αναζήτηση ίσως δεν βρει ορισμένα παλαιότερα.</string>
     <string name="school_mail_search_local_only">Ο διακομιστής δεν μπορεί να εκτελέσει αυτήν την αναζήτηση. Εμφανίζονται αποτελέσματα μόνο από τα email που έχουν ήδη φορτωθεί.</string>
     <string name="school_mail_search_prompt">Αναζήτηση email</string>
     <string name="school_mail_send">Αποστολή</string>

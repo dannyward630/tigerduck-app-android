@@ -188,7 +188,9 @@ class MailChecker @Inject constructor(
             if (!stillSignedIn()) return@withContext CheckOutcome.NotSignedIn
             val error = MailErrors.classify(e)
             if (error is MailError.AuthFailed) {
-                account.onAuthFailure()
+                // Asked again in the same step as the mark: a sign-in since is the server's
+                // answer to a password it took.
+                if (!account.onAuthFailure(generation)) return@withContext CheckOutcome.NotSignedIn
                 notifier.postAuthFailure()
             }
             CheckOutcome.Failed(error)

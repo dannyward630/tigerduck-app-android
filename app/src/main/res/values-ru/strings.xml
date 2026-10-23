@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Открыть это вложение?</string>
     <string name="school_mail_save_draft">Сохранить черновик</string>
     <string name="school_mail_saved">Сохранено</string>
-    <string name="school_mail_search_index_partial">Почта ещё загружается. Поиск может не найти некоторые старые письма.</string>
+    <string name="school_mail_search_index_partial">Ещё не вся почта загружена. Поиск может не найти некоторые старые письма.</string>
     <string name="school_mail_search_local_only">Сервер не поддерживает этот поиск. Показаны совпадения только из уже загруженной почты.</string>
     <string name="school_mail_search_prompt">Поиск по почте</string>
     <string name="school_mail_send">Отправить</string>

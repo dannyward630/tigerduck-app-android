@@ -43,20 +43,40 @@ class SessionHolder(
     internal var onWait: (() -> Unit)? = null
 
     /**
+     * Whether a [use] holds the connection now. A test's way of telling, from [onWait], a caller
+     * that waits on another from one that goes straight on.
+     */
+    @VisibleForTesting
+    internal val held: Boolean get() = mutex.isLocked
+
+    /**
      * @param stillWanted see [SchoolMailRepository.loadPage]: whether the caller still wants the
      *   command sent. Asked under the connection's lock twice -- before the connection is so
      *   much as probed, and again right before [block] -- because a probe or an open logs in with
      *   [credentials], and a caller whose account has left since it read them must not log in as
      *   the next one: a refusal then would be the next account's, dropped as the old one's.
+     * @param onRefused runs when the server refuses the login with [credentials], before the
+     *   connection's lock is let go: a caller queued behind this one then finds the refusal
+     *   recorded, rather than sending the same password again (spec §7.4).
      */
-    suspend fun <T> use(credentials: MailCredentials, stillWanted: () -> Boolean = { true }, block: (MailSession) -> T): T {
+    suspend fun <T> use(
+        credentials: MailCredentials,
+        stillWanted: () -> Boolean = { true },
+        onRefused: () -> Unit = {},
+        block: (MailSession) -> T,
+    ): T {
         onWait?.invoke()
         return mutex.withLock {
             if (!stillWanted()) throw MailError.Abandoned()
             cancelCloseJob()
         if (owner != credentials.loginName) closeLocked()
         session?.let { if (!isAlive(it)) closeLocked() }
-        val s = session ?: factory.open(credentials).also {
+        val s = session ?: try {
+            factory.open(credentials)
+        } catch (e: MailError.AuthFailed) {
+            onRefused()
+            throw e
+        }.also {
             session = it
             owner = credentials.loginName
         }

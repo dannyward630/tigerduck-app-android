@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Åpne dette vedlegget?</string>
     <string name="school_mail_save_draft">Lagre kladd</string>
     <string name="school_mail_saved">Lagret</string>
-    <string name="school_mail_search_index_partial">E-posten lastes fortsatt ned. Søket finner kanskje ikke noe av den eldre e-posten.</string>
+    <string name="school_mail_search_index_partial">Ikke all e-post er lastet ned ennå. Søket finner kanskje ikke noe av den eldre e-posten.</string>
     <string name="school_mail_search_local_only">Serveren kan ikke utføre dette søket. Viser bare treff fra allerede innlastet e-post.</string>
     <string name="school_mail_search_prompt">Søk i e-post</string>
     <string name="school_mail_send">Send</string>

@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Vols obrir aquest fitxer adjunt?</string>
     <string name="school_mail_save_draft">Desa l\'esborrany</string>
     <string name="school_mail_saved">Desat</string>
-    <string name="school_mail_search_index_partial">Encara s\'està baixant el correu. És possible que la cerca no trobi alguns missatges antics.</string>
+    <string name="school_mail_search_index_partial">Encara no s\'ha baixat tot el correu. És possible que la cerca no trobi alguns missatges antics.</string>
     <string name="school_mail_search_local_only">El servidor no pot fer aquesta cerca. Només es mostren resultats del correu ja carregat.</string>
     <string name="school_mail_search_prompt">Cerca al correu</string>
     <string name="school_mail_send">Envia</string>

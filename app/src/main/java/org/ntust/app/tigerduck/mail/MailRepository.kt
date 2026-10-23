@@ -5,10 +5,16 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.di.ApplicationScope
 import org.ntust.app.tigerduck.mail.compose.MessageBuilder
@@ -19,6 +25,11 @@ import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.ResolvedFolders
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexProgress
+import org.ntust.app.tigerduck.mail.index.MailIndexScheduler
+import org.ntust.app.tigerduck.mail.index.MailIndexer
+import org.ntust.app.tigerduck.mail.index.MailSearchIndex
+import org.ntust.app.tigerduck.mail.index.MailSessionRunner
 import org.ntust.app.tigerduck.mail.mime.MailCharsets
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
@@ -35,6 +46,8 @@ import org.ntust.app.tigerduck.mail.store.toModel
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -42,18 +55,23 @@ sealed interface SearchOutcome {
     val messages: List<MailSummary>
 
     /**
-     * The newest page of the server's matches, and [remaining]: the UIDs of every match not
-     * fetched yet, newest first, for [SchoolMailRepository.searchPage] to fetch as the list
-     * scrolls.
+     * The newest page of the matches the search index found, as the server has them now, and
+     * [remaining]: the UIDs of every match not fetched yet, newest first, for
+     * [SchoolMailRepository.searchPage] to fetch as the list scrolls.
      */
     data class Server(
         override val messages: List<MailSummary>,
         val remaining: List<Long> = emptyList(),
         /** The folder's UIDVALIDITY the matches were found under, which [remaining] only means anything in; null where unknown. */
         val uidValidity: Long? = null,
+        /**
+         * Whether the index held every mail of the folder when it was searched. False while the
+         * first download is still bringing the older mail in: the search may have missed some.
+         */
+        val complete: Boolean = true,
     ) : SearchOutcome
     /**
-     * The server couldn't search; these are matches among the folder's cached newest page, with
+     * The demo mailbox, which has no index; these are matches among the folder's newest page, with
      * [uidValidity] the page was read under (null where unknown). The list page substitutes the
      * rows it has loaded, pages back included, where they were read under the same UIDVALIDITY.
      */
@@ -171,8 +189,31 @@ interface SchoolMailRepository {
     /** [uidValidity] and [stillWanted] as on [move]. */
     suspend fun delete(folder: String, uid: Long, uidValidity: Long? = null, stillWanted: () -> Boolean = { true })
 
-    /** [stillWanted] as on [loadPage]. */
+    /**
+     * The mail of [folder] whose sender, subject or text holds [query], found in the search index
+     * on this phone: the school's server cannot search in Chinese. Mail come in since the index
+     * last caught up is added first, the newest few. [stillWanted] as on [loadPage].
+     */
     suspend fun search(folder: String, query: String, stillWanted: () -> Boolean = { true }): SearchOutcome
+
+    /**
+     * Downloads into the search index every mail it lacks, in every folder, Inbox and Sent first;
+     * nothing within [MailRepository.INDEX_RESYNC_MS] of a download that got through. Long: the
+     * first run fetches the text of the whole mailbox. [stillWanted] as on [loadPage].
+     */
+    suspend fun updateSearchIndex(stillWanted: () -> Boolean = { true })
+
+    /** How far [updateSearchIndex] has come while it downloads; null otherwise. */
+    val searchIndexProgress: StateFlow<MailIndexProgress?>
+
+    /** The disk the mail downloaded for search and the list takes on the phone, in bytes. */
+    suspend fun searchIndexBytes(): Long
+
+    /**
+     * Deletes the mail downloaded for search and the list, stopping any download under way. The
+     * mail screen downloads it again when it is next opened.
+     */
+    suspend fun deleteSearchIndex()
 
     /**
      * The summaries of [uids], matches [search] left in [SearchOutcome.Server.remaining]; mail gone
@@ -217,10 +258,21 @@ class MailRepository @Inject constructor(
     private val sender: MailSender,
     private val builder: MessageBuilder,
     private val demo: MailDemoGate,
-    @ApplicationScope scope: CoroutineScope,
+    private val searchIndex: MailSearchIndex,
+    private val indexScheduler: MailIndexScheduler,
+    @ApplicationScope private val scope: CoroutineScope,
 ) : SchoolMailRepository {
     @VisibleForTesting
     internal val holder = SessionHolder(sessions, scope)
+
+    private val indexer = MailIndexer(
+        searchIndex,
+        object : MailSessionRunner {
+            override suspend fun <T> run(stillWanted: () -> Boolean, block: (MailSession) -> T): T = withSession(stillWanted, block = block)
+        },
+        owner = ::indexOwnerNow,
+        stillOwner = ::stillIndexOwner,
+    )
     /** The server's folders as resolved for one account: [generation] is the [MailAccount.accountGeneration] that asked, and the list is nobody else's. */
     private class Resolved(val generation: Int, val folders: ResolvedFolders)
 
@@ -251,13 +303,126 @@ class MailRepository @Inject constructor(
         // before this constructor returns, so no sign-out can precede the
         // subscriber, and a fresh repository has nothing of its own to clear.
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            account.signOuts.collect {
-                withContext(Dispatchers.IO) { holder.closeNow() }
+            account.signOuts.collect { departing ->
+                numberings.clear()
+                lastWhole = null
+                withContext(Dispatchers.IO) {
+                    // With a search's request, which may be waiting for WorkManager's answer.
+                    scheduled { indexScheduler.cancel() }
+                    holder.closeNow()
+                    clearIndexOf(departing)
+                }
                 resolved = null
                 synchronized(demoFolders) { demoFolders.clear(); demoUidSeq = 9_000L }
             }
         }
+        // Another student signing in over this one leaves no mail of this one's to search. The
+        // index refuses a write from a run this one started, and starts over for the next.
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            account.studentChanges.collect { departing ->
+                numberings.clear()
+                lastWhole = null
+                withContext(Dispatchers.IO) { clearIndexOf(departing) }
+            }
+        }
     }
+
+    /**
+     * Empties the search index after [departing] left, unless it is by now the mail of whoever
+     * signed in since: this runs some time after the account changed, and their download may have
+     * opened the index already, which emptied it of the departing account's mail as it did. The
+     * departing account's own mail goes whatever its address, even with that student signed in
+     * again: a sign-out empties the index.
+     */
+    private fun clearIndexOf(departing: String?) {
+        val left = departing?.lowercase()
+        searchIndex.clearUnless { owner -> owner != null && owner != left && owner == indexOwner() }
+    }
+
+    /**
+     * Tells the list of [change], which the phone's copy of the mail has by then: [setSeen] and
+     * [runExpunging] change it in the hold of the connection their write went out in. A removal
+     * also moves the sequence numbers after it.
+     */
+    private suspend fun changed(change: MailChange) {
+        if (change is MailChange.Removed) numberings.remove(change.folder)
+        _changes.emit(change)
+    }
+
+    /**
+     * The copy of the account at [generation], read before a write went out, while it is still
+     * the one signed in: a write that ended after another student signed in names a mail of
+     * theirs by its UID (see [MailChange.generation]), which it must neither mark nor drop. Asked
+     * again under the index's lock, which the sign-in's clear takes too.
+     *
+     * Called in the hold of the connection the write went out in, as a download's batch is filed
+     * in the hold that read it: the download that opens a folder recreated since, in a hold of
+     * its own, comes wholly before or after, so the write never reaches the new folder's mail by
+     * an old UID, nor does an answer read before the write undo it.
+     */
+    private fun writerOfIndex(generation: Int): MailIndexer.Owner? = indexOwnerNow()?.takeIf { it.generation == generation }
+
+    private fun markSeenInIndex(owner: MailIndexer.Owner, folder: String, uid: Long, seen: Boolean) {
+        val validity = searchIndex.uidValidity(owner.address, folder) ?: return
+        val summary = searchIndex.summaries(owner.address, folder, validity, listOf(uid))[uid] ?: return
+        searchIndex.updateFlags(owner.address, folder, validity, mapOf(uid to summary.flags.copy(seen = seen))) { stillIndexOwner(owner) }
+    }
+
+    /**
+     * Every UID of a folder, ascending, as it was when its newest page was last fetched, so an
+     * older page can be found by sequence number on the phone: a mail's is its place here, from 1.
+     */
+    private class Numbering(val generation: Int, val uidValidity: Long, val uids: LongArray)
+
+    private val numberings = ConcurrentHashMap<String, Numbering>()
+
+    /**
+     * The older page of [folder] before [beforeSeq], from the phone's copy, when every mail in it
+     * has been downloaded; null sends it to the server. As [MailSession.fetchPage] answers: newest
+     * first, the UIDs it spans, and where the next one starts.
+     */
+    private suspend fun localOlderPage(folder: String, beforeSeq: Int, limit: Int): MailPage? = withContext(Dispatchers.IO) {
+        // The account's address is a read of the encrypted store: on the IO dispatcher too.
+        val owner = indexOwner() ?: return@withContext null
+        val numbering = numberings[folder]?.takeIf { it.generation == account.accountGeneration } ?: return@withContext null
+        val end = beforeSeq - 1
+        if (end < 1 || end > numbering.uids.size) return@withContext null
+        val start = maxOf(1, end - limit + 1)
+        val window = numbering.uids.copyOfRange(start - 1, end).asList()
+        val stored = searchIndex.summaries(owner, folder, numbering.uidValidity, window)
+        // A mail not downloaded yet, or flagged \Deleted, which the copy leaves out: the server's.
+        if (stored.size < window.size) return@withContext null
+        MailPage(
+            uidValidity = numbering.uidValidity,
+            totalMessages = numbering.uids.size,
+            messages = stored.values.sortedByDescending { it.uid },
+            nextBeforeSeq = if (start > 1) start else null,
+            windowUids = window.first()..window.last(),
+        )
+    }
+
+    /** Whose the search index is: the signed-in account's address, whatever its case. */
+    private fun indexOwner(): String? = account.ownAddress?.lowercase()
+
+    /**
+     * Moved on by [deleteSearchIndex] before it empties the index. A download it does not reach in
+     * time -- the background one, which stops only some time after WorkManager is told to, or a
+     * search's catch-up -- asks for the one it started under before each write, and writes no more.
+     */
+    private val indexEpoch = AtomicInteger()
+
+    /**
+     * Whom a write to the search index is for: [indexOwner] with the sign-in it belongs to, read
+     * together, and the [indexEpoch]. A read of the encrypted store, so not for the main thread.
+     */
+    private fun indexOwnerNow(): MailIndexer.Owner? {
+        val epoch = indexEpoch.get()
+        return account.snapshot()?.let { MailIndexer.Owner(it.credentials.address.lowercase(), it.generation, epoch) }
+    }
+
+    /** Whether the index is still [owner]'s: no sign-in, sign-out or deletion since it was read. */
+    private fun stillIndexOwner(owner: MailIndexer.Owner): Boolean =
+        account.accountGeneration == owner.generation && indexEpoch.get() == owner.epoch
 
     private fun credentials() = account.credentialsOrNull() ?: throw MailError.Protocol("not signed in")
 
@@ -286,7 +451,18 @@ class MailRepository @Inject constructor(
     ): T = withContext(Dispatchers.IO) {
         if (account.isDemo) throw MailError.DemoMode()
         refuseWhileAuthFailed()
-        holder.use(owner?.credentials ?: credentials(), stillWanted, block)
+        // The account [owner] names, or the one signed in now, read with its sign-in.
+        val signedIn = owner ?: account.snapshot() ?: throw MailError.Protocol("not signed in")
+        holder.use(
+            signedIn.credentials,
+            // Asked again under the connection's lock: a request that waited out a login the
+            // server rejected must not send one of its own.
+            stillWanted = { refuseWhileAuthFailed(); stillWanted() },
+            // Told to the account before that lock is let go, for the sign-in these credentials
+            // are: the refusal of one that has left since must not stop the next.
+            onRefused = { account.onAuthFailure(signedIn.generation) },
+            block = block,
+        )
     }
 
     // --- demo -------------------------------------------------------------------
@@ -386,7 +562,18 @@ class MailRepository @Inject constructor(
         // or whoever signs in next would open on it; asked under the cache's lock, which that
         // clear takes too.
         val generation = account.accountGeneration
-        val page = withSession(stillWanted) { it.fetchPage(folder, beforeSeq, limit) }
+        // An older page whose mail the phone holds comes from there, without the network.
+        if (beforeSeq != null) localOlderPage(folder, beforeSeq, limit)?.let { return it }
+        val page = withSession(stillWanted) { session ->
+            session.fetchPage(folder, beforeSeq, limit).also { page ->
+                // The newest page numbers the folder for the older ones: one SEARCH, which reads
+                // no mail.
+                if (beforeSeq == null) {
+                    val uids = session.allUids(folder).sorted().toLongArray()
+                    numberings[folder] = Numbering(generation, page.uidValidity, uids)
+                }
+            }
+        }
         if (beforeSeq == null && !(background && wouldShortenCache(folder, page))) {
             withContext(Dispatchers.IO) { cache.saveFolderIf(folder, page) { account.accountGeneration == generation } }
         }
@@ -450,10 +637,13 @@ class MailRepository @Inject constructor(
         if (account.isDemo) {
             demoUpdate(folder, uid) { it.copy(flags = it.flags.copy(seen = seen)) }
         } else {
-            withSession { it.setSeen(folder, listOf(uid), seen) }
+            withSession { session ->
+                session.setSeen(folder, listOf(uid), seen)
+                writerOfIndex(generation)?.let { markSeenInIndex(it, folder, uid, seen) }
+            }
             updateCached(folder) { s -> if (s.uid == uid) s.copy(flags = s.flags.copy(seen = seen)) else s }
         }
-        _changes.emit(MailChange.Seen(folder, uid, seen, generation))
+        changed(MailChange.Seen(folder, uid, seen, generation))
     }
 
     override suspend fun move(folder: String, uid: Long, target: String, uidValidity: Long?, stillWanted: () -> Boolean) {
@@ -471,10 +661,10 @@ class MailRepository @Inject constructor(
             runExpunging(folder, uid, stillWanted) { session, owned -> session.move(folder, uid, target, owned, uidValidity) }
             removeCached(folder, uid, stillWanted)
         }
-        _changes.emit(MailChange.Removed(folder, uid, generation))
+        changed(MailChange.Removed(folder, uid, generation))
         // The mail's UID in [target] is the server's to give (COPYUID is not read), so a list of
         // the target can only fetch it.
-        _changes.emit(MailChange.Changed(target, generation))
+        changed(MailChange.Changed(target, generation))
     }
 
     /**
@@ -520,24 +710,158 @@ class MailRepository @Inject constructor(
             runExpunging(folder, uid, stillWanted) { session, owned -> session.deletePermanently(folder, uid, owned, uidValidity) }
             removeCached(folder, uid, stillWanted)
         }
-        _changes.emit(MailChange.Removed(folder, uid, generation))
+        changed(MailChange.Removed(folder, uid, generation))
     }
 
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
         val q = query.trim()
         if (account.isDemo) return demoPage(folder).let { page -> SearchOutcome.LoadedOnly(page.messages.filter { matchesLoadedMail(it, q) }, page.uidValidity) }
-        return try {
-            // Newest first, so the first page is the newest matches and the rest page back. One
-            // hold of the connection, so the page and the UIDVALIDITY are those the search saw.
-            withSession(stillWanted) { session ->
-                val matches = session.search(folder, q)
-                val validity = session.uidValidity(folder)
-                val newest = matches.take(PAGE_SIZE)
-                SearchOutcome.Server(session.fetchByUids(folder, newest), matches.drop(newest.size), validity)
+        val asked = indexEpoch.get()
+        val generation = account.accountGeneration
+        val whole = indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
+        // The rest of what the index lacks comes in the background, the first run all of it.
+        // Asked for once the catch-up is through: after a rejected password, which the list hands
+        // the account, nothing may log in again (spec §7.4). And asked for at once: mail come in
+        // past what the catch-up fetches sits below the newest it has, where no later catch-up
+        // looks, so a whole download within [INDEX_RESYNC_MS] must not hold that run off
+        // ([gapsFound]).
+        withContext(Dispatchers.IO) { askForTheRest(asked, generation, whole) }
+        // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
+        val (indexedUnder, matches) = withContext(Dispatchers.IO) {
+            val owner = indexOwner() ?: return@withContext null to emptyList()
+            val validity = searchIndex.uidValidity(owner, folder) ?: return@withContext null to emptyList()
+            validity to searchIndex.search(owner, folder, validity, q)
+        }
+        // Newest first, so the first page is the newest matches and the rest page back. One hold
+        // of the connection, so the page and the UIDVALIDITY are the server's at the same time.
+        return withSession(stillWanted) { session ->
+            val validity = session.uidValidity(folder)
+            // The folder recreated since the index answered: the matches' UIDs name other mail,
+            // and nothing of the new folder's was searched.
+            val current = validity == indexedUnder
+            val found = if (current) matches else emptyList()
+            val newest = found.take(PAGE_SIZE)
+            SearchOutcome.Server(session.fetchByUids(folder, newest), found.drop(newest.size), validity, complete = whole && current)
+        }
+    }
+
+    private val _searchIndexProgress = MutableStateFlow<MailIndexProgress?>(null)
+    override val searchIndexProgress: StateFlow<MailIndexProgress?> = _searchIndexProgress.asStateFlow()
+
+    /** Held by the download under way, so the in-app one and the background one never both run. */
+    private val indexing = Mutex()
+
+    /** Whether a download runs in the app now, which a test waits out. */
+    @VisibleForTesting
+    internal val downloadingInApp: Boolean get() = indexing.isLocked
+
+    @VisibleForTesting
+    internal var clock: () -> Long = System::currentTimeMillis
+
+    /**
+     * A download that got through every folder, for [owner], at [at], planned once a search had
+     * found the index lacking mail [gaps] times.
+     */
+    private class WholeDownload(val owner: MailIndexer.Owner, val at: Long, val gaps: Int)
+
+    /**
+     * The last download that got through every folder; null for none since the index last started
+     * over. One for an owner the index is no longer, signed in again or deleted since, counts as
+     * none, even one that only says so after the deletion.
+     */
+    @Volatile private var lastWhole: WholeDownload? = null
+
+    /**
+     * Moved on by a search whose catch-up left mail out ([search]). A download planned before it
+     * moved did not see that mail, so it does not hold the next one off, even one that only says
+     * it got through afterwards.
+     */
+    private val gapsFound = AtomicInteger()
+
+    /**
+     * Whether opening the mail screen downloads again: not within [INDEX_RESYNC_MS] of a whole
+     * download, which coming back from another page would otherwise repeat every time, every
+     * folder listed and every downloaded mail's flags asked for. New mail meanwhile reaches the
+     * list by its own poll, and a search catches up on it first.
+     */
+    private fun indexDue(): Boolean {
+        val last = lastWhole ?: return true
+        return !stillIndexOwner(last.owner) || last.gaps != gapsFound.get() || clock() - last.at >= INDEX_RESYNC_MS
+    }
+
+    /**
+     * Asked once it has the lock, as the download in the app asks: the worker a visit asked for
+     * waits out the download that visit runs in the app, and would otherwise run every folder
+     * again the moment that one got through.
+     */
+    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
+        // Read before the wait for the lock, as a visit reads it before its download starts.
+        val asked = indexEpoch.get()
+        indexing.withLock { if (indexDue()) downloadIndex(asked, stillWanted) }
+    }
+
+    /**
+     * Nothing once the downloaded mail has been deleted since the download was [asked] for, at
+     * that [indexEpoch]: one that waited out the deletion must not download it all again, which
+     * only the mail screen opened afterwards does.
+     *
+     * A password the server rejects stops it, and every login after it, as the list's own
+     * requests do (spec §7.4): the background download and the one in the app both come here.
+     */
+    private suspend fun downloadIndex(asked: Int, stillWanted: () -> Boolean = { true }) {
+        if (account.isDemo || state.authFailed) return
+        val owner = withContext(Dispatchers.IO) { indexOwnerNow() }?.takeIf { it.epoch == asked } ?: return
+        try {
+            // The folder list a first run resolves is the account's request too.
+            val current = { stillWanted() && stillIndexOwner(owner) }
+            // Again while a search found mail missing as this ran: this planned before that mail
+            // came, and the run the search asked for was this one -- the background run's request
+            // keeps the one already under way, and the download in the app runs one at a time.
+            // Only for a gap found since the pass began, which only a search makes, so it ends.
+            do {
+                val gaps = gapsFound.get()
+                downloadEveryFolder(owner, gaps, current)
+            } while (gapsFound.get() != gaps && current())
+        } catch (e: MailError.AuthFailed) {
+            // Unless the account that was refused has left since: its rejection must not stop the
+            // next one, whose password the server has not seen.
+            account.onAuthFailure(owner.generation)
+            throw e
+        }
+    }
+
+    /** One pass over every folder, planned once a search had found [gaps] gaps ([gapsFound]). */
+    private suspend fun downloadEveryFolder(owner: MailIndexer.Owner, gaps: Int, stillWanted: () -> Boolean) {
+        val folders = folders(stillWanted)
+        val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
+        // Every folder's count first, for the progress to have one total from the start.
+        val names = first + (folders.special.values + folders.others).filter { it !in first }
+        val plans = names.mapNotNull { indexer.plan(it, stillWanted = stillWanted) }
+        var whole = plans.size == names.size
+        // Mail read, answered or deleted elsewhere since it was downloaded. A folder recreated
+        // since its plan is cut short, and the download with it.
+        for (plan in plans) {
+            val refreshed = indexer.refreshFlags(plan, stillWanted)
+            whole = whole && refreshed
+        }
+        val total = plans.sumOf { it.missing.size }
+        if (total == 0) {
+            if (whole) lastWhole = WholeDownload(owner, clock(), gaps)
+            return
+        }
+        var done = 0
+        _searchIndexProgress.value = MailIndexProgress(done, total)
+        try {
+            for (plan in plans) {
+                val through = indexer.fill(plan, stillWanted = stillWanted) { added ->
+                    done += added
+                    _searchIndexProgress.value = MailIndexProgress(done, total)
+                }
+                whole = whole && through
             }
-        } catch (e: MailError.SearchUnsupported) {
-            val cached = cachedPage(folder)
-            SearchOutcome.LoadedOnly(cached?.messages.orEmpty().filter { matchesLoadedMail(it, q) }, cached?.uidValidity)
+            if (whole) lastWhole = WholeDownload(owner, clock(), gaps)
+        } finally {
+            _searchIndexProgress.value = null
         }
     }
 
@@ -595,7 +919,7 @@ class MailRepository @Inject constructor(
             val demoSent = folders().nameOf(SpecialFolder.SENT)
             demoSent?.let { sent -> demoMutate(sent) { it.add(0, demoOutgoingMail(mail, draft = false)) } }
             answered?.let { (folder, uid) -> demoUpdate(folder, uid) { s -> s.copy(flags = s.flags.copy(answered = true)) } }
-            demoSent?.let { _changes.emit(MailChange.Changed(it, generation)) }
+            demoSent?.let { changed(MailChange.Changed(it, generation)) }
             return if (demoSent != null) SentCopy.Filed else SentCopy.NotAttempted
         }
         // The SMTP login uses the same rejected password, so §7.4 covers it too --
@@ -605,11 +929,22 @@ class MailRepository @Inject constructor(
         // -- still sends: filing the copy is a convenience, and [MailSender] reports it as
         // [SentCopy.NotAttempted] rather than failing. Sending is the point.
         val sent = ensureFolderOrNull(SpecialFolder.SENT)
+        // Asked again: the folder's lookup can have met the rejection, or waited out a login that
+        // did, and dropped it with whatever else kept the sent copy from being filed.
+        refuseWhileAuthFailed()
         // The sent copy runs on [holder]'s connection, not one of its own: Mail2000 caps
         // concurrent connections, so a second one is most likely to be refused exactly when the
         // mail screen is open and holding the first.
         val result = withContext(Dispatchers.IO) {
-            sender.send(credentials(), mail, sent) { block -> withSession(block = block) }
+            // The account the SMTP login goes out as, read with its sign-in: a refusal of that
+            // login is that sign-in's (spec §7.4), whichever one the screen that asked opened under.
+            val signedIn = account.snapshot() ?: throw MailError.Protocol("not signed in")
+            try {
+                sender.send(signedIn.credentials, mail, sent) { block -> withSession(block = block) }
+            } catch (e: MailError.AuthFailed) {
+                account.onAuthFailure(signedIn.generation)
+                throw e
+            }
         }
         answered?.let { (folder, uid) ->
             val marked = try {
@@ -625,7 +960,7 @@ class MailRepository @Inject constructor(
         // A copy in the sent folder, filed by the app or found there already, is mail a list of
         // that folder has not got.
         if (sent != null && (result.sentCopy == SentCopy.Filed || result.sentCopy == SentCopy.ServerFiledItself)) {
-            _changes.emit(MailChange.Changed(sent, generation))
+            changed(MailChange.Changed(sent, generation))
         }
         return result.sentCopy
     }
@@ -641,8 +976,8 @@ class MailRepository @Inject constructor(
                 if (replacingUid != null) list.removeAll { it.summary.uid == replacingUid }
                 list.add(0, entry)
             }
-            _changes.emit(MailChange.Changed(drafts, generation))
-            if (replacingUid != null) _changes.emit(MailChange.Removed(drafts, replacingUid, generation))
+            changed(MailChange.Changed(drafts, generation))
+            if (replacingUid != null) changed(MailChange.Removed(drafts, replacingUid, generation))
             return
         }
         // Unlike the sent copy, a draft that is not kept is the whole operation failing, so a
@@ -653,10 +988,10 @@ class MailRepository @Inject constructor(
         withSession { it.append(drafts, bytes, setOf(AppendFlag.SEEN, AppendFlag.DRAFT)) }
         // Told now rather than once the old draft is gone: the new one is on the server from here
         // on, whatever becomes of the delete below.
-        _changes.emit(MailChange.Changed(drafts, generation))
+        changed(MailChange.Changed(drafts, generation))
         if (replacingUid != null) {
             runExpunging(drafts, replacingUid) { session, owned -> session.deletePermanently(drafts, replacingUid, owned) }
-            _changes.emit(MailChange.Removed(drafts, replacingUid, generation))
+            changed(MailChange.Removed(drafts, replacingUid, generation))
         }
     }
 
@@ -665,7 +1000,7 @@ class MailRepository @Inject constructor(
         if (account.isDemo) {
             val drafts = folders().nameOf(SpecialFolder.DRAFTS) ?: return
             demoMutate(drafts) { it.removeAll { m -> m.summary.uid == uid } }
-            _changes.emit(MailChange.Removed(drafts, uid, generation))
+            changed(MailChange.Removed(drafts, uid, generation))
             return
         }
         // Deliberately resolves without creating, unlike [saveDraft]: no drafts folder means
@@ -673,15 +1008,101 @@ class MailRepository @Inject constructor(
         // student's real account for an operation that cannot do anything once it has one.
         val drafts = folders().nameOf(SpecialFolder.DRAFTS) ?: return
         runExpunging(drafts, uid) { session, owned -> session.deletePermanently(drafts, uid, owned) }
-        _changes.emit(MailChange.Removed(drafts, uid, generation))
+        changed(MailChange.Removed(drafts, uid, generation))
     }
 
     override fun selfAddress(): MailAddress = MailAddress(state.displayName, credentials().address)
 
     override fun release() = holder.releaseLater()
 
+    /** The download running in the app, which deleting what it downloads stops. */
+    @Volatile private var inAppIndexing: Job? = null
+
+    override suspend fun searchIndexBytes(): Long = withContext(Dispatchers.IO) { searchIndex.sizeBytes() }
+
+    /**
+     * Held while a search asks for a run, and while [deleteSearchIndex] or a sign-out cancels them:
+     * a run asked for just before the one is cancelled with it, and none after it. Only off the
+     * main thread, since a search holds it while WorkManager answers.
+     */
+    private val scheduling = Any()
+
+    /** Runs right before a step waits for [scheduling]: a test's way of knowing it has got there. Null in the app. */
+    @VisibleForTesting
+    @Volatile
+    internal var onSchedulingWait: (() -> Unit)? = null
+
+    private inline fun <T> scheduled(block: () -> T): T {
+        onSchedulingWait?.invoke()
+        return synchronized(scheduling, block)
+    }
+
+    /**
+     * A search's request for the background run, [whole] saying whether its catch-up left nothing
+     * out. None for a search begun before the downloaded mail was deleted, at epoch [asked]: the
+     * run would download it all again, which only the mail screen opened afterwards does. Nor for
+     * one of a sign-in that has left since [generation]. Asked in one step with the deletion's or
+     * the sign-out's cancel, so a run asked for just before either is cancelled with it.
+     */
+    private fun askForTheRest(asked: Int, generation: Int, whole: Boolean) = scheduled {
+        if (indexEpoch.get() != asked || account.accountGeneration != generation) return@scheduled
+        if (whole) {
+            indexScheduler.request()
+        } else {
+            gapsFound.incrementAndGet()
+            // A run that plans after now, if the one under way may be past its last look at
+            // [gapsFound], or done and yet to be filed so, when a request would only join it.
+            indexScheduler.requestAgain()
+        }
+    }
+
+    /**
+     * Not waiting for a download to stop, which could be out on a slow network for as long as its
+     * timeout: the [indexEpoch] it moves on first is what keeps whatever is still under way from
+     * writing after the clear. Each write asks for it under the index's lock, which the clear
+     * takes too.
+     */
+    override suspend fun deleteSearchIndex() {
+        withContext(Dispatchers.IO) {
+            scheduled {
+                indexEpoch.incrementAndGet()
+                indexScheduler.cancel()
+            }
+        }
+        inAppIndexing?.cancel()
+        lastWhole = null
+        numberings.clear()
+        withContext(Dispatchers.IO) { searchIndex.clear() }
+    }
+
     override fun acquire() {
-        if (!account.isDemo) holder.hold()
+        if (account.isDemo) return
+        holder.hold()
+        // A rejected password downloads nothing until the student signs in again (spec §7.4).
+        if (!indexDue() || state.authFailed) return
+        // The mail screen is in use: whatever mail the phone lacks comes in now, here, rather than
+        // when the system next runs the background download, which some phones hold back for
+        // minutes. That one still finishes what this leaves, should the app go.
+        indexScheduler.request()
+        // Read now, not once the download starts: see [downloadIndex].
+        val asked = indexEpoch.get()
+        scope.launch {
+            if (!indexing.tryLock()) return@launch
+            // This one, never a later visit's that found it under way: deleting the downloaded
+            // mail stops the download that holds the lock.
+            inAppIndexing = coroutineContext[Job]
+            try {
+                // Asked again: another download can have got through while this one waited.
+                if (indexDue()) downloadIndex(asked)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: MailError) {
+                // Left to the background download, which tries again.
+            } finally {
+                inAppIndexing = null
+                indexing.unlock()
+            }
+        }
     }
 
     // --- helpers -------------------------------------------------------------------------
@@ -838,6 +1259,11 @@ class MailRepository @Inject constructor(
                 // mail in the folder was ours, so a successful one empties the
                 // set rather than removing this one UID from it.
                 state.setOwnedDeletedIf(folder, serverValidity, if (expunged) emptySet() else owned + uid, clears)
+                // Gone from the phone's copy too, under the UIDVALIDITY the write went out under,
+                // for the sign-in it went out as.
+                writerOfIndex(owner.generation)?.let { writer ->
+                    searchIndex.remove(writer.address, folder, serverValidity, listOf(uid)) { stillIndexOwner(writer) }
+                }
             }
         } catch (e: MailError) {
             if (e is MailError.FolderChanged) {
@@ -845,7 +1271,7 @@ class MailRepository @Inject constructor(
                 // the stale one: one the caller's UID was older than holds the folder as it is.
                 if (cacheStale) withContext(Dispatchers.IO) { cache.deleteFolder(folder) }
                 // A list of the folder holds rows of the mailbox the server has replaced.
-                _changes.emit(MailChange.Changed(folder, generation))
+                changed(MailChange.Changed(folder, generation))
             } else if (attempted && !alreadyDeleted && e !is MailError.AuthFailed && e !is MailError.Certificate) {
                 recordIfDeletedOnServer(folder, uid, validity, clears)
             }
@@ -901,6 +1327,15 @@ class MailRepository @Inject constructor(
 
     companion object {
         const val PAGE_SIZE = 50
+
+        /**
+         * The newest mail a search adds to the index before it looks, of what came in since the
+         * index last caught up: the background run fetches the rest.
+         */
+        const val SEARCH_CATCH_UP = 10
+
+        /** How soon after a whole download coming back to the mail screen downloads again. */
+        const val INDEX_RESYNC_MS = 15 * 60_000L
 
         /** The only roles [ensureFolder] may create; see its doc for why the other two are out. */
         private val CREATED_ON_DEMAND = setOf(SpecialFolder.SENT, SpecialFolder.DRAFTS, SpecialFolder.TRASH)

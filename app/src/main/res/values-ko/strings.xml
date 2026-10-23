@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">이 첨부 파일을 열까요?</string>
     <string name="school_mail_save_draft">임시저장</string>
     <string name="school_mail_saved">저장됨</string>
-    <string name="school_mail_search_index_partial">메일을 아직 다운로드하는 중이에요. 일부 오래된 메일은 검색에 나오지 않을 수 있어요.</string>
+    <string name="school_mail_search_index_partial">아직 모든 메일을 다운로드하지 않았어요. 일부 오래된 메일은 검색에 나오지 않을 수 있어요.</string>
     <string name="school_mail_search_local_only">서버에서 이 검색을 실행할 수 없습니다. 불러온 메일에서만 검색 결과를 표시합니다.</string>
     <string name="school_mail_search_prompt">메일 검색</string>
     <string name="school_mail_send">보내기</string>

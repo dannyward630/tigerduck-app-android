@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Otevřít tuto přílohu?</string>
     <string name="school_mail_save_draft">Uložit koncept</string>
     <string name="school_mail_saved">Uloženo</string>
-    <string name="school_mail_search_index_partial">Pošta se stále stahuje. Vyhledávání nemusí najít některé starší zprávy.</string>
+    <string name="school_mail_search_index_partial">Ještě není stažená všechna pošta. Vyhledávání nemusí najít některé starší zprávy.</string>
     <string name="school_mail_search_local_only">Server tento typ vyhledávání nepodporuje. Zobrazují se pouze shody z již načtené pošty.</string>
     <string name="school_mail_search_prompt">Hledat v poště</string>
     <string name="school_mail_send">Odeslat</string>

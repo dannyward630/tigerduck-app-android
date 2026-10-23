@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Åbn denne vedhæftning?</string>
     <string name="school_mail_save_draft">Gem kladde</string>
     <string name="school_mail_saved">Gemt</string>
-    <string name="school_mail_search_index_partial">Mailen downloades stadig. Søgningen finder måske ikke nogle ældre mails.</string>
+    <string name="school_mail_search_index_partial">Ikke al mail er downloadet endnu. Søgningen finder måske ikke nogle ældre mails.</string>
     <string name="school_mail_search_local_only">Serveren kan ikke udføre denne søgning. Viser kun resultater fra allerede indlæst mail.</string>
     <string name="school_mail_search_prompt">Søg i mail</string>
     <string name="school_mail_send">Send</string>

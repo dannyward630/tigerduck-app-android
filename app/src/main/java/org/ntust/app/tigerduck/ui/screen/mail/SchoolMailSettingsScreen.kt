@@ -24,6 +24,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,6 +38,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.ui.component.ContentCard
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
 import org.ntust.app.tigerduck.ui.component.SectionHeader
+import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.screen.settings.SettingRowHeight
 import org.ntust.app.tigerduck.ui.screen.settings.SettingsLinkRow
 import org.ntust.app.tigerduck.ui.screen.settings.SubSettingsBarHeight
@@ -66,6 +70,7 @@ fun SchoolMailSettingsScreen(
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
     val cacheBytes by viewModel.cacheBytes.collectAsStateWithLifecycle()
+    val storageBytes by viewModel.storageBytes.collectAsStateWithLifecycle()
 
     // Re-measured whenever the screen is entered: mail read since the last visit has grown the
     // cache behind it.
@@ -121,6 +126,19 @@ fun SchoolMailSettingsScreen(
                     CacheSizeRow(cacheBytes = cacheBytes, onClear = viewModel::clearCache)
                 }
             }
+            item {
+                Column {
+                    ContentCard(modifier = Modifier.padding(top = 12.dp)) {
+                        DownloadedMailRow(bytes = storageBytes, onDelete = viewModel::deleteStorage)
+                    }
+                    Text(
+                        stringResource(R.string.school_mail_storage_footer),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+                    )
+                }
+            }
         }
     }
 }
@@ -157,3 +175,49 @@ internal fun CacheSizeRow(cacheBytes: Long?, onClear: () -> Unit) {
         }
     }
 }
+
+/**
+ * The mail downloaded for search and the list, what it takes, and Delete. Unlike the cache's
+ * Clear, Delete asks first: the mail takes far longer to download again than the cache's few
+ * pages, and the question says it stays on the school's server.
+ */
+@Composable
+internal fun DownloadedMailRow(bytes: Long?, onDelete: () -> Unit) {
+    val context = LocalContext.current
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = SettingRowHeight)
+            .padding(start = 16.dp, end = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            stringResource(R.string.school_mail_storage_title),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyMedium,
+        )
+        Text(
+            bytes?.let { Formatter.formatFileSize(context, it) } ?: "\u2026",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
+        )
+        TextButton(onClick = { confirming = true }, enabled = (bytes ?: 0L) > 0L) {
+            Text(stringResource(R.string.school_mail_delete))
+        }
+    }
+    if (confirming) {
+        TigerDuckDialog(
+            onDismissRequest = { confirming = false },
+            title = stringResource(R.string.school_mail_storage_delete_title),
+            message = stringResource(R.string.school_mail_storage_delete_message),
+            confirmText = stringResource(R.string.school_mail_delete),
+            onConfirm = {
+                confirming = false
+                onDelete()
+            },
+            dismissText = stringResource(R.string.action_cancel),
+        )
+    }
+}
+

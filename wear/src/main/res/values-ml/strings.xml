@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">ഈ അറ്റാച്ച്‌മെന്റ് തുറക്കണോ?</string>
     <string name="school_mail_save_draft">ഡ്രാഫ്റ്റ് സേവ് ചെയ്യുക</string>
     <string name="school_mail_saved">സേവ് ചെയ്തു</string>
-    <string name="school_mail_search_index_partial">ഇമെയിൽ ഇപ്പോഴും ഡൗൺലോഡ് ചെയ്യുന്നു. ചില പഴയ ഇമെയിലുകൾ തിരയലിൽ കണ്ടെത്തിയേക്കില്ല.</string>
+    <string name="school_mail_search_index_partial">എല്ലാ ഇമെയിലുകളും ഇനിയും ഡൗൺലോഡ് ചെയ്തിട്ടില്ല. ചില പഴയ ഇമെയിലുകൾ തിരയലിൽ കണ്ടെത്തിയേക്കില്ല.</string>
     <string name="school_mail_search_local_only">സെർവറിന് ഈ തിരയൽ നടത്താനാകില്ല. ലോഡ് ചെയ്ത ഇമെയിലിൽ നിന്നുള്ള പൊരുത്തങ്ങൾ മാത്രം കാണിക്കുന്നു.</string>
     <string name="school_mail_search_prompt">ഇമെയിൽ തിരയുക</string>
     <string name="school_mail_send">അയയ്ക്കുക</string>

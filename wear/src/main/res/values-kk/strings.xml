@@ -811,7 +811,7 @@
     <string name="school_mail_risky_title">Бұл тіркеме ашылсын ба?</string>
     <string name="school_mail_save_draft">Жобаны сақтау</string>
     <string name="school_mail_saved">Сақталды</string>
-    <string name="school_mail_search_index_partial">Хаттар әлі жүктелуде. Іздеу кейбір ескі хаттарды таппауы мүмкін.</string>
+    <string name="school_mail_search_index_partial">Барлық хаттар әлі жүктелмеді. Іздеу кейбір ескі хаттарды таппауы мүмкін.</string>
     <string name="school_mail_search_local_only">Сервер бұл іздеуді орындай алмайды. Тек жүктелген хаттардан ғана нәтиже көрсетілуде.</string>
     <string name="school_mail_search_prompt">Хаттарды іздеу</string>
     <string name="school_mail_send">Жіберу</string>
