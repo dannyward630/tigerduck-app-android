@@ -272,6 +272,7 @@
     <string name="color_name_pink">Rózsaszín</string>
     <string name="color_name_purple">Lila</string>
     <string name="color_name_red">Piros</string>
+    <string name="color_name_wallpaper">Háttérkép színei</string>
     <string name="color_picker_apply">Alkalmazás</string>
     <string name="color_picker_custom">Egyéni</string>
     <string name="color_picker_presets_note">Előre beállított színek</string>

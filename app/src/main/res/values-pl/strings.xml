@@ -272,6 +272,7 @@
     <string name="color_name_pink">Różowy</string>
     <string name="color_name_purple">Fioletowy</string>
     <string name="color_name_red">Czerwony</string>
+    <string name="color_name_wallpaper">Kolory tapety</string>
     <string name="color_picker_apply">Zastosuj</string>
     <string name="color_picker_custom">Niestandardowy</string>
     <string name="color_picker_presets_note">Kolory predefiniowane</string>

@@ -170,6 +170,7 @@ private fun TrendChart(
     // The accent, as everything else that marks a choice is, and as the
     // iPhone draws its trend.
     val trendAccent = MaterialTheme.colorScheme.primary
+    val onTrendAccent = MaterialTheme.colorScheme.onPrimary
     val onSurface = MaterialTheme.colorScheme.onSurface
     val axisColor = onSurface.copy(alpha = 0.25f)
     val ruleColor = onSurface.copy(alpha = 0.35f)
@@ -371,8 +372,12 @@ private fun TrendChart(
                         floatArrayOf(3.dp.toPx(), 3.dp.toPx())
                     )
                 )
+                // On a confirmed term's filled point, the accent's own text
+                // color: white on every swatch, but the wallpaper's dark-mode
+                // primary is too light for white to show on. An estimate's
+                // hollow point keeps white on the card.
                 drawCircle(
-                    color = Color.White,
+                    color = if (sel.isProvisional) Color.White else onTrendAccent,
                     radius = 3.dp.toPx(),
                     center = Offset(cx, y(v))
                 )

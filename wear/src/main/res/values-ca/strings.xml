@@ -272,6 +272,7 @@
     <string name="color_name_pink">Rosa</string>
     <string name="color_name_purple">Lila</string>
     <string name="color_name_red">Vermell</string>
+    <string name="color_name_wallpaper">Colors del fons de pantalla</string>
     <string name="color_picker_apply">Aplica</string>
     <string name="color_picker_custom">Personalitzat</string>
     <string name="color_picker_presets_note">Colors predeterminats</string>

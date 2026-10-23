@@ -134,7 +134,8 @@ private fun ImportPage(
             dismissOnBackPress = !state.isSaving,
         ),
     ) {
-        // Dark whatever the app's theme, as on iOS: the page is the camera's picture.
+        // Dark whatever the app's theme, as on iOS: the page is the camera's picture. Under the
+        // wallpaper's colors it takes their dark tones, which the nested theme picks for itself.
         TigerDuckAppTheme(darkTheme = true, accentColor = MaterialTheme.colorScheme.primary) {
             Scaffold(
                 containerColor = Color.Black,

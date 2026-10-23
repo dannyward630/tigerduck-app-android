@@ -272,6 +272,7 @@
     <string name="color_name_pink">Roz</string>
     <string name="color_name_purple">Mov</string>
     <string name="color_name_red">Roșu</string>
+    <string name="color_name_wallpaper">Culorile imaginii de fundal</string>
     <string name="color_picker_apply">Aplică</string>
     <string name="color_picker_custom">Personalizat</string>
     <string name="color_picker_presets_note">Culori prestabilite</string>

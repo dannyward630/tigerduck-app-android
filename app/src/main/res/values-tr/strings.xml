@@ -272,6 +272,7 @@
     <string name="color_name_pink">Pembe</string>
     <string name="color_name_purple">Mor</string>
     <string name="color_name_red">Kırmızı</string>
+    <string name="color_name_wallpaper">Duvar kağıdı renkleri</string>
     <string name="color_picker_apply">Uygula</string>
     <string name="color_picker_custom">Özel</string>
     <string name="color_picker_presets_note">Hazır renkler</string>

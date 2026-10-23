@@ -272,6 +272,7 @@
     <string name="color_name_pink">Hồng</string>
     <string name="color_name_purple">Tím</string>
     <string name="color_name_red">Đỏ</string>
+    <string name="color_name_wallpaper">Màu hình nền</string>
     <string name="color_picker_apply">Áp dụng</string>
     <string name="color_picker_custom">Tùy chỉnh</string>
     <string name="color_picker_presets_note">Màu có sẵn</string>

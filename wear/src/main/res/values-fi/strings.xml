@@ -272,6 +272,7 @@
     <string name="color_name_pink">Vaaleanpunainen</string>
     <string name="color_name_purple">Violetti</string>
     <string name="color_name_red">Punainen</string>
+    <string name="color_name_wallpaper">Taustakuvan värit</string>
     <string name="color_picker_apply">Käytä</string>
     <string name="color_picker_custom">Mukautettu</string>
     <string name="color_picker_presets_note">Oletusvärit</string>

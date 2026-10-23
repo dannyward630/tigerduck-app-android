@@ -272,6 +272,7 @@
     <string name="color_name_pink">분홍</string>
     <string name="color_name_purple">보라</string>
     <string name="color_name_red">빨강</string>
+    <string name="color_name_wallpaper">배경화면 색상</string>
     <string name="color_picker_apply">적용</string>
     <string name="color_picker_custom">사용자 지정</string>
     <string name="color_picker_presets_note">기본 색상</string>

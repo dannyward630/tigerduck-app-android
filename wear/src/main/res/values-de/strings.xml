@@ -272,6 +272,7 @@
     <string name="color_name_pink">Pink</string>
     <string name="color_name_purple">Violett</string>
     <string name="color_name_red">Rot</string>
+    <string name="color_name_wallpaper">Hintergrundfarben</string>
     <string name="color_picker_apply">Anwenden</string>
     <string name="color_picker_custom">Benutzerdefiniert</string>
     <string name="color_picker_presets_note">Voreingestellte Farben</string>

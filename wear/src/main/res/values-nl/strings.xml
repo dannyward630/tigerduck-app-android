@@ -272,6 +272,7 @@
     <string name="color_name_pink">Roze</string>
     <string name="color_name_purple">Paars</string>
     <string name="color_name_red">Rood</string>
+    <string name="color_name_wallpaper">Achtergrondkleuren</string>
     <string name="color_picker_apply">Toepassen</string>
     <string name="color_picker_custom">Aangepast</string>
     <string name="color_picker_presets_note">Vooraf ingestelde kleuren</string>

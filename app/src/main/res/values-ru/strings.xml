@@ -272,6 +272,7 @@
     <string name="color_name_pink">Розовый</string>
     <string name="color_name_purple">Фиолетовый</string>
     <string name="color_name_red">Красный</string>
+    <string name="color_name_wallpaper">Цвета обоев</string>
     <string name="color_picker_apply">Применить</string>
     <string name="color_picker_custom">Пользовательский</string>
     <string name="color_picker_presets_note">Предустановленные цвета</string>

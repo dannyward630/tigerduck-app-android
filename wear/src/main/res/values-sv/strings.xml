@@ -272,6 +272,7 @@
     <string name="color_name_pink">Rosa</string>
     <string name="color_name_purple">Lila</string>
     <string name="color_name_red">Röd</string>
+    <string name="color_name_wallpaper">Bakgrundsfärger</string>
     <string name="color_picker_apply">Använd</string>
     <string name="color_picker_custom">Anpassad</string>
     <string name="color_picker_presets_note">Förinställda färger</string>

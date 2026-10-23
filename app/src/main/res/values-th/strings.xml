@@ -272,6 +272,7 @@
     <string name="color_name_pink">ชมพู</string>
     <string name="color_name_purple">ม่วง</string>
     <string name="color_name_red">แดง</string>
+    <string name="color_name_wallpaper">สีวอลเปเปอร์</string>
     <string name="color_picker_apply">นำไปใช้</string>
     <string name="color_picker_custom">กำหนดเอง</string>
     <string name="color_picker_presets_note">สีที่ตั้งไว้</string>

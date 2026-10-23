@@ -272,6 +272,7 @@
     <string name="color_name_pink">Lyserød</string>
     <string name="color_name_purple">Lilla</string>
     <string name="color_name_red">Rød</string>
+    <string name="color_name_wallpaper">Baggrundsfarver</string>
     <string name="color_picker_apply">Anvend</string>
     <string name="color_picker_custom">Brugerdefineret</string>
     <string name="color_picker_presets_note">Forudindstillede farver</string>

@@ -272,6 +272,7 @@
     <string name="color_name_pink">Rose</string>
     <string name="color_name_purple">Violet</string>
     <string name="color_name_red">Rouge</string>
+    <string name="color_name_wallpaper">Couleurs du fond d\'écran</string>
     <string name="color_picker_apply">Appliquer</string>
     <string name="color_picker_custom">Personnalisée</string>
     <string name="color_picker_presets_note">Couleurs prédéfinies</string>

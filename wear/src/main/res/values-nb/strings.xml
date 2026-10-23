@@ -272,6 +272,7 @@
     <string name="color_name_pink">Rosa</string>
     <string name="color_name_purple">Lilla</string>
     <string name="color_name_red">Rød</string>
+    <string name="color_name_wallpaper">Bakgrunnsfarger</string>
     <string name="color_picker_apply">Bruk</string>
     <string name="color_picker_custom">Egendefinert</string>
     <string name="color_picker_presets_note">Forhåndsinnstilte farger</string>

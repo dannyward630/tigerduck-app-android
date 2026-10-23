@@ -272,6 +272,7 @@
     <string name="color_name_pink">গোলাপি</string>
     <string name="color_name_purple">বেগুনি</string>
     <string name="color_name_red">লাল</string>
+    <string name="color_name_wallpaper">ওয়ালপেপারের রং</string>
     <string name="color_picker_apply">প্রয়োগ করুন</string>
     <string name="color_picker_custom">কাস্টম</string>
     <string name="color_picker_presets_note">প্রিসেট রং</string>

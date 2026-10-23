@@ -272,6 +272,7 @@
     <string name="color_name_pink">Roosa</string>
     <string name="color_name_purple">Lilla</string>
     <string name="color_name_red">Punane</string>
+    <string name="color_name_wallpaper">Taustapildi värvid</string>
     <string name="color_picker_apply">Rakenda</string>
     <string name="color_picker_custom">Kohandatud</string>
     <string name="color_picker_presets_note">Eelseadistatud värvid</string>

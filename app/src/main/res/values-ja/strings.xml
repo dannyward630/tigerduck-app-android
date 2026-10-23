@@ -272,6 +272,7 @@
     <string name="color_name_pink">ピンク</string>
     <string name="color_name_purple">パープル</string>
     <string name="color_name_red">レッド</string>
+    <string name="color_name_wallpaper">壁紙の色</string>
     <string name="color_picker_apply">適用</string>
     <string name="color_picker_custom">カスタム</string>
     <string name="color_picker_presets_note">プリセットの色</string>
