@@ -124,6 +124,10 @@ sealed class Screen(val route: String) {
     /** An assignment's page, opened from Home, a reminder or the Live Update; see MoodleAssignmentScreen. */
     object Assignment : Screen("assignment/{assignmentId}") {
         fun route(assignmentId: String) = "assignment/$assignmentId"
+
+        /** The assignment [route] opens, when it is one of these pages. */
+        fun idIn(route: String): String? =
+            route.removePrefix("assignment/").takeIf { route.startsWith("assignment/") && it.isNotEmpty() && '/' !in it }
     }
     object Library : Screen("library")
     object Score : Screen("score")
@@ -299,11 +303,14 @@ fun MainNavigation(
     // so reordering via TabEditor doesn't pop to a removed route.
     val startDest = remember { configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route }
     val popUpToDest = configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route
+    val leaveGuard = remember { LeaveGuard() }
     // A tab the user picks: a course sheet under a page it opened closes, rather than coming back
-    // over its page later.
+    // over its page later. The page on screen is asked first, a mail being written above all.
     val openTab: (String) -> Unit = { route ->
-        classTableViewModel.clearSelection()
-        navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
+        leaveGuard.leave {
+            classTableViewModel.clearSelection()
+            navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
+        }
     }
 
     LaunchedEffect(widgetStartRoute) {
@@ -323,13 +330,17 @@ fun MainNavigation(
         snapshotFlow { navController.currentBackStackEntry }
             .filterNotNull()
             .first()
-        // The course sheet closes first, as on iOS, unless the link is to the page on screen.
-        if (CourseDetailSheetRules.closesForLink(target, navController.currentBackStackEntry?.destination?.route)) {
-            classTableViewModel.clearSelection()
+        // A link to the page on screen leaves it, and the course sheet over it, as they are.
+        // Anywhere else, the page on screen is asked first, and the course sheet closes, as on
+        // iOS, rather than come back over its page on the way back.
+        if (!navController.currentBackStackEntry.showsPage(target)) {
+            leaveGuard.leave {
+                classTableViewModel.clearSelection()
+                // A tab through the bottom bar's own path: launchSingleTop alone looks only at the
+                // page on top, and pushed a second class table over its course detail.
+                navController.openStartRoute(target, tabRoutes, firstTab = popUpToDest, tabTap)
+            }
         }
-        // A tab through the bottom bar's own path: launchSingleTop alone looks only at the page on
-        // top, and pushed a second class table over its course detail.
-        navController.openStartRoute(target, tabRoutes, firstTab = popUpToDest, tabTap)
         // Consume so that re-tapping the same notification (which delivers the
         // identical route string) re-fires this LaunchedEffect instead of
         // being deduped by the same key.
@@ -608,7 +619,10 @@ fun MainNavigation(
                 ),
             ) { entry ->
                 // Not a bare pop: a send can finish after a link has opened another page over it.
-                org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeScreen(onDone = { navController.popIfTop(entry) })
+                org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeScreen(
+                    onDone = { navController.popIfTop(entry) },
+                    leaveGuard = leaveGuard,
+                )
             }
             page(Screen.Score.route) {
                 ScoreScreen(onOpenSignInSettings = openSignInSettings)
@@ -819,6 +833,19 @@ fun MainNavigation(
 internal fun selectedTabRoute(route: String?): String? = when {
     route == Screen.Settings.route || route == Screen.TabEditor.route -> Screen.More.route
     else -> route
+}
+
+/**
+ * Whether this is the page a link to [target] opens: the same route, or the same assignment's
+ * page, which a reminder names `assignment/<id>` and a course opens under its Moodle route.
+ */
+internal fun NavBackStackEntry?.showsPage(target: String): Boolean {
+    if (this == null) return false
+    val route = destination.route
+    if (route == target) return true
+    val assignmentId = Screen.Assignment.idIn(target) ?: return false
+    return (route == Screen.Assignment.route || route == MoodleRoutes.ASSIGNMENT) &&
+        arguments?.getString(MoodleRoutes.ARG_ASSIGNMENT_ID) == assignmentId
 }
 
 /**

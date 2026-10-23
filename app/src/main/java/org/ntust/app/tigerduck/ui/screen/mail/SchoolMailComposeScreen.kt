@@ -59,6 +59,8 @@ import org.ntust.app.tigerduck.mail.ComposeMode
 import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
+import org.ntust.app.tigerduck.ui.navigation.AskBeforeLeaving
+import org.ntust.app.tigerduck.ui.navigation.LeaveGuard
 import org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeViewModel.ComposeError
 import org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeViewModel.RecipientSlot
 import org.ntust.app.tigerduck.ui.screen.settings.SubSettingsBarHeight
@@ -67,10 +69,18 @@ import org.ntust.app.tigerduck.util.replaceIosArg
 /** Spec §6.4 — SubscriptionRuleEditorScreen's full-screen editor with Send in the top bar. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SchoolMailComposeScreen(onDone: () -> Unit, viewModel: SchoolMailComposeViewModel = hiltViewModel()) {
+fun SchoolMailComposeScreen(
+    onDone: () -> Unit,
+    /** What a bottom-bar tap or a link asks before it pops this page. */
+    leaveGuard: LeaveGuard,
+    viewModel: SchoolMailComposeViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showLeave by remember { mutableStateOf(false) }
+    // A tab or a link waiting on the answer to Save draft, which moves the app on once the draft
+    // is saved or discarded; null when back asked, which closes this page.
+    var pendingMove by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showSendConfirm by remember { mutableStateOf(false) }
 
     val quoteHeader = stringResource(R.string.school_mail_quote_header)
@@ -93,7 +103,7 @@ fun SchoolMailComposeScreen(onDone: () -> Unit, viewModel: SchoolMailComposeView
         if (state.savedDraft) Toast.makeText(context, R.string.school_mail_saved, Toast.LENGTH_SHORT).show()
         // A missing sent copy is not told here: the list and the mail this goes back to show it
         // until it is dismissed (SentCopyNoticeBanner).
-        onDone()
+        pendingMove?.invoke() ?: onDone()
     }
 
     // While sending, back (and the nav-up icon, which shares this) does nothing: popping the
@@ -108,6 +118,15 @@ fun SchoolMailComposeScreen(onDone: () -> Unit, viewModel: SchoolMailComposeView
         }
     }
     BackHandler(onBack = leave)
+    // A bottom-bar tap or a link would pop this page as back does, so it asks the same: nothing
+    // while sending, Save draft with text to lose.
+    AskBeforeLeaving(leaveGuard) { move ->
+        when {
+            state.sending -> Unit
+            state.dirty -> { pendingMove = move; showLeave = true }
+            else -> move()
+        }
+    }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         viewModel.addPicked(uris)
@@ -245,13 +264,13 @@ fun SchoolMailComposeScreen(onDone: () -> Unit, viewModel: SchoolMailComposeView
 
     if (showLeave) {
         TigerDuckDialog(
-            onDismissRequest = { showLeave = false },
+            onDismissRequest = { showLeave = false; pendingMove = null },
             title = stringResource(R.string.school_mail_leave_title),
             confirmText = stringResource(R.string.school_mail_save_draft),
             onConfirm = { showLeave = false; viewModel.saveDraft() },
             confirmEnabled = state.pendingPicks == 0,
             dismissText = stringResource(R.string.school_mail_keep_editing),
-            onDismiss = { showLeave = false },
+            onDismiss = { showLeave = false; pendingMove = null },
         ) {
             TextButton(onClick = { showLeave = false; viewModel.discard() }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.school_mail_discard), color = MaterialTheme.colorScheme.error)

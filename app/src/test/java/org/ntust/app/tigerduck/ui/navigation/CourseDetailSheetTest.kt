@@ -37,20 +37,6 @@ class CourseDetailSheetRulesTest {
         assertFalse(CourseDetailSheetRules.shows(picked = false, pageOnTop = true))
     }
 
-    @Test
-    fun `a link to the page on screen leaves the sheet as it is`() {
-        assertFalse(CourseDetailSheetRules.closesForLink(Screen.ClassTable.route, currentRoute = Screen.ClassTable.route))
-    }
-
-    @Test
-    fun `a link anywhere else closes the sheet, so it does not come back on the way back`() {
-        assertTrue(CourseDetailSheetRules.closesForLink(Screen.Assignment.route("900001"), currentRoute = Screen.ClassTable.route))
-        assertTrue(CourseDetailSheetRules.closesForLink(Screen.Home.route, currentRoute = Screen.ClassTable.route))
-        assertTrue(
-            "over a page the sheet opened too",
-            CourseDetailSheetRules.closesForLink(Screen.ClassTable.route, currentRoute = MoodleRoutes.ASSIGNMENTS),
-        )
-    }
 }
 
 /** The pages the course detail opens, on a real NavHost: full screen, in the app's own navigation. */

@@ -38,13 +38,6 @@ internal object CourseDetailSheetRules {
      * top, so a page the sheet opens covers it, and a back to the page brings it back.
      */
     fun shows(picked: Boolean, pageOnTop: Boolean): Boolean = picked && pageOnTop
-
-    /**
-     * Whether a link from a reminder, a widget or the Live Update closes the sheet before [target]
-     * opens: unless it is the page on screen, [currentRoute], which the link leaves as it is. A
-     * sheet left open would come back over its page on the way back from the link's.
-     */
-    fun closesForLink(target: String, currentRoute: String?): Boolean = target != currentRoute
 }
 
 /** Whether [entry] is the page on top: false from the moment a page is opened over it. */
