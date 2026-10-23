@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
@@ -60,6 +61,76 @@ class SwipeableMailCardTest {
 
     private fun customActions(): List<String> =
         card().fetchSemanticsNode().config.getOrElse(SemanticsActions.CustomActions) { emptyList() }.map { it.label }
+
+    /** Runs the card's custom accessibility action [label], as TalkBack's actions menu does. */
+    private fun performAction(label: String) {
+        val action = card().fetchSemanticsNode().config[SemanticsActions.CustomActions].single { it.label == label }
+        composeRule.runOnIdle { action.action() }
+    }
+
+    /** Swipes the card, lets the swipe's fling-out run, and gives back what it called. */
+    private fun swipe(towardRight: Boolean): List<String> {
+        calls.clear()
+        card().performTouchInput { if (towardRight) swipeRight() else swipeLeft() }
+        composeRule.waitForIdle()
+        return calls.toList()
+    }
+
+    /** Presses and holds the card, then taps the item [label] names in the menu that opens. */
+    private fun pickFromMenu(@StringRes label: Int): List<String> {
+        calls.clear()
+        card().performTouchInput { longClick() }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText(text(label)).performClick()
+        composeRule.waitForIdle()
+        return calls.toList()
+    }
+
+    @Test
+    fun `in a left-to-right layout the leading swipe toggles read and the trailing one asks to delete`() {
+        show()
+
+        assertEquals(listOf("read"), swipe(towardRight = true))
+        assertEquals(listOf("delete"), swipe(towardRight = false))
+    }
+
+    @Test
+    fun `in a right-to-left layout the swipes are mirrored`() {
+        show(direction = LayoutDirection.Rtl)
+
+        assertEquals(listOf("read"), swipe(towardRight = false))
+        assertEquals(listOf("delete"), swipe(towardRight = true))
+    }
+
+    @Test
+    fun `a tap opens the mail`() {
+        show()
+
+        card().performClick()
+        assertEquals(listOf("open"), calls)
+    }
+
+    @Test
+    fun `each item of the long press's menu does what it says`() {
+        show()
+
+        assertEquals(listOf("read"), pickFromMenu(R.string.school_mail_mark_read))
+        assertEquals(listOf("move"), pickFromMenu(R.string.school_mail_move_to))
+        assertEquals(listOf("delete"), pickFromMenu(R.string.school_mail_delete))
+        composeRule.onNodeWithText(text(R.string.school_mail_move_to)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `TalkBack can mark the mail read and delete it, which only a swipe does otherwise`() {
+        show()
+
+        assertEquals(listOf(text(R.string.school_mail_mark_read), text(R.string.school_mail_delete)), customActions())
+        performAction(text(R.string.school_mail_delete))
+        assertEquals(listOf("delete"), calls)
+        calls.clear()
+        performAction(text(R.string.school_mail_mark_read))
+        assertEquals(listOf("read"), calls)
+    }
 
     @Test
     fun `a card whose delete or move is still out offers nothing more`() {
