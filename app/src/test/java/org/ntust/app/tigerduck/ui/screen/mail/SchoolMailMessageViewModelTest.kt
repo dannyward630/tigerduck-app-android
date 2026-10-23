@@ -41,7 +41,9 @@ import org.ntust.app.tigerduck.ui.screen.mail.SchoolMailMessageViewModel.ViewMod
 import java.io.ByteArrayOutputStream
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureTimeMillis
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import org.ntust.app.tigerduck.mail.schoolMailSite
 
 /**
@@ -1103,6 +1105,42 @@ class SchoolMailMessageViewModelTest {
         vm.confirmDelete(true)
         assertTrue(vm.state.value.actionError is MailError.FolderChanged)
         assertFalse(vm.state.value.closed)
+    }
+
+    // --- writes that outlive the account ------------------------------------------------
+
+    @Test
+    fun `a move the repository let go unsent is no failure to show`() {
+        repo.add("INBOX", mailSummary(5))
+        repo.bodies[5] = MailBody(null, "x", emptyList(), emptyMap())
+        // Another student signed in over this one while the move waited for the session.
+        repo.moveError = MailError.Abandoned()
+        val vm = vm()
+        vm.load()
+        vm.moveTo("回收筒")
+        assertNull("a write nobody wanted any more was shown as a failure", vm.state.value.actionError)
+        assertFalse(vm.state.value.closed)
+    }
+
+    @Test
+    fun `a delete whose password is rejected after the student signed in again is not theirs to see`() {
+        runBlocking { account.signIn("b10000001", "pw") }
+        repo.add("INBOX", mailSummary(5))
+        repo.bodies[5] = MailBody(null, "x", emptyList(), emptyMap())
+        // The delete is on the connection when the student signs in again with a new password.
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        repo.deleteError = MailError.AuthFailed()
+        val vm = vm()
+        vm.load()
+        vm.delete()
+        vm.confirmDelete(true)
+        runBlocking { account.signIn("b10000001", "pw") }
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the old password's rejection marked the new sign-in rejected", account.authFailed.value)
     }
 
     // --- normalizedHref: direct asserts for the image-URL allowlist (MailWebView) -----------

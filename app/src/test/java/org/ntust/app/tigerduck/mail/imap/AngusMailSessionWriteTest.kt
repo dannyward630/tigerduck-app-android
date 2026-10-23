@@ -243,6 +243,32 @@ class AngusMailSessionWriteTest {
         assertEquals(2, countIn("INBOX"))
     }
 
+    /**
+     * The UIDVALIDITY a caller read its UID under is checked against the folder as the write
+     * selects it: under any other the UID names another mail, and nothing may be copied or flagged.
+     */
+    @Test
+    fun `move and permanent delete send nothing to a folder selected under another UIDVALIDITY`() {
+        server.createFolders("回收筒")
+        server.deliver("not this one")
+        session().use { s ->
+            val page = s.fetchPage("INBOX", null, 10)
+            val uid = page.messages.single().uid
+            val stale = page.uidValidity + 1
+
+            val moved = runCatching { s.move("INBOX", uid, "回收筒", ownedDeleted = emptySet(), uidValidity = stale) }
+            val deleted = runCatching { s.deletePermanently("INBOX", uid, emptySet(), uidValidity = stale) }
+
+            assertTrue(moved.exceptionOrNull() is MailError.FolderChanged)
+            assertTrue(deleted.exceptionOrNull() is MailError.FolderChanged)
+            assertEquals(listOf("not this one"), s.fetchPage("INBOX", null, 10).messages.map { it.subject })
+            // Under the folder's own UIDVALIDITY the same move goes through.
+            assertTrue(s.move("INBOX", uid, "回收筒", ownedDeleted = emptySet(), uidValidity = page.uidValidity))
+        }
+        assertEquals(0, countIn("INBOX"))
+        assertEquals(1, countIn("回收筒"))
+    }
+
     @Test
     fun `search by subject, sender and body, including Chinese`() {
         server.deliver("課程公告", body = "期中考")

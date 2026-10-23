@@ -32,6 +32,22 @@ interface MailStateStore {
     var diagnostics: List<String>
     fun ownedDeleted(folder: String, uidValidity: Long): Set<Long>
     fun setOwnedDeleted(folder: String, uidValidity: Long, uids: Set<Long>)
+
+    /**
+     * How many times [clear] has run in this process. A write that reads the owned-`\Deleted` set
+     * takes it first, so that what it records afterwards ([setOwnedDeletedIf]) lands in the state
+     * of the student it read for. [clearSignIn] keeps the set, and leaves this as it was.
+     */
+    val clears: Int
+
+    /**
+     * [setOwnedDeleted] while [clears] still stands at [clearsSince], asked under the lock [clear]
+     * takes, and says whether it wrote. Not on the account's generation: a student signing in over
+     * another clears the state before the account moves to them, and the same student signing in
+     * again moves the account but keeps the set, which must keep taking what their writes flag.
+     * Nothing persisted changes; the count lives and dies with the writes it guards.
+     */
+    fun setOwnedDeletedIf(folder: String, uidValidity: Long, uids: Set<Long>, clearsSince: Int): Boolean
     fun clear()
 
     /**
@@ -60,6 +76,9 @@ object OwnedDeletedCodec {
 
 class SharedPrefsMailStateStore(context: Context) : MailStateStore {
     private val prefs = context.getSharedPreferences("school_mail_state", Context.MODE_PRIVATE)
+
+    @Volatile private var clearCount = 0
+    override val clears: Int get() = clearCount
 
     override var displayName: String?
         get() = prefs.getString(K_NAME, null)
@@ -124,9 +143,17 @@ class SharedPrefsMailStateStore(context: Context) : MailStateStore {
         prefs.edit().putStringSet(K_OWNED, (others + mine).toSet()).apply()
     }
 
-    // Under the lock [setFetchedAtIf] asks its question under; see there.
+    @Synchronized
+    override fun setOwnedDeletedIf(folder: String, uidValidity: Long, uids: Set<Long>, clearsSince: Int): Boolean {
+        if (clearCount != clearsSince) return false
+        setOwnedDeleted(folder, uidValidity, uids)
+        return true
+    }
+
+    // Under the lock [setFetchedAtIf] and [setOwnedDeletedIf] ask their question under; see there.
     @Synchronized
     override fun clear() {
+        clearCount++
         prefs.edit().clear().apply()
     }
 
