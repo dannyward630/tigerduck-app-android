@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.widget.Toast
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -419,9 +420,13 @@ fun SchoolMailScreen(
                     )
                 }
                 FolderChips(state = state, onSelect = viewModel::selectFolder)
-                if (state.searchLocalOnly) {
+                searchNote(
+                    searched = state.searchResults != null,
+                    loadedOnly = state.searchLocalOnly,
+                    downloading = indexProgress != null,
+                )?.let { note ->
                     Text(
-                        stringResource(R.string.school_mail_search_local_only),
+                        stringResource(note),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
@@ -796,3 +801,16 @@ internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Loc
     val number = NumberFormat.getIntegerInstance(locale)
     return number.format(progress.done) + "/" + number.format(progress.total)
 }
+
+/**
+ * The line under the search field when a search may have missed mail: one that could read only
+ * the loaded mail, or one run while the mail is still downloading, before the older mail is in.
+ */
+@StringRes
+internal fun searchNote(searched: Boolean, loadedOnly: Boolean, downloading: Boolean): Int? = when {
+    !searched -> null
+    loadedOnly -> R.string.school_mail_search_local_only
+    downloading -> R.string.school_mail_search_index_partial
+    else -> null
+}
+
