@@ -399,7 +399,7 @@ fun SchoolMailScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp)
                             .onFocusChanged { searchFocused = it.isFocused },
-                        leadingIcon = { SearchFieldIcon(searching = state.isSearching) },
+                        leadingIcon = { SearchFieldIcon(searching = state.searchBusy) },
                         trailingIcon = searchClearIcon(state.searchText) { viewModel.setSearchText("") },
                         placeholder = { Text(stringResource(R.string.school_mail_search_prompt)) },
                         singleLine = true,

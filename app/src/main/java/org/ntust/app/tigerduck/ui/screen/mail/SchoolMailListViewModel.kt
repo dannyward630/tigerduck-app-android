@@ -99,6 +99,7 @@ class SchoolMailListViewModel @Inject constructor(
         val searchText: String = "",
         val searchResults: List<MailRow>? = null,
         val searchLocalOnly: Boolean = false,
+        /** A search under way: one [runSearch] that has not ended, and is still the latest. */
         val isSearching: Boolean = false,
         /**
          * When the folders on screen last had their newest page fetched -- for All mail the older
@@ -107,6 +108,9 @@ class SchoolMailListViewModel @Inject constructor(
          */
         val fetchedAt: Long = 0L,
     ) {
+        /** A search under way, or a further page of its matches on its way: the search field spins. */
+        val searchBusy: Boolean get() = isSearching || (isPaginating && searchResults != null)
+
         val displayed: List<MailRow>
             get() = (searchResults ?: messages).let { list -> if (unreadOnly) list.filter { !it.summary.flags.seen } else list }
 
@@ -512,6 +516,8 @@ class SchoolMailListViewModel @Inject constructor(
     private fun forgetSearch() {
         searchGeneration++
         unfetchedMatches = emptyMap()
+        // A search still out is nobody's now, so its end must not be waited on to stop the spinner.
+        _state.update { it.copy(isSearching = false) }
     }
 
     fun submitSearch() {
@@ -988,7 +994,8 @@ class SchoolMailListViewModel @Inject constructor(
             // rejected password, the LOGIN that was just decided against (spec §7.4).
             if (!serverUnreachable && _state.value.displayed.isEmpty()) loadMoreSearchResults()
         } finally {
-            _state.update { it.copy(isSearching = false) }
+            // Only the latest search's end stops the spinner: one it overtook may end while it runs.
+            if (search == searchGeneration) _state.update { it.copy(isSearching = false) }
         }
     }
 

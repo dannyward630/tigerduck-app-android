@@ -483,6 +483,92 @@ class SchoolMailListViewModelTest {
     }
 
     @Test
+    fun `the search field spins while a further page of matches is on its way`() {
+        repo.pageSize = 2
+        repo.add("INBOX", *(1L..120L).map { mailSummary(it, subject = "期中考 $it") }.toTypedArray())
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        assertFalse(vm.state.value.searchBusy)
+        val gate = CompletableDeferred<Unit>()
+        repo.searchPageGate = gate
+
+        vm.loadMoreIfNeeded(vm.state.value.displayed.last())
+        assertTrue(vm.state.value.searchBusy)
+
+        repo.searchPageGate = null
+        gate.complete(Unit)
+        assertFalse(vm.state.value.searchBusy)
+    }
+
+    @Test
+    fun `the list paging back on its own leaves the search field still`() {
+        val paging = SchoolMailListViewModel.UiState(isPaginating = true)
+        assertFalse(paging.searchBusy)
+    }
+
+    @Test
+    fun `a search overtaken by a newer one does not stop the newer one's spinner`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        val first = CompletableDeferred<Unit>()
+        repo.searchGate = first
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val second = CompletableDeferred<Unit>()
+        repo.searchGate = second
+        vm.setSearchText("考")
+        vm.submitSearch()
+
+        first.complete(Unit)
+        assertTrue("the newer search is still out", vm.state.value.searchBusy)
+
+        repo.searchGate = null
+        second.complete(Unit)
+        assertFalse(vm.state.value.searchBusy)
+    }
+
+    @Test
+    fun `clearing a search still out stops its spinner at once`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        val gate = CompletableDeferred<Unit>()
+        repo.searchGate = gate
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        assertTrue(vm.state.value.searchBusy)
+
+        vm.setSearchText("")
+        assertFalse(vm.state.value.searchBusy)
+
+        repo.searchGate = null
+        gate.complete(Unit)
+        assertFalse(vm.state.value.searchBusy)
+    }
+
+    @Test
+    fun `another folder picked while a search is out stops its spinner`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        repo.add(SENT, mailSummary(2))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        val gate = CompletableDeferred<Unit>()
+        repo.searchGate = gate
+        vm.setSearchText("期中")
+        vm.submitSearch()
+
+        vm.selectFolder(FolderSelection.Real(SENT))
+        assertFalse(vm.state.value.searchBusy)
+
+        repo.searchGate = null
+        gate.complete(Unit)
+        assertFalse(vm.state.value.searchBusy)
+    }
+
+    @Test
     fun `a certificate failure of a search the user has cleared still stays on screen`() {
         repo.add("INBOX", mailSummary(1, subject = "期中考"))
         vm.load()
