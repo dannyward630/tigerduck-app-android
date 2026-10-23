@@ -31,6 +31,7 @@
     <string name="action_allow">അനുവദിക്കുക</string>
     <string name="action_back">തിരിച്ച്</string>
     <string name="action_cancel">റദ്ദാക്കുക</string>
+    <string name="action_change">മാറ്റുക</string>
     <string name="action_clear_text">ടെക്സ്റ്റ് മായ്ക്കുക</string>
     <string name="action_close">അടക്കുക</string>
     <string name="action_confirm">സ്ഥിരീകരിക്കുക</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">ഇന്റർഫേസ് ശൈലി</string>
     <string name="settings_whats_new">പുതിയതെന്ത്</string>
     <string name="share_code_needs_update_message">ഈ പങ്കിടൽ കോഡിന് ആപ്പിന്റെ പുതിയ പതിപ്പ് ആവശ്യമാണ്.</string>
+    <string name="sign_in_change_account_title">അക്കൗണ്ട് മാറ്റുക</string>
     <string name="sign_in_password">പാസ്‌വേഡ്</string>
     <string name="sign_in_student_id">വിദ്യാർഥി ഐഡി</string>
     <string name="source_code_picker_current_app_badge">നിലവിലെ ആപ്പ്</string>

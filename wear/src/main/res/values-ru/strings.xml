@@ -31,6 +31,7 @@
     <string name="action_allow">Разрешить</string>
     <string name="action_back">Назад</string>
     <string name="action_cancel">Отмена</string>
+    <string name="action_change">Сменить</string>
     <string name="action_clear_text">Очистить текст</string>
     <string name="action_close">Закрыть</string>
     <string name="action_confirm">Подтвердить</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Стиль интерфейса</string>
     <string name="settings_whats_new">Что нового</string>
     <string name="share_code_needs_update_message">Этот код для обмена требует более новой версии приложения.</string>
+    <string name="sign_in_change_account_title">Сменить аккаунт</string>
     <string name="sign_in_password">Пароль</string>
     <string name="sign_in_student_id">Студенческий ID</string>
     <string name="source_code_picker_current_app_badge">Текущее приложение</string>

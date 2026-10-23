@@ -31,6 +31,7 @@
     <string name="action_allow">אפשר</string>
     <string name="action_back">חזרה</string>
     <string name="action_cancel">ביטול</string>
+    <string name="action_change">החלף</string>
     <string name="action_clear_text">נקה טקסט</string>
     <string name="action_close">סגור</string>
     <string name="action_confirm">אישור</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">סגנון ממשק</string>
     <string name="settings_whats_new">מה חדש</string>
     <string name="share_code_needs_update_message">קוד השיתוף הזה דורש גרסה חדשה יותר של האפליקציה.</string>
+    <string name="sign_in_change_account_title">החלפת חשבון</string>
     <string name="sign_in_password">סיסמה</string>
     <string name="sign_in_student_id">מספר סטודנט</string>
     <string name="source_code_picker_current_app_badge">האפליקציה הנוכחית</string>

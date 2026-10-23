@@ -31,6 +31,7 @@
     <string name="action_allow">Επιτρέπεται</string>
     <string name="action_back">Πίσω</string>
     <string name="action_cancel">Άκυρο</string>
+    <string name="action_change">Αλλαγή</string>
     <string name="action_clear_text">Εκκαθάριση κειμένου</string>
     <string name="action_close">Κλείσιμο</string>
     <string name="action_confirm">Επιβεβαίωση</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Στυλ διεπαφής</string>
     <string name="settings_whats_new">Τι νέο υπάρχει</string>
     <string name="share_code_needs_update_message">Αυτός ο κωδικός κοινής χρήσης απαιτεί νεότερη έκδοση της εφαρμογής.</string>
+    <string name="sign_in_change_account_title">Αλλαγή λογαριασμού</string>
     <string name="sign_in_password">Κωδικός πρόσβασης</string>
     <string name="sign_in_student_id">Αριθμός μητρώου</string>
     <string name="source_code_picker_current_app_badge">Τρέχουσα εφαρμογή</string>

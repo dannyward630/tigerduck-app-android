@@ -31,6 +31,7 @@
     <string name="action_allow">Дозволити</string>
     <string name="action_back">Назад</string>
     <string name="action_cancel">Скасувати</string>
+    <string name="action_change">Змінити</string>
     <string name="action_clear_text">Очистити текст</string>
     <string name="action_close">Закрити</string>
     <string name="action_confirm">Підтвердити</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Стиль інтерфейсу</string>
     <string name="settings_whats_new">Що нового</string>
     <string name="share_code_needs_update_message">Цей код для обміну потребує новішої версії додатка.</string>
+    <string name="sign_in_change_account_title">Змінити обліковий запис</string>
     <string name="sign_in_password">Пароль</string>
     <string name="sign_in_student_id">Студентський ID</string>
     <string name="source_code_picker_current_app_badge">Поточний застосунок</string>

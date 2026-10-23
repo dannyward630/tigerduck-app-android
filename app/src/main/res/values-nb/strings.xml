@@ -31,6 +31,7 @@
     <string name="action_allow">Tillat</string>
     <string name="action_back">Tilbake</string>
     <string name="action_cancel">Avbryt</string>
+    <string name="action_change">Bytt</string>
     <string name="action_clear_text">Tøm tekst</string>
     <string name="action_close">Lukk</string>
     <string name="action_confirm">Bekreft</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Grensesnittsstil</string>
     <string name="settings_whats_new">Hva er nytt</string>
     <string name="share_code_needs_update_message">Denne delingskoden krever en nyere versjon av appen.</string>
+    <string name="sign_in_change_account_title">Bytt konto</string>
     <string name="sign_in_password">Passord</string>
     <string name="sign_in_student_id">Studentnummer</string>
     <string name="source_code_picker_current_app_badge">Denne appen</string>
