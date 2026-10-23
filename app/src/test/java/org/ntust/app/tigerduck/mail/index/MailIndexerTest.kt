@@ -9,6 +9,7 @@ import org.ntust.app.tigerduck.mail.FakeMailServer
 import org.ntust.app.tigerduck.mail.MailCredentials
 import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.mail.imap.MailSession
+import org.ntust.app.tigerduck.mail.model.MailFlags
 
 /** [MailIndexer] over [FakeMailServer], its one session handed out as MailRepository hands out the shared one. */
 class MailIndexerTest {
@@ -16,10 +17,18 @@ class MailIndexerTest {
     private val index = InMemoryMailSearchIndex()
     private val session = server.factory().open(MailCredentials("b10000001", "pw"))
 
+    /** Whether a block holds the connection now, as the shared one's lock would say. */
+    private var holding = false
+
     private val sessions = object : MailSessionRunner {
         override suspend fun <T> run(stillWanted: () -> Boolean, block: (MailSession) -> T): T {
             if (!stillWanted()) throw MailError.Abandoned()
-            return block(session)
+            holding = true
+            try {
+                return block(session)
+            } finally {
+                holding = false
+            }
         }
     }
 
@@ -77,5 +86,45 @@ class MailIndexerTest {
         indexer.refreshFlags(plan)
 
         assertFalse(index.summaries(me, "INBOX", validity, listOf(1L)).getValue(1L).flags.seen)
+    }
+
+    /**
+     * A mark-read or a move holds the connection too. Let in between a batch's read of a mail and
+     * its filing, it would be undone by the batch's older answer: so the two are one hold.
+     */
+    @Test
+    fun `a batch and the flags it refreshes are filed before the connection is let go`() = runTest {
+        server.deliver("期中考")
+        val unheld = mutableListOf<String>()
+        val watched = object : MailSearchIndex by index {
+            override fun add(
+                owner: String,
+                folder: String,
+                uidValidity: Long,
+                entries: List<MailSearchIndex.Entry>,
+                stillCurrent: () -> Boolean,
+            ): Boolean {
+                if (!holding) unheld += "add"
+                return index.add(owner, folder, uidValidity, entries, stillCurrent)
+            }
+
+            override fun updateFlags(
+                owner: String,
+                folder: String,
+                uidValidity: Long,
+                flags: Map<Long, MailFlags>,
+                stillCurrent: () -> Boolean,
+            ) {
+                if (!holding) unheld += "updateFlags"
+                index.updateFlags(owner, folder, uidValidity, flags, stillCurrent)
+            }
+        }
+        val indexer = MailIndexer(watched, sessions, owner = { MailIndexer.Owner(me, 1) }, stillOwner = { true })
+        val plan = indexer.plan("INBOX")!!
+
+        indexer.fill(plan)
+        indexer.refreshFlags(plan)
+
+        assertEquals(emptyList<String>(), unheld)
     }
 }
