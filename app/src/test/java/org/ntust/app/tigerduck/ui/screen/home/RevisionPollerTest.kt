@@ -12,6 +12,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.ntust.app.tigerduck.push.SyncChange
+import org.ntust.app.tigerduck.push.SyncChangesPage
 import org.ntust.app.tigerduck.ui.screen.home.RevisionPollOutcome.CHANGED
 import org.ntust.app.tigerduck.ui.screen.home.RevisionPollOutcome.FAILED
 import org.ntust.app.tigerduck.ui.screen.home.RevisionPollOutcome.OFFLINE
@@ -369,6 +371,13 @@ class PollRevisionOnceTest {
     private var syncs = 0
     private var syncLands = true
 
+    /** The change feed's answer; null as when the read failed or the changes are gone. */
+    private var changes: suspend (Long) -> SyncChangesPage? = { null }
+    private val feedReads = mutableListOf<Long>()
+    private var generation = 1
+    private var retries = 0
+    private var onRetry: () -> Unit = {}
+
     private suspend fun poll() = pollRevisionOnce(
         syncEnabled = { syncOn },
         online = { online },
@@ -377,13 +386,26 @@ class PollRevisionOnceTest {
             fetches++
             serverRevision()
         },
+        fetchChanges = { since ->
+            feedReads += since
+            changes(since)
+        },
         lastKnownRevision = { lastKnown },
+        setLastKnownRevision = { lastKnown = it },
+        signInGeneration = { generation },
         fullSyncsInFlight = { inFlight },
+        retryUnsent = {
+            retries++
+            onRetry()
+        },
         fullSync = {
             syncs++
             if (syncLands) lastKnown = 7
         },
     )
+
+    private fun page(vararg changes: Pair<Long, String>) =
+        SyncChangesPage(7, 7, hasMore = false, changes.map { (revision, type) -> SyncChange(revision, type) })
 
     @Test
     fun `with sync off, offline or signed out nothing is asked`() = kotlinx.coroutines.test.runTest {
@@ -439,6 +461,83 @@ class PollRevisionOnceTest {
 
         serverRevision = { throw java.io.IOException("reset") }
         assertEquals(FAILED, poll())
+    }
+
+    @Test
+    fun `changes to assignments and bulletins alone move the watermark once what waits is sent, with no full sync`() =
+        kotlinx.coroutines.test.runTest {
+            serverRevision = { 7L }
+            changes = { page(6L to "assignment", 7L to "bulletin_state") }
+
+            assertEquals(CHANGED, poll())
+            assertEquals(listOf(5L), feedReads)
+            assertEquals(0, syncs)
+            assertEquals(1, retries)
+            assertEquals(7L, lastKnown)
+        }
+
+    @Test
+    fun `any other change takes the full sync`() = kotlinx.coroutines.test.runTest {
+        serverRevision = { 7L }
+        changes = { page(6L to "assignment", 7L to "course_override") }
+
+        assertEquals(CHANGED, poll())
+        assertEquals(1, syncs)
+        assertEquals(0, retries)
+    }
+
+    @Test
+    fun `a feed read that failed or found the changes gone takes the full sync`() = kotlinx.coroutines.test.runTest {
+        serverRevision = { 7L }
+        changes = { throw java.io.IOException("reset") }
+        assertEquals(CHANGED, poll())
+
+        lastKnown = 5
+        changes = { null }
+        assertEquals(CHANGED, poll())
+
+        assertEquals(2, syncs)
+    }
+
+    @Test
+    fun `before a full sync has set the watermark the feed is not read`() = kotlinx.coroutines.test.runTest {
+        serverRevision = { 7L }
+        lastKnown = 0
+
+        assertEquals(CHANGED, poll())
+        assertEquals(emptyList<Long>(), feedReads)
+        assertEquals(1, syncs)
+    }
+
+    @Test
+    fun `a full sync or a sign-out that overtakes the read takes the change`() = kotlinx.coroutines.test.runTest {
+        serverRevision = { 7L }
+        changes = {
+            lastKnown = 7
+            page(6L to "assignment", 7L to "assignment")
+        }
+        assertEquals(CHANGED, poll())
+
+        lastKnown = 5
+        changes = {
+            generation++
+            page(6L to "assignment", 7L to "assignment")
+        }
+        assertEquals(CHANGED, poll())
+
+        assertEquals(0, syncs)
+        assertEquals(0, retries)
+        assertEquals("the sign-out's watermark is not moved for the account that left", 5L, lastKnown)
+    }
+
+    @Test
+    fun `a sign-out while what waits is sent leaves the watermark alone`() = kotlinx.coroutines.test.runTest {
+        serverRevision = { 7L }
+        changes = { page(7L to "assignment") }
+        onRetry = { generation++ }
+
+        assertEquals(CHANGED, poll())
+        assertEquals(5L, lastKnown)
     }
 
     @Test

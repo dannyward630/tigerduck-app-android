@@ -31,6 +31,7 @@
     <string name="action_allow">Permite</string>
     <string name="action_back">Înapoi</string>
     <string name="action_cancel">Anulează</string>
+    <string name="action_change">Schimbă</string>
     <string name="action_clear_text">Șterge textul</string>
     <string name="action_close">Închide</string>
     <string name="action_confirm">Confirmă</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Stil interfață</string>
     <string name="settings_whats_new">Ce este nou</string>
     <string name="share_code_needs_update_message">Acest cod de distribuire necesită o versiune mai nouă a aplicației.</string>
+    <string name="sign_in_change_account_title">Schimbă contul</string>
     <string name="sign_in_password">Parolă</string>
     <string name="sign_in_student_id">ID student</string>
     <string name="source_code_picker_current_app_badge">Aplicația curentă</string>

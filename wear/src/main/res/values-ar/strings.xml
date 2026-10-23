@@ -31,6 +31,7 @@
     <string name="action_allow">السماح</string>
     <string name="action_back">رجوع</string>
     <string name="action_cancel">إلغاء</string>
+    <string name="action_change">تغيير</string>
     <string name="action_clear_text">مسح النص</string>
     <string name="action_close">إغلاق</string>
     <string name="action_confirm">تأكيد</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">نمط الواجهة</string>
     <string name="settings_whats_new">ما الجديد</string>
     <string name="share_code_needs_update_message">يتطلب رمز المشاركة هذا إصدارًا أحدث من التطبيق.</string>
+    <string name="sign_in_change_account_title">تغيير الحساب</string>
     <string name="sign_in_password">كلمة المرور</string>
     <string name="sign_in_student_id">رقم الطالب</string>
     <string name="source_code_picker_current_app_badge">التطبيق الحالي</string>

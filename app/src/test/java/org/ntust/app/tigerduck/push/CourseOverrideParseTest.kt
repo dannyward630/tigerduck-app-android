@@ -4,6 +4,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import org.ntust.app.tigerduck.ui.screen.home.CourseSyncReconciler
 
 /** The `course_overrides` of `GET /sync/full`, from an older backend and a current one. */
 class CourseOverrideParseTest {
@@ -67,6 +68,35 @@ class CourseOverrideParseTest {
         assertEquals("2026-10-10T16:42:49.666640+00:00", picked.colorHexUpdatedAt)
         assertNull(uploaded.colorHexUpdatedAt)
         assertNull(older.colorHexUpdatedAt)
+    }
+
+    /**
+     * tigerduck-backend#122: the backend keeps `""` for a name the user cleared, so a device
+     * that pulls it takes that language off, and the last one off drops the course's entry.
+     */
+    @Test
+    fun `a cleared name is read as empty, and the merge takes it off the stored names`() {
+        val json = JSONObject(
+            """
+            {"course_overrides":[
+              {"moodle_id":"1141CS1001301","course_no":"CS1001301","custom_names":{"zh-TW":"","en":"Calc"}},
+              {"moodle_id":"1141CS1001302","course_no":"CS1001302","custom_names":{"zh-TW":""}}
+            ]}
+            """.trimIndent()
+        )
+
+        val overrides = parseCourseOverrides(json, emptyMap())
+        val merged = CourseSyncReconciler.mergeCustomNames(
+            existing = mapOf(
+                "CS1001301" to mapOf("zh-TW" to "微積分", "en" to "Calculus"),
+                "CS1001302" to mapOf("zh-TW" to "物理"),
+            ),
+            overrides = overrides,
+            syncNames = true,
+        )
+
+        assertEquals(mapOf("zh-TW" to "", "en" to "Calc"), overrides[0].customNames)
+        assertEquals(mapOf("CS1001301" to mapOf("en" to "Calc")), merged)
     }
 
     @Test

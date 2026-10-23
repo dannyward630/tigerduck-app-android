@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.stringResource
@@ -105,12 +106,27 @@ internal fun moodleScreenShouldClose(signedIn: Boolean, store: MoodleCourseStore
  */
 @Composable
 internal fun MoodleSignedOutEffect(viewModel: MoodleCourseViewModel, onClose: () -> Unit) {
-    val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
     val store by viewModel.store.collectAsStateWithLifecycle()
+    MoodleSignedOutEffect(viewModel.signedIn, held = store, isCurrent = { it.isCurrent() }, onClose = onClose)
+}
+
+/**
+ * [MoodleSignedOutEffect] for a page holding [held], the account's data it shows, which
+ * [isCurrent] says still belongs to the account signed in; null while the page has none yet.
+ */
+@Composable
+internal fun <T : Any> MoodleSignedOutEffect(
+    signedIn: kotlinx.coroutines.flow.StateFlow<Boolean>,
+    held: T?,
+    isCurrent: (T) -> Boolean,
+    onClose: () -> Unit,
+) {
+    val isSignedIn by signedIn.collectAsStateWithLifecycle()
     val latestClose by rememberUpdatedState(onClose)
-    if (moodleScreenShouldClose(signedIn, store)) LaunchedEffect(Unit) { latestClose() }
-    LifecycleResumeEffect(store) {
-        if (moodleScreenShouldClose(viewModel.signedIn.value, store)) latestClose()
+    fun shouldClose(signedInNow: Boolean) = !signedInNow || held?.let(isCurrent) == false
+    if (shouldClose(isSignedIn)) LaunchedEffect(Unit) { latestClose() }
+    LifecycleResumeEffect(held) {
+        if (shouldClose(signedIn.value)) latestClose()
         onPauseOrDispose { }
     }
 }
@@ -227,7 +243,7 @@ internal fun MoodleRefreshFailure(failure: Throwable, onRetry: () -> Unit, modif
 
 /** [error] as the reader is told it: Moodle's own words where it has them. */
 @Composable
-internal fun moodleErrorMessage(error: Throwable): String = moodleErrorText(LocalContext.current.resources, error)
+internal fun moodleErrorMessage(error: Throwable): String = moodleErrorText(LocalResources.current, error)
 
 /** [moodleErrorMessage] outside composition, as for a toast. */
 internal fun moodleErrorText(resources: Resources, error: Throwable): String {
@@ -242,8 +258,11 @@ internal fun moodleErrorText(resources: Resources, error: Throwable): String {
         is MoodleWebserviceError.AccessDenied,
         is MoodleWebserviceError.WebserviceDisabled -> resources.getString(R.string.error_moodle_webservice_disabled)
         is MoodleWebserviceError.HttpStatus -> resources.getString(R.string.error_moodle_http_status_format, error.code)
+        // The part this app wrote: what follows a colon quotes the server -- a sign-in page's
+        // address and the start of its HTML, a parser's message -- and stays in the log.
         is MoodleWebserviceError.MalformedResponse ->
-            resources.getString(R.string.error_moodle_malformed_response_format).replaceIosArg(1, error.detail)
+            resources.getString(R.string.error_moodle_malformed_response_format)
+                .replaceIosArg(1, error.detail.substringBefore(':').trim())
         else -> resources.getString(R.string.error_moodle_malformed_response_format)
             .replaceIosArg(1, error.javaClass.simpleName)
     }
@@ -413,6 +432,25 @@ internal object MoodleDates {
     /** `yyyy/MM/dd HH:mm`, for the masthead of a post. */
     fun dateTime(epochSeconds: Long): String = format("yyyy/MM/dd HH:mm").format(Date(epochSeconds * 1000))
 
+    /** `M/d HH:mm`, as the course detail writes an assignment's due time; never seconds. */
+    fun minute(epochSeconds: Long): String = format("M/d HH:mm").format(Date(epochSeconds * 1000))
+
+    /** "Thu, Oct 15 at 20:03" in the device's language: the weekday, month, day and time, for the page's times. */
+    fun dayTime(epochSeconds: Long, locale: Locale = Locale.getDefault()): String =
+        localized(android.text.format.DateFormat.getBestDateTimePattern(locale, "MMMdEEEHHmm"), locale).format(Date(epochSeconds * 1000))
+
+    /** "Tue 23:59": the weekday and time, for the due time's headline. */
+    fun weekdayTime(epochSeconds: Long, locale: Locale = Locale.getDefault()): String =
+        localized(android.text.format.DateFormat.getBestDateTimePattern(locale, "EEEHHmm"), locale).format(Date(epochSeconds * 1000))
+
+    /** "Oct", for the due date's tile. */
+    fun month(epochSeconds: Long, locale: Locale = Locale.getDefault()): String =
+        localized("MMM", locale).format(Date(epochSeconds * 1000))
+
+    fun dayOfMonth(epochSeconds: Long): Int = calendar(epochSeconds * 1000).get(Calendar.DAY_OF_MONTH)
+
+    private fun localized(pattern: String, locale: Locale) =
+        SimpleDateFormat(pattern, locale).apply { timeZone = AppConstants.TAIPEI_TZ }
     /** A file's date: `MM/dd` this year, `yyyy/MM/dd` before. */
     fun date(epochSeconds: Long, nowMs: Long): String =
         format(if (sameYear(epochSeconds, nowMs)) "MM/dd" else "yyyy/MM/dd").format(Date(epochSeconds * 1000))

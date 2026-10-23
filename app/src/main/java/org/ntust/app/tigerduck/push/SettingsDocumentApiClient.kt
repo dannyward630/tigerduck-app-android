@@ -11,6 +11,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONException
 import org.json.JSONObject
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import javax.inject.Inject
@@ -80,6 +81,7 @@ class SettingsDocumentApiClient @Inject constructor(
                 .header("Accept", "application/json")
             chain.proceed(builder.build())
         }
+        .guardedBy(authTokenManager)
         .build()
 
     /**

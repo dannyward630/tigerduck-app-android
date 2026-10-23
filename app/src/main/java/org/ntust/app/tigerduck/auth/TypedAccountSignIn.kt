@@ -14,9 +14,10 @@ import org.ntust.app.tigerduck.auth.AuthTokenManager.SignInAttempt
  * without it, never the refused password stored and unlatched: the school's acceptance lifts
  * nothing by itself (SsoLoginService.signIn).
  *
- * [signInToLibrary] comes next, before the account shows as signed in ([markSignedIn]): the
- * paired watch is sent the library credentials the moment it does. The demo account
- * ([demoSignIn]) signs in on the device, stored the same way, with nothing sent anywhere.
+ * The account then shows as signed in ([markSignedIn]). The library and the school mail are signed
+ * in to by themselves: a school sign-in signs neither in (decided for Android on 2026-10-22). The
+ * demo account ([demoSignIn]) signs in on the device, stored the same way, with nothing sent
+ * anywhere.
  *
  * A sign-out takes no sign-in lock, so it can land at any point, the moment the school answers
  * included. The store and the account showing as signed in each happen only while
@@ -39,8 +40,6 @@ internal class TypedAccountSignIn(
     private val latch: StoredPasswordLatch,
     /** Signs in on the device when these are the demo account's, and says whether they were. */
     private val demoSignIn: suspend (studentId: String, password: String) -> Boolean,
-    /** The library's sign-in, with the generation read before this sign-in began. */
-    private val signInToLibrary: suspend (studentId: String, password: String, generation: Int) -> Unit,
     /** Shows the account as signed in. */
     private val markSignedIn: () -> Unit,
 ) {
@@ -87,7 +86,6 @@ internal class TypedAccountSignIn(
             }
             // Cancelled from here on, the sign-in still leaves the password the school took,
             // with no refusal of the old one held against it.
-            signInToLibrary(studentId, password, generation)
             prepareSignedIn()
             if (!unlessSignedOutSince(generation, markSignedIn)) {
                 return@signInInteractively SignInAttempt.NOTHING_TO_SEND

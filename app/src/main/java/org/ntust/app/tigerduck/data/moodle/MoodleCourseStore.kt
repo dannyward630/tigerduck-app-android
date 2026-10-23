@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +22,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.network.moodle.MoodleCourseApi
 import org.ntust.app.tigerduck.network.moodle.MoodleFileUrls
+import org.ntust.app.tigerduck.network.model.moodle.MoodleAssignmentRecord
 import org.ntust.app.tigerduck.network.model.moodle.MoodleCourseGrades
 import org.ntust.app.tigerduck.network.model.moodle.MoodleCourseMaterials
 import org.ntust.app.tigerduck.network.model.moodle.MoodleCourseSummary
@@ -50,6 +52,11 @@ class MoodleCourseStore(
     private val scope: CoroutineScope,
     /** Where member pictures are kept; null keeps them in memory only. */
     private val picturesDir: File? = null,
+    /**
+     * Where the pictures a member's page opens full screen are kept, under the account's
+     * downloads, which the system's viewers may read; null opens none. See [fullPicture].
+     */
+    private val openedPicturesDir: File? = null,
     /** The files downloaded on the device, every course's; null downloads nothing. */
     val downloads: MoodleFileDownloads? = null,
     /** Where this course's downloaded files are kept for the account; null downloads nothing. */
@@ -59,6 +66,8 @@ class MoodleCourseStore(
     private val background: CoroutineDispatcher = Dispatchers.Default,
     /** The term the course is of, such as "1151", which its forums copy is kept under; see [term]. */
     term: String? = null,
+    /** The records of the account's last assignment round, which the section's Assignments row counts. */
+    assignmentRecords: Flow<List<MoodleAssignmentRecord>> = kotlinx.coroutines.flow.flowOf(emptyList()),
 ) {
     /** Every course of the term, which one forums call covers. */
     val termCourseIds: List<Int> = (termCourseIds + courseId).distinct().sorted()
@@ -94,10 +103,15 @@ class MoodleCourseStore(
 
     // --- Section ---
 
+    /** Every assignment of the course the last round recorded, which its row counts. */
+    val assignmentCount: StateFlow<Int> = assignmentRecords
+        .map { records -> records.count { it.courseId == courseId } }
+        .stateIn(scope, SharingStarted.Eagerly, 0)
+
     /** The section's rows, in order; a kind with nothing to count has none. */
     val sectionRows: StateFlow<List<MoodleSectionRow>> =
-        combine(forums.state, materials.state, grades.state, members.state) { f, mat, g, m ->
-            MoodleSections.rows(f.value, courseId, g.value, m.value, mat.value)
+        combine(forums.state, materials.state, grades.state, members.state, assignmentCount) { f, mat, g, m, assignments ->
+            MoodleSections.rows(f.value, courseId, g.value, m.value, mat.value, assignmentCount = assignments)
         }.stateIn(scope, SharingStarted.Eagerly, emptyList())
 
     /** Why the section's last fetch failed, shown with Retry beside what it has, or in its place. */
@@ -500,9 +514,108 @@ class MoodleCourseStore(
     /** One file per member and picture revision, which a new upload changes. */
     private fun pictureFile(memberId: Int, url: String): File? {
         val dir = picturesDir ?: return null
-        val revision = Regex("[?&]rev=([^&]+)").find(url)?.groupValues?.get(1)
-            ?.filter { it.isLetterOrDigit() }.orEmpty()
-        return File(dir, "$memberId-$revision")
+        return File(dir, "$memberId-${pictureRevision(url)}")
+    }
+
+    private fun pictureRevision(url: String): String =
+        Regex("[?&]rev=([^&]+)").find(url)?.groupValues?.get(1)?.filter { it.isLetterOrDigit() }.orEmpty()
+
+    private val openingLock = Any()
+    private val _openingPictures = MutableStateFlow<Set<Int>>(emptySet())
+
+    /** The members whose picture is getting ready to open full screen; see [fullPicture]. */
+    val openingPictures: StateFlow<Set<Int>> = _openingPictures.asStateFlow()
+
+    /**
+     * [member]'s own picture as a file a viewer can open full screen, as the iPhone opens it
+     * (tigerduck-app/tigerduck-app#741): Moodle's 512 px size, downloaded on the first open and
+     * kept for the account; the 100 px one the page shows when that download fails, and the next
+     * open tries again. Named after the member, whose name the viewer shows. Null for Moodle's
+     * default picture or none, while an open of the member is already getting ready
+     * ([openingPictures]), or after a sign-out meanwhile.
+     */
+    suspend fun fullPicture(member: MoodleMember): MoodleOpenedPicture? {
+        val url = member.pictureUrl ?: return null
+        val dir = openedPicturesDir ?: return null
+        val claimed = synchronized(openingLock) {
+            (member.id !in _openingPictures.value).also { if (it) _openingPictures.value += member.id }
+        }
+        if (!claimed) return null
+        try {
+            val folder = "${member.id}-${pictureRevision(url)}"
+            withContext(Dispatchers.IO) { keptOpenedPicture(File(dir, folder)) }?.let { kept ->
+                return kept.takeIf { context.isCurrent() }
+            }
+            val large = try {
+                api.picture(largePictureUrl(url))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "member picture's large size not downloaded: ${e.logSummary()}")
+                null
+            }
+            if (!context.isCurrent()) return null
+            return if (large != null) {
+                keepOpenedPicture(dir, folder, member.name, large, replacing = "${member.id}-")
+            } else {
+                // Apart from the large size's folder, so the next open tries the download again.
+                val shown = pictureFile(member.id, url)?.let { file ->
+                    withContext(Dispatchers.IO) { runCatching { file.readBytes() }.getOrNull() }
+                } ?: return null
+                keepOpenedPicture(dir, "$folder$SHOWN_SIZE_SUFFIX", member.name, shown, replacing = null)
+            }
+        } finally {
+            synchronized(openingLock) { _openingPictures.value -= member.id }
+        }
+    }
+
+    /** The picture kept in [folder], its one whole file: never one a write left cut short. */
+    private fun keptOpenedPicture(folder: File): MoodleOpenedPicture? {
+        val file = folder.listFiles()?.singleOrNull { it.isFile && !it.name.startsWith(".") } ?: return null
+        return MoodleOpenedPicture(file, MoodlePictureType.ofExtension(file.extension).mimeType)
+    }
+
+    /**
+     * Writes [bytes] as [name]'s picture in [folder], dropping the member's other copies, named
+     * [replacing]; null when it could not, or when a sign-out began meanwhile. One blocking step,
+     * the sign-out's question last: a cancellation, as the sign-out ends the screen, cannot come
+     * between the write and the question. A sign-out says so before its wipe starts, so a copy
+     * written as it began goes here, and one written before is the wipe's to delete.
+     */
+    private suspend fun keepOpenedPicture(
+        dir: File,
+        folder: String,
+        name: String,
+        bytes: ByteArray,
+        replacing: String?,
+    ): MoodleOpenedPicture? = withContext(Dispatchers.IO) {
+        runCatching {
+            val type = MoodlePictureType.of(bytes)
+            if (replacing != null) {
+                dir.listFiles { file -> file.name.startsWith(replacing) && file.name != folder }
+                    ?.forEach { it.deleteRecursively() }
+            }
+            val target = File(dir, folder).apply {
+                deleteRecursively()
+                mkdirs()
+            }
+            val file = File(target, "${openedPictureName(name)}.${type.extension}")
+            // Written apart and moved in once whole: a write cut short, as on a full disk, leaves
+            // no copy a later open would take.
+            val part = File(target, ".${file.name}.part")
+            try {
+                part.writeBytes(bytes)
+                check(part.renameTo(file)) { "not moved into place" }
+            } finally {
+                part.delete()
+            }
+            if (context.isCurrent()) {
+                MoodleOpenedPicture(file, type.mimeType)
+            } else {
+                target.deleteRecursively()
+                null
+            }
+        }.onFailure { Log.w(TAG, "member picture not kept to open: ${it.logSummary()}") }.getOrNull()
     }
 
     /** Replaces the member's earlier pictures. */
@@ -518,6 +631,19 @@ class MoodleCourseStore(
 
     companion object {
         private const val TAG = "MoodleCourseStore"
+
+        /** The folder of a 100 px picture opened in the large size's stead. */
+        private const val SHOWN_SIZE_SUFFIX = "-shown"
+
+        /** Moodle's 512 px size of a member's picture: `f3` where the list's is `f1`. */
+        internal fun largePictureUrl(url: String): String = url.replace(Regex("/f1(?=[?#]|$)"), "/f3")
+
+        /** A file name of [name], with nothing a file system or a viewer would trip on. */
+        internal fun openedPictureName(name: String): String =
+            name.map { if (it.isISOControl() || it in FORBIDDEN_NAME_CHARS) '_' else it }
+                .joinToString("").trim().trimStart('.').take(80).ifEmpty { "picture" }
+
+        private const val FORBIDDEN_NAME_CHARS = "/\\:*?\"<>|"
 
         /** The largest attachment downloaded into the app; a larger one opens on the website. */
         const val MAX_DOWNLOAD_BYTES = 100L * 1024 * 1024
@@ -575,4 +701,33 @@ sealed interface MoodleLookup {
     data object Found : MoodleLookup
     data object Missing : MoodleLookup
     data class Failed(val error: Throwable) : MoodleLookup
+}
+
+/** A member's picture as a file to open full screen; see [MoodleCourseStore.fullPicture]. */
+data class MoodleOpenedPicture(val file: File, val mimeType: String)
+
+/** A picture's file type, by its first bytes; JPEG, as Moodle mostly serves, when they say none. */
+internal enum class MoodlePictureType(val extension: String, val mimeType: String) {
+    JPEG("jpg", "image/jpeg"),
+    PNG("png", "image/png"),
+    GIF("gif", "image/gif"),
+    WEBP("webp", "image/webp"),
+    ;
+
+    companion object {
+        fun of(bytes: ByteArray): MoodlePictureType {
+            fun at(index: Int, vararg expected: Int) =
+                bytes.size >= index + expected.size &&
+                    expected.withIndex().all { (i, b) -> bytes[index + i] == b.toByte() }
+            return when {
+                at(0, 0x89, 'P'.code, 'N'.code, 'G'.code) -> PNG
+                at(0, 'G'.code, 'I'.code, 'F'.code, '8'.code) -> GIF
+                at(0, 'R'.code, 'I'.code, 'F'.code, 'F'.code) && at(8, 'W'.code, 'E'.code, 'B'.code, 'P'.code) -> WEBP
+                else -> JPEG
+            }
+        }
+
+        fun ofExtension(extension: String): MoodlePictureType =
+            entries.firstOrNull { it.extension.equals(extension, ignoreCase = true) } ?: JPEG
+    }
 }

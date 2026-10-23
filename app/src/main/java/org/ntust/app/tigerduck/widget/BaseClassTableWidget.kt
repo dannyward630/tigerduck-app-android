@@ -69,7 +69,8 @@ abstract class BaseClassTableWidget(
             val accent = resolveWidgetAccentColor(prefs, isDark)
             val colors = (if (isDark) WidgetTheme.Dark else WidgetTheme.Light)
                 .copy(highlight = accent)
-            // The interface style, for the Week grid: it draws as the class table does.
+            // The interface style, for the Week grid, which draws as the class table
+            // does, and the Today list's course colors.
             val style = VisualStylePolicy(prefs.visualPreset)
 
             var state by remember { mutableStateOf<WidgetState?>(null) }
@@ -89,8 +90,8 @@ abstract class BaseClassTableWidget(
                 CompositionLocalProvider(LocalContext provides widgetContext(context, prefs.appLanguage)) {
                     when (layout) {
                         WidgetLayout.Week -> WeekGridContent(s, colors, style, tapAction)
-                        WidgetLayout.Today -> TodayListContent(s, colors, tapAction)
-                        WidgetLayout.NextClass -> NextClassContent(s, colors, tapAction)
+                        WidgetLayout.Today -> TodayListContent(s, colors, style, tapAction)
+                        WidgetLayout.NextClass -> NextClassContent(s, colors, style, tapAction)
                     }
                 }
             }

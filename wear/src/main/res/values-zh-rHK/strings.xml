@@ -31,6 +31,7 @@
     <string name="action_allow">允許</string>
     <string name="action_back">返回</string>
     <string name="action_cancel">取消</string>
+    <string name="action_change">更換</string>
     <string name="action_clear_text">清除文字</string>
     <string name="action_close">關閉</string>
     <string name="action_confirm">確認</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">介面風格</string>
     <string name="settings_whats_new">新功能說明</string>
     <string name="share_code_needs_update_message">呢個分享碼需要較新版本嘅 App。</string>
+    <string name="sign_in_change_account_title">更換帳號</string>
     <string name="sign_in_password">密碼</string>
     <string name="sign_in_student_id">學號</string>
     <string name="source_code_picker_current_app_badge">呢個 App</string>

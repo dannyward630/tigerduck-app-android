@@ -10,8 +10,6 @@ import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.DepartingRefresh
 import org.ntust.app.tigerduck.auth.DepartingSession
-import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.util.logSummary
 import java.io.IOException
 import javax.inject.Inject
@@ -54,9 +52,12 @@ interface PendingUnregisterStore {
  * with the departing session until it lands; an access token that will not last is refreshed
  * first, and the pair that brings is kept with it rather than stored as the session.
  *
- * A backend sign-in since the sign-out ends the debt: logging in moves the device to the
- * account that signed in, and the server deletes its rows under every other account then. Sent
- * after a sign-in of the same account, the unregister would delete that session's device instead.
+ * A backend sign-in since the sign-out, at the backend the debt is owed to, ends the debt: logging
+ * in moves the device to the account that signed in, and the server deletes its rows under every
+ * other account then. Sent after a sign-in of the same account, the unregister would delete that
+ * session's device instead. A sign-in at another backend, which the API endpoint setting can name
+ * since the sign-out, moves nothing at this one, and the debt still goes to the backend it is owed
+ * to: its tokens are that backend's, whatever the setting names.
  */
 @Singleton
 class DepartingDeviceUnregister internal constructor(
@@ -64,9 +65,8 @@ class DepartingDeviceUnregister internal constructor(
     /** The HTTP status; throws [IOException] when no reply came back. */
     private val deleteDevice: suspend (base: String, deviceId: String, accessToken: String) -> Int,
     private val refresh: suspend (DepartingSession, sendsWithoutReply: Int) -> DepartingRefresh,
-    private val hasSession: () -> Boolean,
-    /** The backend the app talks to now, which the API endpoint setting decides. */
-    private val currentBaseUrl: () -> String,
+    /** Whether this phone has a session from the backend it is given. */
+    private val sessionAt: (base: String) -> Boolean,
     private val now: () -> Long,
 ) {
     @Inject
@@ -74,13 +74,11 @@ class DepartingDeviceUnregister internal constructor(
         owed: OwedUnregister,
         api: PushApiClient,
         authTokenManager: AuthTokenManager,
-        prefs: AppPreferences,
     ) : this(
         owed = owed,
         deleteDevice = api::deleteDevice,
         refresh = authTokenManager::refreshDeparting,
-        hasSession = { authTokenManager.isLoggedIn },
-        currentBaseUrl = { resolveAnnouncementEndpoint(prefs).url.trimEnd('/') },
+        sessionAt = authTokenManager::hasSessionAt,
         now = System::currentTimeMillis,
     )
 
@@ -113,12 +111,11 @@ class DepartingDeviceUnregister internal constructor(
             Log.w(TAG, "owed unregister unreadable: ${e.javaClass.simpleName}")
             return@withLock Outcome.RETRY
         } ?: return@withLock Outcome.DONE
-        if (hasSession()) {
+        if (sessionAt(pending.session.baseUrl)) {
             // See the class comment: a sign-in since moved the device to its account.
             drop()
             return@withLock Outcome.DONE
         }
-        if (movedElsewhere(pending)) return@withLock Outcome.DONE
         if (now() - pending.owedAt >= OWED_AT_MOST_MS) {
             // Past the refresh token's lifetime nothing can go out as the account any more.
             Log.w(TAG, "the unregister was owed past the session's lifetime; it is dropped")
@@ -148,36 +145,6 @@ class DepartingDeviceUnregister internal constructor(
             .onFailure { Log.w(TAG, "owed unregister not cleared: ${it.javaClass.simpleName}") }
     }
 
-    /**
-     * The API endpoint setting was changed since the sign-out: the tokens are dropped unsent,
-     * rather than handed to the backend it names now, which did not issue them. For the setting's
-     * own save, which re-registers the device at once.
-     */
-    fun dropIfEndpointMoved() {
-        // Not waiting for an unregister on its way, which can take a while: it goes to the
-        // backend it is owed to whatever the setting, and its next try checks the endpoint again.
-        if (!mutex.tryLock()) return
-        try {
-            val pending = try {
-                store.load()
-            } catch (e: Exception) {
-                Log.w(TAG, "owed unregister unreadable: ${e.javaClass.simpleName}")
-                null
-            }
-            pending?.let(::movedElsewhere)
-        } finally {
-            mutex.unlock()
-        }
-    }
-
-    // Under the mutex. Clears [pending] when the endpoint is not the one it is owed to.
-    private fun movedElsewhere(pending: PendingUnregister): Boolean {
-        if (pending.session.baseUrl == currentBaseUrl()) return false
-        Log.w(TAG, "the API endpoint changed since the sign-out; the unregister is dropped")
-        drop()
-        return true
-    }
-
     // Checked again right before each DELETE as well as before anything is sent: a session that
     // appeared meanwhile is a sign-in's, which moved the device to its account (class comment).
     // Its login waits for this lock, so this is a second line rather than the first.
@@ -188,14 +155,14 @@ class DepartingDeviceUnregister internal constructor(
             current = renew(current) ?: return afterFailedRefresh()
             refreshed = true
         }
-        if (hasSession()) return Outcome.DONE
+        if (sessionAt(current.session.baseUrl)) return Outcome.DONE
         // A stop that came during the refresh ends here, with the rotated pair kept.
         currentCoroutineContext().ensureActive()
         var status = deleteDevice(current.session.baseUrl, current.deviceId, current.session.accessToken)
         if (status == 401 && !refreshed) {
             // Turned down before its time, a revoked token, say: a refreshed one may still go out.
             current = renew(current) ?: return afterFailedRefresh()
-            if (hasSession()) return Outcome.DONE
+            if (sessionAt(current.session.baseUrl)) return Outcome.DONE
             status = deleteDevice(current.session.baseUrl, current.deviceId, current.session.accessToken)
         }
         return when {

@@ -88,6 +88,18 @@ object CourseSyncReconciler {
      * comes back in [SemesterOutcome.serverKnownNos] for the caller to
      * persist. It only ever grows; a number stays known after the course is
      * deleted, which is the point.
+     *
+     * [graceCourseNos] are the courses deleted here whose backend DELETE has
+     * not landed, from `PendingCourseDeletes.waitingIn`. The server may still
+     * list them: they are neither un-hidden nor merged back until it does.
+     *
+     * [pendingAddNos] are the courses added here by hand whose upload has not
+     * landed, from `PendingCourseAdds.waitingIn`. Kept whatever the server
+     * says until it does, as the iPhone keeps them (tigerduck-app#727): one the
+     * server once listed, then deleted and added back here, is known by then,
+     * and a tombstone or the server's silence would hide it for good, its add
+     * then let go unsent. The add forces its key past the tombstone once it
+     * lands.
      */
     fun reconcileSemester(
         semester: String,
@@ -97,6 +109,7 @@ object CourseSyncReconciler {
         tombstones: Set<String>,
         serverKnownNos: Set<String> = emptySet(),
         graceCourseNos: Set<String> = emptySet(),
+        pendingAddNos: Set<String> = emptySet(),
         selectionDroppedNos: Set<String> = emptySet(),
     ): SemesterOutcome {
         // Misfiled rows are neither a roster nor evidence of presence, and
@@ -113,9 +126,13 @@ object CourseSyncReconciler {
         // to delete: the server has never seen it, so nothing the server
         // says can be about it. A tombstone naming its number belongs to a
         // course some other device once held — the same rule that keeps
-        // server absence from deleting it below.
-        val unsyncedManualNos = localCourses
-            .filter { it.isManual && it.courseNo !in serverKnownNos }
+        // server absence from deleting it below. Nor can anything the server
+        // says be about a course whose add from here has not landed: the add
+        // is newer.
+        fun notOnServerYet(course: Course) = course.courseNo in pendingAddNos ||
+            (course.isManual && course.courseNo !in serverKnownNos)
+        val notOnServerYetNos = localCourses
+            .filter(::notOnServerYet)
             .map { it.courseNo }
             .toSet()
 
@@ -127,7 +144,7 @@ object CourseSyncReconciler {
         // refresh — the backend refuses that upload, silently — which is
         // how a reset on one phone never reached the other.
         for (courseNo in tombstoneNos) {
-            if (courseNo in serverNos || courseNo in unsyncedManualNos) continue
+            if (courseNo in serverNos || courseNo in notOnServerYetNos) continue
             if (CourseTombstoneKeys.isHidden(courseNo, semester, updated)) continue
             updated = CourseTombstoneKeys.hide(courseNo, semester, updated)
         }
@@ -163,7 +180,7 @@ object CourseSyncReconciler {
         // a snapshot has carried the number, absence is a deletion.
         for (course in localCourses) {
             if (course.courseNo in serverNos) continue
-            if (course.isManual && course.courseNo !in serverKnownNos) continue
+            if (notOnServerYet(course)) continue
             if (CourseTombstoneKeys.isHidden(course.courseNo, semester, updated)) continue
             updated = CourseTombstoneKeys.hide(course.courseNo, semester, updated)
         }
@@ -179,8 +196,13 @@ object CourseSyncReconciler {
 
         val localNos = localCourses.map { it.courseNo }.toSet()
         val hidden = CourseTombstoneKeys.hiddenIn(semester, updated)
+        // Nor a row whose delete from here has not landed: a course taken
+        // back out of Add course writes no tombstone, so only the grace keeps
+        // the server's stale row from coming back as a hand-added course
+        // while PendingCourseDeletes retries the DELETE. As the iPhone's
+        // `mergesListedCourse(... deleting)`.
         val merged = rows
-            .filter { it.courseNo !in localNos && it.courseNo !in hidden }
+            .filter { it.courseNo !in localNos && it.courseNo !in hidden && it.courseNo !in graceCourseNos }
             .distinctBy { it.courseNo }
             .map(::toCourse)
 
@@ -430,8 +452,10 @@ object CourseSyncReconciler {
         if (!syncColors || courses.isEmpty()) return null
         val serverHex = mutableMapOf<String, String>()
         val picks = courses.mapNotNull { course ->
-            val override = overrides.find { it.courseNo == course.courseNo }
-                ?: overrides.find { it.moodleCourseId == course.moodleIdNumber }
+            // By the course's own Moodle id first: the snapshot carries every
+            // term's rows, and a course taken again keeps its number.
+            val override = course.moodleIdNumber?.let { id -> overrides.find { it.moodleCourseId == id } }
+                ?: overrides.find { it.courseNo == course.courseNo }
             // By the row's id and by the course's own: a row made before the
             // course had an idnumber is keyed by its term and number instead.
             // A held course counts with no row of its own too: a row's colour

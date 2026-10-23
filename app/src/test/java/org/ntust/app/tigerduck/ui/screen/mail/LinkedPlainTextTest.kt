@@ -4,7 +4,7 @@ import android.app.Application
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performFirstLinkClick
 import androidx.compose.ui.text.LinkAnnotation

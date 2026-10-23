@@ -53,4 +53,15 @@ class InMemoryMailStateStore : MailStateStore {
         fetchedAt.clear()
         owned.clear()
     }
+
+    @Synchronized
+    override fun clearSignIn() {
+        val name = displayName
+        val notify = notificationsEnabled
+        val kept = owned.toMap()
+        clear()
+        displayName = name
+        notificationsEnabled = notify
+        owned.putAll(kept)
+    }
 }

@@ -18,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PixelMap
 import androidx.compose.ui.graphics.toPixelMap
@@ -31,8 +32,22 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.click
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.requestFocus
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.input.InputMode
+import androidx.compose.ui.input.InputModeManager
+import androidx.compose.ui.platform.LocalInputModeManager
+import androidx.compose.ui.focus.FocusDirection
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -46,6 +61,7 @@ import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import org.ntust.app.tigerduck.ui.theme.VisualPreset
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.pastel
+import org.ntust.app.tigerduck.ui.theme.pastelOutline
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -99,14 +115,15 @@ class ClassTableVisualStyleTest {
         spanCount: Int,
         course: Course = calculus,
         hasAssignment: Boolean = false,
-    ) = draw(preset, width, cellHeight * spanCount) { soloCellContent(course, spanCount, hasAssignment) }
+    ) = draw(preset, width, cellHeight * spanCount) { SoloCellContent(course, spanCount, hasAssignment) }
 
     @Composable
-    private fun soloCellContent(
+    private fun SoloCellContent(
         course: Course,
         spanCount: Int,
         hasAssignment: Boolean = false,
         cellWidth: Int = width,
+        outlineRequired: Boolean = false,
     ) = SoloCourseCell(
         course = course,
         roomHint = null,
@@ -118,6 +135,7 @@ class ClassTableVisualStyleTest {
         weekday = 1,
         hasAssignment = hasAssignment,
         assignmentsIgnored = false,
+        outlineRequired = outlineRequired,
         onTap = {},
         onLongPress = {},
         onRename = {},
@@ -142,6 +160,7 @@ class ClassTableVisualStyleTest {
 
     private val calculusColour get() = TigerDuckTheme.courseColorVibrant(calculus.courseNo)
     private val physicsColour get() = TigerDuckTheme.courseColorVibrant(physics.courseNo)
+    private val chemistryColour get() = TigerDuckTheme.courseColorVibrant(chemistry.courseNo)
 
     // ---- a course's run ----
 
@@ -176,12 +195,83 @@ class ClassTableVisualStyleTest {
         assertNear("tile", calculusColour.pastel(), pixels()[8, 8])
     }
 
+    // ---- required courses ----
+
+    private val requiredCalculus = calculus.copy(requireOption = "R")
+    private val electiveCalculus = calculus.copy(requireOption = "E")
+
+    // Drawn at 3x, so the 1dp outline has a solid middle pixel to read.
+    private val outlineDensity = 3f
+
+    /** The pixel in the middle of a 1dp outline whose outer edge sits at [edge] dp. */
+    private fun outlineAt(edge: Float): Int = ((edge + 0.5f) * outlineDensity).toInt()
+
+    private fun outlinedSoloCell(preset: VisualPreset, course: Course, outlineRequired: Boolean) =
+        draw(preset, width, cellHeight, outlineDensity) {
+            SoloCellContent(course, spanCount = 1, outlineRequired = outlineRequired)
+        }
+
+    @Test
+    fun `TigerDuck outlines a required course in its own colour when the setting is on`() {
+        outlinedSoloCell(VisualPreset.TigerDuck, requiredCalculus, outlineRequired = true)
+        val image = pixels()
+        // The block is inset 1dp in its cell; the outline runs just inside it.
+        assertNear("outline", calculusColour, image[outlineAt(1f), outlineAt(cellHeight / 2f)])
+        assertNear("fill", overWhite(calculusColour, 0.5f), image[outlineAt(8f), outlineAt(8f)])
+    }
+
+    @Test
+    fun `a required course is not outlined until the setting is on`() {
+        outlinedSoloCell(VisualPreset.TigerDuck, requiredCalculus, outlineRequired = false)
+        assertNear("edge", overWhite(calculusColour, 0.5f), pixels()[outlineAt(1f), outlineAt(cellHeight / 2f)])
+    }
+
+    @Test
+    fun `an elective course is not outlined`() {
+        outlinedSoloCell(VisualPreset.TigerDuck, electiveCalculus, outlineRequired = true)
+        assertNear("edge", overWhite(calculusColour, 0.5f), pixels()[outlineAt(1f), outlineAt(cellHeight / 2f)])
+    }
+
+    @Test
+    fun `TAT outlines a required course's tile in the pastel outline`() {
+        outlinedSoloCell(VisualPreset.Tat, requiredCalculus, outlineRequired = true)
+        val image = pixels()
+        assertNear("outline", calculusColour.pastelOutline(), image[outlineAt(1f), outlineAt(cellHeight / 2f)])
+        assertNear("fill", calculusColour.pastel(), image[outlineAt(8f), outlineAt(8f)])
+    }
+
+    @Test
+    fun `a required course in a two-course conflict is outlined too`() {
+        conflictCell(VisualPreset.TigerDuck, density = outlineDensity, courseA = requiredCalculus, outlineRequired = true)
+        val image = pixels()
+        // The first course is a Γ: its bar's top edge runs 1dp under the cell's top.
+        assertNear("required course", calculusColour, image[outlineAt(width / 2f), outlineAt(1f)])
+        // The second course is an L whose tail runs down the left edge, clear of its rounded
+        // corners at mid-height; elective, it keeps its bare edge.
+        assertNear("elective course", overWhite(physicsColour, 0.5f), image[outlineAt(1f), outlineAt(cellHeight.toFloat())])
+    }
+
+    @Test
+    fun `a required course in a conflict of three or more is outlined in its lane`() {
+        multiConflictCell(VisualPreset.TigerDuck, density = outlineDensity, courseA = requiredCalculus, outlineRequired = true)
+        val image = pixels()
+        // The first lane's course is inset 1dp in the cell and 0.5dp in its lane.
+        assertNear("required course", calculusColour, image[outlineAt(1.5f), outlineAt(cellHeight.toFloat())])
+        assertNear("elective course", overWhite(physicsColour, 0.5f), image[outlineAt(width - 2.5f), outlineAt(cellHeight.toFloat())])
+    }
+
     // ---- conflicts ----
 
     /** With [marks], the first course has work due and the second's is ignored. */
-    private fun conflictCell(preset: VisualPreset, marks: Boolean = false, density: Float = 1f) {
+    private fun conflictCell(
+        preset: VisualPreset,
+        marks: Boolean = false,
+        density: Float = 1f,
+        courseA: Course = calculus,
+        outlineRequired: Boolean = false,
+    ) {
         val role = CellRole.ConflictStart(
-            courseA = calculus, spanA = 2, offsetA = 0,
+            courseA = courseA, spanA = 2, offsetA = 0,
             courseB = physics, spanB = 2, offsetB = 0,
             combinedSpan = 2,
         )
@@ -198,6 +288,7 @@ class ClassTableVisualStyleTest {
                 hasAssignmentB = false,
                 assignmentsIgnoredA = false,
                 assignmentsIgnoredB = marks,
+                outlineRequired = outlineRequired,
                 onPickConflict = { _, _, _, _ -> },
                 onLongPress = {},
                 onRename = {},
@@ -227,10 +318,16 @@ class ClassTableVisualStyleTest {
     }
 
     /** With [marks], the first lane's course has work due and the second's is ignored. */
-    private fun multiConflictCell(preset: VisualPreset, marks: Boolean = false, density: Float = 1f) {
+    private fun multiConflictCell(
+        preset: VisualPreset,
+        marks: Boolean = false,
+        density: Float = 1f,
+        courseA: Course = calculus,
+        outlineRequired: Boolean = false,
+    ) {
         val role = CellRole.MultiConflictStart(
             members = listOf(
-                CellRole.MultiConflictStart.Member(calculus, span = 2, offset = 0, lane = 0, firstPeriodId = "1"),
+                CellRole.MultiConflictStart.Member(courseA, span = 2, offset = 0, lane = 0, firstPeriodId = "1"),
                 CellRole.MultiConflictStart.Member(physics, span = 2, offset = 0, lane = 1, firstPeriodId = "1"),
             ),
             combinedSpan = 2,
@@ -246,6 +343,7 @@ class ClassTableVisualStyleTest {
                 weekday = 1,
                 hasAssignment = { marks && it == calculus.courseNo },
                 assignmentsIgnored = { marks && it == physics.courseNo },
+                outlineRequired = outlineRequired,
                 onSelect = { _, _ -> },
                 onLongPress = {},
                 onRename = {},
@@ -262,6 +360,122 @@ class ClassTableVisualStyleTest {
         val image = pixels()
         assertNear("first lane", calculusColour.pastel(), image[width / 4, 6])
         assertNear("second lane", physicsColour.pastel(), image[width * 3 / 4, 6])
+    }
+
+    // ---- lanes that widen (tigerduck-app-android#85, as the iPhone's tigerduck-app#153) ----
+
+    private val chemistry = Course(courseNo = "CH4004", courseName = "Chemistry")
+
+    /**
+     * Calculus on rows 0-1, Physics on 0-2, Chemistry on 2-3, in two lanes: Chemistry meets
+     * Physics on row 2 and is alone on row 3. At density 1 the inner area starts at (1, 1), its
+     * lanes are 29px wide and its rows 51.5px tall.
+     */
+    private val chain = CellRole.MultiConflictStart(
+        members = listOf(
+            CellRole.MultiConflictStart.Member(calculus, span = 2, offset = 0, lane = 0, firstPeriodId = "1"),
+            CellRole.MultiConflictStart.Member(physics, span = 3, offset = 0, lane = 1, firstPeriodId = "1"),
+            CellRole.MultiConflictStart.Member(chemistry, span = 2, offset = 2, lane = 0, firstPeriodId = "3"),
+        ),
+        combinedSpan = 4,
+        laneCount = 2,
+    )
+
+    private fun chainCell(
+        role: CellRole.MultiConflictStart = chain,
+        direction: LayoutDirection = LayoutDirection.Ltr,
+        onFocusManager: (FocusManager, InputModeManager) -> Unit = { _, _ -> },
+        onSelect: (Course) -> Unit = {},
+    ) {
+        draw(VisualPreset.TigerDuck, width, cellHeight * role.combinedSpan) {
+            onFocusManager(LocalFocusManager.current, LocalInputModeManager.current)
+            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+                MultiConflictCourseCell(
+                  cellRole = role,
+                  dayColWidth = width.dp,
+                  cellHeight = cellHeight.dp,
+                  x = 0.dp,
+                  y = 0.dp,
+                  weekday = 1,
+                  hasAssignment = { false },
+                  assignmentsIgnored = { false },
+                  onSelect = { course, _ -> onSelect(course) },
+                  onLongPress = {},
+                  onRename = {},
+                  onPickColor = {},
+                  onToggleIgnoreAssignments = null,
+                  onDelete = {},
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `a course alone in a row of a cluster takes the whole width there`() {
+        chainCell()
+        val image = pixels()
+        assertNear("Chemistry, alone on row 3, across the other lane", overWhite(chemistryColour, 0.5f), image[50, 160])
+        assertNear("Physics beside it on row 2", overWhite(physicsColour, 0.5f), image[52, 112])
+        assertNear("Chemistry in its own lane on row 2", overWhite(chemistryColour, 0.5f), image[8, 112])
+    }
+
+    @Test
+    fun `a tap lands on the course drawn there, and each course is one button`() {
+        var picked: Course? = null
+        chainCell(onSelect = { picked = it })
+
+        composeRule.onAllNodes(hasClickAction()).assertCountEquals(3)
+        composeRule.onRoot().performTouchInput { click(Offset(50f, 160f)) }
+        assertEquals(chemistry, picked)
+        composeRule.onRoot().performTouchInput { click(Offset(52f, 112f)) }
+        assertEquals(physics, picked)
+        composeRule.onRoot().performTouchInput { click(Offset(8f, 112f)) }
+        assertEquals(chemistry, picked)
+    }
+
+    /**
+     * A course whose name sits in a run narrower than its whole shape: Calculus in its own lane
+     * beside Physics, then Statistics, and alone on the last row. The grid places by absolute
+     * offsets, so in a right-to-left language the name must stay in that run, not at the shape's
+     * right edge, where the shape is cut away.
+     */
+    @Test
+    fun `in a right-to-left language a course's name stays in its own run`() {
+        val role = CellRole.MultiConflictStart(
+            members = listOf(
+                CellRole.MultiConflictStart.Member(calculus, span = 5, offset = 0, lane = 0, firstPeriodId = "1"),
+                CellRole.MultiConflictStart.Member(physics, span = 2, offset = 0, lane = 1, firstPeriodId = "1"),
+                CellRole.MultiConflictStart.Member(statistics, span = 2, offset = 2, lane = 1, firstPeriodId = "3"),
+            ),
+            combinedSpan = 5,
+            laneCount = 2,
+        )
+        chainCell(role, LayoutDirection.Rtl)
+
+        val name = composeRule.onNodeWithText("Calculus", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertTrue("Calculus's name runs ${name.left}..${name.right}, its lane 1..30", name.right.value <= 31f)
+    }
+
+    @Test
+    fun `the keyboard stops once on each course`() {
+        lateinit var focus: FocusManager
+        lateinit var inputMode: InputModeManager
+        chainCell(onFocusManager = { manager, mode -> focus = manager; inputMode = mode })
+        // A clickable takes focus from a keyboard, not in touch mode.
+        composeRule.runOnIdle { inputMode.requestInputMode(InputMode.Keyboard) }
+        fun focused() = listOf(calculus, physics, chemistry).firstOrNull { course ->
+            runCatching {
+                composeRule.onNode(hasContentDescription(course.courseName, substring = true)).assertIsFocused()
+            }.isSuccess
+        }?.courseName
+
+        composeRule.onNode(hasContentDescription("Calculus", substring = true)).requestFocus()
+        val stops = listOf(focused()) + (1..2).map {
+            composeRule.runOnIdle { focus.moveFocus(FocusDirection.Next) }
+            composeRule.waitForIdle()
+            focused()
+        }
+        assertEquals(listOf("Calculus", "Physics", "Chemistry"), stops)
     }
 
     // ---- conflict marks ----
@@ -446,7 +660,7 @@ class ClassTableVisualStyleTest {
         ) {
             Column {
                 Spacer(Modifier.height(headerHeight.dp))
-                Box { soloCellContent(calculus, spanCount = 2, cellWidth = width - 2 * inset) }
+                Box { SoloCellContent(calculus, spanCount = 2, cellWidth = width - 2 * inset) }
             }
         }
     }

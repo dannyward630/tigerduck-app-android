@@ -1,7 +1,7 @@
 package org.ntust.app.tigerduck.wear.tile
 
 import android.content.Context
-import androidx.concurrent.futures.ResolvableFuture
+import androidx.concurrent.futures.CallbackToFutureAdapter
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ModifiersBuilders
@@ -41,25 +41,31 @@ class NextClassTileService : TileService() {
     override fun onTileRequest(
         request: RequestBuilders.TileRequest,
     ): ListenableFuture<TileBuilders.Tile> {
-        val future = ResolvableFuture.create<TileBuilders.Tile>()
-        serviceScope.launch {
-            try {
-                val snapshot = SchedulePersistenceHolder.get(this@NextClassTileService).flow.first()
-                future.set(buildTile(snapshot))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                future.setException(e)
+        return CallbackToFutureAdapter.getFuture { completer ->
+            serviceScope.launch {
+                try {
+                    val snapshot = SchedulePersistenceHolder.get(this@NextClassTileService).flow.first()
+                    completer.set(buildTile(snapshot))
+                } catch (e: CancellationException) {
+                    // The service went away first: cancelled rather than left waiting forever.
+                    completer.setCancelled()
+                    throw e
+                } catch (e: Exception) {
+                    completer.setException(e)
+                }
             }
+            "NextClassTileService.onTileRequest"
         }
-        return future
     }
 
     override fun onTileResourcesRequest(
         request: RequestBuilders.ResourcesRequest,
     ): ListenableFuture<ResourceBuilders.Resources> {
         val resources = ResourceBuilders.Resources.Builder().setVersion(RESOURCES_VERSION).build()
-        return ResolvableFuture.create<ResourceBuilders.Resources>().also { it.set(resources) }
+        return CallbackToFutureAdapter.getFuture { completer ->
+            completer.set(resources)
+            "NextClassTileService.onTileResourcesRequest"
+        }
     }
 
     private fun buildTile(snapshot: WatchSnapshot): TileBuilders.Tile {

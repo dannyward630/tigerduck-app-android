@@ -42,6 +42,8 @@ object MoodlePage {
     fun module(module: String, cmid: Int) = "/mod/$module/view.php?id=$cmid"
     fun discussion(discussionId: Int) = "/mod/forum/discuss.php?d=$discussionId"
     fun gradeReport(courseId: Int) = "/grade/report/user/index.php?id=$courseId"
+    fun assignment(cmid: Int) = "/mod/assign/view.php?id=$cmid"
+    fun assignments(courseId: Int) = "/mod/assign/index.php?id=$courseId"
     fun participants(courseId: Int) = "/user/index.php?id=$courseId"
     fun profile(userId: Int, courseId: Int) = "/user/view.php?id=$userId&course=$courseId"
 
@@ -70,12 +72,16 @@ object MoodlePage {
  * the website in the browser the Browser setting picks, signed in through a one-time key as iOS
  * opens it. A link the Moodle app takes asks for no key.
  */
-fun openMoodlePage(context: Context, path: String) {
+fun openMoodlePage(
+    context: Context,
+    path: String,
+    pages: () -> MoodleWebPages = { MoodleWebPages.of(context) },
+) {
     val app = Intent(Intent.ACTION_VIEW, MoodlePage.deepLink(path).toUri()).apply {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
     }
     if (runCatching { context.startActivity(app) }.isSuccess) return
-    openMoodleWebPage(context, MoodlePage.webUrl(path))
+    openMoodleWebPage(context, MoodlePage.webUrl(path), pages = pages)
 }
 
 /**
@@ -186,9 +192,8 @@ fun openMoodleContentLink(
 ) {
     val uri = url.toUri()
     when {
-        uri.scheme.equals("mailto", ignoreCase = true) -> {
-            runCatching { context.startActivity(Intent(Intent.ACTION_SENDTO, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        }
+        // openLink makes it a new message, and says so when no mail app can.
+        uri.scheme.equals("mailto", ignoreCase = true) -> openLink(context, url, browserPreference)
         uri.host.equals(MoodleWebservice.SITE_HOST, ignoreCase = true) ->
             openMoodleWebPage(context, moodleWebLink(url), browserPreference, pages)
         else -> openLink(context, url, browserPreference)

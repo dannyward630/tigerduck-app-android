@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.academic.QuietDays
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.push.PushApiClient
 import org.ntust.app.tigerduck.ui.component.ServerFailureSimulator
 import org.ntust.app.tigerduck.ui.component.ServerKind
@@ -47,6 +48,7 @@ import org.ntust.app.tigerduck.data.RefreshPolicy
 import org.ntust.app.tigerduck.data.RefreshTriggers
 import org.ntust.app.tigerduck.data.UnsentMarks
 import org.ntust.app.tigerduck.data.cache.DataCache
+import org.ntust.app.tigerduck.data.model.AppFeature
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.model.AssignmentFilter
 import org.ntust.app.tigerduck.shared.Course
@@ -366,6 +368,11 @@ class HomeViewModel @Inject constructor(
                     _ignoredAssignmentIds.value = emptySet()
                     _markedCompletedIds.value = emptySet()
                     _ignoredCourseKeys.value = emptySet()
+                    // The watermark is the departing account's: the next
+                    // account's feed read after it would skip that account's
+                    // own earlier changes. From 0 the poll runs a full sync
+                    // until one lands for the account that signs in.
+                    syncState.lastKnownRevision = 0
                     hasLoaded = false
                     _initialLoadComplete.value = true
                 } else if (signedIn) {
@@ -643,8 +650,12 @@ class HomeViewModel @Inject constructor(
         online = networkChecker::isAvailable,
         signIn = authTokenManager::signInIfSignedOut,
         fetchRevision = syncApiClient::fetchRevision,
+        fetchChanges = syncApiClient::fetchChanges,
         lastKnownRevision = { syncState.lastKnownRevision },
+        setLastKnownRevision = { syncState.lastKnownRevision = it },
+        signInGeneration = { authTokenManager.signInGeneration },
         fullSyncsInFlight = backendPullsInFlight::get,
+        retryUnsent = backendSync::sendWhatWaits,
         fullSync = ::syncAndRepublish,
     ).also { outcome ->
         // Reached the server with nothing new: a re-enable check that failed
@@ -720,6 +731,8 @@ class HomeViewModel @Inject constructor(
                         courses = HomeCourseMerge.mergeRemote(
                             remote = remoteCourses,
                             cached = dataCache.loadCourses(),
+                            names = dataCache.loadCourseCustomNames(),
+                            locale = AppLanguageManager.resolvedCourseApiLanguage(prefs.appLanguage),
                             deletedNos = hiddenNow(),
                         )
                         dataCache.saveCourses(courses)
@@ -732,15 +745,25 @@ class HomeViewModel @Inject constructor(
 
                     // Null when Moodle failed or was not asked; an empty list
                     // is its answer and replaces the cache like any other.
-                    // See CourseRosterMerge.assignmentsToStore.
-                    if (remoteAssignments != null) {
-                        assignments = remoteAssignments
-                        dataCache.saveAssignments(remoteAssignments)
-                        runCatching { pushApiClient.uploadAssignments(remoteAssignments) }
-                            .onFailure {
-                                prefs.setLastSyncSource(SyncSource.LOCAL)
-                                Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${it.logSummary()}")
-                            }
+                    // See CourseRosterMerge.assignmentsToStore. What is shown
+                    // and uploaded is the list as written, which the write
+                    // reconciles against newer answers; nothing when the write
+                    // was refused.
+                    val written = remoteAssignments?.let {
+                        moodleService.storeAssignments(it.assignments, it.answer)
+                    }
+                    if (written != null) {
+                        assignments = written
+                        try {
+                            pushApiClient.uploadAssignments(written)
+                        } catch (e: CancellationException) {
+                            // A sign-out cancels this fetch: taken for a failed upload, the
+                            // fetch would go on to show the departing account's lists again.
+                            throw e
+                        } catch (e: Exception) {
+                            prefs.setLastSyncSource(SyncSource.LOCAL)
+                            Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${e.logSummary()}")
+                        }
                     }
                 }
             }
@@ -758,6 +781,9 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /** A Moodle round's assignments as the cache should hold them, with the round that gave them; see [MoodleService.storeAssignments]. */
+    private class AssignmentsToStore(val assignments: List<Assignment>, val answer: MoodleService.AssignmentsAnswer)
+
     /**
      * One network round of the two enrolment sources (NTUST course-selection
      * portal + Moodle enrolled-courses) run in parallel, then per-course
@@ -769,7 +795,7 @@ class HomeViewModel @Inject constructor(
     private suspend fun fetchCoursesAndAssignments(
         studentId: String,
         password: String,
-    ): Pair<List<Course>?, List<Assignment>?> = coroutineScope {
+    ): Pair<List<Course>?, AssignmentsToStore?> = coroutineScope {
         // TTL-throttled, so this costs one request an hour however often Home
         // refreshes. Resolved before the gate below, which depends on it.
         semesterCatalog.refreshIfStale()
@@ -830,21 +856,27 @@ class HomeViewModel @Inject constructor(
 
             if (orderedCourseNos.isEmpty()) return@async emptyList()
 
+            // A course whose query fails keeps its row in the term, where
+            // Moodle's stand-in would take its times and room off this phone
+            // and, uploaded, off every other device (#417).
+            val cachedByNo = dataCache.loadCourses(semester).associateBy { it.courseNo }
             orderedCourseNos.map { courseNo ->
-                async { courseService.lookupOrFallback(semester, courseNo, moodleByNo[courseNo]) }
+                async {
+                    courseService.lookupOrFallback(semester, courseNo, moodleByNo[courseNo], kept = cachedByNo[courseNo])
+                }
             }.awaitAll().filterNotNull()
         }
 
         val assignmentsDef = async {
             if (moodleEnrolled == null) return@async null
             try {
-                val remote = moodleService.fetchAssignments(
+                val answer = moodleService.fetchAssignments(
                     enrolledCourses = moodleEnrolled,
                     rosterCourseNos = rosterCourseNos
                 )
                 val cached = dataCache.loadAssignments()
                 ServerStatusTracker.set(ServerStatus.OK, ServerKind.MOODLE)
-                CourseRosterMerge.assignmentsToStore(remote, cached)
+                answer?.let { AssignmentsToStore(CourseRosterMerge.assignmentsToStore(it.assignments, cached).orEmpty(), it) }
             } catch (e: CancellationException) {
                 // A sign-out cancels the fetch; marking the servers failed
                 // here would land after the tracker was reset for the next
@@ -1027,6 +1059,34 @@ class HomeViewModel @Inject constructor(
                 title = title,
             )
         )
+    }
+
+    /**
+     * A shortcut card for [feature], in the first section that holds them,
+     * or in a new Quick widgets section titled [quickWidgetsTitle] when Home
+     * has none. The title is passed in because the view model has no
+     * resources; HomeScreen resolves it as it does for [addSection].
+     */
+    fun addQuickFeature(feature: AppFeature, quickWidgetsTitle: String) {
+        val added = HomeSectionLayout.addQuickFeature(
+            sections = _sections.value,
+            feature = feature,
+            sectionId = java.util.UUID.randomUUID().toString(),
+            widgetId = java.util.UUID.randomUUID().toString(),
+            quickWidgetsTitle = quickWidgetsTitle,
+        )
+        if (added !== _sections.value) persistSections(added)
+    }
+
+    fun removeWidget(sectionId: String, widgetId: String) {
+        val removed = HomeSectionLayout.removeWidget(_sections.value, sectionId, widgetId)
+        if (removed !== _sections.value) persistSections(removed)
+    }
+
+    /** One step of a shortcut drag; see [moveSections] for why a no-op must not write. */
+    fun moveWidget(sectionId: String, widgetId: String, toIndex: Int) {
+        val moved = HomeSectionLayout.moveWidget(_sections.value, sectionId, widgetId, toIndex)
+        if (moved !== _sections.value) persistSections(moved)
     }
 
     private fun persistSections(sections: List<HomeSection>) {

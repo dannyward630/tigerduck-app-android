@@ -46,6 +46,7 @@ class CourseSyncReconcilerTest {
         grace: Set<String> = emptySet(),
         selectionDropped: Set<String> = emptySet(),
         serverKnown: Set<String> = emptySet(),
+        pendingAdds: Set<String> = emptySet(),
     ) = CourseSyncReconciler.reconcileSemester(
         semester = semester,
         localCourses = local,
@@ -54,8 +55,29 @@ class CourseSyncReconcilerTest {
         tombstones = tombstones,
         serverKnownNos = serverKnown,
         graceCourseNos = grace,
+        pendingAddNos = pendingAdds,
         selectionDroppedNos = selectionDropped,
     )
+
+    /**
+     * A course deleted here whose DELETE has not landed yet (the outbox,
+     * [org.ntust.app.tigerduck.data.PendingCourseDeletes], still holds it):
+     * the snapshot lists its row, and with no tombstone here — a course taken
+     * back out of Add course writes none — the row would come back as a
+     * hand-added course, which the DELETE then removes again, or never does.
+     * As the iPhone's `mergesListedCourse(... deleting)`.
+     */
+    @Test
+    fun `a server row whose delete from here is still queued is not merged back`() {
+        val out = reconcile(
+            local = listOf(local("A")),
+            rows = listOf(server("A"), server("B")),
+            grace = setOf("B"),
+        )
+        assertTrue(out.merged.none { it.courseNo == "B" })
+        // Nor hidden on its account: the DELETE, once it lands, ends the matter.
+        assertEquals(emptySet<String>(), out.tombstones)
+    }
 
     /**
      * The 加退選 case, end to end. The student dropped "B"; the backend still
@@ -284,6 +306,62 @@ class CourseSyncReconcilerTest {
         assertTrue(out.toUpload.isEmpty())
     }
 
+    /**
+     * A course the server once listed, deleted, then added back here by hand
+     * (the iPhone's tigerduck-app#727): its number is known, so neither rule
+     * above keeps it, and an upload that fails twice used to end here. While
+     * its add waits in PendingCourseAdds it is this phone's latest word: the
+     * add forces its key past the tombstone once it lands.
+     */
+    @Test
+    fun `a course added back here is kept while its add waits, past the server's tombstone`() {
+        val out = reconcile(
+            local = listOf(local("A"), local("M", manual = true)),
+            rows = listOf(server("A")),
+            tombstoneNos = setOf("M"),
+            serverKnown = setOf("M"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(emptySet<String>(), out.tombstones)
+    }
+
+    @Test
+    fun `a course added back here is kept while its add waits, past the server's silence`() {
+        val out = reconcile(
+            local = listOf(local("A"), local("M", manual = true)),
+            rows = listOf(server("A")),
+            serverKnown = setOf("M"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(emptySet<String>(), out.tombstones)
+    }
+
+    @Test
+    fun `in a term the server has nothing for, a course whose add waits goes up with the rest`() {
+        val out = reconcile(
+            local = listOf(local("M", manual = true)),
+            rows = emptyList(),
+            tombstoneNos = setOf("M"),
+            serverKnown = setOf("M"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(emptySet<String>(), out.tombstones)
+        assertEquals(listOf("M"), out.toUpload.map { it.courseNo })
+    }
+
+    /** Only the waiting add keeps it: another known course the server dropped still goes. */
+    @Test
+    fun `a waiting add keeps only its own course`() {
+        val out = reconcile(
+            local = listOf(local("A"), local("M", manual = true), local("N", manual = true)),
+            rows = listOf(server("A")),
+            tombstoneNos = setOf("M"),
+            serverKnown = setOf("M", "N"),
+            pendingAdds = setOf("M"),
+        )
+        assertEquals(setOf("1141:N"), out.tombstones)
+    }
+
     // ---- keeping the cache honest ----
 
     @Test
@@ -455,6 +533,24 @@ class CourseSyncReconcilerTest {
         val updated = CourseSyncReconciler.applyColorOverrides(
             courses = listOf(course),
             overrides = listOf(CourseOverrideResult("m9", courseNo = null, colorHex = "#00FF00")),
+            syncColors = true,
+        )
+        assertEquals("#00FF00", updated!!.courses.single().customColorHex)
+    }
+
+    /**
+     * A course taken again keeps its number, and the snapshot carries every term's rows: the
+     * row of this offering, by its Moodle id, is the one whose colour it takes.
+     */
+    @Test
+    fun `a course taken again takes its own term's colour, not an earlier term's`() {
+        val course = Course(courseNo = "A", courseName = "A", moodleIdNumber = "m1141")
+        val updated = CourseSyncReconciler.applyColorOverrides(
+            courses = listOf(course),
+            overrides = listOf(
+                CourseOverrideResult("m1122", "A", "#FF0000", semester = "1122"),
+                CourseOverrideResult("m1141", "A", "#00FF00", semester = "1141"),
+            ),
             syncColors = true,
         )
         assertEquals("#00FF00", updated!!.courses.single().customColorHex)

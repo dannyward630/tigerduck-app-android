@@ -31,6 +31,7 @@
     <string name="action_allow">Payagan</string>
     <string name="action_back">Bumalik</string>
     <string name="action_cancel">Kanselahin</string>
+    <string name="action_change">Palitan</string>
     <string name="action_clear_text">I-clear ang teksto</string>
     <string name="action_close">Isara</string>
     <string name="action_confirm">Kumpirmahin</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Estilo ng interface</string>
     <string name="settings_whats_new">Ano ang bago</string>
     <string name="share_code_needs_update_message">Kailangan ng share code na ito ang mas bagong bersyon ng app.</string>
+    <string name="sign_in_change_account_title">Palitan ang account</string>
     <string name="sign_in_password">Password</string>
     <string name="sign_in_student_id">ID ng estudyante</string>
     <string name="source_code_picker_current_app_badge">Kasalukuyang app</string>

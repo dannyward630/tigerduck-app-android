@@ -40,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +52,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
 import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.data.model.AppFeature
+import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.model.HomeSection
 import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.ui.AppState
@@ -74,10 +75,13 @@ fun HomeScreen(
     appState: AppState,
     viewModel: HomeViewModel = hiltViewModel(),
     onOpenSignInSettings: () -> Unit = {},
+    /** Opens an assignment's page in the app; the page's own button is what opens Moodle. */
+    onOpenAssignment: (Assignment) -> Unit = {},
     /** A course tapped on the time slider: the class table's course detail, as iOS opens it from Home. */
     onOpenCourseDetail: (CourseDetailSelection) -> Unit = {},
+    /** A shipped feature's shortcut card tapped: its page, over Home, as iOS pushes it inside Home. */
+    onOpenFeature: (AppFeature) -> Unit = {},
 ) {
-    val context = LocalContext.current
     val resources = LocalResources.current
     val sections by viewModel.sections.collectAsStateWithLifecycle()
     // Slow pulse (60s, plus every debug-clock flip) so the term gate below
@@ -308,7 +312,7 @@ fun HomeScreen(
                                 if (!isEditing) onOpenCourseDetail(slot.detailSelection)
                             },
                             onAssignmentClick = {
-                                if (!isEditing) openAssignmentInMoodle(context, it)
+                                if (!isEditing) onOpenAssignment(it)
                             },
                             onToggleIgnore = {
                                 if (!isEditing) viewModel.toggleIgnore(it)
@@ -320,7 +324,17 @@ fun HomeScreen(
                             // onSkipCourse = { course, date ->
                             //     if (!isEditing) viewModel.toggleSkip(course, date)
                             // },
-                            onWidgetClick = { if (!isEditing) showComingSoon = true },
+                            isEditing = isEditing,
+                            onOpenFeature = { feature ->
+                                // A stored layout may still hold a shortcut to a
+                                // feature that has not shipped (the first default
+                                // had four); it says so, as the More page does.
+                                if (isEditing) return@HomeSectionContent
+                                if (feature.isImplemented) onOpenFeature(feature) else showComingSoon = true
+                            },
+                            onRemoveWidget = viewModel::removeWidget,
+                            onMoveWidget = viewModel::moveWidget,
+                            onAddQuickFeature = { showAddSectionDialog = true },
                             onOpenSignInSettings = onOpenSignInSettings,
                         )
                     }
@@ -339,6 +353,13 @@ fun HomeScreen(
             },
             onAddCustom = { title ->
                 viewModel.addSection(HomeSection.HomeSectionType.CUSTOM, title)
+                showAddSectionDialog = false
+            },
+            onAddQuickFeature = { feature ->
+                viewModel.addQuickFeature(
+                    feature,
+                    resources.getString(HomeSection.HomeSectionType.QUICK_WIDGETS.defaultTitleRes),
+                )
                 showAddSectionDialog = false
             },
             onDismiss = { showAddSectionDialog = false },

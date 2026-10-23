@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.wear.compose.foundation.pager.HorizontalPager
@@ -67,9 +68,10 @@ fun WearApp() {
     // apply it; recreating the activity is the cleanest way to swap locale
     // without rebuilding compose state by hand.
     val activity = context.findActivity()
+    val configuration = LocalConfiguration.current
     LaunchedEffect(snapshot.languageTag) {
         val tag = snapshot.languageTag ?: return@LaunchedEffect
-        val current = context.resources.configuration.locales[0]?.toLanguageTag() ?: ""
+        val current = configuration.locales[0]?.toLanguageTag() ?: ""
         if (current.equals(tag, ignoreCase = true)) return@LaunchedEffect
         activity?.recreate()
     }

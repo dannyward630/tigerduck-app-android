@@ -37,6 +37,11 @@ sealed class MailError(message: String, cause: Throwable? = null) : Exception(me
      * `stillWanted`. Not a failure of anything: the page that asked simply lets it go.
      */
     class Abandoned : MailError("request abandoned before it was sent")
+    /**
+     * The whole mail went to the SMTP server, whose reply never came: it may have been delivered,
+     * and sending it again may deliver it twice. As the iPhone's `sendUnconfirmed`.
+     */
+    class SendUnconfirmed(cause: Throwable? = null) : MailError("send unconfirmed", cause)
 }
 
 object MailErrors {

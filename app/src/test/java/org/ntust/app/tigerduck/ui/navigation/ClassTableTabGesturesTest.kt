@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package org.ntust.app.tigerduck.ui.navigation
 
 import android.app.Application
@@ -15,6 +17,7 @@ import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test

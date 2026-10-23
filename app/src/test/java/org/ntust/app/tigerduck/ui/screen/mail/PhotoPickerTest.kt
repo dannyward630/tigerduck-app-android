@@ -16,7 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.core.app.ActivityOptionsCompat
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import org.junit.Assert.assertEquals

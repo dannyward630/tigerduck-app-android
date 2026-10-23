@@ -67,6 +67,7 @@ class AndroidMailNotifier @Inject constructor(
         when (plan) {
             is MailNotificationPlanner.Plan.Individual -> plan.items.forEach { item ->
                 manager.notify(
+                    MailNotificationPlanner.TAG,
                     MailNotificationPlanner.notificationId(item.uid),
                     base(item.title, item.text, MailRoutes.message(folder, item.uid), MailNotificationPlanner.notificationId(item.uid)).build(),
                 )
@@ -74,6 +75,7 @@ class AndroidMailNotifier @Inject constructor(
             is MailNotificationPlanner.Plan.Summary -> {
                 val title = context.getString(R.string.school_mail_new_mail_count).replaceIosArg(1, plan.count.toString())
                 manager.notify(
+                    MailNotificationPlanner.TAG,
                     MailNotificationPlanner.SUMMARY_ID,
                     base(title, context.getString(R.string.feature_school_mail), MailRoutes.LIST, MailNotificationPlanner.SUMMARY_ID).build(),
                 )
@@ -107,14 +109,17 @@ class AndroidMailNotifier @Inject constructor(
         postGroupSummary()
     }
 
-    override fun cancelMessage(uid: Long) = NotificationGroup.MAIL.cancel(context, MailNotificationPlanner.notificationId(uid))
+    override fun cancelAuthFailure() = NotificationGroup.MAIL.cancel(context, MailNotificationPlanner.AUTH_FAILED_ID)
+
+    override fun cancelMessage(uid: Long) =
+        NotificationGroup.MAIL.cancel(context, MailNotificationPlanner.notificationId(uid), MailNotificationPlanner.TAG)
 
     override fun cancelPosted(messages: List<MailSummary>) {
         // By id, not from activeNotifications as cancelAll goes: the system lists a notification
         // only some time after it was posted, and this runs right after the post. Every id the
         // post may have used, as it was one by one or one count.
-        messages.forEach { manager.cancel(MailNotificationPlanner.notificationId(it.uid)) }
-        manager.cancel(MailNotificationPlanner.SUMMARY_ID)
+        messages.forEach { manager.cancel(MailNotificationPlanner.TAG, MailNotificationPlanner.notificationId(it.uid)) }
+        manager.cancel(MailNotificationPlanner.TAG, MailNotificationPlanner.SUMMARY_ID)
         NotificationGroup.MAIL.cancelSummary(context)
     }
 

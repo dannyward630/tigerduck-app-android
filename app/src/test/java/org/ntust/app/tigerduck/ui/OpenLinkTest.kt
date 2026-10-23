@@ -16,11 +16,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.ui.screen.coursemoodle.openMoodleContentLink
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowToast
 
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
@@ -159,5 +161,37 @@ class OpenLinkTest {
         installHandler(Intent(Intent.ACTION_VIEW, Uri.parse(file)))
         openMoodleContentLink(context, file, BrowserPreference.SYSTEM)
         assertNull(started())
+    }
+
+    // tigerduck-app-android#249: a tap on a link that nothing could open did nothing at all.
+
+    @Test
+    fun `a link nothing can open says so`() {
+        listOf(BrowserPreference.SYSTEM, BrowserPreference.IN_APP).forEach { preference ->
+            ShadowToast.reset()
+            assertFalse(preference, openLink(context, url, preference))
+            assertEquals(preference, context.getString(R.string.error_link_no_app), ShadowToast.getTextOfLatestToast())
+        }
+    }
+
+    @Test
+    fun `a refused link says so too`() {
+        assertFalse(openLink(context, "javascript:alert(1)", BrowserPreference.SYSTEM))
+        assertEquals(context.getString(R.string.error_link_no_app), ShadowToast.getTextOfLatestToast())
+    }
+
+    @Test
+    fun `a link that opens says nothing`() {
+        installBrowser()
+        assertTrue(openLink(context, url, BrowserPreference.SYSTEM))
+        assertNull(ShadowToast.getLatestToast())
+    }
+
+    @Test
+    fun `a mail link in Moodle content with no mail app says so`() {
+        openMoodleContentLink(context, "mailto:ta@mail.ntust.example", BrowserPreference.SYSTEM)
+
+        assertNull(started())
+        assertEquals(context.getString(R.string.error_link_no_app), ShadowToast.getTextOfLatestToast())
     }
 }

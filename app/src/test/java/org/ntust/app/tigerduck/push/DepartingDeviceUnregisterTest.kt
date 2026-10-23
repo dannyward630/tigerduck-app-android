@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package org.ntust.app.tigerduck.push
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
@@ -58,6 +61,9 @@ class DepartingDeviceUnregisterTest {
     private val refreshReplies = ArrayDeque<DepartingRefresh>()
     private var signedInSince = false
 
+    /** The backend the session [signedInSince] stands for is from. */
+    private var sessionBackend = BACKEND
+
     /** Holds each refresh's reply until the test completes it. */
     private var refreshGate: CompletableDeferred<Unit>? = null
 
@@ -66,9 +72,6 @@ class DepartingDeviceUnregisterTest {
 
     /** Runs as each refresh is sent, before its reply. */
     private var onRefresh: () -> Unit = {}
-
-    /** The backend the API endpoint setting names now. */
-    private var endpoint = BACKEND
 
     private fun unregister() = DepartingDeviceUnregister(
         owed = owed,
@@ -91,8 +94,7 @@ class DepartingDeviceUnregisterTest {
             refreshThrows?.let { throw it }
             refreshReplies.removeFirstOrNull() ?: DepartingRefresh.Refused
         },
-        hasSession = { signedInSince },
-        currentBaseUrl = { endpoint },
+        sessionAt = { base -> signedInSince && base == sessionBackend },
         now = { now },
     )
 
@@ -209,28 +211,34 @@ class DepartingDeviceUnregisterTest {
         assertEquals(emptyList<String>(), deletes)
     }
 
-    // The API endpoint setting, which the next person on the phone can change
+    // The API endpoint setting, which the next person on the phone can change. The tokens go to
+    // the backend that issued them whatever it names, as the iPhone's do (tigerduck-app#745): a
+    // debt dropped there leaves the device registered to the account at that backend.
 
     @Test
-    fun `a debt owed to one backend is dropped unsent once the endpoint names another`() = runTest {
-        owe(expiresAt = now - 1)
-        endpoint = "https://elsewhere.example/v3"
+    fun `a session from another backend leaves the debt to this one`() = runTest {
+        // Signed in at the endpoint set since: that moved nothing at the backend owed.
+        owe()
+        signedInSince = true
+        sessionBackend = ELSEWHERE
 
         assertEquals(Outcome.DONE, unregister().send())
 
-        assertEquals(emptyList<String>(), refreshes)
-        assertEquals(emptyList<String>(), deletes)
-        assertNull(store.pending)
+        assertEquals(listOf("device-1 access-1"), deletes)
     }
 
     @Test
-    fun `changing the endpoint drops the debt at once, and keeping it does not`() = runTest {
+    fun `a sign-in at another backend leaves the debt, and does not wait for one on its way`() = runTest {
         owe()
-        unregister().dropIfEndpointMoved()
-        assertEquals("device-1", store.pending?.deviceId)
+        val held = CompletableDeferred<Int>().also { heldDelete = it }
+        val sending = async { unregister().send() }
+        runCurrent()
 
-        endpoint = "https://elsewhere.example/v3"
-        unregister().dropIfEndpointMoved()
+        assertEquals("login", owed.signingIn(STUDENT, ELSEWHERE) { "login" })
+
+        assertEquals("device-1", store.pending?.deviceId)
+        held.complete(204)
+        assertEquals(Outcome.DONE, sending.await())
         assertNull(store.pending)
     }
 
@@ -243,7 +251,7 @@ class DepartingDeviceUnregisterTest {
         val events = mutableListOf<String>()
         val sending = async { unregister().send().also { events += "unregister $it" } }
         runCurrent()
-        val signingIn = async { owed.signingIn(STUDENT) { events += "login" } }
+        val signingIn = async { owed.signingIn(STUDENT, BACKEND) { events += "login" } }
         runCurrent()
         assertEquals("the login waits for the DELETE", emptyList<String>(), events)
 
@@ -263,7 +271,7 @@ class DepartingDeviceUnregisterTest {
         val sending = async { unregister().send() }
         runCurrent()
 
-        owed.signingIn("B11300002") { }
+        owed.signingIn("B11300002", BACKEND) { }
 
         assertNull(store.pending)
         held.complete(503)
@@ -277,7 +285,7 @@ class DepartingDeviceUnregisterTest {
         val held = CompletableDeferred<Int>().also { heldDelete = it }
         val sending = async { unregister().send() }
         runCurrent()
-        val signingIn = async { owed.signingIn("B11300002") { "login" } }
+        val signingIn = async { owed.signingIn("B11300002", BACKEND) { "login" } }
         runCurrent()
         assertFalse(signingIn.isCompleted)
 
@@ -290,7 +298,7 @@ class DepartingDeviceUnregisterTest {
     fun `a sign-in that fails leaves the debt`() = runTest {
         owe()
 
-        runCatching { owed.signingIn(STUDENT) { throw IllegalStateException("login refused") } }
+        runCatching { owed.signingIn(STUDENT, BACKEND) { throw IllegalStateException("login refused") } }
 
         assertEquals("device-1", store.pending?.deviceId)
     }
@@ -305,43 +313,6 @@ class DepartingDeviceUnregisterTest {
 
         assertEquals(emptyList<String>(), deletes)
         assertNull(store.pending)
-    }
-
-    @Test
-    fun `saving the endpoint is not held up by an unregister on its way`() = runTest {
-        owe()
-        val held = CompletableDeferred<Int>().also { heldDelete = it }
-        val sending = async { unregister().send() }
-        runCurrent()
-        endpoint = "https://elsewhere.example/v3"
-
-        // Returns at once; the unregister on its way goes to the backend it is owed to.
-        unregister().dropIfEndpointMoved()
-
-        held.complete(503)
-        sending.await()
-        // Its next try finds the endpoint moved, and drops it then.
-        assertEquals(Outcome.DONE, unregister().send())
-        assertNull(store.pending)
-    }
-
-    @Test
-    fun `saving the endpoint over a debt that cannot be read does not fail`() = runTest {
-        val broken = object : PendingUnregisterStore {
-            override fun load(): PendingUnregister = throw SecurityException("unreadable")
-            override fun save(pending: PendingUnregister) = true
-            override fun clear() {}
-        }
-        val unregister = DepartingDeviceUnregister(
-            owed = OwedUnregister(broken),
-            deleteDevice = { _, _, _ -> 204 },
-            refresh = { _, _ -> DepartingRefresh.Refused },
-            hasSession = { false },
-            currentBaseUrl = { endpoint },
-            now = { now },
-        )
-
-        unregister.dropIfEndpointMoved()
     }
 
     // What cannot be sent, or is never sent, is not kept for good
@@ -496,5 +467,6 @@ class DepartingDeviceUnregisterTest {
     private companion object {
         const val STUDENT = "B11300001"
         const val BACKEND = "https://backend.example/v3"
+        const val ELSEWHERE = "https://elsewhere.example/v3"
     }
 }

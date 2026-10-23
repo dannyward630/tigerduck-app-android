@@ -2,6 +2,9 @@ package org.ntust.app.tigerduck.ui.screen.classtable.sharing
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -81,6 +84,93 @@ class ClassTableImportPageTest {
         assertEquals(0, closed)
         assertEquals(listOf("B11300001"), store.tables.value.people.map { it.nickname })
     }
+
+    @Test
+    fun `a code from a newer app says the app needs an update, under the import's failure title`() {
+        composeRule.setContent {
+            ClassTableImportPage(model, onClose = {}, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { model.imageRead(listOf("HTTPS://SHARE.TIGERDUCK.APP/FRIEND/1.B11300001")) }
+
+        composeRule.onNodeWithText(app.getString(R.string.class_table_import_failed)).assertExists()
+        composeRule.onNodeWithText(app.getString(R.string.share_code_needs_update_message)).assertExists()
+    }
+
+    @Test
+    fun `a scanned code called off leaves the scanner open for another`() {
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(model, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { model.imageRead(listOf(code)) }
+
+        composeRule.onNodeWithText(app.getString(R.string.action_cancel)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(0, closed)
+        composeRule.onNodeWithText(app.getString(R.string.class_table_import_choose_photo)).assertExists()
+    }
+
+    @Test
+    fun `a link's import offers no photo and closes once its code is called off`() {
+        val linked = linkedModel()
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(linked, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { linked.scanned(code) }
+
+        composeRule.onNodeWithText(app.getString(R.string.class_table_import_choose_photo)).assertDoesNotExist()
+        assertEquals(0, closed)
+
+        composeRule.onNodeWithText(app.getString(R.string.action_cancel)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun `a link whose code a newer app wrote closes with its prompt`() {
+        val linked = linkedModel()
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(linked, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.runOnIdle { linked.scanned("HTTPS://SHARE.TIGERDUCK.APP/FRIEND/1.B11300001") }
+        assertEquals(0, closed)
+
+        composeRule.onNodeWithText(app.getString(R.string.action_confirm)).performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(1, closed)
+    }
+
+    @Test
+    fun `a link that replaces a link's import keeps the new one open`() {
+        val first = linkedModel()
+        first.scanned(code)
+        var current by mutableStateOf(first)
+        var closed = 0
+        composeRule.setContent {
+            ClassTableImportPage(current, onClose = { closed++ }, onFinished = {}, onPickPicture = {})
+        }
+        composeRule.waitForIdle()
+
+        // As linkedImport does: the import on screen is called off, and the link's own takes its place.
+        composeRule.runOnIdle {
+            first.cancel()
+            current = linkedModel().also { it.scanned(code) }
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(0, closed)
+        composeRule.onNodeWithText(app.getString(R.string.action_import)).assertExists()
+    }
+
+    private fun linkedModel() = ClassTableImportModel(
+        store, { "B11300000" }, { true }, { _, _ -> listOf(Course(courseNo = "MA1010001", courseName = "Calculus")) }, scope,
+        fromLink = true,
+    )
 }
 
 /** Holds what is dispatched to it until [release] runs it, as a busy I/O thread would. */

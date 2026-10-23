@@ -11,6 +11,7 @@ import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.PendingCourseIgnore
+import org.ntust.app.tigerduck.data.model.PendingCourseOverride
 import org.ntust.app.tigerduck.data.model.UnsentMark
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode
@@ -31,7 +32,10 @@ import org.robolectric.annotation.Config
 @Config(application = Application::class)
 class SignOutConfirmationTest {
 
-    private val allSynced = SyncedKinds(enabled = true, courses = true, courseNames = true, courseColours = true, assignments = true)
+    private val allSynced = SyncedKinds(
+        enabled = true, courses = true, courseNames = true, courseColours = true, assignments = true,
+        syncedOnce = REENABLE_CATEGORIES,
+    )
     private val syncOff = allSynced.copy(enabled = false)
 
     @Test
@@ -46,6 +50,8 @@ class SignOutConfirmationTest {
             LocalEdits(courseNames = true),
             LocalEdits(courseColours = true),
             LocalEdits(assignmentMarks = true),
+            LocalEdits(ignoredCourses = true),
+            LocalEdits(holidays = true),
         ).forEach { edits ->
             assertEquals("$edits", setOf(UNSYNCED_DATA), signOutLosses(edits, syncOff, hasImportedClassTables = false))
         }
@@ -60,6 +66,45 @@ class SignOutConfirmationTest {
             setOf(UNSYNCED_DATA),
             signOutLosses(edits, allSynced.copy(courseColours = false), hasImportedClassTables = false),
         )
+    }
+
+    @Test
+    fun `a kind no full sync has taken on this phone is asked about, its switch on`() {
+        // As after a sign-in before the first sync: the server may have none of it.
+        val edits = LocalEdits(courseColours = true)
+
+        assertEquals(
+            setOf(UNSYNCED_DATA),
+            signOutLosses(edits, allSynced.copy(syncedOnce = REENABLE_CATEGORIES - "course_colors"), hasImportedClassTables = false),
+        )
+        assertEquals(
+            emptySet<SignOutLoss>(),
+            signOutLosses(edits, allSynced.copy(syncedOnce = setOf("course_colors")), hasImportedClassTables = false),
+        )
+    }
+
+    @Test
+    fun `ignored courses are kept only with assignments and courses both synced`() {
+        // CourseIgnoreSync sends them with both switches on, as the iPhone does.
+        val edits = LocalEdits(ignoredCourses = true)
+
+        assertEquals(emptySet<SignOutLoss>(), signOutLosses(edits, allSynced, hasImportedClassTables = false))
+        assertEquals(setOf(UNSYNCED_DATA), signOutLosses(edits, allSynced.copy(courses = false), hasImportedClassTables = false))
+        assertEquals(setOf(UNSYNCED_DATA), signOutLosses(edits, allSynced.copy(assignments = false), hasImportedClassTables = false))
+        assertEquals(
+            setOf(UNSYNCED_DATA),
+            signOutLosses(edits, allSynced.copy(syncedOnce = REENABLE_CATEGORIES - "courses"), hasImportedClassTables = false),
+        )
+    }
+
+    @Test
+    fun `holiday choices are kept with TigerSync alone`() {
+        // Not a category with a switch: a full sync sends and takes them whatever the switches say.
+        val edits = LocalEdits(holidays = true)
+        val switchesOff = allSynced.copy(courses = false, courseNames = false, courseColours = false, assignments = false, syncedOnce = emptySet())
+
+        assertEquals(emptySet<SignOutLoss>(), signOutLosses(edits, switchesOff, hasImportedClassTables = false))
+        assertEquals(setOf(UNSYNCED_DATA), signOutLosses(edits, syncOff, hasImportedClassTables = false))
     }
 
     @Test
@@ -132,6 +177,8 @@ class SignOutConfirmationTest {
         prefs.cloudSyncEnabled = true
         // F-Droid has no TigerSync, where every edit is asked about anyway.
         assumeTrue(prefs.cloudSyncEnabled)
+        // And a full sync on this phone has taken every kind.
+        prefs.syncedCategories = REENABLE_CATEGORIES
     }
 
     @Test
@@ -141,6 +188,22 @@ class SignOutConfirmationTest {
         assertEquals(setOf(UNSYNCED_DATA), check.losses())
 
         dataCache.saveServerKnownNos(mapOf("1141" to listOf("XX0000001")))
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+    }
+
+    /** A course added back by hand whose add still waits (PendingCourseAdds): the server once had its number. */
+    @Test
+    fun `a course added back whose add still waits is asked about`() = runTest {
+        syncOn()
+        dataCache.saveCourses(listOf(course("XX0000001").copy(isManual = true)), "1141")
+        dataCache.saveServerKnownNos(mapOf("1141" to listOf("XX0000001")))
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        dataCache.savePendingCourseAdds(mapOf("1141" to listOf("XX0000001")))
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+
+        // An add whose course has left this phone is not sent again, and nothing of it is lost.
+        dataCache.saveCourses(emptyList(), "1141")
         assertEquals(emptySet<SignOutLoss>(), check.losses())
     }
 
@@ -176,6 +239,86 @@ class SignOutConfirmationTest {
 
         // The sign-out clears the hold, and the colours it held back never reach the server.
         prefs.pendingConflictCategories = setOf("course_colors")
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `an edit of a kind no full sync has taken here yet is asked about`() = runTest {
+        syncOn()
+        dataCache.saveCourses(listOf(course("CS1001301").copy(customColorHex = "#FF0000")), "1141")
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        prefs.syncedCategories = REENABLE_CATEGORIES - "course_colors"
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `marks a background sync has taken are kept, before any sync from Home`() = runTest {
+        syncOn()
+        prefs.syncedCategories = emptySet()
+        dataCache.saveMarkedCompletedAssignments(setOf("a1"))
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+
+        // BackgroundSyncWorker took the account's marks, which records only this.
+        prefs.assignmentMarksSyncedOnce = true
+
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+    }
+
+    @Test
+    fun `an ignored course is asked about while courses do not sync`() = runTest {
+        syncOn()
+        dataCache.saveIgnoredCourses(setOf("1141CS1001301"))
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        prefs.syncCourses = false
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `a colour or name still waiting to go up is asked about`() = runTest {
+        syncOn()
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        // Set offline: the colour waits in PendingCourseOverrides, which the sign-out wipes.
+        dataCache.savePendingCourseOverrides(
+            listOf(PendingCourseOverride("1141CS1001301", "#FF0000", null, null, changedAtMs = 1L)),
+        )
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `a removal still waiting to go up is asked about`() = runTest {
+        syncOn()
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        // Its DELETE waits in PendingCourseDeletes: lost, the course comes back at the next sign-in.
+        dataCache.savePendingCourseDeletes(mapOf("1141" to mapOf("CS1001301" to 1L)))
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `a holiday choice is the user's own with TigerSync off`() = runTest {
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        prefs.holidayNotifyOverrides = setOf(3)
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `a holiday choice still waiting to go up is asked about`() = runTest {
+        syncOn()
+        prefs.holidayNotifyOverrides = setOf(3)
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        // Its PUT failed: PendingHolidayOverrides keeps it, and the sign-out wipes it.
+        prefs.holidayOverridesAwaitingUpload = setOf(3)
 
         assertEquals(setOf(UNSYNCED_DATA), check.losses())
     }

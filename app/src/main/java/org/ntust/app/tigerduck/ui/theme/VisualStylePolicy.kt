@@ -11,8 +11,9 @@ import androidx.compose.ui.graphics.compositeOver
  * style is a new case here rather than an `if` in every view.
  *
  * The class table, the course cards in its today carousel, Home's time
- * slider and the Week widget differ; every other screen looks the same
- * under both presets.
+ * slider and the Week widget differ, and so does every other place a
+ * course's color shows ([courseAccentColor]); the rest of the app looks
+ * the same under both presets.
  */
 @Immutable
 data class VisualStylePolicy(val preset: VisualPreset) {
@@ -54,6 +55,18 @@ data class VisualStylePolicy(val preset: VisualPreset) {
             ClassTableGridStyle.Blocks -> if (isDark) themeColor else courseColor.copy(alpha = 0.5f)
             ClassTableGridStyle.PeriodTiles -> courseColor.pastel()
         }
+
+    /**
+     * The outline of a required course on [classTableCourseFill], where the
+     * user has them outlined. [courseColor] is the course's own colour, as for
+     * the fill: on a translucent block that colour itself stands out; on a
+     * pastel tile it would all but vanish, so a darker mix of it is drawn, as
+     * the iPhone's `classTableCourseOutline` does.
+     */
+    fun classTableCourseOutline(courseColor: Color): Color = when (classTableGridStyle) {
+        ClassTableGridStyle.Blocks -> courseColor
+        ClassTableGridStyle.PeriodTiles -> courseColor.pastelOutline()
+    }
 
     /** A course's name on [classTableCourseFill]. */
     fun classTableCourseTextColor(isDark: Boolean): Color = when (classTableGridStyle) {
@@ -101,9 +114,9 @@ data class VisualStylePolicy(val preset: VisualPreset) {
     }
 
     /**
-     * How the course colour shows outside the class table: on the today
-     * carousel's cards above it, and on Home's time slider, its cards and
-     * its track.
+     * How the course color shows outside the class table: on the today
+     * carousel's cards above it, on Home's time slider, its cards and its
+     * track, and everywhere [courseAccentColor] draws it.
      */
     val courseColorStyle: CourseColorStyle
         get() = when (preset) {
@@ -185,6 +198,35 @@ data class VisualStylePolicy(val preset: VisualPreset) {
         CourseColorStyle.Pastel -> TextOnPastel
     }
 
+    /**
+     * A course's color everywhere else it shows: the bar beside an
+     * assignment, the bar under a course's name in its sheet, the swatches
+     * of the conflict and color pickers, and the Today widget's row for a
+     * class in session. [courseColor] is the light palette hex; [tint] is
+     * the color a [CourseColorStyle.Tint] one draws there, as each place
+     * picks it. A [CourseColorStyle.Pastel] one is the course's [pastel] in
+     * either theme, as its tile on the class table is.
+     */
+    fun courseAccentColor(courseColor: Color, tint: Color): Color = when (courseColorStyle) {
+        CourseColorStyle.Tint -> tint
+        CourseColorStyle.Pastel -> courseColor.pastel()
+    }
+
+    /** Text on [courseAccentColor], given what a [CourseColorStyle.Tint] one writes there. */
+    fun courseAccentTextColor(tintText: Color): Color = when (courseColorStyle) {
+        CourseColorStyle.Tint -> tintText
+        CourseColorStyle.Pastel -> TextOnPastel
+    }
+
+    /**
+     * Times, rooms and marks on [courseAccentColor], given what a
+     * [CourseColorStyle.Tint] one writes there.
+     */
+    fun courseAccentSecondaryTextColor(tintText: Color): Color = when (courseColorStyle) {
+        CourseColorStyle.Tint -> tintText
+        CourseColorStyle.Pastel -> TextOnPastelSecondary
+    }
+
     companion object {
         /** Text on a [pastel] fill, which stays light in either theme. */
         val TextOnPastel = Color(0xFF1A1A1A)
@@ -211,7 +253,21 @@ fun Color.pastel(whiteShare: Float = PASTEL_WHITE_SHARE): Color = Color(
     alpha = 1f,
 )
 
+/**
+ * This colour mixed half with black, opaque: a line on its own [pastel] that
+ * stands out from it at better than 3:1 whatever the colour, as the iPhone's
+ * `pastelOutline` is.
+ */
+fun Color.pastelOutline(): Color = Color(
+    red = red * (1f - PASTEL_OUTLINE_BLACK_SHARE),
+    green = green * (1f - PASTEL_OUTLINE_BLACK_SHARE),
+    blue = blue * (1f - PASTEL_OUTLINE_BLACK_SHARE),
+    alpha = 1f,
+)
+
 private const val PASTEL_WHITE_SHARE = 0.65f
+
+private const val PASTEL_OUTLINE_BLACK_SHARE = 0.5f
 
 /** A muted course card's pastel: paler, as a TigerDuck card's tint is fainter. */
 private const val MUTED_PASTEL_WHITE_SHARE = 0.82f

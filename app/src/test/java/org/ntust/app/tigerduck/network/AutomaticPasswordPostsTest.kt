@@ -53,7 +53,7 @@ class AutomaticPasswordPostsTest {
     fun setUp() {
         val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("automatic-posts-test", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
-        latch = PersistedStoredPasswordLatch(prefs) { STUDENT to PASSWORD }
+        latch = PersistedStoredPasswordLatch(prefs, now = { 1_800_000_000_000L }) { STUDENT to PASSWORD }
     }
 
     @After
