@@ -262,6 +262,13 @@ class SchoolMailListViewModel @Inject constructor(
      */
     private var unfetchedMatches: Map<String, UnfetchedMatches> = emptyMap()
 
+    /** The UIDVALIDITY the outcome's matches were read under, or null where nothing said. */
+    private val SearchOutcome.version: Long?
+        get() = when (this) {
+            is SearchOutcome.Server -> uidValidity
+            is SearchOutcome.LoadedOnly -> uidValidity
+        }
+
     /** A folder's matches still to fetch, and the UIDVALIDITY they were found under ([SearchOutcome.Server.uidValidity]). */
     private data class UnfetchedMatches(val uidValidity: Long?, val uids: List<Long>)
 
@@ -726,14 +733,12 @@ class SchoolMailListViewModel @Inject constructor(
      * behind other requests while another student signs in. Nor while another write of [row] is
      * still out ([UiState.writing]), which holds the row from here to its end.
      *
-     * Nor once a page of [row]'s folder has come back under another UIDVALIDITY than the row's own
-     * ([MailRow.uidValidity]), the one its page or search read it under: the folder was recreated
-     * on the server while the question was up -- a poll's page can land meanwhile -- and the UID
-     * names another mail there. The repository's own check compares the server with its cache,
-     * which that page has replaced by then, so it would let the write through. A folder recreated
-     * with no page of it on the list -- a search's row, whose folder's first page never came -- is
-     * refused by the server as the write selects it, since the write carries the row's
-     * UIDVALIDITY there too ([SchoolMailRepository.move]). A row without one is never sent.
+     * The write carries the row's own UIDVALIDITY ([MailRow.uidValidity]), the one its page or
+     * search read it under, and the server is the judge of it: the folder as the write selects it
+     * must have it ([SchoolMailRepository.move]), or the write is refused there with nothing sent.
+     * That covers a folder recreated while the question was up, a poll's page of it landing
+     * meanwhile or none at all. The list does not refuse a row for the version it read the folder
+     * under last, which a fresh search can be newer than. A row without one is never sent.
      *
      * The row leaves the list through the repository's feed ([apply]), as a swipe's mark-read
      * changes it ([toggleRead]), and not here as well: a write held on the connection can end
@@ -743,8 +748,7 @@ class SchoolMailListViewModel @Inject constructor(
      */
     private fun write(row: MailRow, generation: Int, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
         if (account.accountGeneration != generation || row.key in _state.value.writing) return
-        val listed = folderValidity[row.folder]
-        if (row.uidValidity == null || (listed != null && listed != row.uidValidity)) {
+        if (row.uidValidity == null) {
             actionFail(MailError.FolderChanged())
             return
         }
@@ -1180,14 +1184,8 @@ class SchoolMailListViewModel @Inject constructor(
                 failure?.takeIf { it is MailError.Certificate || it is MailError.AuthFailed }?.let(::searchFail)
                 return
             }
-            val rows = outcomes.flatMap { (folder, outcome) ->
-                // Each row keeps the version of the folder its matches were read under.
-                val version = when (outcome) {
-                    is SearchOutcome.Server -> outcome.uidValidity
-                    is SearchOutcome.LoadedOnly -> outcome.uidValidity
-                }
-                outcome.messages.map { MailRow(folder, it, version) }
-            }
+            // Each row keeps the version of the folder its matches were read under.
+            val rows = outcomes.flatMap { (folder, outcome) -> outcome.messages.map { MailRow(folder, it, outcome.version) } }
             unfetchedMatches = outcomes.mapNotNull { (folder, outcome) ->
                 (outcome as? SearchOutcome.Server)?.takeIf { it.remaining.isNotEmpty() }
                     ?.let { folder to UnfetchedMatches(it.uidValidity, it.remaining) }
@@ -1197,6 +1195,19 @@ class SchoolMailListViewModel @Inject constructor(
                     searchResults = ordered(selection, rows),
                     searchLocalOnly = outcomes.any { (_, outcome) -> outcome is SearchOutcome.LoadedOnly },
                 )
+            }
+            // A folder the search read under another UIDVALIDITY than the list's rows of it: it was
+            // recreated, and those rows name other mail now. The list reads it again, as it does for
+            // a page of results that comes back recreated ([loadMoreSearchResults]); the results
+            // just found are of the folder as it is, and stay.
+            val recreated = outcomes.mapNotNull { (folder, outcome) ->
+                val listed = folderValidity[folder] ?: return@mapNotNull null
+                val searched = outcome.version ?: return@mapNotNull null
+                if (searched != listed) folder to listed else null
+            }.toMap()
+            if (recreated.isNotEmpty()) {
+                reloadRecreated(recreated)
+                if (!stillCurrent(selection, generation) || search != searchGeneration) return
             }
             refetchIfChangedSince(outcomes.map { it.first }, since)
             failure?.let(::searchFail)

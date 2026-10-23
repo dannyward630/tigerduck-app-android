@@ -3037,4 +3037,42 @@ class SchoolMailListViewModelTest {
         vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
         assertTrue("a move went out with no version to check", repo.moved.isEmpty())
     }
+
+    @Test
+    fun `a fresh search after its folder was recreated deletes what it found, and the list follows`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考 old"))
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.loadIfNeeded()
+        // The folder is recreated on the server, its UID given to another mail, and no page of it
+        // has reached the list since.
+        repo.pageValidity = 2
+        repo.searchValidity = 2
+        repo.mail["INBOX"] = mutableListOf(mailSummary(1, subject = "期中考 new"))
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val row = vm.state.value.displayed.single()
+        assertEquals("期中考 new", row.summary.subject)
+        assertEquals("the list kept the old mailbox's rows", listOf("期中考 new"), vm.state.value.messages.map { it.summary.subject })
+
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertEquals("a row the search read under the folder's new version was refused", listOf("INBOX" to 1L), repo.deleted)
+        assertNull(vm.state.value.actionError)
+    }
+
+    @Test
+    fun `a list row read before its folder was recreated is refused by the server, not the list`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        vm.delete(row)
+        // While the question is up the folder is recreated, and the list reads its new version.
+        repo.pageValidity = 2
+        vm.refresh()
+        vm.confirmDelete(true)
+        assertEquals("the write never reached the server to be judged", 1, repo.writesRefused)
+        assertTrue(repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+    }
 }

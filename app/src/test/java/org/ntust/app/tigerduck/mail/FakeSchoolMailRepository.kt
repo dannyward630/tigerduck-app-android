@@ -382,8 +382,14 @@ class FakeSchoolMailRepository : SchoolMailRepository {
      * folders have now ([pageValidity]) names another mail, and nothing is sent.
      */
     private fun refuseUnder(uidValidity: Long?) {
-        if (uidValidity != null && uidValidity != pageValidity) throw MailError.FolderChanged()
+        if (uidValidity != null && uidValidity != pageValidity) {
+            writesRefused++
+            throw MailError.FolderChanged()
+        }
     }
+
+    /** How many writes [refuseUnder] turned away: the server, not the caller, deciding a UID is stale. */
+    var writesRefused = 0
 
     /** Mirrors the real repository: permanent inside the trash, and permanent everywhere when the account has no trash folder and none could be created. */
     override suspend fun deletesPermanently(folder: String, stillWanted: () -> Boolean): Boolean {
