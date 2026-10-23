@@ -90,6 +90,40 @@ class MailHtmlDocumentTest {
         assertTrue(html, html.contains("background:#ffffff;color:#000000"))
     }
 
+    // --- links: drawn in the colour their contrast is judged in ------------------------------
+
+    @Test
+    fun `the page draws links in its theme's link colour`() {
+        val html = MailHtmlDocument.build("<p>hi</p>", emptyMap(), false, dark.copy(link = "#123456")).html
+        assertTrue(html, html.contains("a[href]{color:#123456}"))
+    }
+
+    @Test
+    fun `a page's links default to the colours Chromium draws them in`() {
+        assertEquals("#9e9eff", dark.link)
+        assertEquals("#0000ee", light.link)
+        assertEquals("#0000ee", MailHtmlTheme.LIGHT.link)
+    }
+
+    @Test
+    fun `a link on the sender's white background is judged in the colour the paper draws it in`() {
+        // #0000ee reads on white at 9.4:1, so both links stay the paper's own blue.
+        val body = """<table bgcolor="#ffffff"><tbody><tr><td><a href="https://example.com/a">Sign up</a></td></tr></tbody></table>""" +
+            """<p><a href="https://example.com/b">Another</a></p>"""
+        val html = MailHtmlDocument.build(body, emptyMap(), false, MailHtmlTheme.LIGHT).html
+        assertTrue(html, html.contains("""<td><a href="https://link.invalid/0">Sign up</a></td>"""))
+    }
+
+    @Test
+    fun `a link on a sender's background it does not read on is given a colour that does`() {
+        val body = """<table bgcolor="#333333"><tbody><tr><td><a href="https://example.com/a">Sign up</a></td></tr></tbody></table>"""
+        val html = MailHtmlDocument.build(body, emptyMap(), false, dark).html
+        val given = Regex("""<a href="https://link.invalid/0" style="color: (#[0-9a-f]{6})">""").find(html)?.groupValues?.get(1)
+        assertTrue(html, given != null)
+        val (link, cell) = listOf(given!!, "#333333").map { MailReadableHtml.parse(it, legacy = false)!! }
+        assertTrue(MailReadableHtml.contrast(link, cell) >= MailReadableHtml.MINIMUM_CONTRAST)
+    }
+
     // --- rewriteLinks: every <a href> becomes its index into the links it returns -------------
 
     @Test

@@ -31,10 +31,22 @@ data class LinkedHtml(val html: String, val links: List<MailLink>)
 data class MailHtmlTheme(
     val background: String,
     val foreground: String,
-    val link: String = "#007aff",
     val isDark: Boolean,
+    /**
+     * The colour the page draws a link in. The page's own CSS sets it, so a link on a sender's
+     * background has its contrast judged in the colour it is drawn in. By default it is the one
+     * Chromium draws a link in under [isDark]'s `color-scheme`, as the page did before setting
+     * one, and as the Apple app's WebKit does.
+     */
+    val link: String = if (isDark) DARK_LINK else LIGHT_LINK,
 ) {
     companion object {
+        /** Chromium's link colour under `color-scheme: light`. */
+        const val LIGHT_LINK = "#0000ee"
+
+        /** Chromium's link colour under `color-scheme: dark`. */
+        const val DARK_LINK = "#9e9eff"
+
         /** [LIGHT]'s paper, for the Surface and WebView drawn behind its document. */
         val LIGHT_PAPER = Color.White
 
@@ -43,12 +55,7 @@ data class MailHtmlTheme(
          * sets dark text and no background of its own reads as nothing on a dark surface; this is
          * the page such a mail was written against, and the reader's way back to it.
          */
-        val LIGHT = MailHtmlTheme(
-            background = LIGHT_PAPER.toCssHex(),
-            foreground = Color.Black.toCssHex(),
-            link = "#007aff",
-            isDark = false,
-        )
+        val LIGHT = MailHtmlTheme(background = LIGHT_PAPER.toCssHex(), foreground = Color.Black.toCssHex(), isDark = false)
     }
 }
 
@@ -133,7 +140,7 @@ object MailHtmlDocument {
                 "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" +
                 "<style>:root{color-scheme:$scheme}" +
                 "html,body{margin:0;padding:0;background:${theme.background};color:${theme.foreground}}" +
-                "body{padding:12px;font-family:sans-serif;overflow-wrap:anywhere}" +
+                "body{padding:12px;font-family:sans-serif;overflow-wrap:anywhere}a[href]{color:${theme.link}}" +
                 "img{max-width:100%;height:auto}table{max-width:100%}pre{white-space:pre-wrap}</style>" +
                 "</head><body>${body.html}</body></html>",
         )

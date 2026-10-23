@@ -161,12 +161,7 @@ fun SchoolMailMessageScreen(
     val mailTheme = if (onLightPaper) {
         MailHtmlTheme.LIGHT
     } else {
-        MailHtmlTheme(
-            background = cs.surface.toCssHex(),
-            foreground = cs.onSurface.toCssHex(),
-            link = cs.primary.toCssHex(),
-            isDark = isDark,
-        )
+        MailHtmlTheme(background = cs.surface.toCssHex(), foreground = cs.onSurface.toCssHex(), isDark = isDark)
     }
     // Keyed on mailTheme (a data class, so this only relaunches on a genuine colour change, not
     // every recomposition): pushing it into the view model directly from the composable body
