@@ -53,24 +53,40 @@ class AssignmentStatusWriter internal constructor(
      * out under. A status the cache already has writes and publishes nothing. Whether it wrote.
      */
     suspend fun take(answer: SubmissionStatusAnswer): Boolean {
-        val written = write(answer) ?: return false
-        published(written)
+        val written = write(answer) as? StatusWrite.Written ?: return false
+        published(written.assignments)
         return true
     }
 
+    /** What [write] made of an answer. */
+    sealed interface StatusWrite {
+        /** Taken, and the list as written with it. */
+        data class Written(val assignments: List<Assignment>) : StatusWrite
+
+        /** Taken, with nothing to change: the cache had it, or has no such assignment. */
+        data object Unchanged : StatusWrite
+
+        /** Not taken: one asked for later is, or the account it was asked for signed out. */
+        data object Refused : StatusWrite
+    }
+
     /**
-     * What [take] writes, told to no one: the list as written, or null when nothing was. For a
-     * caller that tells only some of those [take] tells, itself.
+     * What [take] writes, told to no one. For a caller that tells only some of those [take]
+     * tells, itself.
      */
-    suspend fun write(answer: SubmissionStatusAnswer): List<Assignment>? {
+    suspend fun write(answer: SubmissionStatusAnswer): StatusWrite {
         // Checked before the ledger takes the answer: an answer for the account that left must
         // not stand in the way of the next account's round for the same id.
-        if (answer.generation != dataCache.userDataGeneration) return null
+        if (answer.generation != dataCache.userDataGeneration) return StatusWrite.Refused
+        var refused = false
         var changed = false
         val written = dataCache.updateAssignments(answer.generation) { assignments ->
             // Offered under the cache's lock, which a round's write holds too, so a round that
             // writes between the offer and this write cannot be overwritten by an older answer.
-            if (!ledger.offer(answer)) return@updateAssignments assignments
+            if (!ledger.offer(answer)) {
+                refused = true
+                return@updateAssignments assignments
+            }
             val index = assignments.indexOfFirst { it.assignmentId == answer.assignmentId }
             if (index < 0) return@updateAssignments assignments
             val current = assignments[index]
@@ -84,6 +100,10 @@ class AssignmentStatusWriter internal constructor(
                 this[index] = current.copy(isCompleted = answer.submitted, submittedAt = submittedAt, extensionDueDate = extension)
             }
         }
-        return written?.takeIf { changed }
+        return when {
+            written == null || refused -> StatusWrite.Refused
+            changed -> StatusWrite.Written(written)
+            else -> StatusWrite.Unchanged
+        }
     }
 }

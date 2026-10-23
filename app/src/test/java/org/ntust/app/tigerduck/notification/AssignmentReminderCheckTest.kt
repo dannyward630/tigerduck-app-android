@@ -472,4 +472,24 @@ class AssignmentReminderCheckTest {
 
         assertEquals(ReminderVerdict.Drop(ReminderDropReason.DUE_DATE_CHANGED), check.verdict("20977", null))
     }
+
+    @Test
+    fun `an older call's answer the page has since overtaken does not decide the reminder`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+
+        moodle = {
+            // The page asks after the reminder's call went out and hears the work was reopened, then
+            // the call's older answer arrives: handed in.
+            runBlocking {
+                writer.take(SubmissionStatusAnswer("20977", false, null, monotonicNow + 1, dataCache.userDataGeneration))
+            }
+            answer(own = "submitted")
+        }
+        val verdict = check.verdict("20977", assignment.dueDate.time)
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.SUPERSEDED), verdict)
+        assertEquals(false, dataCache.loadAssignments().single().isCompleted)
+    }
 }
+

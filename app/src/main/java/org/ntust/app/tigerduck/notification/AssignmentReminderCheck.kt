@@ -5,8 +5,8 @@ import android.util.Log
 import kotlinx.coroutines.CancellationException
 import org.ntust.app.tigerduck.data.CourseIgnores
 import org.ntust.app.tigerduck.data.cache.DataCache
-import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.moodle.AssignmentStatusWriter
+import org.ntust.app.tigerduck.data.moodle.AssignmentStatusWriter.StatusWrite
 import org.ntust.app.tigerduck.data.moodle.SubmissionStatusAnswer
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.network.MoodleService
@@ -61,15 +61,25 @@ class AssignmentReminderCheck internal constructor(
         val answer = moodleId?.let { askMoodle(it) } ?: ReminderStatusAnswer.NoAnswer
         // Read again: a mark, an ignore or a new due date can land while Moodle answers.
         var cached = cached(assignmentId)
+        var decidedBy: ReminderStatusAnswer = answer
         if (moodleId != null && answer is ReminderStatusAnswer.Answered) {
-            // What Moodle answered can move the student's own date. Work it says is handed in
-            // keeps the date: that is Moodle's to report, as handed in.
-            record(assignmentId, moodleId, answer, askedAtMs, generation)
-                ?.takeUnless { it.isCompleted }
-                ?.let { written -> cached = cached?.copy(dueAtMs = written.studentDueDate.time) }
+            when (val write = record(assignmentId, moodleId, answer, askedAtMs, generation)) {
+                // What Moodle answered can move the student's own date. Work it says is handed
+                // in keeps the date: that is Moodle's to report, as handed in.
+                is StatusWrite.Written -> write.assignments.firstOrNull { it.assignmentId == assignmentId }
+                    ?.takeUnless { it.isCompleted }
+                    ?.let { written -> cached = cached?.copy(dueAtMs = written.studentDueDate.time) }
+                StatusWrite.Unchanged -> Unit
+                // One asked for later came first: the cache as it stands now has it, and this
+                // answer, older, decides nothing.
+                StatusWrite.Refused -> {
+                    cached = cached(assignmentId)
+                    decidedBy = ReminderStatusAnswer.Superseded
+                }
+            }
         }
         // One armed without its date was armed for the date the cache had before the call.
-        return AssignmentReminderPolicy.decide(cached, armedDueAtMs ?: before?.dueAtMs, answer)
+        return AssignmentReminderPolicy.decide(cached, armedDueAtMs ?: before?.dueAtMs, decidedBy)
     }
 
     private suspend fun cached(assignmentId: String): CachedReminderAssignment? {
@@ -93,7 +103,7 @@ class AssignmentReminderCheck internal constructor(
      * the extension together, and never over an answer asked for later, a round's or a page's.
      * The reminders are armed again from what it wrote, as the next round can come after the
      * first of them is due. The rest a page's answer tells, the upload among them, waits for the
-     * next round: the receiver has seconds. The assignment as written, or null when nothing was.
+     * next round: the receiver has seconds.
      */
     private suspend fun record(
         assignmentId: String,
@@ -101,15 +111,15 @@ class AssignmentReminderCheck internal constructor(
         answer: ReminderStatusAnswer.Answered,
         askedAtMs: Long,
         generation: Int,
-    ): Assignment? {
+    ): StatusWrite {
         val (submitted, submittedAt) = MoodleService.submissionState(moodleId, emptyMap(), answer.lastAttempt)
         val extension = MoodleService.extensionDueDate(moodleId, asked = true, answer.lastAttempt, emptyMap())
         val status = SubmissionStatusAnswer(
             assignmentId, submitted, submittedAt?.time, askedAtMs, generation, extensionDueMs = extension?.time,
         )
-        val written = statusWriter.write(status) ?: return null
-        scheduler.rescheduleFromCache(dataCache, reminderPrefs, generation)
-        return written.firstOrNull { it.assignmentId == assignmentId }
+        val write = statusWriter.write(status)
+        if (write is StatusWrite.Written) scheduler.rescheduleFromCache(dataCache, reminderPrefs, generation)
+        return write
     }
 
     private suspend fun askMoodle(moodleId: Int): ReminderStatusAnswer = try {
