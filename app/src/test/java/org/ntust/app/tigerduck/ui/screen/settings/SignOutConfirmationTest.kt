@@ -292,6 +292,35 @@ class SignOutConfirmationTest {
     }
 
     @Test
+    fun `a name on a course added by hand is asked about with names synced, as it never goes up`() = runTest {
+        syncOn()
+        // The server has had the course itself, so only its name is at stake.
+        dataCache.saveCourses(listOf(course("XX0000001").copy(isManual = true)), "1141")
+        dataCache.saveServerKnownNos(mapOf("1141" to listOf("XX0000001")))
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        // Renamed in the other language, so the course on the table carries no name of its own.
+        dataCache.saveCourseCustomNames(mapOf("XX0000001" to mapOf("en" to "Morning Math")))
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+
+        dataCache.saveCourseCustomNames(emptyMap())
+        dataCache.saveCourses(listOf(course("XX0000001").copy(isManual = true, customCourseName = "早八")), "1141")
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
+    fun `a name on an enrolled course is kept with names synced`() = runTest {
+        syncOn()
+        dataCache.saveCourses(
+            listOf(course("CS1001301").copy(moodleIdNumber = "1141CS1001301", customCourseName = "早八")),
+            "1141",
+        )
+        dataCache.saveCourseCustomNames(mapOf("CS1001301" to mapOf("zh" to "早八")))
+
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+    }
+
+    @Test
     fun `a removal still waiting to go up is asked about`() = runTest {
         syncOn()
         assertEquals(emptySet<SignOutLoss>(), check.losses())
