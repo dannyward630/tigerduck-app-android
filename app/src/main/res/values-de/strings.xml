@@ -31,6 +31,7 @@
     <string name="action_allow">Erlauben</string>
     <string name="action_back">Zurück</string>
     <string name="action_cancel">Abbrechen</string>
+    <string name="action_change">Ändern</string>
     <string name="action_clear_text">Text löschen</string>
     <string name="action_close">Schließen</string>
     <string name="action_confirm">Bestätigen</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Schnittstellenstil</string>
     <string name="settings_whats_new">Was gibt es Neues</string>
     <string name="share_code_needs_update_message">Dieser Freigabecode erfordert eine neuere Version der App.</string>
+    <string name="sign_in_change_account_title">Konto ändern</string>
     <string name="sign_in_password">Passwort</string>
     <string name="sign_in_student_id">Matrikelnummer</string>
     <string name="source_code_picker_current_app_badge">Diese App</string>
