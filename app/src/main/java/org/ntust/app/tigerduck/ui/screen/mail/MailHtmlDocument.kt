@@ -20,9 +20,11 @@ data class LinkedHtml(val html: String, val links: List<MailLink>)
 
 /**
  * The page's own surface, so a mail reads as part of the app rather than as white paper in a
- * dark room -- or [LIGHT]'s white paper, when the reader asks for it. Only the page is themed: a
- * sender's own colours are never rewritten, because the alternative distorts logos, screenshots
- * and branded mail with no way for the reader to tell.
+ * dark room -- or [LIGHT]'s white paper, when the reader asks for it. A sender's colours are kept
+ * wherever they read: only a text colour under 7:1 against what it is drawn on moves, to the
+ * nearest lightness that reads, keeping its hue (see [MailReadableHtml]). Backgrounds, images
+ * and every other colour are left as sent, so logos, screenshots and branded mail are not
+ * distorted.
  * [isDark] drives `color-scheme`, which is what makes mail that opts into `prefers-color-scheme`
  * follow along, and makes UA-default form controls legible.
  */

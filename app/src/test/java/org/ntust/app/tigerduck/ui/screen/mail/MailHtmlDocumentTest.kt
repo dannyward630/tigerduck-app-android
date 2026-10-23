@@ -9,6 +9,7 @@ import org.ntust.app.tigerduck.mail.mime.TextCleaning
 import org.ntust.app.tigerduck.mail.model.InlineImage
 import org.ntust.app.tigerduck.mail.sanitize.HtmlSanitizer
 import org.ntust.app.tigerduck.mail.sanitize.MailLink
+import org.ntust.app.tigerduck.mail.sanitize.MailReadableHtml
 
 class MailHtmlDocumentTest {
     private val png = InlineImage("image/png", byteArrayOf(1, 2, 3))
@@ -43,7 +44,7 @@ class MailHtmlDocumentTest {
         assertTrue(doc.contains("<body><p>x</p></body>"))
     }
 
-    // --- theme: the page's own surface, never a sender's colours -----------------------------
+    // --- theme: the page's own surface, and a sender's colours where they read ---------------
 
     @Test
     fun `dark theme colours reach the document`() {
@@ -58,11 +59,22 @@ class MailHtmlDocumentTest {
         assertTrue(MailHtmlDocument.build("<p>hi</p>", emptyMap(), false, light).html.contains("color-scheme:light"))
     }
 
+    // The sanitizer keeps background-color and drops the background shorthand, so these use the
+    // one a sanitized mail can carry.
     @Test
-    fun `sender's own inline style is left alone`() {
-        val body = """<p style="background:#ffeeaa;color:#003300">branded</p>"""
+    fun `a sender's colour that reads on its own background is left as sent`() {
+        val body = """<p style="background-color: #ffeeaa; color: #003300">branded</p>"""
         val html = MailHtmlDocument.build(body, emptyMap(), false, dark).html
-        assertTrue(html, html.contains("""style="background:#ffeeaa;color:#003300""""))
+        assertTrue(html, html.contains("<body>$body</body>"))
+    }
+
+    @Test
+    fun `a sender's colour that does not read on the page is moved to 7 to 1`() {
+        val body = """<p style="color: #003300">branded</p>"""
+        val html = MailHtmlDocument.build(body, emptyMap(), false, dark).html
+        assertTrue(html, html.contains("""<body><p style="color: #79ab75">branded</p></body>"""))
+        val (moved, page) = listOf("#79ab75", "#121212").map { MailReadableHtml.parse(it, legacy = false)!! }
+        assertTrue(MailReadableHtml.contrast(moved, page) >= MailReadableHtml.MINIMUM_CONTRAST)
     }
 
     @Test
