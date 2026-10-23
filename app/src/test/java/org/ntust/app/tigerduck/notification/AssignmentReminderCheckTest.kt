@@ -261,11 +261,25 @@ class AssignmentReminderCheckTest {
                 answer(own = "submitted")
             }
 
-            check.verdict("20977", assignment.dueDate.time)
+            val verdict = check.verdict("20977", assignment.dueDate.time)
 
+            // The departed account's "handed in" decides nothing for the next one.
+            assertEquals(ReminderVerdict.Drop(ReminderDropReason.SUPERSEDED), verdict)
             assertEquals(listOf(assignment), dataCache.loadAssignments())
             assertEquals(listOf("20977", "20977"), armedIds())
         }
+
+    @Test
+    fun `an answer that outlived a sign-out, with no account since, finds nothing to remind of`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        moodle = {
+            runBlocking { dataCache.clearAllUserData() }
+            answer(own = "new")
+        }
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.NOT_IN_CACHE), check.verdict("20977", assignment.dueDate.time))
+    }
 
     @Test
     fun `the demo account's reminder answers from its own data and asks Moodle nothing`() = runBlocking {
