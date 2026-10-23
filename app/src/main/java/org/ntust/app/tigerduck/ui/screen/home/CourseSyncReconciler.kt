@@ -240,7 +240,8 @@ object CourseSyncReconciler {
      * The term's courses as a sync commits them: [current], the list as it
      * stands now, without the courses the sync pruned from [read], its own
      * earlier load, as [kept] says, and with the rows it merged down
-     * ([merged]) that [current] still lacks. A course a delete or a fetch
+     * ([merged]) that [current] still lacks and [hidden], the course numbers
+     * hidden in the term now, does not name. A course a delete or a fetch
      * took out or put in since the read stays as that left it, where writing
      * [kept] back would undo it.
      */
@@ -249,11 +250,12 @@ object CourseSyncReconciler {
         read: List<Course>,
         kept: List<Course>,
         merged: List<Course> = emptyList(),
+        hidden: Set<String> = emptySet(),
     ): List<Course> {
         val pruned = read.mapTo(mutableSetOf()) { it.courseNo } - kept.mapTo(mutableSetOf()) { it.courseNo }
         val held = current.filter { it.courseNo !in pruned }
         val heldNos = held.mapTo(mutableSetOf()) { it.courseNo }
-        return held + merged.filter { it.courseNo !in heldNos }
+        return held + merged.filter { it.courseNo !in heldNos && it.courseNo !in hidden }
     }
 
     data class SemesterOutcome(

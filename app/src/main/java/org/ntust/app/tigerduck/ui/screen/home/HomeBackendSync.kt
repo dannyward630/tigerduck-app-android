@@ -524,7 +524,7 @@ class HomeBackendSync @Inject constructor(
             }
             if (outcome.uploadLocal) {
                 pruned?.let { kept ->
-                    dataCache.updateCourses(semester) { CourseSyncReconciler.committedCourses(it, localCourses, kept) }
+                    dataCache.updateCourses(semester) { current, _ -> CourseSyncReconciler.committedCourses(current, localCourses, kept) }
                     if (semester == currentSemester) touchedCurrent = true
                 }
                 // Sent whatever the upload ledger remembers (resend): the
@@ -550,8 +550,8 @@ class HomeBackendSync @Inject constructor(
                     Log.i(TAG, "[Sync] $semester: merged from server ${outcome.merged.map { it.courseNo }}")
                 }
                 // Onto the list as it stands: a delete or fetch saved since the load stays.
-                dataCache.updateCourses(semester) {
-                    CourseSyncReconciler.committedCourses(it, localCourses, pruned ?: localCourses, outcome.merged)
+                dataCache.updateCourses(semester) { current, hidden ->
+                    CourseSyncReconciler.committedCourses(current, localCourses, pruned ?: localCourses, outcome.merged, hidden)
                 }
                 if (semester == currentSemester) touchedCurrent = true
             }

@@ -100,7 +100,9 @@ class ClassTableHandAddedHideTest {
         cache.updateDeletedCourseNos(stored, outcome.tombstones)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
         val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones) ?: localCourses
-        cache.updateCourses(TERM) { CourseSyncReconciler.committedCourses(it, localCourses, kept, outcome.merged) }
+        cache.updateCourses(TERM) { current, hidden ->
+            CourseSyncReconciler.committedCourses(current, localCourses, kept, outcome.merged, hidden)
+        }
     }
 
     /**
@@ -352,6 +354,42 @@ class ClassTableHandAddedHideTest {
 
         assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), cache.loadCourses(TERM).map { it.courseNo }.sorted())
         assertEquals(emptySet<String>(), hidden())
+    }
+
+    @Test
+    fun `an older sync that resumes long after a newer one listed a brought-back course still leaves it be`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        val olderFetchedAt = System.currentTimeMillis() - 1_000
+        val read = cache.loadDeletedCourseNos()
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+        val now = System.currentTimeMillis()
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = now + 1_000)
+        // Newer syncs go on while the older one is held, past any grace a minute long.
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = now + 600_000)
+
+        syncListing(enrolled.courseNo, hides = read, fetchedAtMs = olderFetchedAt)
+
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+        assertEquals(emptySet<String>(), hidden())
+    }
+
+    @Test
+    fun `a course a sync merges down that is fetched and deleted while it runs stays out of the term`() = runTest {
+        cache.saveCourses(listOf(enrolled), TERM)
+
+        // The sync is to merge down a course another device added; held before its commit, a
+        // fetch brings the same course and the student deletes it.
+        syncListing(enrolled.courseNo, MERGED, beforeCommit = {
+            cache.saveCourses(cache.loadCourses(TERM) + Course.fromSchedule(MERGED, MERGED, moodleIdNumber = "$TERM$MERGED"), TERM)
+            delete(Course.fromSchedule(MERGED, MERGED))
+        })
+
+        assertEquals(setOf(MERGED), hidden())
+        assertEquals(listOf(enrolled.courseNo), cache.loadCourses(TERM).map { it.courseNo })
     }
 
     @Test

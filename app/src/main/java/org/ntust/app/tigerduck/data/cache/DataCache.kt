@@ -161,14 +161,19 @@ class DataCache @Inject constructor(
     suspend fun saveCourses(courses: List<Course>, semester: String) = coursesMutex.withLock { writeCourses(courses, semester) }
 
     /**
-     * [semester]'s courses as [change] makes them of the list as it stands,
-     * with no other save of a term between the read and the write, for a sync
-     * that commits only what it changed: a delete or a fetch saved while it
-     * ran stays as that left it.
+     * [semester]'s courses as [change] makes them of the list as it stands
+     * and of the course numbers hidden in the term now, with no other save of
+     * a term between the read and the write, for a sync that commits only
+     * what it changed: a delete or a fetch saved while it ran stays as that
+     * left it. A delete writes its hide before its list, so a course deleted
+     * before this read is in the hides, and one deleted after it is taken off
+     * by the delete's own save.
      */
-    suspend fun updateCourses(semester: String, change: (List<Course>) -> List<Course>) = coursesMutex.withLock {
-        writeCourses(change(loadCourses(semester)), semester)
-    }
+    suspend fun updateCourses(semester: String, change: (List<Course>, Set<String>) -> List<Course>) =
+        coursesMutex.withLock {
+            val hidden = CourseTombstoneKeys.hiddenIn(semester, loadDeletedCourseNos())
+            writeCourses(change(loadCourses(semester), hidden), semester)
+        }
 
     // Every write of a term's courses, one at a time; see updateCourses.
     private val coursesMutex = Mutex()
@@ -685,23 +690,22 @@ class DataCache @Inject constructor(
      * numbers of a snapshot fetched at [fetchedAtMs], holds, when it was
      * fetched after they came back: the upload that names them has landed,
      * and to that snapshot and every later one their absence is a delete
-     * elsewhere again. A sync still reconciling an older one leaves them be;
-     * a hold listed more than [RESTORED_LISTED_GRACE_MS] before the snapshot
-     * goes, as no sync is that far behind. An older snapshot may still list
-     * the row their delete took off.
+     * elsewhere again. A sync still reconciling an older one, however long
+     * it has been held, leaves them be, so the hold stays until the course is
+     * hidden again or the data goes with a sign-out. An older snapshot may
+     * still list the row their delete took off.
      */
     suspend fun restoredCoursesListed(semester: String, listed: Collection<String>, fetchedAtMs: Long) =
         courseHidesMutex.withLock {
             val restored = loadRestoredCourses()
             val keys = listed.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
-            val updated = restored.mapNotNull { (key, course) ->
-                val listedAt = course.listedAt
-                when {
-                    listedAt != null && fetchedAtMs - listedAt > RESTORED_LISTED_GRACE_MS -> null
-                    listedAt == null && key in keys && fetchedAtMs > course.restoredAt -> key to course.copy(listedAt = fetchedAtMs)
-                    else -> key to course
+            val updated = restored.mapValues { (key, course) ->
+                if (course.listedAt == null && key in keys && fetchedAtMs > course.restoredAt) {
+                    course.copy(listedAt = fetchedAtMs)
+                } else {
+                    course
                 }
-            }.toMap()
+            }
             if (updated != restored) saveToUserData(updated, RESTORED_COURSES_FILE)
         }
 
@@ -1362,9 +1366,6 @@ class DataCache @Inject constructor(
 
         private const val HAND_ADDED_HIDES_FILE = "hand_added_hides.json"
         private const val RESTORED_COURSES_FILE = "restored_courses.json"
-
-        /** As CourseSyncReconciler's for reset stamps: an overlapping sync's snapshot is seconds behind, never a minute. */
-        private const val RESTORED_LISTED_GRACE_MS = 60_000L
         private const val SELECTION_ROSTERS_FILE = "selection_rosters.json"
 
         private const val MOODLE_DIR = "moodle"
