@@ -31,6 +31,7 @@
     <string name="action_allow">অনুমতি দিন</string>
     <string name="action_back">পিছনে</string>
     <string name="action_cancel">বাতিল</string>
+    <string name="action_change">পরিবর্তন করুন</string>
     <string name="action_clear_text">টেক্সট পরিষ্কার করুন</string>
     <string name="action_close">বন্ধ করুন</string>
     <string name="action_confirm">নিশ্চিত করুন</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">ইন্টারফেস শৈলী</string>
     <string name="settings_whats_new">নতুন কী আছে</string>
     <string name="share_code_needs_update_message">এই শেয়ার কোডের জন্য অ্যাপের নতুন সংস্করণ প্রয়োজন।</string>
+    <string name="sign_in_change_account_title">অ্যাকাউন্ট পরিবর্তন করুন</string>
     <string name="sign_in_password">পাসওয়ার্ড</string>
     <string name="sign_in_student_id">শিক্ষার্থী আইডি</string>
     <string name="source_code_picker_current_app_badge">বর্তমান অ্যাপ</string>
