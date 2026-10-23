@@ -487,11 +487,12 @@ class HomeBackendSync @Inject constructor(
 
         for (semester in semesters) {
             val localCourses = dataCache.loadCourses(semester)
+            val tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones)
             val outcome = CourseSyncReconciler.reconcileSemester(
                 semester = semester,
                 localCourses = localCourses,
                 serverRows = rowsBySemester[semester].orEmpty(),
-                tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones),
+                tombstoneNos = tombstoneNos,
                 tombstones = tombstones,
                 serverKnownNos = serverKnown[semester].orEmpty().toSet(),
                 // Deletes the retry above could not land: the snapshot still lists them.
@@ -501,7 +502,8 @@ class HomeBackendSync @Inject constructor(
                 selectionDroppedNos = selectionDropped[semester].orEmpty().toSet(),
                 restoredNos = dataCache.restoredCoursesIn(semester),
             )
-            dataCache.restoredCoursesListed(semester, rowsBySemester[semester].orEmpty().map { it.courseNo })
+            dataCache.restoredCoursesListed(semester, rowsBySemester[semester].orEmpty().map { it.courseNo }, result.fetchedAtMs)
+            dataCache.handAddedHidesTombstoned(semester, tombstoneNos)
             tombstones = outcome.tombstones
             if (outcome.serverKnownNos.isNotEmpty()) {
                 updatedKnown[semester] = outcome.serverKnownNos.sorted()
@@ -549,7 +551,8 @@ class HomeBackendSync @Inject constructor(
         }
 
         if (tombstones != tombstonesBefore) {
-            dataCache.saveDeletedCourseNos(tombstones)
+            // Only what the reconcile changed: a hide lifted or written meanwhile stands.
+            dataCache.updateDeletedCourseNos(tombstonesBefore, tombstones)
         }
         if (updatedKnown != serverKnown) {
             dataCache.saveServerKnownNos(updatedKnown)

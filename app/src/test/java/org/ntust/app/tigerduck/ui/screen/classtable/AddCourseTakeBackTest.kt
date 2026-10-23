@@ -64,10 +64,11 @@ class AddCourseTakeBackTest {
         assertTrue("deleteCourse still tombstones a regular delete", edits.size == 1 && writes.size == 1)
         val edit = edits.single()
         val write = writes.single()
-        assertTrue(
-            "the write is handed the course, which says whether it was added by hand here",
-            "hideDeletedCourse(courseNo, semester, deletedCourse)" in delete[write],
-        )
+        // The mark a course selection answer lifts comes once the DELETE is queued: lifted before,
+        // the course would go up with the roster and the DELETE take it off again.
+        val mark = delete.indexOfFirst { "dataCache.markDeletedCourse(courseNo, semester, deletedCourse)" in it }
+        val queued = delete.indexOfFirst { "pendingCourseDeletes.send(" in it }
+        assertTrue("the delete's hide is marked after its DELETE is queued", queued >= 0 && mark > queued)
         assertTrue(
             "the edit a fetch reads is made under `if (tombstone)`",
             delete.subList(0, edit + 1).any { "if (tombstone)" in it },

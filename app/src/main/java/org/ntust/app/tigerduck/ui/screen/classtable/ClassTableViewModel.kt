@@ -1199,7 +1199,7 @@ class ClassTableViewModel @Inject constructor(
             val queuedAt = pendingCourseDeletes.stamp()
             if (tombstoneEdit != null) {
                 try {
-                    dataCache.hideDeletedCourse(courseNo, semester, deletedCourse)
+                    dataCache.hideDeletedCourse(courseNo, semester)
                 } finally {
                     tombstoneEdits.saved(tombstoneEdit)
                 }
@@ -1215,6 +1215,8 @@ class ClassTableViewModel @Inject constructor(
             // back: the outbox takes PendingCourseAdds.removing itself, so it
             // is not taken here. See PendingCourseDeletes.
             pendingCourseDeletes.send(semester, courseNo, queuedAt)
+            // Once the DELETE is queued, or has landed: see DataCache.hideDeletedCourse.
+            if (tombstoneEdit != null) dataCache.markDeletedCourse(courseNo, semester, deletedCourse)
             runCatching { pushApiClient.uploadCourses(updated, semester) }
                 .onFailure { e -> Log.w("ClassTable", "uploadCourses after delete failed: ${e.logSummary()}") }
         }

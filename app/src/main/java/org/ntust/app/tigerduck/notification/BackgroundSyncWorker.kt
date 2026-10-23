@@ -306,11 +306,12 @@ class BackgroundSyncWorker @AssistedInject constructor(
             result.coursesResetAt, prefs.lastSeenCoursesResetAt, prefs.legacyLastCourseSyncAtMs,
         ).apply
         val knownHere = storedKnown[semester].orEmpty().toSet()
+        val tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones)
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = semester,
             localCourses = localCourses,
             serverRows = result.serverCourses.filter { it.semester == semester },
-            tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones),
+            tombstoneNos = tombstoneNos,
             tombstones = stored,
             serverKnownNos = knownHere,
             // Deletes the retry above could not land: the snapshot still lists them.
@@ -320,9 +321,13 @@ class BackgroundSyncWorker @AssistedInject constructor(
             selectionDroppedNos = dataCache.loadSelectionDroppedNos()[semester].orEmpty().toSet(),
             restoredNos = dataCache.restoredCoursesIn(semester),
         )
-        dataCache.restoredCoursesListed(semester, result.serverCourses.filter { it.semester == semester }.map { it.courseNo })
+        dataCache.restoredCoursesListed(
+            semester, result.serverCourses.filter { it.semester == semester }.map { it.courseNo }, result.fetchedAtMs,
+        )
+        dataCache.handAddedHidesTombstoned(semester, tombstoneNos)
         if (outcome.tombstones != stored) {
-            dataCache.saveDeletedCourseNos(outcome.tombstones)
+            // Only what the reconcile changed: a hide lifted or written meanwhile stands.
+            dataCache.updateDeletedCourseNos(stored, outcome.tombstones)
         }
         // Unconditional: a course hidden by an earlier build and left in
         // the cache is pruned on the first run, not the next change.

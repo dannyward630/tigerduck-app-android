@@ -47,38 +47,45 @@ class ClassTableHandAddedHideTest {
     /** As the class table's delete leaves the store and the term, reading the course off the term. */
     private suspend fun delete(course: Course) {
         val held = cache.loadCourses(TERM).first { it.courseNo == course.courseNo }
-        cache.hideDeletedCourse(held.courseNo, TERM, held)
+        cache.hideDeletedCourse(held.courseNo, TERM)
         cache.saveCourses(cache.loadCourses(TERM).filter { it.courseNo != held.courseNo }, TERM)
+        cache.markDeletedCourse(held.courseNo, TERM, held)
     }
 
     /** The sync's reconcile as HomeBackendSync stores it, for a tombstone another device wrote for [course]. */
     private suspend fun tombstonedElsewhere(course: Course) {
+        val stored = cache.loadDeletedCourseNos()
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = TERM,
             localCourses = cache.loadCourses(TERM),
             serverRows = listOf(ServerCourse(enrolled.courseNo, enrolled.courseName, TERM, moodleId = enrolled.moodleIdNumber)),
             tombstoneNos = setOf(course.courseNo),
-            tombstones = cache.loadDeletedCourseNos(),
+            tombstones = stored,
             serverKnownNos = setOf(enrolled.courseNo, course.courseNo),
             restoredNos = cache.restoredCoursesIn(TERM),
         )
-        cache.saveDeletedCourseNos(outcome.tombstones)
+        cache.handAddedHidesTombstoned(TERM, setOf(course.courseNo))
+        cache.updateDeletedCourseNos(stored, outcome.tombstones)
         CourseSyncReconciler.pruneHidden(TERM, cache.loadCourses(TERM), outcome.tombstones)?.let { cache.saveCourses(it, TERM) }
     }
 
-    /** A full sync whose snapshot lists [serverNos] for the term, with no tombstone, as HomeBackendSync stores it. */
-    private suspend fun syncListing(vararg serverNos: String) {
+    /**
+     * A full sync whose snapshot, fetched at [fetchedAtMs] (by default after everything so far),
+     * lists [serverNos] for the term, with no tombstone, as HomeBackendSync stores it.
+     */
+    private suspend fun syncListing(vararg serverNos: String, fetchedAtMs: Long = Long.MAX_VALUE) {
+        val stored = cache.loadDeletedCourseNos()
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = TERM,
             localCourses = cache.loadCourses(TERM),
             serverRows = serverNos.map { ServerCourse(it, it, TERM, moodleId = "$TERM$it") },
             tombstoneNos = emptySet(),
-            tombstones = cache.loadDeletedCourseNos(),
+            tombstones = stored,
             serverKnownNos = cache.loadServerKnownNos()[TERM].orEmpty().toSet(),
             restoredNos = cache.restoredCoursesIn(TERM),
         )
-        cache.restoredCoursesListed(TERM, serverNos.toList())
-        cache.saveDeletedCourseNos(outcome.tombstones)
+        cache.restoredCoursesListed(TERM, serverNos.toList(), fetchedAtMs)
+        cache.updateDeletedCourseNos(stored, outcome.tombstones)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
         val kept = CourseSyncReconciler.pruneHidden(TERM, cache.loadCourses(TERM), outcome.tombstones) ?: cache.loadCourses(TERM)
         cache.saveCourses(kept + outcome.merged, TERM)
@@ -241,6 +248,49 @@ class ClassTableHandAddedHideTest {
         // The hides gone from under the mark, as a damaged file leaves them.
         File(RuntimeEnvironment.getApplication().filesDir, "TigerDuckData/deleted_courses.json").delete()
 
+        tombstonedElsewhere(handAdded)
+
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+    }
+
+    @Test
+    fun `a sync that read the hides before a course came back does not hide it again`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        val read = cache.loadDeletedCourseNos()
+
+        // While the sync reconciles what it read, a fetch brings the course back.
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+        // The sync commits what it made of its read: another course hidden for a tombstone.
+        cache.updateDeletedCourseNos(read, CourseTombstoneKeys.hide("ZZ1010008", TERM, read))
+
+        assertEquals(setOf("ZZ1010008"), hidden())
+    }
+
+    @Test
+    fun `a snapshot fetched before a course came back does not end its hold`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+
+        // Fetched before its DELETE landed, so it still lists the old row, and reconciled only now.
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = 0L)
+        syncListing(enrolled.courseNo)
+
+        assertEquals(emptySet<String>(), hidden())
+    }
+
+    @Test
+    fun `another device's tombstone makes a marked hide bind`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+
+        // The backend leaves this device's own tombstone out of its snapshot: one there is another's.
         tombstonedElsewhere(handAdded)
 
         assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
