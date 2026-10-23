@@ -99,10 +99,22 @@ class MailHtmlDocumentTest {
     }
 
     @Test
-    fun `a page's links default to the colours Chromium draws them in`() {
+    fun `a page's links default to the colours Chromium draws them in, where those read`() {
         assertEquals("#9e9eff", dark.link)
         assertEquals("#0000ee", light.link)
         assertEquals("#0000ee", MailHtmlTheme.LIGHT.link)
+        assertEquals("#0000ee", MailHtmlTheme(background = "#f2f2f7", foreground = "#1c1c1e", isDark = false).link)
+    }
+
+    @Test
+    fun `on the app's dark surface a link is drawn in a colour that reads at 7 to 1 there`() {
+        // #9e9eff is 4.75:1 on the default dark theme's #3a3a3c.
+        val surface = MailHtmlTheme(background = "#3a3a3c", foreground = "#ffffff", isDark = true)
+        val (link, page) = listOf(surface.link, "#3a3a3c").map { MailReadableHtml.parse(it, legacy = false)!! }
+        assertTrue(surface.link, MailReadableHtml.contrast(link, page) >= MailReadableHtml.MINIMUM_CONTRAST)
+        val html = MailHtmlDocument.build("""<p><a href="https://example.com">x</a></p>""", emptyMap(), false, surface).html
+        assertTrue(html, html.contains("a[href]{color:${surface.link}}"))
+        assertTrue(html, html.contains("""<a href="https://link.invalid/0">x</a>"""))
     }
 
     @Test

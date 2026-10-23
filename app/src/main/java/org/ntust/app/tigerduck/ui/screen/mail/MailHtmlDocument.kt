@@ -36,9 +36,11 @@ data class MailHtmlTheme(
      * The colour the page draws a link in. The page's own CSS sets it, so a link on a sender's
      * background has its contrast judged in the colour it is drawn in. By default it is the one
      * Chromium draws a link in under [isDark]'s `color-scheme`, as the page did before setting
-     * one, and as the Apple app's WebKit does.
+     * one, and as the Apple app's WebKit does -- moved, as the readability pass moves text, where
+     * that does not read at 7:1 on [background]. The Apple app's dark page is black, where it
+     * does; the default dark theme's surface is not, and its links would be 4.75:1.
      */
-    val link: String = if (isDark) DARK_LINK else LIGHT_LINK,
+    val link: String = linkOn(background, isDark),
 ) {
     companion object {
         /** Chromium's link colour under `color-scheme: light`. */
@@ -46,6 +48,13 @@ data class MailHtmlTheme(
 
         /** Chromium's link colour under `color-scheme: dark`. */
         const val DARK_LINK = "#9e9eff"
+
+        private fun linkOn(background: String, isDark: Boolean): String {
+            val chromium = if (isDark) DARK_LINK else LIGHT_LINK
+            val page = MailReadableHtml.parse(background, legacy = false) ?: return chromium
+            val link = MailReadableHtml.parse(chromium, legacy = false) ?: return chromium
+            return MailReadableHtml.readable(link, page)?.css ?: chromium
+        }
 
         /** [LIGHT]'s paper, for the Surface and WebView drawn behind its document. */
         val LIGHT_PAPER = Color.White
