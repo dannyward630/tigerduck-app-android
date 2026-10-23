@@ -324,6 +324,7 @@ fun SchoolMailScreen(
                             SwipeableMailCard(
                                 row = row,
                                 mailDomain = viewModel.mailDomain,
+                                writing = row.key in state.writing,
                                 // The row's own folder decides everything, never the selected chip:
                                 // opened from All mail, a Sent mail has to behave exactly as it
                                 // would had the user opened Sent itself.
@@ -551,6 +552,7 @@ internal fun MailCard(
     mailDomain: String,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
@@ -565,11 +567,12 @@ internal fun MailCard(
             .then(
                 if (onLongClick != null) {
                     Modifier.combinedClickable(
+                        enabled = enabled,
                         onClick = onClick,
                         onLongClick = onLongClick,
                     )
                 } else {
-                    Modifier.combinedClickable(onClick = onClick)
+                    Modifier.combinedClickable(enabled = enabled, onClick = onClick)
                 }
             ),
     ) {
@@ -626,16 +629,22 @@ internal fun MailCard(
 }
 
 /**
- * Swipe actions matching iOS parity:
- * - Leading swipe (drag right in LTR): toggle read/unread (green icon).
- * - Trailing swipe (drag left in LTR): delete mail (red trash icon).
- * - Long-press: context menu with Toggle Read/Unread, Move to..., and Delete.
- * - Custom accessibility actions for both read toggle and delete.
+ * The gesture of SwipeableBulletinCard (100dp threshold, 0.6× damping), split by direction as the
+ * iPhone's list is: the leading swipe, a drag to the right in a left-to-right layout, toggles read,
+ * and the trailing swipe, to the left, asks to delete; a right-to-left layout mirrors both. A long
+ * press opens the two as a menu, with Move to… between them. Both swipes are custom accessibility
+ * actions as well, under the labels their icons announce, because an accessibility service cannot
+ * perform a drag.
+ *
+ * [writing] while the mail's delete or move is still out ([SchoolMailListViewModel.UiState.writing]):
+ * the card is dimmed and offers nothing, not even a tap into a mail on its way out of the folder,
+ * until the write ends and the card leaves the list or, the write having failed, comes back.
  */
 @Composable
-private fun SwipeableMailCard(
+internal fun SwipeableMailCard(
     row: MailRow,
     mailDomain: String,
+    writing: Boolean,
     onClick: () -> Unit,
     onToggleRead: () -> Unit,
     onMove: () -> Unit,
@@ -657,16 +666,20 @@ private fun SwipeableMailCard(
     val readDescription = stringResource(if (isRead) R.string.school_mail_mark_unread else R.string.school_mail_mark_read)
     val deleteDescription = stringResource(R.string.school_mail_delete)
 
-    val accessibilityActions = remember(readDescription, deleteDescription) {
-        listOf(
-            CustomAccessibilityAction(readDescription) { latestToggle(); true },
-            CustomAccessibilityAction(deleteDescription) { latestDelete(); true },
-        )
+    val accessibilityActions = remember(readDescription, deleteDescription, writing) {
+        if (writing) {
+            emptyList()
+        } else {
+            listOf(
+                CustomAccessibilityAction(readDescription) { latestToggle(); true },
+                CustomAccessibilityAction(deleteDescription) { latestDelete(); true },
+            )
+        }
     }
 
     var menuOpen by remember { mutableStateOf(false) }
 
-    Box(modifier.fillMaxWidth()) {
+    Box(modifier.fillMaxWidth().alpha(if (writing) ContentAlpha.DISABLED else 1f)) {
         val progress = (abs(offset.value) / thresholdPx).coerceIn(0f, 1f)
         if (offset.value != 0f) {
             val isLeading = offset.value > 0f
@@ -695,7 +708,8 @@ private fun SwipeableMailCard(
             Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(offset.value.roundToInt(), 0) }
-                .pointerInput(row.key) {
+                .pointerInput(row.key, writing) {
+                    if (writing) return@pointerInput
                     detectHorizontalDragGestures(
                         onDragEnd = {
                             scope.launch {
@@ -722,10 +736,11 @@ private fun SwipeableMailCard(
                 mailDomain,
                 onClick = onClick,
                 onLongClick = { menuOpen = true },
+                enabled = !writing,
                 modifier = Modifier.semantics { customActions = accessibilityActions },
             )
             DropdownMenu(
-                expanded = menuOpen,
+                expanded = menuOpen && !writing,
                 onDismissRequest = { menuOpen = false },
                 shape = RoundedCornerShape(12.dp),
             ) {

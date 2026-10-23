@@ -126,6 +126,14 @@ class SchoolMailListViewModel @Inject constructor(
         val pendingDelete: PendingDelete? = null,
         /** A mail waiting on the folder it is moved to; [moveTo] picks it, [dismissMove] drops it. */
         val pendingMove: PendingMove? = null,
+        /**
+         * The rows, by [MailRow.key], whose delete or move is still out. Such a row stays on
+         * screen until the server is done -- a STATUS, COPY, STORE and EXPUNGE away -- and
+         * another swipe at it meanwhile would queue a second write behind the first: a second
+         * COPY that files the mail twice, or a "gone" error for a mail already deleted. So
+         * nothing more is asked of it until its write ends ([write]), and the card says so.
+         */
+        val writing: Set<String> = emptySet(),
     ) {
         /** A search under way, or a further page of its matches on its way: the search field spins. */
         val searchBusy: Boolean get() = isSearching || isPagingSearch
@@ -565,8 +573,12 @@ class SchoolMailListViewModel @Inject constructor(
      * The row changes through the repository's feed ([apply]), as a mark-read on the mail's own
      * screen does, and not here as well: a swipe whose write ends after another student signed in
      * over this one would otherwise change a row of theirs, which the feed knows not to.
+     *
+     * Not for a row whose delete or move is still out ([UiState.writing]): the mail is on its way
+     * out of the folder, and a STORE behind that write would find it gone.
      */
     fun toggleRead(row: MailRow) {
+        if (row.key in _state.value.writing) return
         val seen = !row.summary.flags.seen
         viewModelScope.launch {
             try {
@@ -588,6 +600,7 @@ class SchoolMailListViewModel @Inject constructor(
      * question is then nobody's: put to them, its Delete would act on a mail of theirs.
      */
     fun delete(row: MailRow) {
+        if (row.key in _state.value.writing) return
         val generation = account.accountGeneration
         viewModelScope.launch {
             try {
@@ -616,6 +629,7 @@ class SchoolMailListViewModel @Inject constructor(
     }
 
     fun requestMove(row: MailRow) {
+        if (row.key in _state.value.writing) return
         _state.update { it.copy(pendingMove = PendingMove(row, account.accountGeneration)) }
     }
 
@@ -632,7 +646,8 @@ class SchoolMailListViewModel @Inject constructor(
 
     /**
      * Sends a delete or move of [row] asked under [generation], unless the account has moved
-     * since: its folder and UID would then name another student's mail.
+     * since: its folder and UID would then name another student's mail. Nor while another write
+     * of [row] is still out ([UiState.writing]), which holds the row from here to its end.
      *
      * The row leaves the list through the repository's feed ([apply]), as a swipe's mark-read
      * changes it ([toggleRead]), and not here as well: a write held on the connection can end
@@ -641,7 +656,8 @@ class SchoolMailListViewModel @Inject constructor(
      * password, which would mark theirs rejected.
      */
     private fun write(row: MailRow, generation: Int, send: suspend (MailRow) -> Unit) {
-        if (account.accountGeneration != generation) return
+        if (account.accountGeneration != generation || row.key in _state.value.writing) return
+        _state.update { it.copy(writing = it.writing + row.key) }
         viewModelScope.launch {
             try {
                 send(row)
@@ -650,6 +666,10 @@ class SchoolMailListViewModel @Inject constructor(
             } catch (e: Exception) {
                 val error = MailErrors.classify(e)
                 if (!dropped(error, generation)) actionFail(error)
+            } finally {
+                // A sign-out or another student's sign-in reset the state since, and the row
+                // [writing] names now, if any, is theirs.
+                if (account.accountGeneration == generation) _state.update { it.copy(writing = it.writing - row.key) }
             }
         }
     }

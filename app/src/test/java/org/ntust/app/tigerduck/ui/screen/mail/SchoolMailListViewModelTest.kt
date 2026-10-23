@@ -2652,4 +2652,75 @@ class SchoolMailListViewModelTest {
         assertNull(vm.state.value.actionError)
         assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
     }
+
+    @Test
+    fun `a mail whose delete is still out is not deleted, moved or marked again`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        // The delete waits on the connection, and the mail stays on screen until it is done.
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertEquals("the card does not say its delete is out", setOf(row.key), vm.state.value.writing)
+        // So it is swiped again, and moved and marked through its menu.
+        vm.delete(row)
+        assertNull("a mail being deleted was asked about again", vm.state.value.pendingDelete)
+        vm.requestMove(row)
+        assertNull("a mail being deleted was offered a move", vm.state.value.pendingMove)
+        vm.toggleRead(row)
+        // The mail next to it is its own.
+        val other = vm.state.value.displayed.first { it.uid == 1L }
+        vm.delete(other)
+        assertEquals(other, vm.state.value.pendingDelete?.row)
+        vm.confirmDelete(false)
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("a second delete went out", listOf("INBOX" to 2L), repo.deleted)
+        assertTrue(repo.seenCalls.isEmpty())
+        assertTrue(vm.state.value.writing.isEmpty())
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a mail whose move is still out is not moved or deleted again`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        val junk = repo.resolved.nameOf(SpecialFolder.JUNK)!!
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.requestMove(row)
+        vm.moveTo(junk)
+        vm.requestMove(row)
+        vm.moveTo(junk)
+        vm.delete(row)
+        vm.confirmDelete(true)
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("a second COPY went out", listOf(Triple("INBOX", 1L, junk)), repo.moved)
+        assertTrue(repo.deleted.isEmpty())
+        assertTrue(vm.state.value.displayed.isEmpty())
+    }
+
+    @Test
+    fun `a mail whose delete failed can be deleted again`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        repo.deleteError = MailError.Network()
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertTrue(vm.state.value.actionError is MailError.Network)
+        assertTrue("a failed delete held its card", vm.state.value.writing.isEmpty())
+        vm.dismissActionError()
+        repo.deleteError = null
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertEquals(listOf("INBOX" to 1L), repo.deleted)
+        assertTrue(vm.state.value.displayed.isEmpty())
+    }
 }
