@@ -27,8 +27,17 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     /** Set, [setSeen] waits on it after reading the account: the write held on the connection while the test acts. */
     var seenGate: CompletableDeferred<Unit>? = null
 
-    /** Set, [move] and [delete] wait on it after reading the account, as [seenGate] holds [setSeen]. */
+    /**
+     * Set, [move] and [delete] wait on it once sent, as [seenGate] holds [setSeen]: the command out
+     * on the connection, its answer held while the test acts.
+     */
     var writeGate: CompletableDeferred<Unit>? = null
+
+    /**
+     * Set, [move] and [delete] wait on it before their `stillWanted` is asked: the write queued
+     * behind the session another request holds, not sent yet.
+     */
+    var writeQueueGate: CompletableDeferred<Unit>? = null
 
     /** Set, [deletesPermanently] waits on it first: the CREATE and LIST a missing trash costs, held out while the test acts. */
     var trashGate: CompletableDeferred<Unit>? = null
@@ -343,8 +352,10 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         _changes.emit(MailChange.Seen(folder, uid, seen, generation))
     }
 
-    override suspend fun move(folder: String, uid: Long, target: String) {
+    override suspend fun move(folder: String, uid: Long, target: String, stillWanted: () -> Boolean) {
         val generation = generation()
+        writeQueueGate?.await()
+        unlessAbandoned(stillWanted)
         writeGate?.await()
         foldersTouched += folder
         foldersTouched += target
@@ -361,8 +372,10 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         return touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
     }
 
-    override suspend fun delete(folder: String, uid: Long) {
+    override suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean) {
         val generation = generation()
+        writeQueueGate?.await()
+        unlessAbandoned(stillWanted)
         writeGate?.await()
         foldersTouched += folder
         deleteError?.let { throw it }

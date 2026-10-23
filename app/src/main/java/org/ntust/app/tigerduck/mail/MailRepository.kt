@@ -151,9 +151,17 @@ interface SchoolMailRepository {
     suspend fun summary(folder: String, uid: Long): MailSummary?
     suspend fun body(folder: String, uid: Long): MailBody
     suspend fun setSeen(folder: String, uid: Long, seen: Boolean)
-    suspend fun move(folder: String, uid: Long, target: String)
+
+    /**
+     * [stillWanted] as on [loadPage], for the COPY and STORE the move sends: a move confirmed for
+     * one student that waited for the session while another signed in over them would otherwise
+     * move a mail of theirs with the same UID.
+     */
+    suspend fun move(folder: String, uid: Long, target: String, stillWanted: () -> Boolean = { true })
     suspend fun deletesPermanently(folder: String): Boolean
-    suspend fun delete(folder: String, uid: Long)
+
+    /** [stillWanted] as on [move]. */
+    suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean = { true })
 
     /** [stillWanted] as on [loadPage]. */
     suspend fun search(folder: String, query: String, stillWanted: () -> Boolean = { true }): SearchOutcome
@@ -435,7 +443,7 @@ class MailRepository @Inject constructor(
         _changes.emit(MailChange.Seen(folder, uid, seen, generation))
     }
 
-    override suspend fun move(folder: String, uid: Long, target: String) {
+    override suspend fun move(folder: String, uid: Long, target: String, stillWanted: () -> Boolean) {
         val generation = account.accountGeneration
         if (account.isDemo) {
             synchronized(demoFolders) {
@@ -447,8 +455,8 @@ class MailRepository @Inject constructor(
                 }
             }
         } else {
-            runExpunging(folder, uid) { session, owned -> session.move(folder, uid, target, owned) }
-            removeCached(folder, uid)
+            runExpunging(folder, uid, stillWanted) { session, owned -> session.move(folder, uid, target, owned) }
+            removeCached(folder, uid, stillWanted)
         }
         _changes.emit(MailChange.Removed(folder, uid, generation))
         // The mail's UID in [target] is the server's to give (COPYUID is not read), so a list of
@@ -487,14 +495,14 @@ class MailRepository @Inject constructor(
         return ensureFolder(SpecialFolder.TRASH)
     }
 
-    override suspend fun delete(folder: String, uid: Long) {
+    override suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean) {
         val generation = account.accountGeneration
-        trashFor(folder)?.let { return move(folder, uid, it) }
+        trashFor(folder)?.let { return move(folder, uid, it, stillWanted) }
         if (account.isDemo) {
             demoMutate(folder) { it.removeAll { m -> m.summary.uid == uid } }
         } else {
-            runExpunging(folder, uid) { session, owned -> session.deletePermanently(folder, uid, owned) }
-            removeCached(folder, uid)
+            runExpunging(folder, uid, stillWanted) { session, owned -> session.deletePermanently(folder, uid, owned) }
+            removeCached(folder, uid, stillWanted)
         }
         _changes.emit(MailChange.Removed(folder, uid, generation))
     }
@@ -736,6 +744,11 @@ class MailRepository @Inject constructor(
      * conditional EXPUNGE, sharing the bookkeeping [move], [delete] and
      * [saveDraft]'s replacement step all need:
      *
+     * - Asks [stillWanted] with the session held, before anything is sent
+     *   ([SchoolMailRepository.loadPage]): a write of a student who left while
+     *   it waited for the session, another having signed in over them, ends as
+     *   [MailError.Abandoned] instead of acting on that one's mailbox, and so
+     *   does the flag check after a failed [op].
      * - Reads the folder's live UIDVALIDITY inside the same held connection
      *   before [op] runs. If it doesn't match what the cache believes, the
      *   cache is dropped and [MailError.FolderChanged] is thrown before
@@ -762,7 +775,12 @@ class MailRepository @Inject constructor(
      *   copy and the original behind, invisible in the app but still on the
      *   student's quota, and nothing in the app could undo it.
      */
-    private suspend fun runExpunging(folder: String, uid: Long, op: (MailSession, Set<Long>) -> Boolean) {
+    private suspend fun runExpunging(
+        folder: String,
+        uid: Long,
+        stillWanted: () -> Boolean = { true },
+        op: (MailSession, Set<Long>) -> Boolean,
+    ) {
         val generation = account.accountGeneration
         val cached = cachedPage(folder)
         val cachedValidity = cached?.uidValidity
@@ -770,7 +788,7 @@ class MailRepository @Inject constructor(
         var validity = 0L
         var attempted = false
         try {
-            withSession { session ->
+            withSession(stillWanted) { session ->
                 val serverValidity = session.status(folder).uidValidity
                 validity = serverValidity
                 if (cachedValidity != null && cachedValidity != serverValidity) {
@@ -790,7 +808,7 @@ class MailRepository @Inject constructor(
                 // A list of the folder holds rows of the mailbox the server has replaced.
                 _changes.emit(MailChange.Changed(folder, generation))
             } else if (attempted && !alreadyDeleted && e !is MailError.AuthFailed && e !is MailError.Certificate) {
-                recordIfDeletedOnServer(folder, uid, validity)
+                recordIfDeletedOnServer(folder, uid, validity, stillWanted)
             }
             throw e
         }
@@ -801,9 +819,9 @@ class MailRepository @Inject constructor(
      * reason [runExpunging] gives: the set this call's [runExpunging] read before [op] ran may
      * already be stale, and adding to a stale copy would drop whatever landed in between.
      */
-    private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long) {
+    private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long, stillWanted: () -> Boolean) {
         try {
-            withSession { session ->
+            withSession(stillWanted) { session ->
                 if (session.refreshFlags(folder, listOf(uid))[uid]?.deleted == true) {
                     state.setOwnedDeleted(folder, validity, state.ownedDeleted(folder, validity) + uid)
                 }
@@ -820,9 +838,17 @@ class MailRepository @Inject constructor(
         cache.saveFolder(folder, page.copy(messages = page.messages.map(transform)))
     }
 
-    private suspend fun removeCached(folder: String, uid: Long) = withContext(Dispatchers.IO) {
-        val page = cachedPage(folder) ?: return@withContext
-        cache.saveFolder(folder, page.copy(messages = page.messages.filterNot { it.uid == uid }, totalMessages = (page.totalMessages - 1).coerceAtLeast(0)))
+    /**
+     * [stillWanted] as the write's own: the cache of a student who signed in after the write went
+     * out is not theirs to lose a row from, whatever UID the write named.
+     */
+    private suspend fun removeCached(folder: String, uid: Long, stillWanted: () -> Boolean = { true }) {
+        withContext(Dispatchers.IO) {
+            cachedPage(folder)?.let { page ->
+                val rest = page.copy(messages = page.messages.filterNot { it.uid == uid }, totalMessages = (page.totalMessages - 1).coerceAtLeast(0))
+                cache.saveFolderIf(folder, rest, stillWanted)
+            }
+        }
     }
 
     companion object {

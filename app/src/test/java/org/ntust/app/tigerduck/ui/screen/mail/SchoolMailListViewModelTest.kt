@@ -2826,4 +2826,27 @@ class SchoolMailListViewModelTest {
         assertNull(vm.state.value.pendingMove)
         assertTrue(vm.state.value.actionError is MailError.Network)
     }
+
+    @Test
+    fun `a delete or move still waiting for the connection when another student signs in is not sent`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val first = vm.state.value.displayed.first { it.uid == 2L }
+        val second = vm.state.value.displayed.first { it.uid == 1L }
+        // Both writes are confirmed, and queue behind a request that holds the session.
+        val gate = CompletableDeferred<Unit>()
+        repo.writeQueueGate = gate
+        vm.delete(first)
+        vm.confirmDelete(true)
+        vm.requestMove(second)
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        // Another student signs in over the first, whose INBOX hands out the same UIDs.
+        signInAnotherOverThisOne()
+        repo.writeQueueGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the first student's delete went out as the second", repo.deleted.isEmpty())
+        assertTrue("the first student's move went out as the second", repo.moved.isEmpty())
+        assertNull(vm.state.value.actionError)
+    }
 }

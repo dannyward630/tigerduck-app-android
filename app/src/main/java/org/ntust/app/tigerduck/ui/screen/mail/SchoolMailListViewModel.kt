@@ -633,7 +633,7 @@ class SchoolMailListViewModel @Inject constructor(
     fun confirmDelete(confirm: Boolean) {
         val pending = _state.value.pendingDelete ?: return
         _state.update { it.copy(pendingDelete = null) }
-        if (confirm) write(pending.row, pending.generation) { repository.delete(it.folder, it.uid) }
+        if (confirm) write(pending.row, pending.generation) { row, stillWanted -> repository.delete(row.folder, row.uid, stillWanted) }
     }
 
     /**
@@ -671,7 +671,7 @@ class SchoolMailListViewModel @Inject constructor(
     fun moveTo(target: String) {
         val pending = _state.value.pendingMove ?: return
         _state.update { it.copy(pendingMove = null) }
-        write(pending.row, pending.generation) { repository.move(it.folder, it.uid, target) }
+        write(pending.row, pending.generation) { row, stillWanted -> repository.move(row.folder, row.uid, target, stillWanted) }
     }
 
     /**
@@ -686,8 +686,10 @@ class SchoolMailListViewModel @Inject constructor(
 
     /**
      * Sends a delete or move of [row] asked under [generation], unless the account has moved
-     * since: its folder and UID would then name another student's mail. Nor while another write
-     * of [row] is still out ([UiState.writing]), which holds the row from here to its end.
+     * since: its folder and UID would then name another student's mail. The repository asks the
+     * same of [send]'s `stillWanted` with the session held, since the write can wait for it
+     * behind other requests while another student signs in. Nor while another write of [row] is
+     * still out ([UiState.writing]), which holds the row from here to its end.
      *
      * The row leaves the list through the repository's feed ([apply]), as a swipe's mark-read
      * changes it ([toggleRead]), and not here as well: a write held on the connection can end
@@ -695,12 +697,12 @@ class SchoolMailListViewModel @Inject constructor(
      * Nor is such a write's failure theirs to see ([dropped]), and least of all a rejected
      * password, which would mark theirs rejected.
      */
-    private fun write(row: MailRow, generation: Int, send: suspend (MailRow) -> Unit) {
+    private fun write(row: MailRow, generation: Int, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
         if (account.accountGeneration != generation || row.key in _state.value.writing) return
         _state.update { it.copy(writing = it.writing + row.key) }
         viewModelScope.launch {
             try {
-                send(row)
+                send(row) { account.accountGeneration == generation }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

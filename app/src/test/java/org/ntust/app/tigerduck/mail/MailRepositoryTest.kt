@@ -191,6 +191,31 @@ class MailRepositoryTest {
         assertEquals(opened, opens.get())
     }
 
+    /**
+     * A move or delete is asked the same question, with the session held: one confirmed for a
+     * student who left while it waited -- another signed in over them, whose mailbox hands out
+     * the same UIDs -- moves and deletes none of the next one's mail.
+     */
+    @Test
+    fun `a move or delete of a departed account touches nothing of the next one's`() = runTest {
+        server.deliver("a")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val uid = repo.loadPage("INBOX", null).messages.single().uid
+        val trash = repo.folders().nameOf(SpecialFolder.TRASH)!!
+        val before = setup.account.accountGeneration
+        server.passwords["B10000002"] = "pw"
+        setup.account.signIn("b10000002", "pw")
+
+        val moved = runCatching { repo.move("INBOX", uid, trash) { setup.account.accountGeneration == before } }
+        val deleted = runCatching { repo.delete("INBOX", uid) { setup.account.accountGeneration == before } }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Abandoned)
+        assertTrue(deleted.exceptionOrNull() is MailError.Abandoned)
+        assertEquals(listOf("a"), server.subjects("INBOX"))
+        assertTrue(server.subjects(trash).isEmpty())
+    }
+
     /** The folder list a first request resolves is a request too, and asked the same question. */
     @Test
     fun `a departed account's inbox status resolves no folders for the next one`() = runTest {
