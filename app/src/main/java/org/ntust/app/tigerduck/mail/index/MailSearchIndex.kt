@@ -4,19 +4,29 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.google.gson.Gson
+import org.ntust.app.tigerduck.data.model.mail.MailSummaryDto
+import org.ntust.app.tigerduck.mail.model.MailFlags
+import org.ntust.app.tigerduck.mail.model.MailSummary
+import org.ntust.app.tigerduck.mail.store.toDto
+import org.ntust.app.tigerduck.mail.store.toModel
 import java.io.Closeable
 
 /**
  * Every mail's sender, subject and text, kept on the phone so a search runs here: the school's
  * server takes a search in ASCII only. It answers `NO [BADCHARSET]` to UTF-8 and Big5 alike, and
- * finds nothing for Chinese sent without a charset.
+ * finds nothing for Chinese sent without a charset. Each mail's [MailSummary] is kept with it, so
+ * the list pages back through the mail downloaded without asking the server.
  *
  * The index belongs to one [owner], the signed-in mail account: a write from any other, one that
  * left while it was fetching, is refused, and the next account to [open] a folder starts it empty.
  */
 interface MailSearchIndex {
-    /** One mail as a search reads it; [sender] holds its name and address both. */
-    data class Entry(val uid: Long, val sender: String, val subject: String, val body: String)
+    /**
+     * One mail as a search reads it, [sender] holding its name and address both, and as the list
+     * shows it, [summary].
+     */
+    data class Entry(val uid: Long, val sender: String, val subject: String, val body: String, val summary: MailSummary)
 
     /** The UIDVALIDITY [folder] was indexed under for [owner], or null if it has not been. */
     fun uidValidity(owner: String, folder: String): Long?
@@ -43,6 +53,15 @@ interface MailSearchIndex {
     /** The UIDs, newest first, of [owner]'s mail in [folder] whose sender, subject or text holds [query]. */
     fun search(owner: String, folder: String, query: String): List<Long>
 
+    /** The summaries of those of [uids] downloaded into [folder] under [uidValidity], by UID. */
+    fun summaries(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>): Map<Long, MailSummary>
+
+    /**
+     * Brings the flags of [folder]'s downloaded mail to [flags], as the server has them now; mail
+     * flagged `\Deleted` leaves it.
+     */
+    fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>)
+
     /** Empties it, for a sign-out. */
     fun clear()
 }
@@ -53,13 +72,15 @@ interface MailSearchIndex {
  */
 class SqliteMailSearchIndex(context: Context, name: String? = DB_NAME) : MailSearchIndex, Closeable {
 
+    private val gson = Gson()
+
     private val helper = object : SQLiteOpenHelper(context, name, null, VERSION) {
         override fun onCreate(db: SQLiteDatabase) {
             db.execSQL("CREATE TABLE owner (id TEXT NOT NULL)")
             db.execSQL("CREATE TABLE folders (name TEXT PRIMARY KEY NOT NULL, uid_validity INTEGER NOT NULL)")
             db.execSQL(
                 "CREATE TABLE mail (folder TEXT NOT NULL, uid INTEGER NOT NULL, sender TEXT NOT NULL, " +
-                    "subject TEXT NOT NULL, body TEXT NOT NULL, PRIMARY KEY (folder, uid)) WITHOUT ROWID",
+                    "subject TEXT NOT NULL, body TEXT NOT NULL, summary TEXT NOT NULL, PRIMARY KEY (folder, uid)) WITHOUT ROWID",
             )
         }
 
@@ -141,6 +162,7 @@ class SqliteMailSearchIndex(context: Context, name: String? = DB_NAME) : MailSea
                         put("sender", e.sender)
                         put("subject", e.subject)
                         put("body", e.body)
+                        put("summary", gson.toJson(e.summary.toDto()))
                     },
                     SQLiteDatabase.CONFLICT_REPLACE,
                 )
@@ -169,6 +191,57 @@ class SqliteMailSearchIndex(context: Context, name: String? = DB_NAME) : MailSea
     }
 
     @Synchronized
+    override fun summaries(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>): Map<Long, MailSummary> {
+        if (uids.isEmpty() || ownerLocked() != owner || validityLocked(folder) != uidValidity) return emptyMap()
+        return buildMap {
+            // In chunks under SQLite's limit on bound arguments.
+            uids.chunked(500).forEach { chunk ->
+                val marks = chunk.joinToString(",") { "?" }
+                db.rawQuery(
+                    "SELECT summary FROM mail WHERE folder = ? AND uid IN ($marks)",
+                    arrayOf(folder) + chunk.map { it.toString() },
+                ).use { c ->
+                    while (c.moveToNext()) {
+                        val summary = summaryOf(c.getString(0)) ?: continue
+                        put(summary.uid, summary)
+                    }
+                }
+            }
+        }
+    }
+
+    @Synchronized
+    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>) {
+        if (flags.isEmpty() || ownerLocked() != owner) return
+        val stored = validityLocked(folder)?.let { summariesLocked(folder, flags.keys) }.orEmpty()
+        transaction {
+            stored.values.forEach { summary ->
+                val now = flags[summary.uid] ?: return@forEach
+                if (now == summary.flags) return@forEach
+                // Flagged \Deleted, which the stored summary has no room for: gone from the list,
+                // as the server's own pages leave it out.
+                if (now.deleted) {
+                    db.delete("mail", "folder = ? AND uid = ?", arrayOf(folder, summary.uid.toString()))
+                    return@forEach
+                }
+                db.update(
+                    "mail",
+                    ContentValues().apply { put("summary", gson.toJson(summary.copy(flags = now).toDto())) },
+                    "folder = ? AND uid = ?",
+                    arrayOf(folder, summary.uid.toString()),
+                )
+            }
+        }
+    }
+
+    private fun summariesLocked(folder: String, uids: Collection<Long>): Map<Long, MailSummary> =
+        summaries(ownerLocked() ?: return emptyMap(), folder, validityLocked(folder) ?: return emptyMap(), uids)
+
+    // A row a later layout cannot read is treated as not downloaded, and fetched again.
+    private fun summaryOf(json: String): MailSummary? =
+        runCatching { gson.fromJson(json, MailSummaryDto::class.java)?.toModel() }.getOrNull()
+
+    @Synchronized
     override fun clear() = transaction { clearLocked() }
 
     @Synchronized
@@ -186,6 +259,7 @@ class SqliteMailSearchIndex(context: Context, name: String? = DB_NAME) : MailSea
 
     companion object {
         const val DB_NAME = "mail_search.db"
-        private const val VERSION = 1
+        // 2: each mail's summary.
+        private const val VERSION = 2
     }
 }

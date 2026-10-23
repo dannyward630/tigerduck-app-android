@@ -67,6 +67,12 @@ interface MailSession : Closeable {
     fun undeletedUids(folder: String): List<Long>
 
     /**
+     * Every UID of [folder], `\Deleted` mail included, in no particular order: the place of each,
+     * in ascending order, is its sequence number, which [fetchPage] pages by.
+     */
+    fun allUids(folder: String): List<Long>
+
+    /**
      * What a search reads of each of [uids]: its text, plain or taken out of its HTML
      * ([MailSearchText]), never its attachments or images. A mail gone since is left out.
      */

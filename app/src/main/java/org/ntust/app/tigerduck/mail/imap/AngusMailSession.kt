@@ -12,6 +12,7 @@ import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimePart
 import jakarta.mail.search.FlagTerm
 import jakarta.mail.search.SearchTerm
+import org.eclipse.angus.mail.iap.Response
 import org.eclipse.angus.mail.imap.IMAPFolder
 import org.eclipse.angus.mail.imap.IMAPMessage
 import org.eclipse.angus.mail.imap.IMAPStore
@@ -338,12 +339,17 @@ class AngusMailSession internal constructor(
      * full local scan, so callers can tell "the server won't do this search"
      * from "here are the results" and act on spec §8.3 accordingly.
      */
-    private fun uidSearch(f: IMAPFolder, term: SearchTerm): Set<Long> {
+    private fun uidSearch(f: IMAPFolder, term: SearchTerm): Set<Long> = uidSearchCommand(f) { p ->
+        val ascii = SearchSequence.isAscii(term)
+        val args = SearchSequence(p).generateSequence(term, if (ascii) null else "UTF-8")
+        p.command(if (ascii) "UID SEARCH" else "UID SEARCH CHARSET UTF-8", args)
+    }
+
+    /** The UIDs a `UID SEARCH` that [send] sends finds; a NO or BAD throws, as [uidSearch]. */
+    private fun uidSearchCommand(f: IMAPFolder, send: (IMAPProtocol) -> Array<Response>): Set<Long> {
         @Suppress("UNCHECKED_CAST")
         return f.doCommand(IMAPFolder.ProtocolCommand { p: IMAPProtocol ->
-            val ascii = SearchSequence.isAscii(term)
-            val args = SearchSequence(p).generateSequence(term, if (ascii) null else "UTF-8")
-            val responses = p.command(if (ascii) "UID SEARCH" else "UID SEARCH CHARSET UTF-8", args)
+            val responses = send(p)
             val last = responses[responses.size - 1]
             val found = mutableSetOf<Long>()
             if (last.isOK) {
@@ -418,6 +424,12 @@ class AngusMailSession internal constructor(
     override fun undeletedUids(folder: String): List<Long> = io {
         val f = folder(folder, Folder.READ_ONLY)
         uidSearch(f, FlagTerm(Flags(Flags.Flag.DELETED), false)).toList()
+    }
+
+    override fun allUids(folder: String): List<Long> = io {
+        val f = folder(folder, Folder.READ_ONLY)
+        // Answered from the server's own list, as fast as a SEARCH goes: no message is read.
+        uidSearchCommand(f) { p -> p.command("UID SEARCH ALL", null) }.toList()
     }
 
     override fun fetchSearchTexts(folder: String, uids: List<Long>): Map<Long, String> = io {

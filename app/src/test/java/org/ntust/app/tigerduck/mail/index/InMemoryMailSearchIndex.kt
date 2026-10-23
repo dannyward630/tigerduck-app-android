@@ -1,5 +1,8 @@
 package org.ntust.app.tigerduck.mail.index
 
+import org.ntust.app.tigerduck.mail.model.MailFlags
+import org.ntust.app.tigerduck.mail.model.MailSummary
+
 /**
  * [MailSearchIndex] in memory, for tests off the device: the same rules as the SQLite one, which
  * MailSearchIndexTest holds it to, with a match ignoring case for ASCII as SQLite's LIKE does.
@@ -67,6 +70,23 @@ class InMemoryMailSearchIndex : MailSearchIndex {
             .filter { it.sender.holds() || it.subject.holds() || it.body.holds() }
             .map { it.uid }
             .sortedDescending()
+    }
+
+    @Synchronized
+    override fun summaries(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>): Map<Long, MailSummary> {
+        if (this.owner != owner || validities[folder] != uidValidity) return emptyMap()
+        val box = mail[folder].orEmpty()
+        return uids.mapNotNull { box[it]?.summary }.associateBy { it.uid }
+    }
+
+    @Synchronized
+    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>) {
+        if (this.owner != owner) return
+        val box = mail[folder] ?: return
+        flags.forEach { (uid, now) ->
+            val entry = box[uid] ?: return@forEach
+            if (now.deleted) box.remove(uid) else box[uid] = entry.copy(summary = entry.summary.copy(flags = now))
+        }
     }
 
     @Synchronized

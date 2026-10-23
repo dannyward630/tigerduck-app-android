@@ -42,6 +42,9 @@ class FakeMailServer {
         callErrors.clear()
         callErrors.addAll(errors)
     }
+    /** Every page a session fetched, by folder and cursor: a page answered on the phone adds nothing. */
+    val pageFetches = mutableListOf<Pair<String, Int?>>()
+
     /** How many times a session listed a folder's UIDs, which the search index does before it fetches. */
     var undeletedUidsCalls = 0
     var expungeOnMove = true
@@ -142,6 +145,7 @@ class FakeMailServer {
         }
 
         override fun fetchPage(folder: String, beforeSeq: Int?, pageSize: Int) = call {
+            pageFetches += folder to beforeSeq
             val l = list(folder).sortedBy { it.summary.uid }
             val end = (beforeSeq ?: (l.size + 1)) - 1
             if (end < 1) MailPage(uidValidity, l.size, emptyList(), null) else {
@@ -210,6 +214,8 @@ class FakeMailServer {
             undeletedUidsCalls++
             list(folder).filterNot { it.summary.flags.deleted }.map { it.summary.uid }
         }
+
+        override fun allUids(folder: String) = call { list(folder).map { it.summary.uid } }
 
         override fun append(folder: String, rfc822: ByteArray, flags: Set<AppendFlag>) = call {
             val msg = MimeMessage(Session.getInstance(Properties()), ByteArrayInputStream(rfc822))

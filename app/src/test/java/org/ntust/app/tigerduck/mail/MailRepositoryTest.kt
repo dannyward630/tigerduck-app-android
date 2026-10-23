@@ -573,6 +573,86 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `an older page whose mail is downloaded comes from the phone, without the network`() = runTest {
+        val uids = (1..120).map { server.deliver("信 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.updateSearchIndex()
+        val newest = repo.loadPage("INBOX", null)
+        val fetched = server.pageFetches.size
+
+        val older = repo.loadPage("INBOX", newest.nextBeforeSeq)
+
+        assertEquals(fetched, server.pageFetches.size)
+        assertEquals(uids.dropLast(MailRepository.PAGE_SIZE).takeLast(MailRepository.PAGE_SIZE).reversed(), older.messages.map { it.uid })
+        assertEquals(newest.uidValidity, older.uidValidity)
+        assertEquals(21, older.nextBeforeSeq)
+        val oldest = repo.loadPage("INBOX", older.nextBeforeSeq)
+        assertEquals(fetched, server.pageFetches.size)
+        assertEquals(uids.take(20).reversed(), oldest.messages.map { it.uid })
+        assertNull("the bottom of the folder", oldest.nextBeforeSeq)
+    }
+
+    @Test
+    fun `an older page not downloaded yet comes from the server`() = runTest {
+        (1..120).forEach { server.deliver("信 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+        val newest = repo.loadPage("INBOX", null)
+        val fetched = server.pageFetches.size
+
+        repo.loadPage("INBOX", newest.nextBeforeSeq)
+
+        assertEquals(fetched + 1, server.pageFetches.size)
+    }
+
+    @Test
+    fun `a mail marked read reads as read on the phone's copy`() = runTest {
+        val uids = (1..60).map { server.deliver("信 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.updateSearchIndex()
+        val newest = repo.loadPage("INBOX", null)
+
+        repo.setSeen("INBOX", uids.first(), true)
+        val fetched = server.pageFetches.size
+
+        val older = repo.loadPage("INBOX", newest.nextBeforeSeq)
+        assertEquals("from the phone", fetched, server.pageFetches.size)
+        assertTrue(older.messages.single { it.uid == uids.first() }.flags.seen)
+    }
+
+    @Test
+    fun `a mail read on another device reads as read once the download runs again`() = runTest {
+        val uids = (1..60).map { server.deliver("信 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.updateSearchIndex()
+        val stored = server.folders.getValue("INBOX").single { it.summary.uid == uids.first() }
+        stored.summary = stored.summary.copy(flags = stored.summary.flags.copy(seen = true))
+
+        repo.updateSearchIndex()
+        val newest = repo.loadPage("INBOX", null)
+        val fetched = server.pageFetches.size
+        val older = repo.loadPage("INBOX", newest.nextBeforeSeq)
+
+        assertEquals("from the phone", fetched, server.pageFetches.size)
+        assertTrue(older.messages.single { it.uid == uids.first() }.flags.seen)
+    }
+
+    @Test
+    fun `the mail screen in use downloads in the app, without waiting on the background run`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val owner = setup.account.ownAddress!!.lowercase()
+
+        repo.acquire()
+        runCurrent()
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isEmpty()) Thread.sleep(10) }
+        }
+
+        assertEquals(1, setup.searchIndex.uids(owner, "INBOX").size)
+    }
+
+    @Test
     fun `mail gone from the server leaves the index`() = runTest {
         val gone = server.deliver("期中考 A")
         val kept = server.deliver("期中考 B")

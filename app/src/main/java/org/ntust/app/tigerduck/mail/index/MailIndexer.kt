@@ -71,7 +71,7 @@ internal class MailIndexer(
             val entries = sessions.run(current) { s ->
                 val texts = s.fetchSearchTexts(plan.folder, batch)
                 s.fetchByUids(plan.folder, batch).map {
-                    MailSearchIndex.Entry(it.uid, senderOf(it), it.subject, texts[it.uid].orEmpty())
+                    MailSearchIndex.Entry(it.uid, senderOf(it), it.subject, texts[it.uid].orEmpty(), it)
                 }
             }
             if (!index.add(plan.owner, plan.folder, plan.uidValidity, entries, current)) return false
@@ -79,6 +79,20 @@ internal class MailIndexer(
             onAdded(batch.size)
         }
         return plan.missing.size <= limit
+    }
+
+    /**
+     * Brings the flags of the mail [plan]'s folder has downloaded to the server's: a mail read,
+     * answered or deleted on another device or the web shows so on the phone's copy too.
+     */
+    suspend fun refreshFlags(plan: Plan, stillWanted: () -> Boolean = { true }) {
+        val current = { stillWanted() && generation() == plan.generation }
+        val downloaded = index.uids(plan.owner, plan.folder).toList()
+        for (chunk in downloaded.chunked(FLAGS_BATCH)) {
+            val flags = sessions.run(current) { s -> s.refreshFlags(plan.folder, chunk) }
+            if (!current()) return
+            index.updateFlags(plan.owner, plan.folder, flags)
+        }
     }
 
     /** [plan] and [fill] in one: what a search catches up on before it looks. */
@@ -95,6 +109,9 @@ internal class MailIndexer(
     companion object {
         /** Mails fetched per hold of the connection: few, so a page the user opens waits seconds at most. */
         const val BATCH = 5
+
+        /** Mails whose flags one FETCH asks for: flags are a few bytes a mail. */
+        const val FLAGS_BATCH = 500
 
         /** The sender as a search reads it, the name and the address both. */
         fun senderOf(summary: MailSummary): String =

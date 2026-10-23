@@ -9,6 +9,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.mail.index.MailSearchIndex.Entry
+import org.ntust.app.tigerduck.mail.model.MailAddress
+import org.ntust.app.tigerduck.mail.model.MailFlags
+import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
@@ -16,6 +19,15 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
 class MailSearchIndexTest {
+
+    /** A downloaded mail, its summary to match. */
+    @Suppress("TestFunctionName")
+    private fun Entry(uid: Long, sender: String, subject: String, body: String, seen: Boolean = false) =
+        MailSearchIndex.Entry(
+            uid, sender, subject, body,
+            MailSummary(uid, MailAddress(null, "x@example.com"), emptyList(), emptyList(), emptyList(), subject, null, null,
+                MailFlags.NONE.copy(seen = seen), 100, false, null, null, null),
+        )
 
     // In memory: nothing outlives the test.
     private val index = SqliteMailSearchIndex(RuntimeEnvironment.getApplication(), name = null)
@@ -117,6 +129,28 @@ class MailSearchIndexTest {
         assertEquals(emptySet<Long>(), index.uids(next, "INBOX"))
         assertFalse("the one that left adds nothing", index.add(me, "INBOX", 7, listOf(Entry(2, "b@example.com", "公告", "")), current))
         assertEquals(emptyList<Long>(), index.search(me, "INBOX", "公告"))
+    }
+
+    @Test
+    fun `the list reads back each downloaded mail as it was, and only those downloaded`() {
+        seed(entries = arrayOf(Entry(1, "a@example.com", "期中考", ""), Entry(2, "b@example.com", "公告", "")))
+
+        val stored = index.summaries(me, "INBOX", 7, listOf(1L, 2L, 3L))
+
+        assertEquals(setOf(1L, 2L), stored.keys)
+        assertEquals("期中考", stored.getValue(1L).subject)
+        assertEquals(emptyMap<Long, MailSummary>(), index.summaries(me, "INBOX", 8, listOf(1L)))
+    }
+
+    @Test
+    fun `a mail read elsewhere reads as read, and one deleted there leaves`() {
+        seed(entries = arrayOf(Entry(1, "a@example.com", "期中考", ""), Entry(2, "b@example.com", "公告", "")))
+
+        index.updateFlags(me, "INBOX", mapOf(1L to MailFlags.NONE.copy(seen = true), 2L to MailFlags.NONE.copy(deleted = true)))
+
+        val stored = index.summaries(me, "INBOX", 7, listOf(1L, 2L))
+        assertTrue(stored.getValue(1L).flags.seen)
+        assertEquals(setOf(1L), stored.keys)
     }
 
     @Test
