@@ -33,15 +33,16 @@ class MailReadableHtml(private val html: String) {
     private val targets: List<String>
 
     init {
-        targets = targets(html)
         var hasColors = false
         val nodeList = mutableListOf<InternalNode>()
         var parsedDoc: Document? = null
+        var parsedTargets = emptyList<String>()
 
         try {
             val parsed = Jsoup.parseBodyFragment(html)
             parsed.outputSettings().prettyPrint(false)
             parsedDoc = parsed
+            parsedTargets = targets(parsed)
 
             val bodyChildren = parsed.body().children()
             val stack = ArrayDeque<Visit>()
@@ -101,6 +102,7 @@ class MailReadableHtml(private val html: String) {
         setsColors = hasColors
         document = parsedDoc
         nodes = nodeList
+        targets = parsedTargets
     }
 
     /**
@@ -454,11 +456,23 @@ class MailReadableHtml(private val html: String) {
 
         /** On `background-color`, keywords that leave no background: its initial value is transparent. */
         private val INITIAL_KEYWORDS = setOf("initial", "unset")
-        private val CSS_NUMBER = Regex("""[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:e[+-]?[0-9]+)?""")
-        private val TARGET_REGEX = Regex("""\s(?:href|src)="[^"]*"""")
 
-        fun targets(html: String): List<String> =
-            TARGET_REGEX.findAll(html).map { it.value }.toList()
+        private val CSS_NUMBER = Regex("""[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:e[+-]?[0-9]+)?""")
+
+        /**
+         * The link and image targets the HTML parser reads off [html], in document order, as
+         * `href=`/`src=` and the value. Read off the parsed tree rather than the markup, so text
+         * that reads like an attribute is no target, and a page whose output the parser reads
+         * back with every target as it was keeps its colour fixes.
+         */
+        fun targets(html: String): List<String> = targets(Jsoup.parseBodyFragment(html))
+
+        private fun targets(document: Document): List<String> = buildList {
+            for (element in document.body().select("[href], [src]")) {
+                if (element.hasAttr("href")) add("href=" + element.attr("href"))
+                if (element.hasAttr("src")) add("src=" + element.attr("src"))
+            }
+        }
 
         private fun set(name: String, element: Element, value: String?) {
             val current = if (element.hasAttr(name)) element.attr(name) else null

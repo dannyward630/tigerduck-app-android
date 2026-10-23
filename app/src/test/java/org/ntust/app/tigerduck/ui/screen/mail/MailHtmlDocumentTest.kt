@@ -267,6 +267,19 @@ class MailHtmlDocumentTest {
     }
 
     @Test
+    fun `text that reads like a target does not stop stripped links being judged again`() {
+        // The newline the second pass's parse drops sits before text that reads like an href.
+        val newline = Char(10).toString()
+        val mail = """<div style="background-color: #000000; color: #ffffff"><a href="https://a.example" style="background-color: #ffffff">y<pre>""" +
+            newline.repeat(3) + """href="z"</pre></a></div>"""
+        val sanitized = HtmlSanitizer.sanitize(mail, allowRemoteImages = false)
+        val document = MailHtmlDocument.build(sanitized.html, emptyMap(), allowRemoteImages = false, theme = MailHtmlTheme.LIGHT)
+        assertTrue(document.links.isEmpty())
+        val anchor = Jsoup.parse(document.html).selectFirst("a")!!
+        assertEquals("background-color: #ffffff; color: #595959", anchor.attr("style"))
+    }
+
+    @Test
     fun `links are rewritten after cid inlining, so the check covers the body the WebView gets`() {
         // inlineCids is a text substitution: a cid-looking text runs to the next quote and swallows
         // markup. Done after the rewrite, it would merge two checked anchors into one.

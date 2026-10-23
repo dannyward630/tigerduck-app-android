@@ -564,8 +564,8 @@ class MailReadableHtmlTest {
     @Test
     fun `link and image targets are listed in order`() {
         val html = """<a href="https://link.invalid/0">x</a><img src="tdcid:a" /><img data-remote-src="https://x.example/p.png" />""" +
-            """<p title=" src=&quot;y&quot;">t</p>"""
-        assertEquals(listOf(""" href="https://link.invalid/0"""", """ src="tdcid:a""""), MailReadableHtml.targets(html))
+            """<p title=" src=&quot;y&quot;">t</p><pre> href="z"</pre>"""
+        assertEquals(listOf("href=https://link.invalid/0", "src=tdcid:a"), MailReadableHtml.targets(html))
     }
 
     @Test
@@ -581,10 +581,13 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a page that would change a link target keeps the colours as sent`() {
-        // jsoup writes this bare & back as &amp;, which is not the href it was given.
+    fun `a target written back in other bytes is the same target`() {
+        // jsoup writes this bare & back as &amp;, which the parser reads as the same href.
         val input = """<p style="color: #333333"><a href="https://example.com/test?a=1&b=2">Link</a></p>"""
-        assertEquals(input, MailReadableHtml(input).onApp())
+        assertEquals(
+            """<p style="color: #959595"><a href="https://example.com/test?a=1&amp;b=2">Link</a></p>""",
+            MailReadableHtml(input).onApp(),
+        )
     }
 
     @Test

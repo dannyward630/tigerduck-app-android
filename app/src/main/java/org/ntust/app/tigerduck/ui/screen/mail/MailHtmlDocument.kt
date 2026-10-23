@@ -113,7 +113,12 @@ object MailHtmlDocument {
      * `.invalid` is IANA/RFC 2606 reserved and never resolves; [MailWebView] answers a tap with the index
      * alone, never a URL, so no WebView/Chromium canonicalization quirk can match a tap to the wrong entry.
      */
-    fun rewriteLinks(html: String): LinkedHtml {
+    fun rewriteLinks(html: String): LinkedHtml = rewritten(html).linked
+
+    /** [rewriteLinks]'s result, and whether it had to strip every href. */
+    private class Rewritten(val linked: LinkedHtml, val stripped: Boolean)
+
+    private fun rewritten(html: String): Rewritten {
         val doc = Jsoup.parseBodyFragment(html)
         doc.outputSettings().prettyPrint(false)
         val anchors = doc.select("a[href]")
@@ -124,10 +129,10 @@ object MailHtmlDocument {
         }
         val rewritten = doc.body().html()
         if (hrefsAndTexts(Jsoup.parseBodyFragment(rewritten).select("a[href]")) == hrefsAndTexts(anchors)) {
-            return LinkedHtml(rewritten, links)
+            return Rewritten(LinkedHtml(rewritten, links), stripped = false)
         }
         anchors.removeAttr("href")
-        return LinkedHtml(doc.body().html(), emptyList())
+        return Rewritten(LinkedHtml(doc.body().html(), emptyList()), stripped = true)
     }
 
     private fun hrefsAndTexts(anchors: Elements): List<Pair<String, String>> = anchors.map { it.attr("href") to it.text() }
@@ -155,13 +160,15 @@ object MailHtmlDocument {
         allowRemoteImages: Boolean,
         theme: MailHtmlTheme,
     ): LinkedHtml {
-        val readableHtml = readable.on(theme)
-        val linked = rewriteLinks(inlineCids(readableHtml, images))
+        val rewritten = rewritten(inlineCids(readable.on(theme), images))
         // Every href stripped (see rewriteLinks): the anchors were judged as links, drawn in the
         // link colour, and are text now, drawn in the colour around them -- which may not read on
         // a background of their own. So the page is judged again as it now is.
-        val stripped = linked.links.isEmpty() && MailReadableHtml.targets(readableHtml).any { it.trimStart().startsWith("href=") }
-        val body = if (stripped) LinkedHtml(MailReadableHtml(linked.html).on(theme), emptyList()) else linked
+        val body = if (rewritten.stripped) {
+            LinkedHtml(MailReadableHtml(rewritten.linked.html).on(theme), emptyList())
+        } else {
+            rewritten.linked
+        }
         val scheme = if (theme.isDark) "dark" else "light"
         return body.copy(
             html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
