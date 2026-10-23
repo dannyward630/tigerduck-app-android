@@ -156,18 +156,21 @@ class EmptyClassroomViewModel internal constructor(
         load(force = false)
     }
 
-    /** The screen went away: a read it started would otherwise go on, and queue later reads behind it. */
+    /**
+     * The screen went away. A read it started goes on, as a day takes long to read, and its
+     * spinners with it: a return to the day joins the read instead of sending its requests again.
+     * As iOS (tigerduck-app/tigerduck-app#628).
+     */
     fun disappear() {
         isStarted = false
-        stopLoading()
         tickerJob?.cancel()
         tickerJob = null
-        edit { it.copy(isRefreshing = false, isReloading = false) }
     }
 
     /**
-     * The signed-in account changed: what the screen holds belonged to the one before. Off screen
-     * that is only forgotten; the next [appear] reads for the new account.
+     * The signed-in account changed: what the screen holds belonged to the one before, a read
+     * still running off screen included. Off screen that is only forgotten; the next [appear]
+     * reads for the new account.
      */
     fun accountChanged() {
         stopLoading()
@@ -182,6 +185,7 @@ class EmptyClassroomViewModel internal constructor(
                 classes = emptyList(),
                 pickedBuilding = env.pickedBuilding,
                 isRefreshing = false,
+                isReloading = false,
                 siteStatus = ServerStatus.UNKNOWN,
             )
         }
@@ -277,8 +281,9 @@ class EmptyClassroomViewModel internal constructor(
 
     private fun load(force: Boolean) {
         val day = _state.value.selectedDay
-        // A repeated appear() while this day loads keeps that load. Leaving the screen already
-        // stopped it, so coming back after a disappear() always starts a new read.
+        // A repeated appear() while this day loads keeps that load, and so does a return after
+        // disappear(). Another day, a pull and an account change still end it, so a new read
+        // does not queue behind it.
         if (!force && running?.first == day) return
         stopLoading()
         refreshClasses()
