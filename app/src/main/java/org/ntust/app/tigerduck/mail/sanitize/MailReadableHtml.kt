@@ -104,8 +104,12 @@ class MailReadableHtml(private val html: String) {
     }
 
     /**
-     * The document on `pageBackground`, `pageForeground`, and `linkForeground`.
-     * Cancelled, or with a link or image target unlike `html`'s, it is `html`.
+     * The document on a page of [pageBackgroundHex], whose text is [pageForegroundHex] and whose
+     * links are [linkForegroundHex]. With nothing to fix, or with a link or image target unlike
+     * [html]'s, it is [html].
+     *
+     * Each call rewrites the one parsed document, setting every colour it judges either to its
+     * fix or back to what was sent, so pages come out the same in any order, but never two at once.
      */
     fun adjust(
         pageBackgroundHex: String,
@@ -587,7 +591,8 @@ class MailReadableHtml(private val html: String) {
             val validLens = if (legacy) setOf(3, 6) else setOf(3, 4, 6, 8)
             if (digits.length !in validLens) return null
             val values = digits.map { ch ->
-                val v = Character.digit(ch, 16)
+                // ASCII only: Character.digit also reads fullwidth and other Unicode digits.
+                val v = if (ch.code < 0x80) Character.digit(ch, 16) else -1
                 if (v == -1) return null
                 v.toDouble()
             }
@@ -605,7 +610,8 @@ class MailReadableHtml(private val html: String) {
         private fun function(value: String): RGBA? {
             val open = value.indexOf('(')
             if (open == -1 || !value.endsWith(')')) return null
-            val name = value.substring(0, open).trim()
+            // Not trimmed: `rgb (51, 51, 51)` is no colour to CSS.
+            val name = value.substring(0, open)
             if (name != "rgb" && name != "rgba") return null
             val args = value.substring(open + 1, value.length - 1).trim()
             val channels: MutableList<String>
@@ -641,7 +647,7 @@ class MailReadableHtml(private val html: String) {
             val isPercent = text.endsWith('%')
             val digits = if (isPercent) text.substring(0, text.length - 1) else text
             if (digits.isEmpty()) return null
-            if (!digits.all { it in "0123456789.+-eE" }) return null
+            if (!digits.all { it in "0123456789.+-e" }) return null
             val num = digits.toDoubleOrNull() ?: return null
             val normalized = num / (if (isPercent) 100.0 else scale)
             return normalized.coerceIn(0.0, 1.0)
