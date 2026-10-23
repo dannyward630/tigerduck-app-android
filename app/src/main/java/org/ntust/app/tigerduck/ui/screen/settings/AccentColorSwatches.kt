@@ -47,29 +47,36 @@ private val accentColorNames = listOf(
 )
 
 /**
- * The accent colour swatches in Settings. Each is a selectable item named by
- * its colour, so TalkBack says which colour it is and which one is chosen,
+ * The accent color swatches in Settings. Each is a selectable item named by
+ * its color, so TalkBack says which color it is and which one is chosen,
  * not just "double tap to activate".
  *
  * [selectedHex] and [onSelect] carry the canonical (light) hex, so the pair
- * swaps when the colour theme toggles; [isDark] picks the display colour.
+ * swaps when the color theme toggles; [isDark] picks the display color.
+ *
+ * From Android 12 the row opens with the wallpaper's colors, which
+ * [onSelectWallpaper] picks. While [followsWallpaper] that swatch is the one
+ * selected, and none of the others is: [selectedHex] still holds the swatch
+ * last picked, for the surfaces that cannot follow the wallpaper.
  */
 @Composable
 internal fun AccentColorSwatches(
     selectedHex: Int,
+    followsWallpaper: Boolean,
     isDark: Boolean,
     onSelect: (Int) -> Unit,
+    onSelectWallpaper: () -> Unit,
 ) {
     val display = if (isDark) AppPreferences.themeColorsDark else AppPreferences.themeColors
     val context = LocalContext.current
-    val supportsDynamic = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-    val dynamicColors = if (supportsDynamic) {
+    // As the root theme draws them, in this mode.
+    val dynamicColors = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else {
         null
     }
 
-    // Eight 32dp swatches need 326dp, more than a narrow phone -- or a
+    // Nine 32dp swatches need 368dp, more than a narrow phone -- or a
     // larger display size -- leaves inside this card, and a plain Row
     // squeezes whatever does not fit out of the last one. Scrolling
     // keeps every swatch round.
@@ -77,8 +84,7 @@ internal fun AccentColorSwatches(
         modifier = Modifier.horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        if (supportsDynamic && dynamicColors != null) {
-            val wallpaperSelected = selectedHex == AppPreferences.ACCENT_WALLPAPER
+        if (dynamicColors != null) {
             val wallpaperName = stringResource(R.string.color_name_wallpaper)
             Box(
                 modifier = Modifier
@@ -93,14 +99,14 @@ internal fun AccentColorSwatches(
                         )
                     )
                     .selectable(
-                        selected = wallpaperSelected,
+                        selected = followsWallpaper,
                         role = Role.RadioButton,
-                        onClick = { onSelect(AppPreferences.ACCENT_WALLPAPER) },
+                        onClick = onSelectWallpaper,
                     )
                     .semantics { contentDescription = wallpaperName },
                 contentAlignment = Alignment.Center,
             ) {
-                if (wallpaperSelected) {
+                if (followsWallpaper) {
                     Icon(
                         imageVector = Icons.Filled.Check,
                         contentDescription = null,
@@ -112,7 +118,7 @@ internal fun AccentColorSwatches(
         }
         display.forEachIndexed { idx, (_, displayHex) ->
             val canonicalHex = AppPreferences.themeColors[idx].second
-            val selected = selectedHex == canonicalHex
+            val selected = !followsWallpaper && selectedHex == canonicalHex
             val name = accentColorNames.getOrNull(idx)?.let { stringResource(it) }
             Box(
                 modifier = Modifier

@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.ui
 
-import android.os.Build
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -25,6 +24,7 @@ import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.AppFeature
 import org.ntust.app.tigerduck.data.model.CalendarEvent
 import org.ntust.app.tigerduck.data.model.EventSource
+import org.ntust.app.tigerduck.data.preferences.AccentPolicy
 import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CourseNameScale
@@ -201,39 +201,37 @@ class AppState @Inject constructor(
     val showOnboarding: Boolean
         get() = !hasCompletedOnboarding || needsOnboardingRerun
 
-    private var accentColorHexState by mutableIntStateOf(prefs.accentColorHex)
-
-    var accentColorHex: Int
-        get() = accentColorHexState
-        set(value) {
-            if (accentColorHexState == value) return
-            accentColorHexState = value
-            prefs.accentColorHex = value
-            widgetUpdater.requestUpdate()
-        }
-
-    val isWallpaperAccent: Boolean
-        get() = accentColorHex == AppPreferences.ACCENT_WALLPAPER && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    // The widgets draw the swatch, and redraw only when asked.
+    private val accentSetting = AccentSetting(prefs, onFixedChange = { widgetUpdater.requestUpdate() })
 
     /**
-     * Accent color resolved for the current theme mode. [accentColorHex] always
+     * The accent swatch last picked, as its canonical (light) hex. It stays
+     * while the wallpaper's colors are picked, and is what every surface that
+     * cannot follow them draws; see [AccentPolicy].
+     */
+    val accentColorHex: Int
+        get() = accentSetting.lightHex
+
+    /**
+     * Whether the app's screens draw the wallpaper's colors: picked in
+     * Settings, on Android 12 or later.
+     */
+    val usesWallpaperColors: Boolean
+        get() = accentSetting.appFollowsWallpaper
+
+    /** Picks the accent swatch of canonical (light) hex [lightHex], in place of the wallpaper too. */
+    fun pickAccentColor(lightHex: Int) = accentSetting.pick(lightHex)
+
+    /** Picks the wallpaper's colors for the app's screens, keeping the swatch for the rest. */
+    fun pickWallpaperColors() = accentSetting.pickWallpaper()
+
+    /**
+     * The swatch's color for the current theme mode. [accentColorHex] always
      * stores the canonical (light) hex; in dark mode we return the paired
      * dark variant so the tint stays vibrant against dark surfaces.
-     * When wallpaper dynamic color is active (or set on pre-S devices), falls back to the default blue.
      */
-    fun accentColor(isDark: Boolean = TigerDuckTheme.isDarkMode): Color {
-        val effectiveHex = if (accentColorHex == AppPreferences.ACCENT_WALLPAPER) {
-            0x007AFF
-        } else {
-            accentColorHex
-        }
-        val hex = if (isDark) {
-            AppPreferences.accentDarkVariant(effectiveHex)
-        } else {
-            effectiveHex
-        }
-        return Color(0xFF000000L or (hex.toLong() and 0xFFFFFFL))
-    }
+    fun accentColor(isDark: Boolean = TigerDuckTheme.isDarkMode): Color =
+        AccentPolicy.fixedColor(accentColorHex, isDark)
 
     private val visualPresetSetting =
         VisualPresetSetting(prefs, onChange = { widgetUpdater.requestUpdate() })
@@ -588,7 +586,7 @@ class AppState @Inject constructor(
             // from the wiped store.
             hasCompletedOnboardingState = prefs.hasCompletedOnboarding
             onboardingVersionState = prefs.onboardingVersion
-            accentColorHexState = prefs.accentColorHex
+            accentSetting.reload()
             visualPresetSetting.reload()
             showAbsoluteAssignmentTimeState = prefs.showAbsoluteAssignmentTime
             alwaysShowAllPeriodsState = prefs.alwaysShowAllPeriods

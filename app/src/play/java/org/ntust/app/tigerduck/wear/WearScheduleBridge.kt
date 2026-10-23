@@ -66,12 +66,7 @@ class WearScheduleBridge @Inject constructor(
             // On logout, explicitly clear the watch's view.
             emptyList()
         }
-        val effectiveAccent = if (appPreferences.accentColorHex == AppPreferences.ACCENT_WALLPAPER) {
-            0x007AFF
-        } else {
-            appPreferences.accentColorHex
-        }
-        val accentHex = "#%06X".format(0xFFFFFF and effectiveAccent)
+        val accentHex = wearAccentHex(appPreferences)
         val payload = gson.toJson(courses.map { it.toDto() }).toByteArray()
         val gzipped = ByteArrayOutputStream().also { bos ->
             GZIPOutputStream(bos).use { it.write(payload) }
@@ -200,6 +195,14 @@ class WearScheduleBridge @Inject constructor(
         const val KEY_CRED_EPOCH = "libraryCredentialEpoch"
     }
 }
+
+/**
+ * The accent the watch is sent, as `#RRGGBB`: the swatch last picked, also
+ * while the phone follows the wallpaper, as the watch has no wallpaper colors
+ * of its own to follow (see [org.ntust.app.tigerduck.data.preferences.AccentPolicy]).
+ */
+internal fun wearAccentHex(prefs: AppPreferences): String =
+    "#%06X".format(0xFFFFFF and prefs.accentColorHex)
 
 /**
  * How far ahead the watch is told about quiet days. Bounded because every day
