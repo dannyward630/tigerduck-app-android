@@ -67,3 +67,59 @@ class LeaveGuardTest {
         assertEquals(1, moves)
     }
 }
+
+class HeldMoveTest {
+
+    private val held = HeldMove()
+    private var moves = 0
+    private val move = { moves++; Unit }
+    private var closes = 0
+    private val close = { closes++; Unit }
+
+    private fun ask(left: Boolean = false, cannotLeave: Boolean = false, nothingToLose: Boolean = false) =
+        held.ask(move, left, cannotLeave, nothingToLose)
+
+    @Test
+    fun `with nothing to lose, the move is made at once`() {
+        assertEquals(false, ask(nothingToLose = true))
+        assertEquals(1, moves)
+    }
+
+    @Test
+    fun `while a send is out, the move is not made, held or asked about`() {
+        assertEquals(false, ask(cannotLeave = true))
+        held.release(close)
+        assertEquals(0, moves)
+        assertEquals(1, closes)
+    }
+
+    @Test
+    fun `with text to lose, the move waits for Save draft or Discard, and is made once`() {
+        assertEquals(true, ask())
+        assertEquals(0, moves)
+
+        held.release(close)
+        assertEquals(1, moves)
+        assertEquals(0, closes)
+
+        held.release(close)
+        assertEquals("not twice", 1, moves)
+    }
+
+    @Test
+    fun `Keep editing, a failed save, a send or back drops what was held`() {
+        ask()
+        held.drop()
+
+        held.release(close)
+
+        assertEquals(0, moves)
+        assertEquals(1, closes)
+    }
+
+    @Test
+    fun `a page that has let go already, sliding away, holds nothing more`() {
+        assertEquals(false, ask(left = true))
+        assertEquals(1, moves)
+    }
+}

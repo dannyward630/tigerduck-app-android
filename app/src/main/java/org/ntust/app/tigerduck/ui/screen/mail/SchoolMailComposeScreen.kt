@@ -60,6 +60,7 @@ import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.navigation.AskBeforeLeaving
+import org.ntust.app.tigerduck.ui.navigation.HeldMove
 import org.ntust.app.tigerduck.ui.navigation.LeaveGuard
 import org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeViewModel.ComposeError
 import org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeViewModel.RecipientSlot
@@ -79,8 +80,8 @@ fun SchoolMailComposeScreen(
     val context = LocalContext.current
     var showLeave by remember { mutableStateOf(false) }
     // A tab or a link waiting on the answer to Save draft, which moves the app on once the draft
-    // is saved or discarded; null when back asked, which closes this page.
-    var pendingMove by remember { mutableStateOf<(() -> Unit)?>(null) }
+    // is saved or discarded; none when back asked, which closes this page.
+    val heldMove = remember { HeldMove() }
     var showSendConfirm by remember { mutableStateOf(false) }
 
     val quoteHeader = stringResource(R.string.school_mail_quote_header)
@@ -103,14 +104,18 @@ fun SchoolMailComposeScreen(
         if (state.savedDraft) Toast.makeText(context, R.string.school_mail_saved, Toast.LENGTH_SHORT).show()
         // A missing sent copy is not told here: the list and the mail this goes back to show it
         // until it is dismissed (SentCopyNoticeBanner).
-        pendingMove?.invoke() ?: onDone()
+        heldMove.release(onDone)
     }
+    // A save that failed leaves the user writing, and nothing they asked for before then may move
+    // the app once they later send or discard.
+    LaunchedEffect(state.error) { if (state.error != null) heldMove.drop() }
 
     // While sending, back (and the nav-up icon, which shares this) does nothing: popping the
     // screen mid-send would clear the ViewModel and cancel the send, the original would never be
     // marked answered, a sent draft would never be discarded, and a failure would have nowhere to
     // show (spec §8.4).
     val leave = {
+        heldMove.drop()
         when {
             state.sending -> Unit
             state.dirty -> showLeave = true
@@ -119,13 +124,10 @@ fun SchoolMailComposeScreen(
     }
     BackHandler(onBack = leave)
     // A bottom-bar tap or a link would pop this page as back does, so it asks the same: nothing
-    // while sending, Save draft with text to lose.
+    // while sending, Save draft with text to lose. Once saved or discarded, as it slides away, it
+    // asks nothing more.
     AskBeforeLeaving(leaveGuard) { move ->
-        when {
-            state.sending -> Unit
-            state.dirty -> { pendingMove = move; showLeave = true }
-            else -> move()
-        }
+        if (heldMove.ask(move, left = state.done, cannotLeave = state.sending, nothingToLose = !state.dirty)) showLeave = true
     }
 
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -256,7 +258,7 @@ fun SchoolMailComposeScreen(
             onDismissRequest = { showSendConfirm = false },
             title = stringResource(R.string.school_mail_send_confirm_title),
             confirmText = stringResource(R.string.school_mail_send),
-            onConfirm = { showSendConfirm = false; viewModel.send() },
+            onConfirm = { showSendConfirm = false; heldMove.drop(); viewModel.send() },
             dismissText = stringResource(R.string.school_mail_keep_editing),
             onDismiss = { showSendConfirm = false },
         )
@@ -264,13 +266,13 @@ fun SchoolMailComposeScreen(
 
     if (showLeave) {
         TigerDuckDialog(
-            onDismissRequest = { showLeave = false; pendingMove = null },
+            onDismissRequest = { showLeave = false; heldMove.drop() },
             title = stringResource(R.string.school_mail_leave_title),
             confirmText = stringResource(R.string.school_mail_save_draft),
             onConfirm = { showLeave = false; viewModel.saveDraft() },
             confirmEnabled = state.pendingPicks == 0,
             dismissText = stringResource(R.string.school_mail_keep_editing),
-            onDismiss = { showLeave = false; pendingMove = null },
+            onDismiss = { showLeave = false; heldMove.drop() },
         ) {
             TextButton(onClick = { showLeave = false; viewModel.discard() }, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.school_mail_discard), color = MaterialTheme.colorScheme.error)

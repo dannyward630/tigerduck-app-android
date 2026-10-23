@@ -305,13 +305,13 @@ fun MainNavigation(
     val popUpToDest = configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route
     val leaveGuard = remember { LeaveGuard() }
     // A tab the user picks: a course sheet under a page it opened closes, rather than coming back
-    // over its page later. The page on screen is asked first, a mail being written above all.
-    val openTab: (String) -> Unit = { route ->
-        leaveGuard.leave {
-            classTableViewModel.clearSelection()
-            navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
-        }
+    // over its page later.
+    val goToTab: (String) -> Unit = { route ->
+        classTableViewModel.clearSelection()
+        navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
     }
+    // The same once the page on screen lets go of the user, a mail being written above all.
+    val openTab: (String) -> Unit = { route -> leaveGuard.leave { goToTab(route) } }
 
     LaunchedEffect(widgetStartRoute) {
         widgetStartRoute ?: return@LaunchedEffect
@@ -425,15 +425,20 @@ fun MainNavigation(
                                                 ClassTableSwitcherEntry.sections(importedTables, switcherUserName),
                                             ) { entry ->
                                                 showClassTableSwitcher = false
-                                                // The page shows what the row picks, or hosts the import.
-                                                if (currentRoute != route) openTab(route)
-                                                when (entry) {
-                                                    ClassTableSwitcherEntry.ImportClassTable ->
-                                                        classTableImportViewModel.start()
-                                                    is ClassTableSwitcherEntry.Person ->
-                                                        classTableViewModel.showTable(entry.id)
-                                                    is ClassTableSwitcherEntry.User ->
-                                                        classTableViewModel.showTable(null)
+                                                // All of it once the page on screen lets go: an
+                                                // import opened over a mail still asking whether to
+                                                // save would cover the question. The page shows what
+                                                // the row picks, or hosts the import.
+                                                leaveGuard.leave {
+                                                    if (navController.currentBackStackEntry?.destination?.route != route) goToTab(route)
+                                                    when (entry) {
+                                                        ClassTableSwitcherEntry.ImportClassTable ->
+                                                            classTableImportViewModel.start()
+                                                        is ClassTableSwitcherEntry.Person ->
+                                                            classTableViewModel.showTable(entry.id)
+                                                        is ClassTableSwitcherEntry.User ->
+                                                            classTableViewModel.showTable(null)
+                                                    }
                                                 }
                                             }
                                         }
