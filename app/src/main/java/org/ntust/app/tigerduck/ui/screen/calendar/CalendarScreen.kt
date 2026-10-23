@@ -453,19 +453,24 @@ internal fun CalendarGrid(
                                     fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                                 if (dotSources.isNotEmpty()) {
-                                    // One dot per source in its colour, as on
+                                    // One dot per source in its color, as on
                                     // the iPhone, so a deadline reads apart
-                                    // from a holiday. White on the selected
-                                    // day: a source colour can sit too close
-                                    // to the accent fill, and the list below
-                                    // shows that day's sources anyway.
+                                    // from a holiday. On the selected day they
+                                    // take the day number's onPrimary: a source
+                                    // color can sit too close to the accent
+                                    // fill, and the list below shows that
+                                    // day's sources anyway. Not white: the
+                                    // wallpaper's primary in dark mode is
+                                    // light enough to hide it.
                                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                         dotSources.forEach { source ->
                                             Box(
                                                 modifier = Modifier
                                                     .size(4.dp)
                                                     .clip(CircleShape)
-                                                    .background(if (isSelected) Color.White else source.color)
+                                                    .background(
+                                                        if (isSelected) MaterialTheme.colorScheme.onPrimary else source.color
+                                                    )
                                             )
                                         }
                                     }

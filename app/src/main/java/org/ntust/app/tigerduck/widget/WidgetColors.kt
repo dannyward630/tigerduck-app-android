@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import androidx.compose.ui.graphics.Color
 import org.ntust.app.tigerduck.shared.Course
+import org.ntust.app.tigerduck.data.preferences.AccentPolicy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.ui.theme.courseColorPalette
 import org.ntust.app.tigerduck.ui.theme.courseColorPaletteDark
@@ -70,8 +71,8 @@ private fun hashPaletteColor(courseNo: String): Color {
     return courseColorPalette[hash % courseColorPalette.size]
 }
 
-// Shared across every widget so the theme-mode + accent resolution stays in
-// lockstep with AppState.accentColor regardless of which widget is rendering.
+// Shared across every widget so the theme mode stays in lockstep with the
+// app's regardless of which widget is rendering.
 fun resolveWidgetIsDark(prefs: AppPreferences, context: Context): Boolean =
     when (prefs.themeMode) {
         "dark" -> true
@@ -83,8 +84,10 @@ fun resolveWidgetIsDark(prefs: AppPreferences, context: Context): Boolean =
         }
     }
 
-fun resolveWidgetAccentColor(prefs: AppPreferences, isDark: Boolean): Color {
-    val lightHex = prefs.accentColorHex
-    val hex = if (isDark) AppPreferences.accentDarkVariant(lightHex) else lightHex
-    return Color(0xFF000000L or (hex.toLong() and 0xFFFFFFL))
-}
+/**
+ * The accent every widget draws: the swatch last picked, in the theme's
+ * variant, as the app draws it. Never the wallpaper's colors, which only the
+ * app's own screens follow (see [AccentPolicy]).
+ */
+fun resolveWidgetAccentColor(prefs: AppPreferences, isDark: Boolean): Color =
+    AccentPolicy.fixedColor(prefs.accentColorHex, isDark)
