@@ -346,6 +346,7 @@
     <string name="course_member_department_tx_short">Materials Science and Engineering</string>
     <string name="course_member_email">Email</string>
     <string name="course_member_groups">Ομάδες</string>
+    <string name="course_member_profile_picture">Φωτογραφία προφίλ</string>
     <string name="course_members_auditors">Ακροατές</string>
     <string name="course_members_students">Φοιτητές</string>
     <string name="course_members_tas">Βοηθοί διδασκαλίας</string>
@@ -441,6 +442,7 @@
     <string name="error_invalid_server_response">Μη έγκυρη απόκριση διακομιστή</string>
     <string name="error_library_credentials_not_found">Δεν βρέθηκαν διαπιστευτήρια λογαριασμού βιβλιοθήκης</string>
     <string name="error_library_sign_in_failed_format">Αποτυχία σύνδεσης βιβλιοθήκης: %1$@</string>
+    <string name="error_link_no_app">Καμία εφαρμογή δεν μπορεί να ανοίξει αυτόν τον σύνδεσμο</string>
     <string name="error_moodle_http_status_format">Το Moodle επέστρεψε μη αναμενόμενη κατάσταση HTTP: %1$d</string>
     <string name="error_moodle_invalid_credentials">Το Moodle απέρριψε τα τρέχοντα διαπιστευτήρια.</string>
     <string name="error_moodle_invalid_token">Το token του Moodle δεν είναι πλέον έγκυρο· απαιτείται νέα εξουσιοδότηση.</string>
@@ -910,6 +912,9 @@
     <string name="settings_analytics_description">Μοιράσου ανώνυμα δεδομένα χρήσης (σελίδες που επισκέφτηκες, χρήση widget) για να βοηθήσεις στη βελτίωση του TigerDuck</string>
     <string name="settings_analytics_enabled">Ανάλυση χρήσης</string>
     <string name="settings_api_endpoint">Τελικό σημείο API</string>
+    <string name="settings_api_endpoint_change_alert_confirm">Αλλαγή</string>
+    <string name="settings_api_endpoint_change_alert_message">Μετά τη σύνδεση, αυτό το τελικό σημείο λαμβάνει τον αριθμό φοιτητή σας και το token Moodle. Όλοι οι συνδεδεμένοι λογαριασμοί θα αποσυνδεθούν.</string>
+    <string name="settings_api_endpoint_change_alert_title">Αλλαγή του τελικού σημείου API;</string>
     <string name="settings_api_endpoint_change_title">Αλλαγή τελικού σημείου</string>
     <string name="settings_api_endpoint_checking">Έλεγχος…</string>
     <string name="settings_api_endpoint_effective_title">Ενεργό τελικό σημείο</string>
@@ -980,7 +985,6 @@
     <string name="settings_pin_today_courses_on_class_table">Καρφίτσωμα των σημερινών μαθημάτων στην κορυφή του προγράμματος</string>
     <string name="settings_privacy_policy">Πολιτική απορρήτου</string>
     <string name="settings_push_server_nav_label">Push διακομιστή</string>
-    <string name="settings_remember_bulletin_filter">Θυμηθείτε τα φίλτρα του δελτίου</string>
     <string name="settings_reset_course_colors">Επανεκχώρηση χρωμάτων μαθημάτων</string>
     <string name="settings_reset_course_colors_confirm_message">Κάθε μάθημα θα λάβει ένα νέο, μοναδικό χρώμα — πρώτα από την προκαθορισμένη παλέτα, στη συνέχεια τυχαία όταν εξαντληθεί.</string>
     <string name="settings_reset_course_colors_confirm_title">Επανεκχώρηση χρωμάτων μαθημάτων;</string>
@@ -1013,6 +1017,7 @@
     <string name="settings_view_source_code">Προβολή πηγαίου κώδικα</string>
     <string name="settings_visual_preset_label">Στυλ διεπαφής</string>
     <string name="settings_whats_new">Τι νέο υπάρχει</string>
+    <string name="share_code_needs_update_message">Αυτός ο κωδικός κοινής χρήσης απαιτεί νεότερη έκδοση της εφαρμογής.</string>
     <string name="sign_in_password">Κωδικός πρόσβασης</string>
     <string name="sign_in_student_id">Αριθμός μητρώου</string>
     <string name="source_code_picker_current_app_badge">Τρέχουσα εφαρμογή</string>
@@ -1054,12 +1059,10 @@
     <string name="sync_status_failed">Απέτυχε</string>
     <string name="sync_status_hours_ago_short">%1$d ώρ πριν</string>
     <string name="sync_status_just_now">Μόλις τώρα</string>
-    <string name="sync_status_last_synced">Τελευταίος συγχρονισμός</string>
     <string name="sync_status_last_updated">Τελευταία ενημέρωση</string>
     <string name="sync_status_minimal">Περιορισμένο</string>
     <string name="sync_status_minutes_ago_short">%1$d λεπ πριν</string>
     <string name="sync_status_nav_label">Κατάσταση TigerSync</string>
-    <string name="sync_status_never_synced">Ποτέ δεν συγχρονίστηκε</string>
     <string name="sync_status_never_updated">Ποτέ δεν ενημερώθηκε</string>
     <string name="sync_status_ok">Εντάξει</string>
     <string name="sync_status_syncing">Συγχρονισμός…</string>

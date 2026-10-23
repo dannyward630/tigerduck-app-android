@@ -346,6 +346,7 @@
     <string name="course_member_department_tx_short">Materials Science and Engineering</string>
     <string name="course_member_email">البريد الإلكتروني</string>
     <string name="course_member_groups">المجموعات</string>
+    <string name="course_member_profile_picture">صورة الملف الشخصي</string>
     <string name="course_members_auditors">المستمعون</string>
     <string name="course_members_students">الطلاب</string>
     <string name="course_members_tas">مساعدو التدريس</string>
@@ -441,6 +442,7 @@
     <string name="error_invalid_server_response">استجابة الخادم غير صالحة</string>
     <string name="error_library_credentials_not_found">لم يتم العثور على بيانات اعتماد حساب المكتبة</string>
     <string name="error_library_sign_in_failed_format">فشل تسجيل الدخول إلى المكتبة: %1$@</string>
+    <string name="error_link_no_app">لا يوجد تطبيق يمكنه فتح هذا الرابط</string>
     <string name="error_moodle_http_status_format">أعاد Moodle حالة HTTP غير متوقعة: %1$d</string>
     <string name="error_moodle_invalid_credentials">رفض Moodle بيانات الاعتماد الحالية.</string>
     <string name="error_moodle_invalid_token">لم يعد رمز Moodle صالحًا؛ يلزم إعادة التفويض.</string>
@@ -910,6 +912,9 @@
     <string name="settings_analytics_description">شارك بيانات استخدام مجهولة الهوية (الصفحات المزارة، استخدام الأدوات) للمساعدة في تحسين TigerDuck</string>
     <string name="settings_analytics_enabled">تحليلات الاستخدام</string>
     <string name="settings_api_endpoint">نقطة نهاية API</string>
+    <string name="settings_api_endpoint_change_alert_confirm">تغيير</string>
+    <string name="settings_api_endpoint_change_alert_message">بعد تسجيل الدخول، تتلقى نقطة النهاية هذه رقم الطالب ورمز Moodle الخاصين بك. سيتم تسجيل الخروج من أي حسابات مسجّل الدخول إليها.</string>
+    <string name="settings_api_endpoint_change_alert_title">تغيير نقطة نهاية API؟</string>
     <string name="settings_api_endpoint_change_title">تغيير نقطة النهاية</string>
     <string name="settings_api_endpoint_checking">جارٍ التحقق…</string>
     <string name="settings_api_endpoint_effective_title">نقطة النهاية الحالية</string>
@@ -980,7 +985,6 @@
     <string name="settings_pin_today_courses_on_class_table">تثبيت مقررات اليوم أعلى الجدول الدراسي</string>
     <string name="settings_privacy_policy">سياسة الخصوصية</string>
     <string name="settings_push_server_nav_label">دفع الخادم</string>
-    <string name="settings_remember_bulletin_filter">تذكر مرشحات النشرة</string>
     <string name="settings_reset_course_colors">إعادة تعيين ألوان المقررات</string>
     <string name="settings_reset_course_colors_confirm_message">سيُسنَد لكل مقرر لون فريد جديد — من اللوحة المحددة أولاً، ثم عشوائياً عند نفاد اللوحة.</string>
     <string name="settings_reset_course_colors_confirm_title">هل تريد إعادة تعيين ألوان المقررات؟</string>
@@ -1013,6 +1017,7 @@
     <string name="settings_view_source_code">عرض الكود المصدري</string>
     <string name="settings_visual_preset_label">نمط الواجهة</string>
     <string name="settings_whats_new">ما الجديد</string>
+    <string name="share_code_needs_update_message">يتطلب رمز المشاركة هذا إصدارًا أحدث من التطبيق.</string>
     <string name="sign_in_password">كلمة المرور</string>
     <string name="sign_in_student_id">رقم الطالب</string>
     <string name="source_code_picker_current_app_badge">التطبيق الحالي</string>
@@ -1054,12 +1059,10 @@
     <string name="sync_status_failed">فشل</string>
     <string name="sync_status_hours_ago_short">منذ %1$d س</string>
     <string name="sync_status_just_now">للتو</string>
-    <string name="sync_status_last_synced">آخر مزامنة</string>
     <string name="sync_status_last_updated">آخر تحديث</string>
     <string name="sync_status_minimal">محدود</string>
     <string name="sync_status_minutes_ago_short">منذ %1$d د</string>
     <string name="sync_status_nav_label">حالة TigerSync</string>
-    <string name="sync_status_never_synced">لم تتم المزامنة قط</string>
     <string name="sync_status_never_updated">لم يتم التحديث قط</string>
     <string name="sync_status_ok">سليم</string>
     <string name="sync_status_syncing">جارٍ المزامنة…</string>

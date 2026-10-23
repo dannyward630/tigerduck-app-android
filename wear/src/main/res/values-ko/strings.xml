@@ -346,6 +346,7 @@
     <string name="course_member_department_tx_short">Materials Science and Engineering</string>
     <string name="course_member_email">이메일</string>
     <string name="course_member_groups">그룹</string>
+    <string name="course_member_profile_picture">프로필 사진</string>
     <string name="course_members_auditors">청강생</string>
     <string name="course_members_students">학생</string>
     <string name="course_members_tas">조교</string>
@@ -441,6 +442,7 @@
     <string name="error_invalid_server_response">서버 응답이 올바르지 않습니다</string>
     <string name="error_library_credentials_not_found">도서관 계정 정보를 찾을 수 없습니다</string>
     <string name="error_library_sign_in_failed_format">도서관 로그인에 실패했습니다: %1$@</string>
+    <string name="error_link_no_app">이 링크를 열 수 있는 앱이 없습니다</string>
     <string name="error_moodle_http_status_format">Moodle이 예기치 않은 HTTP 상태를 반환했습니다: %1$d</string>
     <string name="error_moodle_invalid_credentials">Moodle이 현재 자격 증명을 거부했습니다.</string>
     <string name="error_moodle_invalid_token">Moodle 토큰이 더 이상 유효하지 않습니다. 재인증이 필요합니다.</string>
@@ -910,6 +912,9 @@
     <string name="settings_analytics_description">익명 사용 데이터(방문한 페이지, 위젯 사용)를 공유하여 TigerDuck 개선에 도움을 주세요</string>
     <string name="settings_analytics_enabled">사용 분석</string>
     <string name="settings_api_endpoint">API 엔드포인트</string>
+    <string name="settings_api_endpoint_change_alert_confirm">변경</string>
+    <string name="settings_api_endpoint_change_alert_message">로그인하면 이 엔드포인트가 학번과 Moodle 토큰을 받습니다. 로그인된 모든 계정이 로그아웃됩니다.</string>
+    <string name="settings_api_endpoint_change_alert_title">API 엔드포인트를 변경할까요?</string>
     <string name="settings_api_endpoint_change_title">엔드포인트 변경</string>
     <string name="settings_api_endpoint_checking">확인 중…</string>
     <string name="settings_api_endpoint_effective_title">현재 엔드포인트</string>
@@ -980,7 +985,6 @@
     <string name="settings_pin_today_courses_on_class_table">시간표 상단에 오늘의 수업 고정</string>
     <string name="settings_privacy_policy">개인정보 처리방침</string>
     <string name="settings_push_server_nav_label">서버 푸시</string>
-    <string name="settings_remember_bulletin_filter">게시판 필터 기억</string>
     <string name="settings_reset_course_colors">수업 색상 재할당</string>
     <string name="settings_reset_course_colors_confirm_message">모든 수업에 고유한 새 색상을 할당합니다. 먼저 프리셋 팔레트에서, 팔레트가 부족하면 무작위로 생성됩니다.</string>
     <string name="settings_reset_course_colors_confirm_title">수업 색상을 재할당할까요?</string>
@@ -1013,6 +1017,7 @@
     <string name="settings_view_source_code">소스 코드 보기</string>
     <string name="settings_visual_preset_label">인터페이스 스타일</string>
     <string name="settings_whats_new">새로운 기능</string>
+    <string name="share_code_needs_update_message">이 공유 코드를 사용하려면 더 새로운 버전의 앱이 필요합니다.</string>
     <string name="sign_in_password">비밀번호</string>
     <string name="sign_in_student_id">학번</string>
     <string name="source_code_picker_current_app_badge">현재 앱</string>
@@ -1054,12 +1059,10 @@
     <string name="sync_status_failed">실패</string>
     <string name="sync_status_hours_ago_short">%1$d시간 전</string>
     <string name="sync_status_just_now">방금 전</string>
-    <string name="sync_status_last_synced">마지막 동기화</string>
     <string name="sync_status_last_updated">마지막 업데이트</string>
     <string name="sync_status_minimal">제한됨</string>
     <string name="sync_status_minutes_ago_short">%1$d분 전</string>
     <string name="sync_status_nav_label">TigerSync 상태</string>
-    <string name="sync_status_never_synced">동기화 안 됨</string>
     <string name="sync_status_never_updated">업데이트 안 됨</string>
     <string name="sync_status_ok">정상</string>
     <string name="sync_status_syncing">동기화 중…</string>

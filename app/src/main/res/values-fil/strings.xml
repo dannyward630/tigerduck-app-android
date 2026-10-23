@@ -346,6 +346,7 @@
     <string name="course_member_department_tx_short">Materials Science and Engineering</string>
     <string name="course_member_email">Email</string>
     <string name="course_member_groups">Mga grupo</string>
+    <string name="course_member_profile_picture">Larawan sa profile</string>
     <string name="course_members_auditors">Mga auditor</string>
     <string name="course_members_students">Mga estudyante</string>
     <string name="course_members_tas">Mga teaching assistant</string>
@@ -441,6 +442,7 @@
     <string name="error_invalid_server_response">Hindi valid na tugon ng server</string>
     <string name="error_library_credentials_not_found">Walang nakitang credentials ng library account</string>
     <string name="error_library_sign_in_failed_format">Nabigong mag-sign in sa aklatan: %1$@</string>
+    <string name="error_link_no_app">Walang app na makakapagbukas ng link na ito</string>
     <string name="error_moodle_http_status_format">Nagbalik ang Moodle ng hindi inaasahang HTTP status: %1$d</string>
     <string name="error_moodle_invalid_credentials">Tinanggihan ng Moodle ang kasalukuyang credentials.</string>
     <string name="error_moodle_invalid_token">Hindi na valid ang Moodle token; kailangan ng muling pag-authorize.</string>
@@ -910,6 +912,9 @@
     <string name="settings_analytics_description">Ibahagi ang anonymous na datos ng paggamit (mga page na binisita, paggamit ng widget) para mapabuti ang TigerDuck</string>
     <string name="settings_analytics_enabled">Analytics ng paggamit</string>
     <string name="settings_api_endpoint">Endpoint ng API</string>
+    <string name="settings_api_endpoint_change_alert_confirm">Baguhin</string>
+    <string name="settings_api_endpoint_change_alert_message">Pagkatapos mong mag-sign in, matatanggap ng endpoint na ito ang iyong ID ng estudyante at Moodle token. Masa-sign out ang lahat ng naka-sign in na account.</string>
+    <string name="settings_api_endpoint_change_alert_title">Baguhin ang endpoint ng API?</string>
     <string name="settings_api_endpoint_change_title">Baguhin ang endpoint</string>
     <string name="settings_api_endpoint_checking">Sinusuri…</string>
     <string name="settings_api_endpoint_effective_title">Kasalukuyang endpoint</string>
@@ -980,7 +985,6 @@
     <string name="settings_pin_today_courses_on_class_table">I-pin ang mga kurso ngayon sa itaas ng iskedyul</string>
     <string name="settings_privacy_policy">Patakaran sa privacy</string>
     <string name="settings_push_server_nav_label">Push ng server</string>
-    <string name="settings_remember_bulletin_filter">Tandaan ang mga filter ng bulletin</string>
     <string name="settings_reset_course_colors">Iulit ang pagtatalaga ng kulay ng kurso</string>
     <string name="settings_reset_course_colors_confirm_message">Bawat kurso ay bibigyan ng bago at natatanging kulay — una mula sa preset na palette, sumunod ay random kapag naubos na ang palette.</string>
     <string name="settings_reset_course_colors_confirm_title">Iulit ang pagtatalaga ng kulay ng kurso?</string>
@@ -1013,6 +1017,7 @@
     <string name="settings_view_source_code">Tingnan ang source code</string>
     <string name="settings_visual_preset_label">Estilo ng interface</string>
     <string name="settings_whats_new">Ano ang bago</string>
+    <string name="share_code_needs_update_message">Kailangan ng share code na ito ang mas bagong bersyon ng app.</string>
     <string name="sign_in_password">Password</string>
     <string name="sign_in_student_id">ID ng estudyante</string>
     <string name="source_code_picker_current_app_badge">Kasalukuyang app</string>
@@ -1054,12 +1059,10 @@
     <string name="sync_status_failed">Nabigo</string>
     <string name="sync_status_hours_ago_short">%1$d o nakaraon</string>
     <string name="sync_status_just_now">Ngayon lang</string>
-    <string name="sync_status_last_synced">Huling na-sync</string>
     <string name="sync_status_last_updated">Huling na-update</string>
     <string name="sync_status_minimal">Limitado</string>
     <string name="sync_status_minutes_ago_short">%1$d min nakaraon</string>
     <string name="sync_status_nav_label">Katayuan ng TigerSync</string>
-    <string name="sync_status_never_synced">Hindi pa na-sync</string>
     <string name="sync_status_never_updated">Hindi pa na-update</string>
     <string name="sync_status_ok">OK</string>
     <string name="sync_status_syncing">Nagsi-sync…</string>

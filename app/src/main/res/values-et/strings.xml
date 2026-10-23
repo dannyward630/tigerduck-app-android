@@ -346,6 +346,7 @@
     <string name="course_member_department_tx_short">Materials Science and Engineering</string>
     <string name="course_member_email">E-post</string>
     <string name="course_member_groups">Rühmad</string>
+    <string name="course_member_profile_picture">Profiilipilt</string>
     <string name="course_members_auditors">Vabakuulajad</string>
     <string name="course_members_students">Üliõpilased</string>
     <string name="course_members_tas">Õppeassistendid</string>
@@ -441,6 +442,7 @@
     <string name="error_invalid_server_response">Vigane serveri vastus</string>
     <string name="error_library_credentials_not_found">Raamatukogu konto andmeid ei leitud</string>
     <string name="error_library_sign_in_failed_format">Raamatukogu sisselogimine ebaõnnestus: %1$@</string>
+    <string name="error_link_no_app">Ükski rakendus ei saa seda linki avada</string>
     <string name="error_moodle_http_status_format">Moodle tagastas ootamatu HTTP-staatuse: %1$d</string>
     <string name="error_moodle_invalid_credentials">Moodle lükkas praegused mandaadid tagasi.</string>
     <string name="error_moodle_invalid_token">Moodle’i token ei kehti enam; vajalik on uus autoriseerimine.</string>
@@ -910,6 +912,9 @@
     <string name="settings_analytics_description">Jaga anonüümseid kasutusandmeid (külastatud lehed, vidinate kasutamine), et aidata TigerDucki paremaks muuta</string>
     <string name="settings_analytics_enabled">Kasutusanalüütika</string>
     <string name="settings_api_endpoint">API lõpp-punkt</string>
+    <string name="settings_api_endpoint_change_alert_confirm">Muuda</string>
+    <string name="settings_api_endpoint_change_alert_message">Pärast sisselogimist saab see lõpp-punkt sinu tudengi ID ja Moodle\'i tokeni. Kõik sisselogitud kontod logitakse välja.</string>
+    <string name="settings_api_endpoint_change_alert_title">Kas muuta API lõpp-punkti?</string>
     <string name="settings_api_endpoint_change_title">Muuda lõpp-punkti</string>
     <string name="settings_api_endpoint_checking">Kontrollin…</string>
     <string name="settings_api_endpoint_effective_title">Kehtiv lõpp-punkt</string>
@@ -980,7 +985,6 @@
     <string name="settings_pin_today_courses_on_class_table">Kinnita tänased kursused tunniplaani ülaossa</string>
     <string name="settings_privacy_policy">Privaatsuspoliitika</string>
     <string name="settings_push_server_nav_label">Serveri tõuge</string>
-    <string name="settings_remember_bulletin_filter">Pidage meeles bülletäänide filtreid</string>
     <string name="settings_reset_course_colors">Määra kursuste värvid uuesti</string>
     <string name="settings_reset_course_colors_confirm_message">Iga kursus saab uue ainulaadse värvi — kõigepealt eelmääratud paletist, seejärel juhuslikult, kui palett on otsas.</string>
     <string name="settings_reset_course_colors_confirm_title">Kas määrata kursuste värvid uuesti?</string>
@@ -1013,6 +1017,7 @@
     <string name="settings_view_source_code">Vaata lähtekoodi</string>
     <string name="settings_visual_preset_label">Liidese stiil</string>
     <string name="settings_whats_new">Mis on uut</string>
+    <string name="share_code_needs_update_message">See jagamiskood vajab rakenduse uuemat versiooni.</string>
     <string name="sign_in_password">Parool</string>
     <string name="sign_in_student_id">Üliõpilase ID</string>
     <string name="source_code_picker_current_app_badge">Praegune rakendus</string>
@@ -1054,12 +1059,10 @@
     <string name="sync_status_failed">Ebaõnnestus</string>
     <string name="sync_status_hours_ago_short">%1$d t tagasi</string>
     <string name="sync_status_just_now">Äsja</string>
-    <string name="sync_status_last_synced">Viimati sünkroonitud</string>
     <string name="sync_status_last_updated">Viimati uuendatud</string>
     <string name="sync_status_minimal">Piiratud</string>
     <string name="sync_status_minutes_ago_short">%1$d min tagasi</string>
     <string name="sync_status_nav_label">TigerSync olek</string>
-    <string name="sync_status_never_synced">Pole kunagi sünkroonitud</string>
     <string name="sync_status_never_updated">Pole kunagi uuendatud</string>
     <string name="sync_status_ok">Korras</string>
     <string name="sync_status_syncing">Sünkroonimine…</string>

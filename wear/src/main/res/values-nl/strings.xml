@@ -346,6 +346,7 @@
     <string name="course_member_department_tx_short">Materials Science and Engineering</string>
     <string name="course_member_email">E-mail</string>
     <string name="course_member_groups">Groepen</string>
+    <string name="course_member_profile_picture">Profielfoto</string>
     <string name="course_members_auditors">Toehoorders</string>
     <string name="course_members_students">Studenten</string>
     <string name="course_members_tas">Studentassistenten</string>
@@ -441,6 +442,7 @@
     <string name="error_invalid_server_response">Ongeldige serverrespons</string>
     <string name="error_library_credentials_not_found">Inloggegevens van bibliotheekaccount niet gevonden</string>
     <string name="error_library_sign_in_failed_format">Inloggen bij bibliotheek mislukt: %1$@</string>
+    <string name="error_link_no_app">Geen enkele app kan deze link openen</string>
     <string name="error_moodle_http_status_format">Moodle gaf een onverwachte HTTP-status: %1$d</string>
     <string name="error_moodle_invalid_credentials">Moodle heeft de huidige inloggegevens geweigerd.</string>
     <string name="error_moodle_invalid_token">Moodle-token is niet meer geldig; opnieuw autoriseren is vereist.</string>
@@ -910,6 +912,9 @@
     <string name="settings_analytics_description">Deel anonieme gebruiksgegevens (bezochte pagina\'s, gebruik van widgets) om TigerDuck te helpen verbeteren</string>
     <string name="settings_analytics_enabled">Gebruiksanalyse</string>
     <string name="settings_api_endpoint">API-eindpunt</string>
+    <string name="settings_api_endpoint_change_alert_confirm">Wijzigen</string>
+    <string name="settings_api_endpoint_change_alert_message">Na het inloggen ontvangt dit eindpunt je studentnummer en je Moodle-token. Alle ingelogde accounts worden uitgelogd.</string>
+    <string name="settings_api_endpoint_change_alert_title">API-eindpunt wijzigen?</string>
     <string name="settings_api_endpoint_change_title">Eindpunt wijzigen</string>
     <string name="settings_api_endpoint_checking">Bezig met controleren…</string>
     <string name="settings_api_endpoint_effective_title">Actief eindpunt</string>
@@ -980,7 +985,6 @@
     <string name="settings_pin_today_courses_on_class_table">Vakken van vandaag bovenaan het rooster vastzetten</string>
     <string name="settings_privacy_policy">Privacybeleid</string>
     <string name="settings_push_server_nav_label">Serverpush</string>
-    <string name="settings_remember_bulletin_filter">Bulletinfilters onthouden</string>
     <string name="settings_reset_course_colors">Cursuskleuren opnieuw toewijzen</string>
     <string name="settings_reset_course_colors_confirm_message">Elke cursus krijgt een nieuwe, unieke kleur — eerst uit het voorgedefinieerde palet, daarna willekeurig zodra het palet op is.</string>
     <string name="settings_reset_course_colors_confirm_title">Cursuskleuren opnieuw toewijzen?</string>
@@ -1013,6 +1017,7 @@
     <string name="settings_view_source_code">Broncode bekijken</string>
     <string name="settings_visual_preset_label">Interfacestijl</string>
     <string name="settings_whats_new">Wat is er nieuw</string>
+    <string name="share_code_needs_update_message">Voor deze deelcode is een nieuwere versie van de app nodig.</string>
     <string name="sign_in_password">Wachtwoord</string>
     <string name="sign_in_student_id">Studentnummer</string>
     <string name="source_code_picker_current_app_badge">Deze app</string>
@@ -1054,12 +1059,10 @@
     <string name="sync_status_failed">Mislukt</string>
     <string name="sync_status_hours_ago_short">%1$d u geleden</string>
     <string name="sync_status_just_now">Zojuist</string>
-    <string name="sync_status_last_synced">Laatst gesynchroniseerd</string>
     <string name="sync_status_last_updated">Laatst bijgewerkt</string>
     <string name="sync_status_minimal">Beperkt</string>
     <string name="sync_status_minutes_ago_short">%1$d min geleden</string>
     <string name="sync_status_nav_label">TigerSync-status</string>
-    <string name="sync_status_never_synced">Nooit gesynchroniseerd</string>
     <string name="sync_status_never_updated">Nooit bijgewerkt</string>
     <string name="sync_status_ok">OK</string>
     <string name="sync_status_syncing">Synchroniseren…</string>
