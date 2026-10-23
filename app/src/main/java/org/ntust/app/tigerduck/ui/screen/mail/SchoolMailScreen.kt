@@ -451,28 +451,23 @@ fun SchoolMailScreen(
         )
     }
 
-    if (state.confirmDelete) {
+    state.pendingDelete?.let { pending ->
+        // The question a delete from the trash asks is the harder one, and its button says so.
         TigerDuckDialog(
             onDismissRequest = { viewModel.confirmDelete(false) },
-            title = stringResource(R.string.school_mail_delete_confirm_title),
-            message = stringResource(R.string.school_mail_delete_confirm_message),
+            title = stringResource(if (pending.permanently) R.string.school_mail_delete_forever_title else R.string.school_mail_delete_confirm_title),
+            message = stringResource(if (pending.permanently) R.string.school_mail_delete_forever_message else R.string.school_mail_delete_confirm_message),
             confirmText = stringResource(R.string.school_mail_delete),
             onConfirm = { viewModel.confirmDelete(true) },
             dismissText = stringResource(R.string.action_cancel),
-        )
-    }
-    if (state.confirmDeleteForever) {
-        TigerDuckDialog(
-            onDismissRequest = { viewModel.confirmDeleteForever(false) },
-            title = stringResource(R.string.school_mail_delete_forever_title),
-            message = stringResource(R.string.school_mail_delete_forever_message),
-            confirmText = stringResource(R.string.school_mail_delete),
-            onConfirm = { viewModel.confirmDeleteForever(true) },
-            dismissText = stringResource(R.string.action_cancel),
-            confirmColors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.error,
-                contentColor = MaterialTheme.colorScheme.onError,
-            ),
+            confirmColors = if (pending.permanently) {
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                )
+            } else {
+                ButtonDefaults.buttonColors()
+            },
         )
     }
     state.pendingMoveRow?.let { row ->
@@ -484,7 +479,7 @@ fun SchoolMailScreen(
         ) {
             viewModel.moveTargets(row).forEach { name ->
                 val kind = folders?.kindOf(name)
-                TextButton(onClick = { viewModel.moveTo(row, name) }, modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { viewModel.moveTo(name) }, modifier = Modifier.fillMaxWidth()) {
                     Text(if (kind != null) stringResource(kind.labelRes()) else name)
                 }
             }

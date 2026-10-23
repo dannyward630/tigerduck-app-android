@@ -64,6 +64,13 @@ class SchoolMailListViewModel @Inject constructor(
         val key: String get() = kind?.name ?: "all"
     }
 
+    /**
+     * [row]'s delete, asked before it is made: [permanently] when it destroys the mail rather than
+     * moving it to the trash ([SchoolMailRepository.deletesPermanently]), which asks the harder
+     * question.
+     */
+    data class PendingDelete(val row: MailRow, val permanently: Boolean)
+
     data class UiState(
         val chips: List<FolderChip> = emptyList(),
         val others: List<String> = emptyList(),
@@ -112,9 +119,9 @@ class SchoolMailListViewModel @Inject constructor(
          */
         val fetchedAt: Long = 0L,
         val folders: ResolvedFolders? = null,
-        val pendingDeleteRow: MailRow? = null,
-        val confirmDelete: Boolean = false,
-        val confirmDeleteForever: Boolean = false,
+        /** A delete waiting on its confirmation; [confirmDelete] answers it. */
+        val pendingDelete: PendingDelete? = null,
+        /** A mail waiting on the folder it is moved to; [moveTo] picks it, [dismissMove] drops it. */
         val pendingMoveRow: MailRow? = null,
     ) {
         /** A search under way, or a further page of its matches on its way: the search field spins. */
@@ -569,14 +576,16 @@ class SchoolMailListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Asks before [row] is deleted, as the mail's own screen does: which question depends on
+     * whether the delete moves it to the trash or destroys it, and only the server can say (a
+     * missing trash is created on the way; see [SchoolMailRepository.deletesPermanently]).
+     */
     fun delete(row: MailRow) {
         viewModelScope.launch {
             try {
-                if (repository.deletesPermanently(row.folder)) {
-                    _state.update { it.copy(pendingDeleteRow = row, confirmDeleteForever = true) }
-                } else {
-                    _state.update { it.copy(pendingDeleteRow = row, confirmDelete = true) }
-                }
+                val permanently = repository.deletesPermanently(row.folder)
+                _state.update { it.copy(pendingDelete = PendingDelete(row, permanently)) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -585,36 +594,20 @@ class SchoolMailListViewModel @Inject constructor(
         }
     }
 
+    /** The answer to [UiState.pendingDelete]: either question, since both make the same [SchoolMailRepository.delete]. */
     fun confirmDelete(confirm: Boolean) {
-        val row = _state.value.pendingDeleteRow
-        _state.update { it.copy(confirmDelete = false, pendingDeleteRow = null) }
-        if (confirm && row != null) {
-            viewModelScope.launch {
-                try {
-                    repository.delete(row.folder, row.uid)
-                    removeMessage(row.key)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    actionFail(MailErrors.classify(e))
-                }
-            }
-        }
-    }
-
-    fun confirmDeleteForever(confirm: Boolean) {
-        val row = _state.value.pendingDeleteRow
-        _state.update { it.copy(confirmDeleteForever = false, pendingDeleteRow = null) }
-        if (confirm && row != null) {
-            viewModelScope.launch {
-                try {
-                    repository.delete(row.folder, row.uid)
-                    removeMessage(row.key)
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    actionFail(MailErrors.classify(e))
-                }
+        val pending = _state.value.pendingDelete ?: return
+        _state.update { it.copy(pendingDelete = null) }
+        if (!confirm) return
+        val row = pending.row
+        viewModelScope.launch {
+            try {
+                repository.delete(row.folder, row.uid)
+                removeMessage(row.key)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                actionFail(MailErrors.classify(e))
             }
         }
     }
@@ -632,7 +625,9 @@ class SchoolMailListViewModel @Inject constructor(
         _state.update { it.copy(pendingMoveRow = null) }
     }
 
-    fun moveTo(row: MailRow, target: String) {
+    /** Moves [UiState.pendingMoveRow] to [target], one of [moveTargets]. */
+    fun moveTo(target: String) {
+        val row = _state.value.pendingMoveRow ?: return
         _state.update { it.copy(pendingMoveRow = null) }
         viewModelScope.launch {
             try {

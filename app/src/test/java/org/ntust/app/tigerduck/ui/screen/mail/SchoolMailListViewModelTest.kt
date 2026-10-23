@@ -2458,20 +2458,16 @@ class SchoolMailListViewModelTest {
         vm.load()
         val row = vm.state.value.displayed.first { it.uid == 2L }
         vm.delete(row)
-        assertTrue(vm.state.value.confirmDelete)
-        assertFalse(vm.state.value.confirmDeleteForever)
-        assertEquals(row, vm.state.value.pendingDeleteRow)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false), vm.state.value.pendingDelete)
 
         vm.confirmDelete(false)
-        assertFalse(vm.state.value.confirmDelete)
-        assertNull(vm.state.value.pendingDeleteRow)
+        assertNull(vm.state.value.pendingDelete)
         assertEquals(2, vm.state.value.displayed.size)
         assertTrue(repo.deleted.isEmpty())
 
         vm.delete(row)
         vm.confirmDelete(true)
-        assertFalse(vm.state.value.confirmDelete)
-        assertNull(vm.state.value.pendingDeleteRow)
+        assertNull(vm.state.value.pendingDelete)
         assertEquals(listOf("INBOX" to 2L), repo.deleted)
         assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
     }
@@ -2484,20 +2480,16 @@ class SchoolMailListViewModelTest {
         vm.selectFolder(FolderSelection.Real(trash))
         val row = vm.state.value.displayed.first { it.uid == 8L }
         vm.delete(row)
-        assertFalse(vm.state.value.confirmDelete)
-        assertTrue(vm.state.value.confirmDeleteForever)
-        assertEquals(row, vm.state.value.pendingDeleteRow)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true), vm.state.value.pendingDelete)
 
-        vm.confirmDeleteForever(false)
-        assertFalse(vm.state.value.confirmDeleteForever)
-        assertNull(vm.state.value.pendingDeleteRow)
+        vm.confirmDelete(false)
+        assertNull(vm.state.value.pendingDelete)
         assertEquals(2, vm.state.value.displayed.size)
         assertTrue(repo.deleted.isEmpty())
 
         vm.delete(row)
-        vm.confirmDeleteForever(true)
-        assertFalse(vm.state.value.confirmDeleteForever)
-        assertNull(vm.state.value.pendingDeleteRow)
+        vm.confirmDelete(true)
+        assertNull(vm.state.value.pendingDelete)
         assertEquals(listOf(trash to 8L), repo.deleted)
         assertEquals(listOf(7L), vm.state.value.displayed.map { it.uid })
     }
@@ -2529,8 +2521,12 @@ class SchoolMailListViewModelTest {
         assertEquals(row, vm.state.value.pendingMoveRow)
         vm.dismissMove()
         assertNull(vm.state.value.pendingMoveRow)
+        vm.moveTo(target)
+        assertTrue("a move dismissed is not made", repo.moved.isEmpty())
 
-        vm.moveTo(row, target)
+        vm.requestMove(row)
+        vm.moveTo(target)
+        assertNull(vm.state.value.pendingMoveRow)
         assertEquals(listOf(Triple("INBOX", 2L, target)), repo.moved)
         assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
     }
@@ -2542,7 +2538,8 @@ class SchoolMailListViewModelTest {
         val row = vm.state.value.displayed.single()
         repo.moveError = MailError.ServerBusy()
         val target = repo.resolved.nameOf(SpecialFolder.TRASH)!!
-        vm.moveTo(row, target)
+        vm.requestMove(row)
+        vm.moveTo(target)
 
         assertTrue(vm.state.value.actionError is MailError.ServerBusy)
         assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
