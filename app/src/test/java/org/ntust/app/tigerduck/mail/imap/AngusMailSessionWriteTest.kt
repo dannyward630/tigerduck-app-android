@@ -2,9 +2,12 @@ package org.ntust.app.tigerduck.mail.imap
 
 import jakarta.mail.Flags
 import jakarta.mail.Folder
+import jakarta.mail.Message
 import jakarta.mail.Session
 import jakarta.mail.internet.InternetAddress
+import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
+import jakarta.mail.internet.MimeMultipart
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -258,6 +261,45 @@ class AngusMailSessionWriteTest {
             val texts = s.fetchSearchTexts("INBOX", left)
             assertEquals("期中考 時間", texts.getValue(uids[0]))
             assertEquals("期末報告", texts.getValue(uids[1]))
+        }
+    }
+
+    @Test
+    fun `the search index reads a mail's plain text over its HTML, and none of its attachments`() {
+        val mime = Session.getInstance(Properties())
+        val message = MimeMessage(mime).apply {
+            setFrom(InternetAddress("prof@example.com"))
+            setRecipients(Message.RecipientType.TO, server.credentials.address)
+            setSubject("期中考", "UTF-8")
+            setContent(MimeMultipart("mixed").apply {
+                addBodyPart(MimeBodyPart().apply {
+                    setContent(MimeMultipart("alternative").apply {
+                        addBodyPart(MimeBodyPart().apply { setText("考試時間改到週五", "UTF-8") })
+                        addBodyPart(MimeBodyPart().apply { setContent("<p>考試<b>時間</b></p>", "text/html; charset=UTF-8") })
+                    })
+                })
+                addBodyPart(MimeBodyPart().apply {
+                    setContent(ByteArray(200_000) { 'A'.code.toByte() }, "application/pdf")
+                    fileName = "notes.pdf"
+                })
+            })
+            saveChanges()
+        }
+        server.deliver(message)
+        session().use { s ->
+            val uid = s.undeletedUids("INBOX").single()
+            assertEquals("考試時間改到週五", s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid))
+        }
+    }
+
+    @Test
+    fun `a mail longer than the search reads is searched by its start`() {
+        server.deliver("長信", body = "開頭 " + "字".repeat(100_000) + " 結尾")
+        session().use { s ->
+            val uid = s.undeletedUids("INBOX").single()
+            val text = s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid)
+            assertTrue(text.startsWith("開頭 字"))
+            assertFalse(text.endsWith("結尾"))
         }
     }
 

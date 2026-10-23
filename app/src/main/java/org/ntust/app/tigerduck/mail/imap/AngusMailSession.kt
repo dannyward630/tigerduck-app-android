@@ -16,10 +16,13 @@ import org.eclipse.angus.mail.iap.Response
 import org.eclipse.angus.mail.imap.IMAPFolder
 import org.eclipse.angus.mail.imap.IMAPMessage
 import org.eclipse.angus.mail.imap.IMAPStore
+import org.eclipse.angus.mail.imap.protocol.BODY
+import org.eclipse.angus.mail.imap.protocol.FetchResponse
 import org.eclipse.angus.mail.imap.protocol.IMAPProtocol
 import org.eclipse.angus.mail.imap.protocol.IMAPResponse
 import org.eclipse.angus.mail.imap.protocol.SearchSequence
 import org.eclipse.angus.mail.imap.protocol.Status
+import org.eclipse.angus.mail.imap.protocol.UID
 import org.ntust.app.tigerduck.mail.MailCredentials
 import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.mail.MailErrors
@@ -44,6 +47,8 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.SequenceInputStream
+import java.util.Properties
 
 class AngusMailSessionFactory(private val configs: MailServerConfigSource) : MailSessionFactory {
     constructor(config: MailServerConfig) : this(MailServerConfigSource { config })
@@ -433,24 +438,52 @@ class AngusMailSession internal constructor(
     }
 
     override fun fetchSearchTexts(folder: String, uids: List<Long>): Map<Long, String> = io {
+        if (uids.isEmpty()) return@io emptyMap()
         val f = folder(folder, Folder.READ_ONLY)
-        val messages = f.getMessagesByUID(uids.toLongArray()).filterNotNull()
-        // Every mail's structure in one FETCH, so each then costs one more per text part.
-        f.fetch(messages.toTypedArray(), FetchProfile().apply {
-            add(UIDFolder.FetchProfileItem.UID)
-            add(FetchProfile.Item.CONTENT_INFO)
-        })
-        messages.associate { m ->
-            val text = try {
-                searchText(m)
-            } catch (e: Exception) {
-                // One mail that will not parse is searched by its sender and subject alone; a
-                // connection that went fails the lot, to be fetched again.
-                if (!f.isOpen) throw e
-                ""
+        // One FETCH for the lot: each mail's header and the start of its body, its text read from
+        // them here. A FETCH per part, and a NOOP before each, was a dozen round trips a mail,
+        // which held the first download of a mailbox to a few mails a second.
+        @Suppress("UNCHECKED_CAST")
+        val raw = f.doCommand(IMAPFolder.ProtocolCommand { p: IMAPProtocol ->
+            val responses = p.command(
+                "UID FETCH ${uids.joinToString(",")} (UID BODY.PEEK[HEADER] BODY.PEEK[TEXT]<0.$SEARCH_TEXT_BYTES>)",
+                null,
+            )
+            val last = responses[responses.size - 1]
+            val found = mutableMapOf<Long, Pair<ByteArray, ByteArray>>()
+            if (last.isOK) {
+                for (r in responses) {
+                    if (r !is FetchResponse) continue
+                    val uid = r.getItem(UID::class.java)?.uid ?: continue
+                    var header: ByteArray? = null
+                    var text: ByteArray? = null
+                    for (i in 0 until r.itemCount) {
+                        val item = r.getItem(i) as? BODY ?: continue
+                        if (item.isHeader) header = item.byteArray?.newBytes else text = item.byteArray?.newBytes
+                    }
+                    if (header != null) found[uid] = header to (text ?: ByteArray(0))
+                }
             }
-            f.getUID(m) to text
+            p.notifyResponseHandlers(responses)
+            p.handleResult(last)
+            found
+        }) as Map<Long, Pair<ByteArray, ByteArray>>
+        raw.mapValues { (_, parts) ->
+            // A mail that will not parse is searched by its sender and subject alone.
+            runCatching { searchText(MimeMessage(parseSession, SequenceInputStream(headerBlock(parts.first).inputStream(), parts.second.inputStream()))) }
+                .getOrDefault("")
         }
+    }
+
+    /**
+     * [header] ending in exactly one blank line, which parts it from the body after it. RFC 3501
+     * has `BODY[HEADER]` include that line; a server that leaves it out would have the body's
+     * first line read as one more header.
+     */
+    private fun headerBlock(header: ByteArray): ByteArray {
+        var end = header.size
+        while (end > 0 && (header[end - 1] == '\r'.code.toByte() || header[end - 1] == '\n'.code.toByte())) end--
+        return header.copyOf(end) + "\r\n\r\n".toByteArray(Charsets.US_ASCII)
     }
 
     /** [m]'s text parts, as [fetchBody] reads them, without its images or attachments. */
@@ -511,6 +544,15 @@ class AngusMailSession internal constructor(
         val SUMMARY_HEADERS =
             arrayOf("From", "Reply-To", "To", "Cc", "Subject", "Date", "Message-ID", "In-Reply-To", "References", "Return-Path")
         val WHITESPACE = Regex("\\s+")
+
+        /**
+         * How much of a mail's body a search reads: its first 64 KiB, which holds far more text
+         * than MailSearchText keeps, even under HTML or base64.
+         */
+        const val SEARCH_TEXT_BYTES = 64 * 1024
+
+        /** Parses what [fetchSearchTexts] fetched, on the phone; a body cut short still parses. */
+        val parseSession: Session = Session.getInstance(Properties())
 
         fun kindOf(part: Part): PartKind {
             val disposition = runCatching { part.disposition?.lowercase() }.getOrNull()

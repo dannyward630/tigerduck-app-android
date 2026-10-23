@@ -107,8 +107,11 @@ internal class MailIndexer(
     }
 
     companion object {
-        /** Mails fetched per hold of the connection: few, so a page the user opens waits seconds at most. */
-        const val BATCH = 5
+        /**
+         * Mails fetched per hold of the connection: two FETCHes, so a page the user opens waits a
+         * second or two at most.
+         */
+        const val BATCH = 20
 
         /** Mails whose flags one FETCH asks for: flags are a few bytes a mail. */
         const val FLAGS_BATCH = 500

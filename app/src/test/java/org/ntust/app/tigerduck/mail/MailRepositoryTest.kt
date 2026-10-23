@@ -544,7 +544,8 @@ class MailRepositoryTest {
 
     @Test
     fun `the background download tells how far it has come, of one total for every folder`() = runTest {
-        repeat(7) { server.deliver("收件 $it") }
+        val inbox = MailIndexer.BATCH + 2
+        repeat(inbox) { server.deliver("收件 $it") }
         server.deliver("寄出", folder = "寄件備份匣")
         val repo = TestSetup(backgroundScope).signedIn()
         val seen = mutableListOf<MailIndexProgress?>()
@@ -552,10 +553,10 @@ class MailRepositoryTest {
 
         repo.updateSearchIndex()
 
-        assertEquals(8, seen.size)
-        assertTrue(seen.all { it?.total == 8 })
+        assertEquals(inbox + 1, seen.size)
+        assertTrue(seen.all { it?.total == inbox + 1 })
         // A batch at a time: Inbox's two, then Sent's one.
-        assertEquals(listOf(0, MailIndexer.BATCH, 7), seen.map { it!!.done }.distinct())
+        assertEquals(listOf(0, MailIndexer.BATCH, inbox), seen.map { it!!.done }.distinct())
         assertNull("gone once it is done", repo.searchIndexProgress.value)
     }
 
