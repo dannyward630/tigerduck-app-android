@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -48,6 +47,7 @@ import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -284,7 +284,7 @@ class MailRepository @Inject constructor(
             account.signOuts.collect {
                 indexScheduler.cancel()
                 numberings.clear()
-                indexedAt = 0L
+                lastWhole = null
                 withContext(Dispatchers.IO) {
                     holder.closeNow()
                     searchIndex.clear()
@@ -298,7 +298,7 @@ class MailRepository @Inject constructor(
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             account.studentChanges.collect {
                 numberings.clear()
-                indexedAt = 0L
+                lastWhole = null
                 withContext(Dispatchers.IO) { searchIndex.clear() }
             }
         }
@@ -367,14 +367,24 @@ class MailRepository @Inject constructor(
     private fun indexOwner(): String? = account.ownAddress?.lowercase()
 
     /**
-     * Whom a write to the search index is for: [indexOwner] with the sign-in it belongs to, read
-     * together. A read of the encrypted store, so not for the main thread.
+     * Moved on by [deleteSearchIndex] before it empties the index. A download it does not reach in
+     * time -- the background one, which stops only some time after WorkManager is told to, or a
+     * search's catch-up -- asks for the one it started under before each write, and writes no more.
      */
-    private fun indexOwnerNow(): MailIndexer.Owner? =
-        account.snapshot()?.let { MailIndexer.Owner(it.credentials.address.lowercase(), it.generation) }
+    private val indexEpoch = AtomicInteger()
 
-    /** Whether the index is still [owner]'s: no sign-in or sign-out since it was read. */
-    private fun stillIndexOwner(owner: MailIndexer.Owner): Boolean = account.accountGeneration == owner.generation
+    /**
+     * Whom a write to the search index is for: [indexOwner] with the sign-in it belongs to, read
+     * together, and the [indexEpoch]. A read of the encrypted store, so not for the main thread.
+     */
+    private fun indexOwnerNow(): MailIndexer.Owner? {
+        val epoch = indexEpoch.get()
+        return account.snapshot()?.let { MailIndexer.Owner(it.credentials.address.lowercase(), it.generation, epoch) }
+    }
+
+    /** Whether the index is still [owner]'s: no sign-in, sign-out or deletion since it was read. */
+    private fun stillIndexOwner(owner: MailIndexer.Owner): Boolean =
+        account.accountGeneration == owner.generation && indexEpoch.get() == owner.epoch
 
     private fun credentials() = account.credentialsOrNull() ?: throw MailError.Protocol("not signed in")
 
@@ -681,8 +691,15 @@ class MailRepository @Inject constructor(
     @VisibleForTesting
     internal var clock: () -> Long = System::currentTimeMillis
 
-    /** When a download last got through every folder; 0 for never, or for one cut short since. */
-    @Volatile private var indexedAt = 0L
+    /** A download that got through every folder, for [owner], at [at]. */
+    private class WholeDownload(val owner: MailIndexer.Owner, val at: Long)
+
+    /**
+     * The last download that got through every folder; null for none since the index last started
+     * over. One for an owner the index is no longer, signed in again or deleted since, counts as
+     * none, even one that only says so after the deletion.
+     */
+    @Volatile private var lastWhole: WholeDownload? = null
 
     /**
      * Whether opening the mail screen downloads again: not within [INDEX_RESYNC_MS] of a whole
@@ -690,7 +707,10 @@ class MailRepository @Inject constructor(
      * folder listed and every downloaded mail's flags asked for. New mail meanwhile reaches the
      * list by its own poll, and a search catches up on it first.
      */
-    private fun indexDue(): Boolean = indexedAt == 0L || clock() - indexedAt >= INDEX_RESYNC_MS
+    private fun indexDue(): Boolean {
+        val last = lastWhole ?: return true
+        return !stillIndexOwner(last.owner) || clock() - last.at >= INDEX_RESYNC_MS
+    }
 
     override suspend fun updateSearchIndex(stillWanted: () -> Boolean) = indexing.withLock { downloadIndex(stillWanted) }
 
@@ -699,20 +719,20 @@ class MailRepository @Inject constructor(
      * requests do (spec §7.4): the background download and the one in the app both come here.
      */
     private suspend fun downloadIndex(stillWanted: () -> Boolean = { true }) {
-        if (account.isDemo || state.authFailed || indexOwner() == null) return
-        val generation = account.accountGeneration
+        if (account.isDemo || state.authFailed) return
+        val owner = indexOwnerNow() ?: return
         try {
             // The folder list a first run resolves is the account's request too.
-            downloadEveryFolder(generation) { stillWanted() && account.accountGeneration == generation }
+            downloadEveryFolder(owner) { stillWanted() && stillIndexOwner(owner) }
         } catch (e: MailError.AuthFailed) {
             // Unless the account that was refused has left since: its rejection must not stop the
             // next one, whose password the server has not seen.
-            if (account.accountGeneration == generation) account.onAuthFailure()
+            if (account.accountGeneration == owner.generation) account.onAuthFailure()
             throw e
         }
     }
 
-    private suspend fun downloadEveryFolder(generation: Int, stillWanted: () -> Boolean) {
+    private suspend fun downloadEveryFolder(owner: MailIndexer.Owner, stillWanted: () -> Boolean) {
         val folders = folders(stillWanted)
         val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
         // Every folder's count first, for the progress to have one total from the start.
@@ -723,7 +743,7 @@ class MailRepository @Inject constructor(
         plans.forEach { indexer.refreshFlags(it, stillWanted) }
         val total = plans.sumOf { it.missing.size }
         if (total == 0) {
-            if (whole) indexed(generation)
+            if (whole) lastWhole = WholeDownload(owner, clock())
             return
         }
         var done = 0
@@ -736,7 +756,7 @@ class MailRepository @Inject constructor(
                 }
                 whole = whole && through
             }
-            if (whole) indexed(generation)
+            if (whole) lastWhole = WholeDownload(owner, clock())
         } finally {
             _searchIndexProgress.value = null
         }
@@ -886,17 +906,19 @@ class MailRepository @Inject constructor(
 
     override suspend fun searchIndexBytes(): Long = withContext(Dispatchers.IO) { searchIndex.sizeBytes() }
 
+    /**
+     * Not waiting for a download to stop, which could be out on a slow network for as long as its
+     * timeout: the [indexEpoch] it moves on first is what keeps whatever is still under way from
+     * writing after the clear. Each write asks for it under the index's lock, which the clear
+     * takes too.
+     */
     override suspend fun deleteSearchIndex() {
+        indexEpoch.incrementAndGet()
         indexScheduler.cancel()
-        inAppIndexing?.cancelAndJoin()
-        indexedAt = 0L
+        inAppIndexing?.cancel()
+        lastWhole = null
         numberings.clear()
         withContext(Dispatchers.IO) { searchIndex.clear() }
-    }
-
-    /** A download got through every folder for the account [generation] names, if it still is. */
-    private fun indexed(generation: Int) {
-        if (account.accountGeneration == generation) indexedAt = clock()
     }
 
     override fun acquire() {
@@ -908,8 +930,11 @@ class MailRepository @Inject constructor(
         // when the system next runs the background download, which some phones hold back for
         // minutes. That one still finishes what this leaves, should the app go.
         indexScheduler.request()
-        inAppIndexing = scope.launch {
+        scope.launch {
             if (!indexing.tryLock()) return@launch
+            // This one, never a later visit's that found it under way: deleting the downloaded
+            // mail stops the download that holds the lock.
+            inAppIndexing = coroutineContext[Job]
             try {
                 downloadIndex()
             } catch (e: CancellationException) {
@@ -917,6 +942,7 @@ class MailRepository @Inject constructor(
             } catch (_: MailError) {
                 // Left to the background download, which tries again.
             } finally {
+                inAppIndexing = null
                 indexing.unlock()
             }
         }

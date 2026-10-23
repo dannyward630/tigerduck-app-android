@@ -35,7 +35,7 @@ class MailIndexerTest {
     private val me = "b10000001@mail.ntust.edu.tw"
 
     /** An indexer whose account never changes. */
-    private fun indexer() = MailIndexer(index, sessions, owner = { MailIndexer.Owner(me, 1) }, stillOwner = { true })
+    private fun indexer() = MailIndexer(index, sessions, owner = { MailIndexer.Owner(me, 1, epoch = 0) }, stillOwner = { true })
 
     /** [folder] deleted and created again on the server: a new UIDVALIDITY, and its UIDs from 1 again. */
     private fun recreate(folder: String = "INBOX") {
@@ -51,7 +51,7 @@ class MailIndexerTest {
         // Another student signs in right after the account is read, before anything else is.
         val indexer = MailIndexer(
             index, sessions,
-            owner = { MailIndexer.Owner(me, generation).also { generation++ } },
+            owner = { MailIndexer.Owner(me, generation, epoch = 0).also { generation++ } },
             stillOwner = { it.generation == generation },
         )
 
@@ -119,7 +119,7 @@ class MailIndexerTest {
                 index.updateFlags(owner, folder, uidValidity, flags, stillCurrent)
             }
         }
-        val indexer = MailIndexer(watched, sessions, owner = { MailIndexer.Owner(me, 1) }, stillOwner = { true })
+        val indexer = MailIndexer(watched, sessions, owner = { MailIndexer.Owner(me, 1, epoch = 0) }, stillOwner = { true })
         val plan = indexer.plan("INBOX")!!
 
         indexer.fill(plan)

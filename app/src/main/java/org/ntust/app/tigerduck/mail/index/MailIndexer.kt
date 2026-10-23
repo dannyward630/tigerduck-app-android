@@ -22,17 +22,18 @@ internal class MailIndexer(
     /** Who the index is for now; null while signed out. */
     private val owner: () -> Owner?,
     /**
-     * Whether the index is still [Owner]'s: no sign-in or sign-out since it was read, which a run
-     * that outlives one has no business writing past.
+     * Whether the index is still [Owner]'s: no sign-in, sign-out or deletion of what it holds since
+     * it was read, which a run that outlives one has no business writing past.
      */
     private val stillOwner: (Owner) -> Boolean,
 ) {
     /**
      * Whom a run downloads for: the signed-in account's [address], read together with the
      * [generation] it signed in at, so a run never pairs one account's address with the sign-in
-     * of the next, whose credentials its requests would then go out under.
+     * of the next, whose credentials its requests would then go out under; and the index as it
+     * was then, which deleting what it holds moves on to the next [epoch].
      */
-    data class Owner(val address: String, val generation: Int)
+    data class Owner(val address: String, val generation: Int, val epoch: Int)
 
     /** What [folder]'s index lacks, newest first, as [plan] found it for [owner] under [uidValidity]. */
     class Plan internal constructor(

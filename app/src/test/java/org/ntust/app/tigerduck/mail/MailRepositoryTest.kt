@@ -828,6 +828,112 @@ class MailRepositoryTest {
         assertEquals(0, setup.indexScheduler.requests)
     }
 
+    /**
+     * Sessions whose first listing of a folder's UIDs waits for [release]: a download out on the
+     * server, which [holding] says it has reached.
+     */
+    private inner class HeldListing {
+        val holding = CountDownLatch(1)
+        val release = CountDownLatch(1)
+
+        val factory = MailSessionFactory { credentials ->
+            val session = server.factory().open(credentials)
+            object : MailSession by session {
+                override fun undeletedUids(folder: String): List<Long> {
+                    if (holding.count > 0L) {
+                        holding.countDown()
+                        release.await(5, TimeUnit.SECONDS)
+                    }
+                    return session.undeletedUids(folder)
+                }
+            }
+        }
+    }
+
+    /** Every UID downloaded for [owner], whatever the folder. */
+    private fun TestSetup.indexedMail(owner: String): List<Long> = server.folders.keys.flatMap { searchIndex.uids(owner, it) }
+
+    @Test
+    fun `deleting the downloaded mail stops the download in the app, however many visits there were`() = runTest {
+        server.deliver("期中考")
+        val held = HeldListing()
+        val setup = TestSetup(backgroundScope, held.factory)
+        val repo = setup.signedIn()
+        val owner = setup.account.ownAddress!!.lowercase()
+        repo.acquire()
+        runCurrent()
+        // Waited for off the test's thread, which the download in the app goes on on.
+        withContext(Dispatchers.Default) { assertTrue(held.holding.await(5, TimeUnit.SECONDS)) }
+        // Back on the mail screen while the first visit's download is still out.
+        repo.acquire()
+        runCurrent()
+
+        repo.deleteSearchIndex()
+        held.release.countDown()
+        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) Thread.sleep(10) } }
+
+        assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+    }
+
+    @Test
+    fun `deleting the downloaded mail while the background download is out leaves nothing of it`() = runTest {
+        server.deliver("期中考")
+        val held = HeldListing()
+        val setup = TestSetup(backgroundScope, held.factory)
+        val repo = setup.signedIn()
+        val owner = setup.account.ownAddress!!.lowercase()
+        val download = launch(Dispatchers.IO) { runCatching { repo.updateSearchIndex() } }
+        assertTrue(held.holding.await(5, TimeUnit.SECONDS))
+
+        // WorkManager stops the worker only some time after it is told to.
+        repo.deleteSearchIndex()
+        held.release.countDown()
+        download.join()
+
+        assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+    }
+
+    @Test
+    fun `deleting the downloaded mail while a search catches up leaves nothing of it`() = runTest {
+        server.deliver("期中考")
+        val held = HeldListing()
+        val setup = TestSetup(backgroundScope, held.factory)
+        val repo = setup.signedIn()
+        val owner = setup.account.ownAddress!!.lowercase()
+        val search = async(Dispatchers.IO) { runCatching { repo.search("INBOX", "期中") } }
+        assertTrue(held.holding.await(5, TimeUnit.SECONDS))
+
+        repo.deleteSearchIndex()
+        held.release.countDown()
+        search.await()
+
+        assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+    }
+
+    @Test
+    fun `a download that gets through just as its mail is deleted leaves the next visit to download it again`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        var now = 1_000_000L
+        var deleting = true
+        repo.clock = {
+            // Read as the download notes that it got through: the mail is deleted right then.
+            if (deleting) {
+                deleting = false
+                runBlocking { repo.deleteSearchIndex() }
+            }
+            now
+        }
+        repo.updateSearchIndex()
+        assertFalse(deleting)
+
+        now += 1_000
+        visit(repo)
+
+        assertEquals(1, setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").size)
+    }
+
     @Test
     fun `mail gone from the server leaves the index`() = runTest {
         val gone = server.deliver("期中考 A")
