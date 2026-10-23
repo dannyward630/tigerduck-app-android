@@ -761,6 +761,74 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a password rejected while downloading for search stops every login after it`() = runTest {
+        server.deliver("期中考")
+        val attempts = AtomicInteger()
+        val sessions = MailSessionFactory { credentials ->
+            attempts.incrementAndGet()
+            server.factory().open(credentials)
+        }
+        val setup = TestSetup(backgroundScope, sessions)
+        val repo = setup.signedIn()
+        // Changed on the web: the server now rejects the stored password.
+        server.passwords["B10000001"] = "changed"
+
+        assertTrue(runCatching { repo.updateSearchIndex() }.exceptionOrNull() is MailError.AuthFailed)
+
+        assertTrue("spec §7.4: the rejection reaches the account", setup.account.authFailed.value)
+        val tried = attempts.get()
+        val requested = setup.indexScheduler.requests
+        runCatching { repo.updateSearchIndex() }
+        visit(repo)
+        assertEquals("no LOGIN with the rejected password again", tried, attempts.get())
+        assertEquals("nor a background download asked for", requested, setup.indexScheduler.requests)
+    }
+
+    @Test
+    fun `a password rejected while downloading in the app reaches the account`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        server.passwords["B10000001"] = "changed"
+
+        visit(repo)
+
+        assertTrue(setup.account.authFailed.value)
+    }
+
+    @Test
+    fun `a rejection of an account that left while it downloaded does not stop the next one`() = runTest {
+        server.passwords["B10000002"] = "pw"
+        lateinit var setup: TestSetup
+        val sessions = MailSessionFactory { credentials ->
+            // The other student signs in while the first one's login is out, which then fails.
+            if (credentials.loginName == "B10000001") {
+                runBlocking { setup.account.signIn("b10000002", "pw") }
+                throw MailError.AuthFailed()
+            }
+            server.factory().open(credentials)
+        }
+        setup = TestSetup(backgroundScope, sessions)
+        val repo = setup.signedIn()
+
+        runCatching { repo.updateSearchIndex() }
+
+        assertFalse(setup.account.authFailed.value)
+    }
+
+    @Test
+    fun `a search whose password is rejected asks for no background download`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        server.passwords["B10000001"] = "changed"
+
+        assertTrue(runCatching { repo.search("INBOX", "期中") }.exceptionOrNull() is MailError.AuthFailed)
+
+        assertEquals(0, setup.indexScheduler.requests)
+    }
+
+    @Test
     fun `mail gone from the server leaves the index`() = runTest {
         val gone = server.deliver("期中考 A")
         val kept = server.deliver("期中考 B")

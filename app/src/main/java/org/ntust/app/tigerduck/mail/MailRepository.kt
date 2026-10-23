@@ -646,9 +646,11 @@ class MailRepository @Inject constructor(
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
         val q = query.trim()
         if (account.isDemo) return demoPage(folder).let { page -> SearchOutcome.LoadedOnly(page.messages.filter { matchesLoadedMail(it, q) }, page.uidValidity) }
-        // The rest of what the index lacks comes in the background, the first run all of it.
-        indexScheduler.request()
         indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
+        // The rest of what the index lacks comes in the background, the first run all of it.
+        // Asked for once the catch-up is through: after a rejected password, which the list hands
+        // the account, nothing may log in again (spec §7.4).
+        indexScheduler.request()
         // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
         val (indexedUnder, matches) = withContext(Dispatchers.IO) {
             val owner = indexOwner() ?: return@withContext null to emptyList()
@@ -692,9 +694,25 @@ class MailRepository @Inject constructor(
 
     override suspend fun updateSearchIndex(stillWanted: () -> Boolean) = indexing.withLock { downloadIndex(stillWanted) }
 
+    /**
+     * A password the server rejects stops it, and every login after it, as the list's own
+     * requests do (spec §7.4): the background download and the one in the app both come here.
+     */
     private suspend fun downloadIndex(stillWanted: () -> Boolean = { true }) {
-        if (account.isDemo || indexOwner() == null) return
+        if (account.isDemo || state.authFailed || indexOwner() == null) return
         val generation = account.accountGeneration
+        try {
+            // The folder list a first run resolves is the account's request too.
+            downloadEveryFolder(generation) { stillWanted() && account.accountGeneration == generation }
+        } catch (e: MailError.AuthFailed) {
+            // Unless the account that was refused has left since: its rejection must not stop the
+            // next one, whose password the server has not seen.
+            if (account.accountGeneration == generation) account.onAuthFailure()
+            throw e
+        }
+    }
+
+    private suspend fun downloadEveryFolder(generation: Int, stillWanted: () -> Boolean) {
         val folders = folders(stillWanted)
         val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
         // Every folder's count first, for the progress to have one total from the start.
@@ -884,7 +902,8 @@ class MailRepository @Inject constructor(
     override fun acquire() {
         if (account.isDemo) return
         holder.hold()
-        if (!indexDue()) return
+        // A rejected password downloads nothing until the student signs in again (spec §7.4).
+        if (!indexDue() || state.authFailed) return
         // The mail screen is in use: whatever mail the phone lacks comes in now, here, rather than
         // when the system next runs the background download, which some phones hold back for
         // minutes. That one still finishes what this leaves, should the app go.
