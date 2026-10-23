@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -393,11 +394,24 @@ private val TigerDuckTypography: Typography = Typography().let { default ->
     )
 }
 
+/**
+ * Whether the [TigerDuckAppTheme] around draws the wallpaper's colors. A theme
+ * nested inside it reads this, so it draws them too, in its own mode.
+ */
+private val LocalUsesDynamicColor = staticCompositionLocalOf { false }
+
 @Composable
 fun TigerDuckAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     accentColor: Color = Color(0xFF007AFF),
-    useDynamicColor: Boolean = false,
+    /**
+     * Whether the accent slots take the wallpaper's colors in place of
+     * [accentColor], from Android 12. A theme nested in another follows the
+     * outer one unless told otherwise, and takes the wallpaper's colors for its
+     * own mode: the class table import page is dark inside a light app, and the
+     * accent it is handed, the light theme's primary, is the wrong tone there.
+     */
+    useDynamicColor: Boolean = LocalUsesDynamicColor.current,
     /** The interface style, provided to the content as [LocalVisualStylePolicy]. */
     visualPreset: VisualPreset = VisualPreset.Default,
     content: @Composable () -> Unit
@@ -427,6 +441,7 @@ fun TigerDuckAppTheme(
     ) {
         CompositionLocalProvider(
             LocalVisualStylePolicy provides VisualStylePolicy(visualPreset),
+            LocalUsesDynamicColor provides useDynamicColor,
             content = content,
         )
     }

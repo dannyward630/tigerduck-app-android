@@ -125,6 +125,40 @@ class TigerDuckAppThemeTest {
 
     @Config(sdk = [31])
     @Test
+    fun `a dark theme inside a light one, as the import page's, draws the wallpaper's dark colors`() {
+        var inner: ColorScheme? = null
+        composeRule.setContent {
+            TigerDuckAppTheme(darkTheme = false, accentColor = orange, useDynamicColor = true) {
+                // The call ClassTableImportPage makes for its camera page.
+                TigerDuckAppTheme(darkTheme = true, accentColor = MaterialTheme.colorScheme.primary) {
+                    inner = MaterialTheme.colorScheme
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        val wallpaper = dynamicDarkColorScheme(composeRule.activity)
+
+        assertEquals(wallpaper.primary, inner?.primary)
+        assertEquals(wallpaper.onPrimary, inner?.onPrimary)
+        assertEquals(DarkColorScheme.surface, inner?.surface)
+    }
+
+    @Test
+    fun `a dark theme inside a light one keeps the swatch it is given`() {
+        var inner: ColorScheme? = null
+        composeRule.setContent {
+            TigerDuckAppTheme(darkTheme = false, accentColor = orange) {
+                TigerDuckAppTheme(darkTheme = true, accentColor = MaterialTheme.colorScheme.primary) {
+                    inner = MaterialTheme.colorScheme
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertEquals(orange, inner?.primary)
+    }
+
+    @Config(sdk = [31])
+    @Test
     fun `a switch's thumb on the wallpaper's dark primary takes its paired color`() {
         TigerDuckTheme.setDarkMode(true)
         var colors: SwitchColors? = null
