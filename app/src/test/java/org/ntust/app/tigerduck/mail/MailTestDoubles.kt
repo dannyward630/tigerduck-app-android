@@ -15,6 +15,7 @@ import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.notify.MailNotifier
 import org.ntust.app.tigerduck.mail.store.MailCredentialStore
 import org.ntust.app.tigerduck.mail.sync.MailBackgroundScheduler
+import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
@@ -69,8 +70,23 @@ class InMemoryCredentialStore : MailCredentialStore {
 class RecordingScheduler : MailBackgroundScheduler {
     var scheduled = 0
     var cancelled = 0
-    override fun schedule() { scheduled++ }
-    override fun cancel() { cancelled++ }
+
+    /** Every schedule and cancel, in order, from whatever thread. */
+    val events: MutableList<String> = Collections.synchronizedList(mutableListOf())
+
+    /** Fires inside [cancel], before it takes: a test acts while a cancel is under way. */
+    @Volatile var onCancel: (() -> Unit)? = null
+
+    override fun schedule() {
+        scheduled++
+        events += "schedule"
+    }
+
+    override fun cancel() {
+        onCancel?.invoke()
+        cancelled++
+        events += "cancel"
+    }
 }
 
 class RecordingNotifier : MailNotifier {
