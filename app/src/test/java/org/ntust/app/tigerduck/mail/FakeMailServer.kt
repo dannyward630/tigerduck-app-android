@@ -189,7 +189,8 @@ class FakeMailServer {
             s.summary = s.summary.copy(flags = s.summary.flags.copy(answered = true))
         }
 
-        override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>) = call {
+        override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long?) = call {
+            refuseUnder(uidValidity)
             val s = find(folder, uid)
             val copyUid = nextUid++
             list(target) += Stored(s.summary.copy(uid = copyUid), s.body)
@@ -201,7 +202,8 @@ class FakeMailServer {
             expungeOnMove
         }
 
-        override fun deletePermanently(folder: String, uid: Long, ownedDeleted: Set<Long>) = call {
+        override fun deletePermanently(folder: String, uid: Long, ownedDeleted: Set<Long>, uidValidity: Long?) = call {
+            refuseUnder(uidValidity)
             if (failAfterFlag) {
                 val s = find(folder, uid)
                 s.summary = s.summary.copy(flags = s.summary.flags.copy(deleted = true))
@@ -236,6 +238,11 @@ class FakeMailServer {
         override fun close() {
             if (!closed) openSessions--
             closed = true
+        }
+
+        /** As a write's SELECT answers: a UID read under another UIDVALIDITY names another mail, and nothing is sent. */
+        private fun refuseUnder(uidValidity: Long?) {
+            if (uidValidity != null && uidValidity != this@FakeMailServer.uidValidity) throw MailError.FolderChanged()
         }
 
         private fun find(folder: String, uid: Long) =

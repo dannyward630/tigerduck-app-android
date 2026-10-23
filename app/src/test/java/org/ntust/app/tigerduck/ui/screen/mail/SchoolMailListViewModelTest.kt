@@ -1205,6 +1205,24 @@ class SchoolMailListViewModelTest {
         assertFalse("the first student's write marked the second's mail read", vm.state.value.displayed.single().summary.flags.seen)
     }
 
+    @Test
+    fun `a mark-read that fails after another student signed in over this one is not theirs to see`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        // The first student's swipe marks a mail read, and the write waits on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.seenGate = gate
+        repo.seenError = MailError.AuthFailed()
+        vm.toggleRead(vm.state.value.displayed.single())
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        repo.seenGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
+    }
+
     /**
      * Holds the answer to [folder]'s next page on its way up, so the fetch that asked for it is
      * still out while the test writes; the page was read before the write and has none of it.
@@ -2544,5 +2562,669 @@ class SchoolMailListViewModelTest {
         // The queue ran out before the pause, so resuming must not warm the same three again.
         assertEquals(3, warm().size)
         vm.stopPolling()
+    }
+
+    // --- delete and move -------------------------------------------------------------------
+
+    @Test
+    fun `delete in normal folder asks for confirmation and moves mail on confirm`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.load()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        vm.delete(row)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false, account.accountGeneration), vm.state.value.pendingDelete)
+
+        vm.confirmDelete(false)
+        assertNull(vm.state.value.pendingDelete)
+        assertEquals(2, vm.state.value.displayed.size)
+        assertTrue(repo.deleted.isEmpty())
+
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertNull(vm.state.value.pendingDelete)
+        assertEquals(listOf("INBOX" to 2L), repo.deleted)
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `delete in trash asks for permanent confirmation and deletes permanently on confirm`() {
+        val trash = repo.resolved.nameOf(SpecialFolder.TRASH)!!
+        repo.add(trash, mailSummary(7), mailSummary(8))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real(trash))
+        val row = vm.state.value.displayed.first { it.uid == 8L }
+        vm.delete(row)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true, account.accountGeneration), vm.state.value.pendingDelete)
+
+        vm.confirmDelete(false)
+        assertNull(vm.state.value.pendingDelete)
+        assertEquals(2, vm.state.value.displayed.size)
+        assertTrue(repo.deleted.isEmpty())
+
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertNull(vm.state.value.pendingDelete)
+        assertEquals(listOf(trash to 8L), repo.deleted)
+        assertEquals(listOf(7L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `delete failure surfaces action error and leaves the list intact`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.load()
+        val row = vm.state.value.displayed.single()
+        repo.deleteError = MailError.Network()
+        vm.delete(row)
+        vm.confirmDelete(true)
+
+        assertTrue(vm.state.value.actionError is MailError.Network)
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `moveTo moves mail to target folder and removes row from list`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.load()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        val target = repo.resolved.nameOf(SpecialFolder.TRASH)!!
+
+        vm.requestMove(row)
+        assertEquals(row, vm.state.value.pendingMove?.row)
+        val targets = vm.state.value.pendingMove!!.targets
+        assertFalse("target folders cannot include own folder", targets.any { it.folder == row.folder })
+        assertTrue(SchoolMailListViewModel.MoveTarget(target, SpecialFolder.TRASH) in targets)
+        assertTrue("a folder of the student's own is offered by its name", SchoolMailListViewModel.MoveTarget("Moodle 課程討論區", null) in targets)
+        vm.dismissMove()
+        assertNull(vm.state.value.pendingMove)
+        vm.moveTo(target)
+        assertTrue("a move dismissed is not made", repo.moved.isEmpty())
+
+        vm.requestMove(row)
+        vm.moveTo(target)
+        assertNull(vm.state.value.pendingMove)
+        assertEquals(listOf(Triple("INBOX", 2L, target)), repo.moved)
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `move failure surfaces action error and leaves list intact`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.load()
+        val row = vm.state.value.displayed.single()
+        repo.moveError = MailError.ServerBusy()
+        val target = repo.resolved.nameOf(SpecialFolder.TRASH)!!
+        vm.requestMove(row)
+        vm.moveTo(target)
+
+        assertTrue(vm.state.value.actionError is MailError.ServerBusy)
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a delete asked before another student signed in over this one asks them nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        // The first student's swipe waits on the server to say whether the delete is permanent:
+        // with no trash yet, that answer costs a CREATE and a LIST.
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(row)
+        signOutAndSignInAnother()
+        vm.loadIfNeeded()
+        repo.trashGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull("the first student's question was put to the second", vm.state.value.pendingDelete)
+        vm.confirmDelete(true)
+        assertTrue(repo.deleted.isEmpty())
+    }
+
+    @Test
+    fun `a delete question whose answer fails after its student signed in again is not shown`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(vm.state.value.displayed.single())
+        // The same student signs in again, with no sign-out between: the question is still out,
+        // as no other student's sign-in would leave it, and its failure reaches it.
+        runBlocking { account.signIn("b10000001", "pw") }
+        repo.trashGate = null
+        // The password the question was asked under is rejected on the way.
+        gate.completeExceptionally(MailError.AuthFailed())
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.pendingDelete)
+        assertNull(vm.state.value.actionError)
+        assertFalse("the old password's rejection marked the new sign-in rejected", account.authFailed.value)
+    }
+
+    @Test
+    fun `a move question whose folders fail after its student signed in again is not shown`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        // The folder list the question needs is out on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.foldersAnswerGate = gate
+        vm.requestMove(vm.state.value.displayed.single())
+        repo.foldersAnswerGate = null
+        runBlocking { account.signIn("b10000001", "pw") }
+        gate.completeExceptionally(MailError.AuthFailed())
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.pendingMove)
+        assertNull(vm.state.value.actionError)
+        assertFalse("the old password's rejection marked the new sign-in rejected", account.authFailed.value)
+    }
+
+    @Test
+    fun `a delete that ends after another student signed in over this one leaves their list alone`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        // The first student confirms a delete, and the write waits on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        // Another student signs in over the first, whose INBOX holds a mail under the same UID.
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the first student's delete took the second's mail off the list", listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a delete that fails after another student signed in over this one is not theirs to see`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        repo.deleteError = MailError.AuthFailed()
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
+    }
+
+    @Test
+    fun `a move that ends after another student signed in over this one leaves their list alone`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the first student's move took the second's mail off the list", listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a move that fails after another student signed in over this one is not theirs to see`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        repo.moveError = MailError.AuthFailed()
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        signOutAndSignInAnother()
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
+    }
+
+    @Test
+    fun `a mail whose delete is still out is not deleted, moved or marked again`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        // The delete waits on the connection, and the mail stays on screen until it is done.
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertEquals("the card does not say its delete is out", setOf(row.key), vm.state.value.writing)
+        // So it is swiped again, and moved and marked through its menu.
+        vm.delete(row)
+        assertNull("a mail being deleted was asked about again", vm.state.value.pendingDelete)
+        vm.requestMove(row)
+        assertNull("a mail being deleted was offered a move", vm.state.value.pendingMove)
+        vm.toggleRead(row)
+        // The mail next to it is its own.
+        val other = vm.state.value.displayed.first { it.uid == 1L }
+        vm.delete(other)
+        assertEquals(other, vm.state.value.pendingDelete?.row)
+        vm.confirmDelete(false)
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("a second delete went out", listOf("INBOX" to 2L), repo.deleted)
+        assertTrue(repo.seenCalls.isEmpty())
+        assertTrue(vm.state.value.writing.isEmpty())
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a mail whose move is still out is not moved or deleted again`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        val junk = repo.resolved.nameOf(SpecialFolder.JUNK)!!
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.requestMove(row)
+        vm.moveTo(junk)
+        vm.requestMove(row)
+        vm.moveTo(junk)
+        vm.delete(row)
+        vm.confirmDelete(true)
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("a second COPY went out", listOf(Triple("INBOX", 1L, junk)), repo.moved)
+        assertTrue(repo.deleted.isEmpty())
+        assertTrue(vm.state.value.displayed.isEmpty())
+    }
+
+    @Test
+    fun `a mail whose delete failed can be deleted again`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        repo.deleteError = MailError.Network()
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertTrue(vm.state.value.actionError is MailError.Network)
+        assertTrue("a failed delete held its card", vm.state.value.writing.isEmpty())
+        vm.dismissActionError()
+        repo.deleteError = null
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertEquals(listOf("INBOX" to 1L), repo.deleted)
+        assertTrue(vm.state.value.displayed.isEmpty())
+    }
+
+    @Test
+    fun `a second swipe before the first delete's question is up leaves the first one asked`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val first = vm.state.value.displayed.first { it.uid == 2L }
+        val second = vm.state.value.displayed.first { it.uid == 1L }
+        // The first swipe's answer is still out when the second row is swiped.
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(first)
+        vm.delete(second)
+        repo.trashGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the second swipe dropped the first delete without a word", first, vm.state.value.pendingDelete?.row)
+        vm.confirmDelete(true)
+        assertNull(vm.state.value.pendingDelete)
+        assertEquals(listOf("INBOX" to 2L), repo.deleted)
+    }
+
+    @Test
+    fun `nothing else is asked while a question is up, and the next can be once it is answered`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val first = vm.state.value.displayed.first { it.uid == 2L }
+        val second = vm.state.value.displayed.first { it.uid == 1L }
+        vm.delete(first)
+        vm.delete(second)
+        vm.requestMove(second)
+        assertEquals(first, vm.state.value.pendingDelete?.row)
+        assertNull("a move was asked over a delete's question", vm.state.value.pendingMove)
+        vm.confirmDelete(false)
+
+        vm.requestMove(second)
+        vm.delete(first)
+        assertEquals(second, vm.state.value.pendingMove?.row)
+        assertNull("a delete was asked over a move's question", vm.state.value.pendingDelete)
+        vm.dismissMove()
+
+        vm.delete(second)
+        assertEquals(second, vm.state.value.pendingDelete?.row)
+    }
+
+    @Test
+    fun `a trash the first delete created is offered as a place to move mail to`() {
+        // An account with no trash, as the list found it when it loaded.
+        repo.resolved = ResolvedFolders(SpecialFolder.entries.filter { it != SpecialFolder.TRASH }.associateWith { it.decodedName }, emptyList())
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        // The first delete's question created one on the server, and the repository knows it.
+        repo.resolved = ResolvedFolders(SpecialFolder.entries.associateWith { it.decodedName }, emptyList())
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        vm.requestMove(row)
+        val targets = vm.state.value.pendingMove!!.targets
+        assertTrue("the trash created since is missing", SchoolMailListViewModel.MoveTarget(SpecialFolder.TRASH.decodedName, SpecialFolder.TRASH) in targets)
+    }
+
+    @Test
+    fun `a move asked before another student signed in over this one asks them nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        // The folders a move offers wait on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.foldersGate = gate
+        vm.requestMove(row)
+        signOutAndSignInAnother()
+        repo.foldersGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull("the first student's question was put to the second", vm.state.value.pendingMove)
+        assertNull(vm.state.value.actionError)
+    }
+
+    @Test
+    fun `a move whose folders cannot be read says so and asks nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        repo.foldersError = MailError.Network()
+        vm.requestMove(vm.state.value.displayed.single())
+        assertNull(vm.state.value.pendingMove)
+        assertTrue(vm.state.value.actionError is MailError.Network)
+    }
+
+    @Test
+    fun `a delete or move still waiting for the connection when another student signs in is not sent`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val first = vm.state.value.displayed.first { it.uid == 2L }
+        val second = vm.state.value.displayed.first { it.uid == 1L }
+        // Both writes are confirmed, and queue behind a request that holds the session.
+        val gate = CompletableDeferred<Unit>()
+        repo.writeQueueGate = gate
+        vm.delete(first)
+        vm.confirmDelete(true)
+        vm.requestMove(second)
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        // Another student signs in over the first, whose INBOX hands out the same UIDs.
+        signInAnotherOverThisOne()
+        repo.writeQueueGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the first student's delete went out as the second", repo.deleted.isEmpty())
+        assertTrue("the first student's move went out as the second", repo.moved.isEmpty())
+        assertNull(vm.state.value.actionError)
+    }
+
+    @Test
+    fun `a mail whose write was out while its student signed in again is given back once the write ends`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        repo.deleteError = MailError.Network()
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        // The same student signs in again with no sign-out between, as the sheet a rejected
+        // password shows allows: the account moves, and nothing resets the list.
+        runBlocking { account.signIn("b10000001", "pw") }
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the card stayed held after its write ended", vm.state.value.writing.isEmpty())
+        repo.deleteError = null
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        assertEquals(row, vm.state.value.pendingDelete?.row)
+    }
+
+    @Test
+    fun `a write that ends after another student signed in leaves their own write of the same mail held`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val first = CompletableDeferred<Unit>()
+        repo.writeGate = first
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        // The second student deletes the mail under the same folder and UID in their own INBOX.
+        val second = CompletableDeferred<Unit>()
+        repo.writeGate = second
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        vm.confirmDelete(true)
+        first.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the first student's write gave back the second's card", setOf(row.key), vm.state.value.writing)
+        repo.writeGate = null
+        second.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue(vm.state.value.writing.isEmpty())
+    }
+
+    @Test
+    fun `a delete or move asked before its folder was found recreated is not made`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        vm.delete(row)
+        // While the question is up, the next page -- a poll's -- finds the folder recreated on the
+        // server, where UID 2 is another mail altogether.
+        repo.pageValidity = 2
+        repo.mail["INBOX"] = mutableListOf(mailSummary(2, subject = "another mail"))
+        vm.refresh()
+        vm.confirmDelete(true)
+        assertTrue("the delete went out for another mail under the same UID", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+        vm.dismissActionError()
+
+        // A move asked now is of the mail on screen now, and goes out.
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        assertEquals(listOf(Triple("INBOX", 2L, repo.resolved.nameOf(SpecialFolder.JUNK)!!)), repo.moved)
+    }
+
+    @Test
+    fun `a mail moved between the folders All mail merges stays on its list`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1), mailSummary(2, subject = "moved to sent"))
+        repo.add(sent, mailSummary(3))
+        vm.loadIfNeeded()
+        assertEquals(FolderSelection.AllMail, vm.state.value.selected)
+        val row = vm.state.value.displayed.first { it.folder == "INBOX" && it.uid == 2L }
+        vm.requestMove(row)
+        vm.moveTo(sent)
+        val moved = vm.state.value.displayed.filter { it.summary.subject == "moved to sent" }
+        assertEquals("the moved mail left All mail, which still merges where it went", listOf(sent), moved.map { it.folder })
+
+        // A folder off screen is left to be fetched when it appears.
+        val loads = repo.loadsSent.size
+        vm.requestMove(vm.state.value.displayed.first { it.folder == "INBOX" })
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        assertEquals(loads, repo.loadsSent.size)
+    }
+
+    @Test
+    fun `a delete question still waiting for the connection when the account moves asks the server nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(vm.state.value.displayed.single())
+        // The same student signs in again, which leaves the question out rather than cancelling it.
+        runBlocking { account.signIn("b10000001", "pw") }
+        repo.trashGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the question went to the server under the new sign-in", 0, repo.trashQuestionsSent)
+        assertNull(vm.state.value.pendingDelete)
+        assertNull(vm.state.value.actionError)
+    }
+
+    @Test
+    fun `a delete or move asked before its folder was recreated, unseen by the list, is refused by the server`() {
+        val trash = repo.resolved.nameOf(SpecialFolder.TRASH)!!
+        repo.add(trash, mailSummary(7))
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        vm.selectFolder(FolderSelection.Real(trash))
+        vm.delete(vm.state.value.displayed.single())
+        // While the question is up the trash is recreated on the server, and no page of it has
+        // reached the list: only the server can tell.
+        repo.pageValidity = 2
+        vm.confirmDelete(true)
+        assertTrue("a permanent delete went out under another UIDVALIDITY", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+        assertTrue(vm.state.value.writing.isEmpty())
+        vm.dismissActionError()
+
+        // A move of the same mail, asked under the UIDVALIDITY the list still has, is refused alike.
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo("INBOX")
+        assertTrue("a move went out under another UIDVALIDITY", repo.moved.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+    }
+
+    @Test
+    fun `a search row's delete carries the folder version the search read it under`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        // The first page fails with nothing cached, so the list knows no version of the folder.
+        repo.loadError = MailError.Network()
+        vm.loadIfNeeded()
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        // The folder is recreated on the server while the question is up, its UIDs given out again.
+        repo.pageValidity = 2
+        vm.confirmDelete(true)
+        assertTrue("the delete went out unchecked for another mail under the same UID", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+    }
+
+    @Test
+    fun `a row whose folder version is not known is neither deleted nor moved`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        repo.loadError = MailError.Network()
+        vm.loadIfNeeded()
+        // A search whose server did not say which version of the folder it read.
+        repo.searchValidity = null
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertTrue("a delete went out with no version to check", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+        vm.dismissActionError()
+        vm.requestMove(row)
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        assertTrue("a move went out with no version to check", repo.moved.isEmpty())
+    }
+
+    @Test
+    fun `a fresh search after its folder was recreated deletes what it found, and the list follows`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考 old"))
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.loadIfNeeded()
+        // The folder is recreated on the server, its UID given to another mail, and no page of it
+        // has reached the list since.
+        repo.pageValidity = 2
+        repo.searchValidity = 2
+        repo.mail["INBOX"] = mutableListOf(mailSummary(1, subject = "期中考 new"))
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val row = vm.state.value.displayed.single()
+        assertEquals("期中考 new", row.summary.subject)
+        assertEquals("the list kept the old mailbox's rows", listOf("期中考 new"), vm.state.value.messages.map { it.summary.subject })
+
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertEquals("a row the search read under the folder's new version was refused", listOf("INBOX" to 1L), repo.deleted)
+        assertNull(vm.state.value.actionError)
+    }
+
+    @Test
+    fun `a list row read before its folder was recreated is refused by the server, not the list`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        vm.delete(row)
+        // While the question is up the folder is recreated, and the list reads its new version.
+        repo.pageValidity = 2
+        vm.refresh()
+        vm.confirmDelete(true)
+        assertEquals("the write never reached the server to be judged", 1, repo.writesRefused)
+        assertTrue(repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+    }
+
+    @Test
+    fun `a search's older look at a folder reloaded meanwhile does not drop the newer one`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        repo.add(sent, mailSummary(2))
+        vm.loadIfNeeded()
+        // The server cannot search, so the inbox answers from the mail loaded under version 1,
+        // and the sent folder's search is held while the list reads both folders again, recreated.
+        repo.searchUnsupported = true
+        val gate = CompletableDeferred<Unit>()
+        repo.onSearched = { folder -> if (folder == "INBOX") repo.searchGate = gate }
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        repo.onSearched = null
+        repo.searchGate = null
+        repo.pageValidity = 2
+        vm.refresh()
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the newer page was dropped as the old mailbox's", repo.droppedCaches.isEmpty())
+    }
+
+    @Test
+    fun `a certificate failure stays on screen when its search is cleared while a recreated folder reloads`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.loadIfNeeded()
+        // The inbox's search finds it recreated; the sent folder's cannot trust the certificate.
+        repo.searchValidity = 2
+        repo.searchErrorFolder = sent
+        repo.searchError = MailError.Certificate()
+        // The search is cleared while the recreated inbox is set right.
+        repo.onDropCachedPage = { vm.setSearchText("") }
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the certificate failure went unshown", vm.state.value.loadState.let { it is SchoolMailListViewModel.LoadState.Failed && it.error is MailError.Certificate })
+    }
+
+    @Test
+    fun `a recreated folder a search finds as the server goes out of reach is not fetched at once`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1, subject = "期中考 old"))
+        vm.loadIfNeeded()
+        val loads = repo.loadsSent.size
+        // The inbox's search finds it recreated, and then the connection is gone for the sent folder's.
+        repo.searchValidity = 2
+        repo.searchErrorFolder = sent
+        repo.searchError = MailError.Network()
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        assertEquals("the list asked an unreachable server again at once", loads, repo.loadsSent.size)
+        assertTrue("the old mailbox's rows stayed", vm.state.value.messages.none { it.folder == "INBOX" })
+        assertEquals(listOf("INBOX" to 1L), repo.droppedCaches)
     }
 }

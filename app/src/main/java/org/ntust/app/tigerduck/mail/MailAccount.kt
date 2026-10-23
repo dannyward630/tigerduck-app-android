@@ -96,11 +96,16 @@ class MailAccount @Inject constructor(
      */
     val accountGeneration: Int get() = generation.get()
 
-    /** The signed-in account and its [accountGeneration], read together; null while signed out. */
-    class Snapshot(val generation: Int, val credentials: MailCredentials)
+    /**
+     * The signed-in account and its [accountGeneration], read together; null while signed out.
+     * [clears] is the state's [MailStateStore.clears] read with them: a sign-in resets the state in
+     * the same hold that puts its credentials in place ([save]), so the count is always that of
+     * [credentials]' student, never the next one's.
+     */
+    class Snapshot(val generation: Int, val credentials: MailCredentials, val clears: Int)
 
     fun snapshot(): Snapshot? = synchronized(accountLock) {
-        credentialsOrNull()?.let { Snapshot(generation.get(), it) }
+        credentialsOrNull()?.let { Snapshot(generation.get(), it, state.clears) }
     }
 
     /**
@@ -129,16 +134,16 @@ class MailAccount @Inject constructor(
         if (demo.matches(creds.studentId, password)) {
             if (!sameStudent) cache.clearAll()
             if (replacing) leaveStudent()
-            resetState(sameStudent)
-            state.demoMailbox = true
-            state.displayName = keptName ?: demo.mailbox().displayName
-            save(creds)
+            save(creds, sameStudent) {
+                state.demoMailbox = true
+                state.displayName = keptName ?: demo.mailbox().displayName
+            }
             notifier.cancelAuthFailure()
             return@withContext null
         }
         if (demo.appDemoActive) return@withContext MailError.AuthFailed()
 
-        try {
+        val fill = try {
             sessions.open(creds).use { session ->
                 val folders = MailFolders.resolve(session.listFolders())
                 val status = session.status(folders.nameOf(SpecialFolder.INBOX) ?: "INBOX")
@@ -147,15 +152,17 @@ class MailAccount @Inject constructor(
                 }
                 if (!sameStudent) cache.clearAll()
                 if (replacing) leaveStudent()
-                resetState(sameStudent)
-                state.inboxUidValidity = status.uidValidity
-                state.inboxSeenUidNext = status.uidNext
-                state.displayName = keptName ?: name
+                val fresh: () -> Unit = {
+                    state.inboxUidValidity = status.uidValidity
+                    state.inboxSeenUidNext = status.uidNext
+                    state.displayName = keptName ?: name
+                }
+                fresh
             }
         } catch (e: Exception) {
             return@withContext MailErrors.classify(e)
         }
-        save(creds)
+        save(creds, sameStudent, fill)
         notifier.cancelAuthFailure()
         scheduler.schedule()
         null
@@ -226,9 +233,18 @@ class MailAccount @Inject constructor(
         true
     }
 
-    private fun save(creds: MailCredentials) {
+    /**
+     * Puts [creds] in place with the state reset for them ([resetState]) and [fill]ed in, in one hold
+     * of [accountLock] with the generation's move. Resetting first and switching the credentials
+     * later left a moment when the departing student's credentials stood beside the next one's
+     * fresh state, and a write that started then recorded its flagged mail as the next one's
+     * ([MailStateStore.setOwnedDeletedIf]); a [snapshot] now holds one student's of both.
+     */
+    private fun save(creds: MailCredentials, sameStudent: Boolean, fill: () -> Unit) {
         onLockWait?.invoke()
         synchronized(accountLock) {
+            resetState(sameStudent)
+            fill()
             generation.incrementAndGet()
             credentials.mailStudentId = creds.studentId
             credentials.mailPassword = creds.password

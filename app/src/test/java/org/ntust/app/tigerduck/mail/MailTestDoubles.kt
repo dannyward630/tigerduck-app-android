@@ -59,7 +59,11 @@ class InMemoryCredentialStore : MailCredentialStore {
             idReaders += Thread.currentThread()
             return field
         }
+
+    /** Fires on every [mailPassword] read, which the real store decrypts: a test checks which thread it ran on. */
+    var onPasswordRead: (() -> Unit)? = null
     override var mailPassword: String? = null
+        get() = field.also { onPasswordRead?.invoke() }
 
     /** Fires inside [clearMailCredentials], before anything is removed: lets a test act mid-sign-out. */
     var beforeClear: (() -> Unit)? = null

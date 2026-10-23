@@ -52,16 +52,20 @@ interface MailSession : Closeable {
      * ours. Returns whether it expunged. On throw, [uid] may already be
      * `\Deleted` on the server (the flag is set before the EXPUNGE check);
      * the caller must still record it as owned so a later call can expunge it.
+     *
+     * [uidValidity], when given, is the UIDVALIDITY [uid] was read under: the folder as selected
+     * for the write must still have it, or [org.ntust.app.tigerduck.mail.MailError.FolderChanged]
+     * is thrown before anything is sent, since under another the UID names another mail.
      */
-    fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>): Boolean
+    fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long? = null): Boolean
 
     /**
      * Sets `\Deleted` and EXPUNGEs only if every `\Deleted` mail in [folder]
      * is ours. Returns whether it expunged. On throw, [uid] may already be
      * `\Deleted` on the server; the caller must still record it as owned so
-     * a later call can expunge it.
+     * a later call can expunge it. [uidValidity] as on [move].
      */
-    fun deletePermanently(folder: String, uid: Long, ownedDeleted: Set<Long>): Boolean
+    fun deletePermanently(folder: String, uid: Long, ownedDeleted: Set<Long>, uidValidity: Long? = null): Boolean
 
     /** The UIDs of [folder]'s mail not flagged `\Deleted`, in no particular order. */
     fun undeletedUids(folder: String): List<Long>

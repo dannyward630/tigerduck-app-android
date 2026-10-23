@@ -698,16 +698,24 @@ class SchoolMailMessageViewModel @Inject constructor(
 
     fun dismissActionError() = update { it.copy(actionError = null) }
 
+    /**
+     * Runs [block], one of this screen's actions, and shows its failure. Not one the repository
+     * let go unsent ([MailError.Abandoned]), as it does a write whose student another signed in
+     * over while it waited; nor one of an account that has moved since the action began -- that
+     * student, or the same one signing in again -- whose rejected password must not mark the new
+     * sign-in rejected. The list drops the same ([SchoolMailListViewModel]).
+     */
     private fun act(block: suspend () -> Unit) {
+        val generation = account.accountGeneration
         viewModelScope.launch {
-            // As in [load]: the sign-in a rejection is for.
-            val generation = account.accountGeneration
             try {
                 block()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 val error = MailErrors.classify(e)
+                if (error is MailError.Abandoned || account.accountGeneration != generation) return@launch
+                // Marked for that sign-in alone, in one step with any sign-in since.
                 if (error is MailError.AuthFailed) account.onAuthFailure(generation)
                 update { it.copy(actionError = error) }
             }

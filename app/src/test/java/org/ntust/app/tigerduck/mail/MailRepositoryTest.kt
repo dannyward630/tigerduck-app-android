@@ -72,6 +72,8 @@ class MailRepositoryTest {
         scope: kotlinx.coroutines.CoroutineScope,
         /** What the repository opens its sessions with; the account signs in on the server itself. */
         sessions: MailSessionFactory = server.factory(),
+        /** What the account signs in with. */
+        accountSessions: MailSessionFactory = server.factory(),
         /** The index the repository is handed, around [searchIndex]: a test acts inside its calls. */
         wrapIndex: (InMemoryMailSearchIndex) -> MailSearchIndex = { it },
     ) {
@@ -79,7 +81,7 @@ class MailRepositoryTest {
         val searchIndex = InMemoryMailSearchIndex()
         val indexScheduler = RecordingIndexScheduler()
         val notifier = RecordingNotifier()
-        val account = MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), RecordingScheduler(), notifier, scope)
+        val account = MailAccount(credentials, state, accountSessions, cache, demo, schoolMailSite(), RecordingScheduler(), notifier, scope)
         val repository = MailRepository(
             account, sessions, cache, state,
             MailSender(MessageBuilder(), transport, pause = {}), MessageBuilder(), demo, wrapIndex(searchIndex), indexScheduler, scope,
@@ -231,6 +233,326 @@ class MailRepositoryTest {
 
         assertTrue(outcome.exceptionOrNull() is MailError.Abandoned)
         assertEquals(opened, opens.get())
+    }
+
+    /**
+     * A move or delete is asked the same question, with the session held: one confirmed for a
+     * student who left while it waited -- another signed in over them, whose mailbox hands out
+     * the same UIDs -- moves and deletes none of the next one's mail.
+     */
+    @Test
+    fun `a move or delete of a departed account touches nothing of the next one's`() = runTest {
+        server.deliver("a")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val uid = repo.loadPage("INBOX", null).messages.single().uid
+        val trash = repo.folders().nameOf(SpecialFolder.TRASH)!!
+        val before = setup.account.accountGeneration
+        server.passwords["B10000002"] = "pw"
+        setup.account.signIn("b10000002", "pw")
+
+        val moved = runCatching { repo.move("INBOX", uid, trash) { setup.account.accountGeneration == before } }
+        val deleted = runCatching { repo.delete("INBOX", uid) { setup.account.accountGeneration == before } }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Abandoned)
+        assertTrue(deleted.exceptionOrNull() is MailError.Abandoned)
+        assertEquals(listOf("a"), server.subjects("INBOX"))
+        assertTrue(server.subjects(trash).isEmpty())
+    }
+
+    /**
+     * So is readying a delete, which creates the trash it moves mail to when the account has none:
+     * a delete of a student who left while it waited lists and creates nothing in the next one's
+     * mailbox.
+     */
+    @Test
+    fun `a departed account's delete creates no trash in the next one's mailbox`() = runTest {
+        server.folders.remove("回收筒")
+        server.deliver("a")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val uid = repo.loadPage("INBOX", null).messages.single().uid
+        val before = setup.account.accountGeneration
+        server.passwords["B10000002"] = "pw"
+        setup.account.signIn("b10000002", "pw")
+
+        val asked = runCatching { repo.deletesPermanently("INBOX") { setup.account.accountGeneration == before } }
+        val deleted = runCatching { repo.delete("INBOX", uid) { setup.account.accountGeneration == before } }
+
+        assertTrue(asked.exceptionOrNull() is MailError.Abandoned)
+        assertTrue(deleted.exceptionOrNull() is MailError.Abandoned)
+        assertTrue("a trash was created in the next student's mailbox", server.createAttempts.isEmpty())
+        assertEquals(listOf("a"), server.subjects("INBOX"))
+    }
+
+    /**
+     * A folder recreated on the server after the caller read its UID, whose page has replaced the
+     * cache since: the cache now agrees with the server, so only the UIDVALIDITY the caller read
+     * the UID under can tell that the UID names another mail. Neither a move nor a delete -- in
+     * the trash, a permanent one -- touches it.
+     */
+    @Test
+    fun `a move or delete of a mail read before its folder was recreated touches the new folder's mail not at all`() = runTest {
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val trash = repo.folders().nameOf(SpecialFolder.TRASH)!!
+        val inboxUid = server.deliver("read before")
+        val trashUid = server.deliver("deleted before", folder = trash)
+        repo.loadPage("INBOX", null)
+        repo.loadPage(trash, null)
+        val read = server.uidValidity
+
+        // Both folders are recreated, and the same UIDs given to other mail.
+        server.uidValidity = read + 1
+        server.folders["INBOX"] = mutableListOf()
+        server.folders[trash] = mutableListOf()
+        server.nextUid = inboxUid
+        server.deliver("another")
+        server.nextUid = trashUid
+        server.deliver("another in the trash", folder = trash)
+        repo.loadPage("INBOX", null)
+        repo.loadPage(trash, null)
+
+        val moved = runCatching { repo.move("INBOX", inboxUid, trash, uidValidity = read) }
+        val deleted = runCatching { repo.delete(trash, trashUid, uidValidity = read) }
+
+        assertTrue(moved.exceptionOrNull() is MailError.FolderChanged)
+        assertTrue(deleted.exceptionOrNull() is MailError.FolderChanged)
+        assertEquals(listOf("another"), server.subjects("INBOX"))
+        assertEquals(listOf("another in the trash"), server.subjects(trash))
+        // The cache was of the folder as it is, and stays.
+        assertEquals(listOf("another"), repo.cachedPage("INBOX")!!.messages.map { it.subject })
+    }
+
+    /**
+     * A session whose [MailSession.move] signs another student in over this one once it has sent
+     * its COPY and STORE, as the sign-in sheet a rejected password shows allows while a write is
+     * on the connection; [fail] has the move fail then, with its flag on the server.
+     */
+    private fun TestSetup.switchingDuringMove(fail: Boolean = false, to: String = "b10000002"): MailSessionFactory = MailSessionFactory { credentials ->
+        val session = server.factory().open(credentials)
+        object : MailSession by session {
+            override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long?): Boolean {
+                server.failAfterFlag = fail
+                try {
+                    return session.move(folder, uid, target, ownedDeleted, uidValidity)
+                } finally {
+                    server.failAfterFlag = false
+                    server.passwords[to.uppercase()] = "pw"
+                    runBlocking { account.signIn(to, "pw") }
+                }
+            }
+        }
+    }
+
+    /**
+     * A move that leaves its mail flagged rather than expunged records the UID as the app's to
+     * expunge later -- in the state of the student it was made for. One that ends after another
+     * student signed in over them records nothing in that one's state, which a later EXPUNGE in a
+     * folder of the same name and UIDVALIDITY would otherwise take as the app's own.
+     */
+    @Test
+    fun `a move that ends after another student signed in records no mail as theirs to expunge`() = runTest {
+        server.expungeOnMove = false
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove().open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+
+        repo.move("INBOX", uid, "回收筒")
+
+        assertEquals("b10000002", credentials.mailStudentId?.lowercase())
+        assertTrue("the first student's flagged mail was recorded as the second's", state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
+    }
+
+    /**
+     * The same student signing in again keeps the set ([MailStateStore.clearSignIn]), and a move
+     * on the connection meanwhile still adds to it: dropping the UID would leave a mail the app
+     * flagged that no later EXPUNGE would ever take as its own.
+     */
+    @Test
+    fun `a move that ends after the same student signed in again still records its flagged mail`() = runTest {
+        server.expungeOnMove = false
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(to = "b10000001").open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+
+        repo.move("INBOX", uid, "回收筒")
+
+        assertEquals(setOf(uid), state.ownedDeleted("INBOX", server.uidValidity))
+    }
+
+    /**
+     * A list's move asks whether it is still wanted on the account generation it was confirmed
+     * under, which the same student signing in again moves. The flag check after the move fails
+     * is the bookkeeping of that student's own set, which [MailStateStore.clearSignIn] keeps: it
+     * must still record the flag that landed, or no later EXPUNGE of the folder takes that mail.
+     */
+    @Test
+    fun `a list move that fails as the same student signs in again still records its flagged mail`() = runTest {
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(fail = true, to = "b10000001").open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+        val before = setup.account.accountGeneration
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") { setup.account.accountGeneration == before } }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertEquals("the flagged mail went unrecorded", setOf(uid), state.ownedDeleted("INBOX", server.uidValidity))
+    }
+
+    /**
+     * Another student's sign-in resets the state and puts their credentials in place in one hold of
+     * the account. A write that starts while that sign-in is still finishing pairs the first
+     * student's credentials with the first student's state, never with the next one's: what it
+     * records after it fails lands nowhere once the next one is in.
+     */
+    @Test
+    fun `a write that starts as another student's sign-in finishes records nothing in their state`() = runTest {
+        val uid = server.deliver("a")
+        // The next student's sign-in holds as it closes its own session, everything asked.
+        val closing = CountDownLatch(1)
+        val letClose = CountDownLatch(1)
+        val holdingClose = MailSessionFactory { c ->
+            val session = server.factory().open(c)
+            if (c.loginName != "B10000002") {
+                session
+            } else {
+                object : MailSession by session {
+                    override fun close() {
+                        closing.countDown()
+                        letClose.await(5, TimeUnit.SECONDS)
+                        session.close()
+                    }
+                }
+            }
+        }
+        // The write lets that sign-in finish while it is on the connection, then fails, its flag landed.
+        val signedInNext = CountDownLatch(1)
+        val writing = MailSessionFactory { c ->
+            val session = server.factory().open(c)
+            object : MailSession by session {
+                override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long?): Boolean {
+                    letClose.countDown()
+                    assertTrue(signedInNext.await(5, TimeUnit.SECONDS))
+                    server.failAfterFlag = true
+                    try {
+                        return session.move(folder, uid, target, ownedDeleted, uidValidity)
+                    } finally {
+                        server.failAfterFlag = false
+                    }
+                }
+            }
+        }
+        val setup = TestSetup(backgroundScope, writing, accountSessions = holdingClose)
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+        server.passwords["B10000002"] = "pw"
+        val signIn = async(Dispatchers.IO) { setup.account.signIn("b10000002", "pw").also { signedInNext.countDown() } }
+        assertTrue(closing.await(5, TimeUnit.SECONDS))
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") }
+        assertNull(signIn.await())
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertTrue("the first student's flagged mail was recorded as the next one's", state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
+    }
+
+    /**
+     * The account a move is made as is read off the caller's thread, which for the list and the
+     * mail screen is the main one: reading it decrypts the password from the credential store.
+     */
+    @Test
+    fun `a move reads the account it is made as off the caller's thread`() = runTest {
+        val uid = server.deliver("a")
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.loadPage("INBOX", null)
+        val caller = Thread.currentThread()
+        val readOn = java.util.concurrent.CopyOnWriteArrayList<Thread>()
+        credentials.onPasswordRead = { readOn += Thread.currentThread() }
+
+        repo.move("INBOX", uid, "回收筒")
+        credentials.onPasswordRead = null
+
+        assertTrue(readOn.isNotEmpty())
+        assertTrue("the password was decrypted on the caller's thread", readOn.none { it == caller })
+    }
+
+    /** As above, with another student signing in: their state takes nothing of the first one's. */
+    @Test
+    fun `a list move that fails as another student signs in records nothing`() = runTest {
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(fail = true).open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+        val before = setup.account.accountGeneration
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") { setup.account.accountGeneration == before } }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertTrue(state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
+    }
+
+    /**
+     * A write that waited for the session while another student signed in over this one finds
+     * the state reset for them: the set there is theirs, and must not decide what the write
+     * expunges, so the write sends nothing.
+     */
+    @Test
+    fun `a write whose student's state was reset while it waited for the session sends nothing`() = runTest {
+        server.deliver("a")
+        val holding = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val sessions = MailSessionFactory { credentials ->
+            val session = server.factory().open(credentials)
+            object : MailSession by session {
+                override fun fetchBody(folder: String, uid: Long): MailBody {
+                    holding.countDown()
+                    release.await(5, TimeUnit.SECONDS)
+                    return session.fetchBody(folder, uid)
+                }
+            }
+        }
+        val setup = TestSetup(backgroundScope, sessions)
+        val repo = setup.signedIn()
+        val uid = repo.loadPage("INBOX", null).messages.single().uid
+        // One request holds the session.
+        val body = launch(Dispatchers.IO) { runCatching { repo.body("INBOX", uid) } }
+        assertTrue(holding.await(5, TimeUnit.SECONDS))
+        // The move reaches the wait for it, and another student signs in meanwhile.
+        val reached = CountDownLatch(1)
+        setup.repository.holder.onWait = { reached.countDown() }
+        val move = async(Dispatchers.IO) { runCatching { repo.move("INBOX", uid, "回收筒") } }
+        assertTrue(reached.await(5, TimeUnit.SECONDS))
+        setup.repository.holder.onWait = null
+        server.passwords["B10000002"] = "pw"
+        setup.account.signIn("b10000002", "pw")
+        release.countDown()
+
+        assertTrue(move.await().exceptionOrNull() is MailError.Abandoned)
+        assertEquals(listOf("a"), server.subjects("INBOX"))
+        body.join()
+    }
+
+    /** As above, for the flag check a failed move makes to record a flag that landed regardless. */
+    @Test
+    fun `a move that fails after another student signed in records no mail as theirs to expunge`() = runTest {
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(fail = true).open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertTrue("the first student's flagged mail was recorded as the second's", state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
     }
 
     /** The folder list a first request resolves is a request too, and asked the same question. */
@@ -1622,8 +1944,8 @@ class MailRepositoryTest {
         val interrupting = MailSessionFactory { credentials ->
             val session = server.factory().open(credentials)
             object : MailSession by session {
-                override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>): Boolean {
-                    val expunged = session.move(folder, uid, target, ownedDeleted)
+                override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long?): Boolean {
+                    val expunged = session.move(folder, uid, target, ownedDeleted, uidValidity)
                     if (other == null) {
                         // The other student's mail has the UID the moved one had, as a mailbox
                         // of theirs would.
