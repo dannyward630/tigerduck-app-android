@@ -882,6 +882,36 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a request queued behind a rejected login does not log in again`() = runTest {
+        val attempts = AtomicInteger()
+        val opening = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val sessions = MailSessionFactory { credentials ->
+            if (attempts.incrementAndGet() == 1) {
+                opening.countDown()
+                assertTrue(release.await(5, TimeUnit.SECONDS))
+            }
+            server.factory().open(credentials)
+        }
+        val setup = TestSetup(backgroundScope, sessions)
+        val repo = setup.signedIn()
+        server.passwords["B10000001"] = "changed"
+        val first = async(Dispatchers.IO) { runCatching { repo.status("INBOX") } }
+        assertTrue(opening.await(5, TimeUnit.SECONDS))
+        // Another request reaches the wait for the connection while the first one's login is out.
+        val reached = CountDownLatch(1)
+        setup.repository.holder.onWait = { reached.countDown() }
+        val second = async(Dispatchers.IO) { runCatching { repo.status("INBOX") } }
+        assertTrue(reached.await(5, TimeUnit.SECONDS))
+        release.countDown()
+
+        assertTrue(first.await().exceptionOrNull() is MailError.AuthFailed)
+        assertTrue(second.await().exceptionOrNull() is MailError.AuthFailed)
+        assertEquals("spec §7.4: one LOGIN with the rejected password", 1, attempts.get())
+        assertTrue(setup.account.authFailed.value)
+    }
+
+    @Test
     fun `a password rejected while downloading in the app reaches the account`() = runTest {
         server.deliver("期中考")
         val setup = TestSetup(backgroundScope)

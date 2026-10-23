@@ -247,7 +247,21 @@ class MailRepository @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope,
 ) : SchoolMailRepository {
     @VisibleForTesting
-    internal val holder = SessionHolder(sessions, scope)
+    internal val holder = SessionHolder(
+        MailSessionFactory { credentials ->
+            try {
+                sessions.open(credentials)
+            } catch (e: MailError.AuthFailed) {
+                // Told to the account before the connection's lock is let go (spec §7.4), so a
+                // request queued behind this login finds the account refused and sends no LOGIN of
+                // its own. Only for the stored password: the refusal of an account that has left
+                // since must not stop the next one.
+                if (account.credentialsOrNull() == credentials) account.onAuthFailure()
+                throw e
+            }
+        },
+        scope,
+    )
 
     private val indexer = MailIndexer(
         searchIndex,
@@ -415,7 +429,9 @@ class MailRepository @Inject constructor(
     private suspend fun <T> withSession(stillWanted: () -> Boolean = { true }, block: (MailSession) -> T): T = withContext(Dispatchers.IO) {
         if (account.isDemo) throw MailError.DemoMode()
         refuseWhileAuthFailed()
-        holder.use(credentials(), stillWanted, block)
+        // Asked again under the connection's lock: a request that waited out a login the server
+        // rejected must not send one of its own.
+        holder.use(credentials(), { refuseWhileAuthFailed(); stillWanted() }, block)
     }
 
     // --- demo -------------------------------------------------------------------
