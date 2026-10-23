@@ -454,6 +454,7 @@ class MailReadableHtml(private val html: String) {
 
         /** On `background-color`, keywords that leave no background: its initial value is transparent. */
         private val INITIAL_KEYWORDS = setOf("initial", "unset")
+        private val CSS_NUMBER = Regex("""[+-]?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:e[+-]?[0-9]+)?""")
         private val TARGET_REGEX = Regex("""\s(?:href|src)="[^"]*"""")
 
         fun targets(html: String): List<String> =
@@ -646,8 +647,9 @@ class MailReadableHtml(private val html: String) {
         private fun number(text: String, scale: Double): Double? {
             val isPercent = text.endsWith('%')
             val digits = if (isPercent) text.substring(0, text.length - 1) else text
-            if (digits.isEmpty()) return null
-            if (!digits.all { it in "0123456789.+-e" }) return null
+            // CSS's own number syntax, not toDouble's, which also takes `0.` and `1.`: a value
+            // a browser drops would be read here as a colour the page never shows.
+            if (!CSS_NUMBER.matches(digits)) return null
             val num = digits.toDoubleOrNull() ?: return null
             val normalized = num / (if (isPercent) 100.0 else scale)
             return normalized.coerceIn(0.0, 1.0)

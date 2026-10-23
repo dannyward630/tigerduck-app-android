@@ -456,6 +456,8 @@ class MailReadableHtmlTest {
             "rgb(51 51 51 51)", "rgb(20%, 51, 51)", "rgb(nan, 0, 0)", "rgb(0x33, 0, 0)", "rgb (51, 51, 51)",
             // Fullwidth digits, which Character.digit reads as hex and a browser does not.
             "#\uFF13\uFF13\uFF13",
+            // Numbers CSS does not take, which toDouble does.
+            "rgb(0., 0., 0.)", "rgb(51., 51, 51)", "rgba(51, 51, 51, 1.)", "rgb(50.% 20% 20%)",
         )
         for (value in forms) {
             assertNull(value, MailReadableHtml.parse(value, legacy = false))
@@ -466,6 +468,19 @@ class MailReadableHtmlTest {
      * `bgcolor` and `<font color>` follow HTML's legacy colour rules, which read `#333333ff` or
      * `rgb()` as some other colour, so only the forms both rules agree on are read there.
      */
+    @Test
+    fun `a background CSS does not take is no background`() {
+        // Chromium drops rgb(0., 0., 0.), so the dark text is on the white page and reads.
+        val html = """<p style="background-color: rgb(0., 0., 0.); color: #333333">Notice</p>"""
+        assertEquals(html, readable(html).onLight())
+    }
+
+    @Test
+    fun `every CSS number form is read`() {
+        assertEquals(RGBA(0.5, 0.2, 0.0), MailReadableHtml.parse("rgb(50% 20% -.5%)", legacy = false))
+        assertEquals(RGBA(1.0, 0.0, 0.0, 0.5), MailReadableHtml.parse("rgb(+2.55e2 0 0 / 5e-1)", legacy = false))
+    }
+
     @Test
     fun `bgcolor and font color take only the forms HTML reads as CSS does`() {
         assertEquals(rgb(0x333333), MailReadableHtml.parse("#333", legacy = true))
