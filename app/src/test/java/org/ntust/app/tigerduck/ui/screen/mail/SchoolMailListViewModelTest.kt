@@ -2585,20 +2585,39 @@ class SchoolMailListViewModelTest {
     }
 
     @Test
-    fun `a question whose answer fails after another student signed in over this one is not theirs to see`() {
+    fun `a delete question whose answer fails after its student signed in again is not shown`() {
         repo.add("INBOX", mailSummary(1))
         vm.loadIfNeeded()
         val gate = CompletableDeferred<Unit>()
         repo.trashGate = gate
         vm.delete(vm.state.value.displayed.single())
-        signOutAndSignInAnother()
-        vm.loadIfNeeded()
+        // The same student signs in again, with no sign-out between: the question is still out,
+        // as no other student's sign-in would leave it, and its failure reaches it.
+        runBlocking { account.signIn("b10000001", "pw") }
         repo.trashGate = null
-        // The first student's password is rejected on the way.
+        // The password the question was asked under is rejected on the way.
         gate.completeExceptionally(MailError.AuthFailed())
         main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.pendingDelete)
         assertNull(vm.state.value.actionError)
-        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
+        assertFalse("the old password's rejection marked the new sign-in rejected", account.authFailed.value)
+    }
+
+    @Test
+    fun `a move question whose folders fail after its student signed in again is not shown`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        // The folder list the question needs is out on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.foldersAnswerGate = gate
+        vm.requestMove(vm.state.value.displayed.single())
+        repo.foldersAnswerGate = null
+        runBlocking { account.signIn("b10000001", "pw") }
+        gate.completeExceptionally(MailError.AuthFailed())
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.pendingMove)
+        assertNull(vm.state.value.actionError)
+        assertFalse("the old password's rejection marked the new sign-in rejected", account.authFailed.value)
     }
 
     @Test
