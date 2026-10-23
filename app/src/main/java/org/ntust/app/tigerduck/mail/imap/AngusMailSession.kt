@@ -443,10 +443,17 @@ class AngusMailSession internal constructor(
         // One FETCH for the lot: each mail's header and the start of its body, its text read from
         // them here. A FETCH per part, and a NOOP before each, was a dozen round trips a mail,
         // which held the first download of a mailbox to a few mails a second.
+        //
+        // Of the header only the fields that say how the body is built: the rest, which the
+        // sender and the servers on the way choose and nothing bounds, is no use to the text, and
+        // the sender and subject come with the summary. Every literal of the FETCH is held at once
+        // until it ends, so it holds a batch's [SEARCH_TEXT_BYTES] apiece, and the few lines of
+        // these fields.
         @Suppress("UNCHECKED_CAST")
         val raw = f.doCommand(IMAPFolder.ProtocolCommand { p: IMAPProtocol ->
             val responses = p.command(
-                "UID FETCH ${uids.joinToString(",")} (UID BODY.PEEK[HEADER] BODY.PEEK[TEXT]<0.$SEARCH_TEXT_BYTES>)",
+                "UID FETCH ${uids.joinToString(",")} " +
+                    "(UID BODY.PEEK[HEADER.FIELDS ($SEARCH_TEXT_HEADERS)] BODY.PEEK[TEXT]<0.$SEARCH_TEXT_BYTES>)",
                 null,
             )
             val last = responses[responses.size - 1]
@@ -477,8 +484,8 @@ class AngusMailSession internal constructor(
 
     /**
      * [header] ending in exactly one blank line, which parts it from the body after it. RFC 3501
-     * has `BODY[HEADER]` include that line; a server that leaves it out would have the body's
-     * first line read as one more header.
+     * has `BODY[HEADER.FIELDS]` include that line; a server that leaves it out would have the
+     * body's first line read as one more header.
      */
     private fun headerBlock(header: ByteArray): ByteArray {
         var end = header.size
@@ -550,6 +557,12 @@ class AngusMailSession internal constructor(
          * than MailSearchText keeps, even under HTML or base64.
          */
         const val SEARCH_TEXT_BYTES = 64 * 1024
+
+        /**
+         * The header fields [fetchSearchTexts] parses a mail's text by: its type and transfer
+         * encoding, and the disposition that makes a part an attachment, as [kindOf] reads them.
+         */
+        const val SEARCH_TEXT_HEADERS = "MIME-Version Content-Type Content-Transfer-Encoding Content-Disposition"
 
         /** Parses what [fetchSearchTexts] fetched, on the phone; a body cut short still parses. */
         val parseSession: Session = Session.getInstance(Properties())

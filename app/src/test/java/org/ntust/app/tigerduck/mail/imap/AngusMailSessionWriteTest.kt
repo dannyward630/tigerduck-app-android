@@ -15,10 +15,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
+import org.eclipse.angus.mail.imap.IMAPStore
 import org.ntust.app.tigerduck.mail.MailError
+import org.ntust.app.tigerduck.mail.MailProperties
 import org.ntust.app.tigerduck.mail.MailTestServer
 import java.io.ByteArrayOutputStream
+import java.io.FilterInputStream
+import java.io.InputStream
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import java.net.Socket
 import java.util.Properties
+import java.util.concurrent.atomic.AtomicLong
+import javax.net.SocketFactory
 
 class AngusMailSessionWriteTest {
     @get:Rule val server = MailTestServer()
@@ -300,6 +309,71 @@ class AngusMailSessionWriteTest {
             val text = s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid)
             assertTrue(text.startsWith("開頭 字"))
             assertFalse(text.endsWith("結尾"))
+        }
+    }
+
+    /** A socket factory that counts the bytes the server sends on every socket it makes. */
+    private class CountingSocketFactory : SocketFactory() {
+        val received = AtomicLong()
+
+        override fun createSocket(): Socket = object : Socket() {
+            override fun getInputStream(): InputStream = object : FilterInputStream(super.getInputStream()) {
+                override fun read(): Int = super.read().also { if (it >= 0) received.incrementAndGet() }
+
+                override fun read(b: ByteArray, off: Int, len: Int): Int =
+                    super.read(b, off, len).also { if (it > 0) received.addAndGet(it.toLong()) }
+            }
+        }
+
+        override fun createSocket(host: String, port: Int): Socket =
+            createSocket().apply { connect(InetSocketAddress(host, port)) }
+
+        override fun createSocket(host: String, port: Int, localHost: InetAddress, localPort: Int): Socket =
+            createSocket().apply {
+                bind(InetSocketAddress(localHost, localPort))
+                connect(InetSocketAddress(host, port))
+            }
+
+        override fun createSocket(host: InetAddress, port: Int): Socket =
+            createSocket().apply { connect(InetSocketAddress(host, port)) }
+
+        override fun createSocket(address: InetAddress, port: Int, localAddress: InetAddress, localPort: Int): Socket =
+            createSocket().apply {
+                bind(InetSocketAddress(localAddress, localPort))
+                connect(InetSocketAddress(address, port))
+            }
+    }
+
+    /** A session as the app opens one, its connection made by [sockets]. */
+    private fun session(sockets: SocketFactory): AngusMailSession {
+        val properties = MailProperties.imap(server.config).apply { put("mail.imap.socketFactory", sockets) }
+        val mail = Session.getInstance(properties)
+        val store = mail.getStore("imap") as IMAPStore
+        store.connect(server.config.imap.host, server.config.imap.port, server.credentials.loginName, server.credentials.password)
+        return AngusMailSession(store, mail)
+    }
+
+    @Test
+    fun `the search index reads of a mail's header only what its text needs`() {
+        val message = MimeMessage(Session.getInstance(Properties())).apply {
+            setFrom(InternetAddress("prof@example.com"))
+            setRecipients(Message.RecipientType.TO, server.credentials.address)
+            setSubject("長標頭", "UTF-8")
+            // Hundreds of kilobytes of header, which a mail can carry and its text has no use for.
+            repeat(4_000) { addHeader("X-Padding-$it", "a".repeat(100)) }
+            setText("期中考", "UTF-8")
+            saveChanges()
+        }
+        server.deliver(message)
+        val sockets = CountingSocketFactory()
+        session(sockets).use { s ->
+            val uid = s.undeletedUids("INBOX").single()
+            val before = sockets.received.get()
+
+            assertEquals("期中考", s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid))
+
+            val read = sockets.received.get() - before
+            assertTrue("read $read bytes", read < 16 * 1024)
         }
     }
 
