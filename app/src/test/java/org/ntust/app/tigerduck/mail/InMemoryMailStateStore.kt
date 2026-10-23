@@ -45,7 +45,8 @@ class InMemoryMailStateStore : MailStateStore {
         owned[folder to uidValidity] = uids
     }
 
-    override var clears: Int = 0
+    // Volatile as the real store's: a write reads it off the main thread, without the lock.
+    @Volatile override var clears: Int = 0
         private set
 
     @Synchronized
@@ -58,6 +59,11 @@ class InMemoryMailStateStore : MailStateStore {
     @Synchronized
     override fun clear() {
         clears++
+        reset()
+    }
+
+    /** What both clears empty; only [clear] counts, so a write never sees a same-student sign-in move [clears]. */
+    private fun reset() {
         displayName = null; notificationsEnabled = true; authFailed = false; demoMailbox = false
         inboxUidValidity = 0; inboxSeenUidNext = 0; lastForegroundCheckAt = 0
         diagnostics = emptyList()
@@ -70,9 +76,7 @@ class InMemoryMailStateStore : MailStateStore {
         val name = displayName
         val notify = notificationsEnabled
         val kept = owned.toMap()
-        val count = clears
-        clear()
-        clears = count
+        reset()
         displayName = name
         notificationsEnabled = notify
         owned.putAll(kept)

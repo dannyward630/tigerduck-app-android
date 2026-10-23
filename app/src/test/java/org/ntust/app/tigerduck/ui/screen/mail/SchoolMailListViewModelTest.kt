@@ -2992,5 +2992,12 @@ class SchoolMailListViewModelTest {
         assertTrue("a permanent delete went out under another UIDVALIDITY", repo.deleted.isEmpty())
         assertTrue(vm.state.value.actionError is MailError.FolderChanged)
         assertTrue(vm.state.value.writing.isEmpty())
+        vm.dismissActionError()
+
+        // A move of the same mail, asked under the UIDVALIDITY the list still has, is refused alike.
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo("INBOX")
+        assertTrue("a move went out under another UIDVALIDITY", repo.moved.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
     }
 }
