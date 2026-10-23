@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">要開啟這個附件嗎？</string>
     <string name="school_mail_save_draft">儲存草稿</string>
     <string name="school_mail_saved">已儲存</string>
+    <string name="school_mail_search_index_partial">仍在下載郵件，搜尋可能找不到部分較舊的郵件。</string>
     <string name="school_mail_search_local_only">伺服器不支援這個搜尋，只搜尋已載入的郵件。</string>
     <string name="school_mail_search_prompt">搜尋郵件</string>
     <string name="school_mail_send">傳送</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">帳號密碼應與校務系統相同。此密碼 TigerDuck 只會加密存在這台裝置，不會上傳。</string>
     <string name="school_mail_sign_in_prompt_title">登入校園信箱</string>
     <string name="school_mail_source_failed">無法載入原始碼。</string>
+    <string name="school_mail_storage_delete_message">郵件仍保留在學校的伺服器上。下次開啟校園信箱時會重新下載，在那之前，搜尋可能找不到部分郵件。</string>
+    <string name="school_mail_storage_delete_title">要刪除已下載的郵件嗎？</string>
+    <string name="school_mail_storage_footer">下載後就能搜尋所有郵件，捲動清單也不必等待載入。</string>
+    <string name="school_mail_storage_title">已下載的郵件</string>
     <string name="school_mail_subject">主旨</string>
     <string name="school_mail_to">收件者</string>
     <string name="school_mail_too_large">附件超過 50 MB 上限</string>

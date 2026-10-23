@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">هل تريد فتح هذا المرفق؟</string>
     <string name="school_mail_save_draft">حفظ المسودة</string>
     <string name="school_mail_saved">تم الحفظ</string>
+    <string name="school_mail_search_index_partial">لا يزال البريد قيد التنزيل. قد لا يعثر البحث على بعض الرسائل الأقدم.</string>
     <string name="school_mail_search_local_only">لا يمكن للخادم تنفيذ هذا البحث، سيتم عرض النتائج من الرسائل المحمَّلة فقط.</string>
     <string name="school_mail_search_prompt">البحث في البريد</string>
     <string name="school_mail_send">إرسال</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">يجب أن يكون رقم الطالب وكلمة المرور مطابقين لبيانات النظام الجامعي. يخزّن TigerDuck كلمة المرور هذه مشفّرة على هذا الجهاز فقط ولا يرفعها أبدًا.</string>
     <string name="school_mail_sign_in_prompt_title">تسجيل الدخول إلى البريد المدرسي</string>
     <string name="school_mail_source_failed">تعذّر تحميل المصدر.</string>
+    <string name="school_mail_storage_delete_message">يبقى بريدك على خادم المدرسة. سيتم تنزيله مرة أخرى عند فتح البريد المدرسي في المرة القادمة، وحتى ذلك الحين قد لا يعثر البحث على بعضه.</string>
+    <string name="school_mail_storage_delete_title">هل تريد حذف البريد الذي تم تنزيله؟</string>
+    <string name="school_mail_storage_footer">يتم تنزيله حتى تتمكن من البحث في كل بريدك والتنقل فيه دون انتظار.</string>
+    <string name="school_mail_storage_title">البريد الذي تم تنزيله</string>
     <string name="school_mail_subject">الموضوع</string>
     <string name="school_mail_to">إلى</string>
     <string name="school_mail_too_large">المرفقات تتجاوز الحد الأقصى البالغ 50 ميغابايت</string>

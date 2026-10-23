@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">이 첨부 파일을 열까요?</string>
     <string name="school_mail_save_draft">임시저장</string>
     <string name="school_mail_saved">저장됨</string>
+    <string name="school_mail_search_index_partial">메일을 아직 다운로드하는 중이에요. 일부 오래된 메일은 검색에 나오지 않을 수 있어요.</string>
     <string name="school_mail_search_local_only">서버에서 이 검색을 실행할 수 없습니다. 불러온 메일에서만 검색 결과를 표시합니다.</string>
     <string name="school_mail_search_prompt">메일 검색</string>
     <string name="school_mail_send">보내기</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">학번과 비밀번호는 학교 시스템과 동일해야 합니다. TigerDuck은 이 비밀번호를 이 기기에만 암호화하여 저장하며 절대 업로드하지 않습니다.</string>
     <string name="school_mail_sign_in_prompt_title">학교 메일 로그인</string>
     <string name="school_mail_source_failed">소스를 불러올 수 없습니다.</string>
+    <string name="school_mail_storage_delete_message">메일은 학교 서버에 그대로 남아 있어요. 다음에 학교 메일을 열면 다시 다운로드되며, 그 전까지는 검색에서 일부 메일이 나오지 않을 수 있어요.</string>
+    <string name="school_mail_storage_delete_title">다운로드한 메일을 삭제할까요?</string>
+    <string name="school_mail_storage_footer">모든 메일을 검색하고 기다리지 않고 스크롤할 수 있도록 다운로드해 둬요.</string>
+    <string name="school_mail_storage_title">다운로드한 메일</string>
     <string name="school_mail_subject">제목</string>
     <string name="school_mail_to">받는사람</string>
     <string name="school_mail_too_large">첨부 파일이 50MB 제한을 초과했습니다</string>

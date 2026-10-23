@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Avataanko tämä liite?</string>
     <string name="school_mail_save_draft">Tallenna luonnos</string>
     <string name="school_mail_saved">Tallennettu</string>
+    <string name="school_mail_search_index_partial">Viestejä ladataan vielä. Haku ei ehkä löydä joitakin vanhempia viestejä.</string>
     <string name="school_mail_search_local_only">Palvelin ei voi suorittaa tätä hakua. Näytetään osumat vain ladatuista viesteistä.</string>
     <string name="school_mail_search_prompt">Hae viestejä</string>
     <string name="school_mail_send">Lähetä</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Opiskelijanumerosi ja salasanasi tulee olla samat kuin koulun järjestelmässä. TigerDuck tallentaa tämän salasanan vain salattuna tälle laitteelle eikä koskaan lataa sitä palvelimelle.</string>
     <string name="school_mail_sign_in_prompt_title">Kirjaudu koulusähköpostiin</string>
     <string name="school_mail_source_failed">Lähdettä ei voitu ladata.</string>
+    <string name="school_mail_storage_delete_message">Viestisi pysyvät koulun palvelimella. Ne ladataan uudelleen, kun avaat Koulusähköpostin seuraavan kerran, ja siihen asti haku ei ehkä löydä kaikkea.</string>
+    <string name="school_mail_storage_delete_title">Poistetaanko ladatut viestit?</string>
+    <string name="school_mail_storage_footer">Ladataan, jotta voit hakea kaikista viesteistäsi ja selata niitä odottamatta.</string>
+    <string name="school_mail_storage_title">Ladatut viestit</string>
     <string name="school_mail_subject">Aihe</string>
     <string name="school_mail_to">Vastaanottaja</string>
     <string name="school_mail_too_large">Liitteet ylittävät 50 Mt:n rajan</string>

@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Öppna den här bilagan?</string>
     <string name="school_mail_save_draft">Spara utkast</string>
     <string name="school_mail_saved">Sparat</string>
+    <string name="school_mail_search_index_partial">Mejlen laddas fortfarande ned. Sökningen hittar kanske inte några äldre mejl.</string>
     <string name="school_mail_search_local_only">Servern kan inte köra den här sökningen. Visar bara träffar från redan inläst mejl.</string>
     <string name="school_mail_search_prompt">Sök i mejl</string>
     <string name="school_mail_send">Skicka</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Ditt studentnummer och lösenord ska vara samma som i skolans system. TigerDuck sparar det här lösenordet bara krypterat på den här enheten och laddar aldrig upp det.</string>
     <string name="school_mail_sign_in_prompt_title">Logga in på Skolmejl</string>
     <string name="school_mail_source_failed">Källkoden kunde inte läsas in.</string>
+    <string name="school_mail_storage_delete_message">Din mejl ligger kvar på skolans server. Den laddas ned igen nästa gång du öppnar Skolmejl, och fram till dess hittar sökningen kanske inte allt.</string>
+    <string name="school_mail_storage_delete_title">Ta bort nedladdad mejl?</string>
+    <string name="school_mail_storage_footer">Laddas ned så att du kan söka i all din mejl och bläddra i den utan att vänta.</string>
+    <string name="school_mail_storage_title">Nedladdad mejl</string>
     <string name="school_mail_subject">Ämne</string>
     <string name="school_mail_to">Till</string>
     <string name="school_mail_too_large">Bilagorna överskrider gränsen på 50 MB</string>

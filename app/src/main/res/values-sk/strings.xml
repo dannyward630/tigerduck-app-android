@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Otvoriť túto prílohu?</string>
     <string name="school_mail_save_draft">Uložiť koncept</string>
     <string name="school_mail_saved">Uložené</string>
+    <string name="school_mail_search_index_partial">Pošta sa stále sťahuje. Vyhľadávanie nemusí nájsť niektoré staršie správy.</string>
     <string name="school_mail_search_local_only">Server túto funkciu vyhľadávania nepodporuje. Zobrazujú sa iba zhody z už načítanej pošty.</string>
     <string name="school_mail_search_prompt">Hľadať v pošte</string>
     <string name="school_mail_send">Odoslať</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Vaše prihlasovacie meno a heslo by mali byť rovnaké ako v školskom systéme. TigerDuck toto heslo na tomto zariadení ukladá len v zašifrovanej podobe a nikdy ho nikam neodosiela.</string>
     <string name="school_mail_sign_in_prompt_title">Prihlásiť sa do školskej pošty</string>
     <string name="school_mail_source_failed">Zdrojový kód sa nepodarilo načítať.</string>
+    <string name="school_mail_storage_delete_message">Vaša pošta zostane na serveri školy. Znova sa stiahne, keď nabudúce otvoríte Školskú poštu, a dovtedy vyhľadávanie nemusí nájsť všetko.</string>
+    <string name="school_mail_storage_delete_title">Odstrániť stiahnutú poštu?</string>
+    <string name="school_mail_storage_footer">Sťahuje sa, aby ste mohli prehľadávať celú poštu a prechádzať ju bez čakania.</string>
+    <string name="school_mail_storage_title">Stiahnutá pošta</string>
     <string name="school_mail_subject">Predmet</string>
     <string name="school_mail_to">Komu</string>
     <string name="school_mail_too_large">Prílohy prekračujú limit 50 MB</string>

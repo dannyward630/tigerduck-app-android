@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">ఈ జోడింపును తెరవాలా?</string>
     <string name="school_mail_save_draft">డ్రాఫ్ట్ సేవ్ చేయండి</string>
     <string name="school_mail_saved">సేవ్ చేయబడింది</string>
+    <string name="school_mail_search_index_partial">ఇమెయిల్ ఇంకా డౌన్‌లోడ్ అవుతోంది. కొన్ని పాత ఇమెయిల్‌లు శోధనలో కనిపించకపోవచ్చు.</string>
     <string name="school_mail_search_local_only">సర్వర్ ఈ శోధనను అమలు చేయలేదు. లోడ్ చేసిన ఇమెయిల్ నుండి మాత్రమే సరిపోలికలు చూపిస్తోంది.</string>
     <string name="school_mail_search_prompt">ఇమెయిల్ శోధించండి</string>
     <string name="school_mail_send">పంపు</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">మీ ID మరియు పాస్‌వర్డ్ అకాడెమిక్ సిస్టమ్‌లో ఉన్నట్లే ఉండాలి. TigerDuck ఈ పాస్‌వర్డ్‌ను ఈ పరికరంలో ఎన్‌క్రిప్ట్ చేసి మాత్రమే నిల్వ చేస్తుంది, ఎప్పుడూ అప్‌లోడ్ చేయదు.</string>
     <string name="school_mail_sign_in_prompt_title">స్కూల్ ఇమెయిల్‌లో సైన్ ఇన్ చేయండి</string>
     <string name="school_mail_source_failed">మూలాన్ని లోడ్ చేయలేకపోయింది.</string>
+    <string name="school_mail_storage_delete_message">మీ ఇమెయిల్ స్కూల్ సర్వర్‌లోనే ఉంటుంది. తర్వాతిసారి స్కూల్ ఇమెయిల్ తెరిచినప్పుడు అది మళ్లీ డౌన్‌లోడ్ అవుతుంది, అప్పటివరకు శోధనలో కొన్ని కనిపించకపోవచ్చు.</string>
+    <string name="school_mail_storage_delete_title">డౌన్‌లోడ్ చేసిన ఇమెయిల్‌ను తొలగించాలా?</string>
+    <string name="school_mail_storage_footer">మీరు అన్ని ఇమెయిల్‌లలో శోధించడానికి, వేచి ఉండకుండా స్క్రోల్ చేయడానికి ఇవి డౌన్‌లోడ్ అవుతాయి.</string>
+    <string name="school_mail_storage_title">డౌన్‌లోడ్ చేసిన ఇమెయిల్</string>
     <string name="school_mail_subject">విషయం</string>
     <string name="school_mail_to">స్వీకర్త</string>
     <string name="school_mail_too_large">జోడింపులు 50 MB పరిమితిని దాటాయి</string>

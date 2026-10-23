@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Diesen Anhang öffnen?</string>
     <string name="school_mail_save_draft">Entwurf speichern</string>
     <string name="school_mail_saved">Gespeichert</string>
+    <string name="school_mail_search_index_partial">E-Mails werden noch heruntergeladen. Die Suche findet einige ältere E-Mails vielleicht noch nicht.</string>
     <string name="school_mail_search_local_only">Der Server kann diese Suche nicht ausführen. Es werden nur Treffer aus bereits geladenen E-Mails angezeigt.</string>
     <string name="school_mail_search_prompt">E-Mails durchsuchen</string>
     <string name="school_mail_send">Senden</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Matrikelnummer und Passwort entsprechen denen des Hochschulsystems. TigerDuck speichert dieses Passwort nur verschlüsselt auf diesem Gerät und lädt es niemals hoch.</string>
     <string name="school_mail_sign_in_prompt_title">Bei Uni-Mail anmelden</string>
     <string name="school_mail_source_failed">Der Quelltext konnte nicht geladen werden.</string>
+    <string name="school_mail_storage_delete_message">Deine E-Mails bleiben auf dem Server der Uni. Sie werden beim nächsten Öffnen von Uni-Mail erneut heruntergeladen, bis dahin findet die Suche vielleicht nicht alles.</string>
+    <string name="school_mail_storage_delete_title">Heruntergeladene E-Mails löschen?</string>
+    <string name="school_mail_storage_footer">Werden heruntergeladen, damit du alle E-Mails durchsuchen und ohne Warten durchblättern kannst.</string>
+    <string name="school_mail_storage_title">Heruntergeladene E-Mails</string>
     <string name="school_mail_subject">Betreff</string>
     <string name="school_mail_to">An</string>
     <string name="school_mail_too_large">Anhänge überschreiten das Limit von 50 MB</string>

@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Åpne dette vedlegget?</string>
     <string name="school_mail_save_draft">Lagre kladd</string>
     <string name="school_mail_saved">Lagret</string>
+    <string name="school_mail_search_index_partial">E-posten lastes fortsatt ned. Søket finner kanskje ikke noe av den eldre e-posten.</string>
     <string name="school_mail_search_local_only">Serveren kan ikke utføre dette søket. Viser bare treff fra allerede innlastet e-post.</string>
     <string name="school_mail_search_prompt">Søk i e-post</string>
     <string name="school_mail_send">Send</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Studentnummeret og passordet ditt skal være det samme som i skolens system. TigerDuck lagrer dette passordet bare kryptert på denne enheten og laster det aldri opp.</string>
     <string name="school_mail_sign_in_prompt_title">Logg på Skolepost</string>
     <string name="school_mail_source_failed">Kildekoden kunne ikke lastes inn.</string>
+    <string name="school_mail_storage_delete_message">E-posten din blir værende på skolens server. Den lastes ned igjen neste gang du åpner Skolepost, og frem til da finner søket kanskje ikke alt.</string>
+    <string name="school_mail_storage_delete_title">Vil du slette nedlastet e-post?</string>
+    <string name="school_mail_storage_footer">Lastes ned så du kan søke i all e-posten din og bla i den uten å vente.</string>
+    <string name="school_mail_storage_title">Nedlastet e-post</string>
     <string name="school_mail_subject">Emne</string>
     <string name="school_mail_to">Til</string>
     <string name="school_mail_too_large">Vedlegg overskrider grensen på 50 MB</string>

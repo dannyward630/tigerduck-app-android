@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Открыть это вложение?</string>
     <string name="school_mail_save_draft">Сохранить черновик</string>
     <string name="school_mail_saved">Сохранено</string>
+    <string name="school_mail_search_index_partial">Почта ещё загружается. Поиск может не найти некоторые старые письма.</string>
     <string name="school_mail_search_local_only">Сервер не поддерживает этот поиск. Показаны совпадения только из уже загруженной почты.</string>
     <string name="school_mail_search_prompt">Поиск по почте</string>
     <string name="school_mail_send">Отправить</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Логин и пароль должны совпадать с учётными данными системы университета. TigerDuck хранит этот пароль только в зашифрованном виде на этом устройстве и никогда его не выгружает.</string>
     <string name="school_mail_sign_in_prompt_title">Войти в университетскую почту</string>
     <string name="school_mail_source_failed">Не удалось загрузить исходный код.</string>
+    <string name="school_mail_storage_delete_message">Ваша почта остаётся на сервере университета. Она загрузится снова, когда вы в следующий раз откроете Университетскую почту, а до тех пор поиск может найти не всё.</string>
+    <string name="school_mail_storage_delete_title">Удалить загруженную почту?</string>
+    <string name="school_mail_storage_footer">Загружается, чтобы вы могли искать по всей почте и прокручивать её без ожидания.</string>
+    <string name="school_mail_storage_title">Загруженная почта</string>
     <string name="school_mail_subject">Тема</string>
     <string name="school_mail_to">Кому</string>
     <string name="school_mail_too_large">Вложения превышают лимит 50 МБ</string>

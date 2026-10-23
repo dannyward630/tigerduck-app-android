@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">کیا یہ منسلکہ کھولیں؟</string>
     <string name="school_mail_save_draft">مسودہ محفوظ کریں</string>
     <string name="school_mail_saved">محفوظ ہو گیا</string>
+    <string name="school_mail_search_index_partial">ای میل ابھی ڈاؤن لوڈ ہو رہی ہے۔ تلاش میں کچھ پرانی ای میل شاید نہ ملیں۔</string>
     <string name="school_mail_search_local_only">سرور یہ تلاش نہیں چلا سکتا۔ صرف لوڈ شدہ ای میل سے نتائج دکھائے جا رہے ہیں۔</string>
     <string name="school_mail_search_prompt">ای میل تلاش کریں</string>
     <string name="school_mail_send">بھیجیں</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">آپ کا ID اور پاس ورڈ اکیڈمک سسٹم جیسا ہی ہونا چاہیے۔ TigerDuck اس پاس ورڈ کو صرف اس ڈیوائس پر خفیہ کر کے محفوظ رکھتا ہے، کبھی اپ لوڈ نہیں کرتا۔</string>
     <string name="school_mail_sign_in_prompt_title">اسکول ای میل میں سائن ان کریں</string>
     <string name="school_mail_source_failed">سورس لوڈ نہیں ہو سکا۔</string>
+    <string name="school_mail_storage_delete_message">آپ کی ای میل اسکول کے سرور پر ہی رہتی ہے۔ اگلی بار اسکول ای میل کھولنے پر یہ دوبارہ ڈاؤن لوڈ ہوگی، تب تک تلاش میں کچھ ای میل شاید نہ ملیں۔</string>
+    <string name="school_mail_storage_delete_title">ڈاؤن لوڈ کی گئی ای میل حذف کریں؟</string>
+    <string name="school_mail_storage_footer">یہ ڈاؤن لوڈ کی جاتی ہیں تاکہ آپ اپنی تمام ای میل میں تلاش کر سکیں اور انتظار کے بغیر اسکرول کر سکیں۔</string>
+    <string name="school_mail_storage_title">ڈاؤن لوڈ کی گئی ای میل</string>
     <string name="school_mail_subject">موضوع</string>
     <string name="school_mail_to">وصول کنندہ</string>
     <string name="school_mail_too_large">منسلکات 50 MB کی حد سے تجاوز کر گئے ہیں</string>

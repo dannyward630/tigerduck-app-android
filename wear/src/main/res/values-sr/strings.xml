@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Да отворим овај прилог?</string>
     <string name="school_mail_save_draft">Сачувај нацрт</string>
     <string name="school_mail_saved">Сачувано</string>
+    <string name="school_mail_search_index_partial">Пошта се још преузима. Претрага можда неће пронаћи неке старије поруке.</string>
     <string name="school_mail_search_local_only">Сервер не подржава ову претрагу. Приказују се резултати само из учитаних порука.</string>
     <string name="school_mail_search_prompt">Претражи пошту</string>
     <string name="school_mail_send">Пошаљи</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Ваш број индекса и лозинка треба да буду исти као у школском систему. TigerDuck ову лозинку чува само шифровано на овом уређају и никада је не отпрема.</string>
     <string name="school_mail_sign_in_prompt_title">Пријавите се на школску пошту</string>
     <string name="school_mail_source_failed">Изворни код није учитан.</string>
+    <string name="school_mail_storage_delete_message">Ваша пошта остаје на серверу школе. Поново ће се преузети када следећи пут отворите Школску пошту, а до тада претрага можда неће пронаћи све.</string>
+    <string name="school_mail_storage_delete_title">Избрисати преузету пошту?</string>
+    <string name="school_mail_storage_footer">Преузима се да бисте могли да претражујете сву пошту и да је прегледате без чекања.</string>
+    <string name="school_mail_storage_title">Преузета пошта</string>
     <string name="school_mail_subject">Тема</string>
     <string name="school_mail_to">Прима</string>
     <string name="school_mail_too_large">Прилози прелазе ограничење од 50 MB</string>

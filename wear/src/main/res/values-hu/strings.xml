@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Megnyitja ezt a mellékletet?</string>
     <string name="school_mail_save_draft">Piszkozat mentése</string>
     <string name="school_mail_saved">Mentve</string>
+    <string name="school_mail_search_index_partial">A levelek letöltése még folyamatban van. A keresés néhány régebbi levelet esetleg nem talál meg.</string>
     <string name="school_mail_search_local_only">A szerver nem tudja végrehajtani ezt a keresést. Csak a már betöltött üzenetek közötti találatok jelennek meg.</string>
     <string name="school_mail_search_prompt">Üzenetek keresése</string>
     <string name="school_mail_send">Küldés</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">A hallgatói azonosítónak és a jelszónak meg kell egyeznie az egyetemi rendszerben használttal. A TigerDuck alkalmazás ezt a jelszót csak titkosítva tárolja ezen az eszközön, és soha nem tölti fel.</string>
     <string name="school_mail_sign_in_prompt_title">Bejelentkezés az iskolai postába</string>
     <string name="school_mail_source_failed">Nem sikerült betölteni a forrást.</string>
+    <string name="school_mail_storage_delete_message">A levelei az iskola szerverén maradnak. A következő alkalommal, amikor megnyitja az Iskolai postát, újra letöltődnek, addig a keresés nem biztos, hogy mindent megtalál.</string>
+    <string name="school_mail_storage_delete_title">Törli a letöltött leveleket?</string>
+    <string name="school_mail_storage_footer">A levelek letöltődnek, hogy az összesben kereshessen, és várakozás nélkül görgethesse őket.</string>
+    <string name="school_mail_storage_title">Letöltött levelek</string>
     <string name="school_mail_subject">Tárgy</string>
     <string name="school_mail_to">Címzett</string>
     <string name="school_mail_too_large">A mellékletek meghaladják az 50 MB-os korlátot</string>

@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">این پیوست باز شود؟</string>
     <string name="school_mail_save_draft">ذخیرهٔ پیش‌نویس</string>
     <string name="school_mail_saved">ذخیره شد</string>
+    <string name="school_mail_search_index_partial">ایمیل‌ها هنوز در حال دانلود هستند. ممکن است جست‌وجو برخی ایمیل‌های قدیمی‌تر را پیدا نکند.</string>
     <string name="school_mail_search_local_only">سرور نمی‌تواند این جست‌وجو را اجرا کند. فقط نتایج ایمیل‌های بارگذاری‌شده نمایش داده می‌شود.</string>
     <string name="school_mail_search_prompt">جست‌وجوی ایمیل</string>
     <string name="school_mail_send">ارسال</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">شماره دانشجویی و رمز عبور شما باید همان سیستم دانشگاه باشد. TigerDuck این رمز عبور را فقط به‌صورت رمزگذاری‌شده روی همین دستگاه ذخیره می‌کند و هرگز آپلود نمی‌کند.</string>
     <string name="school_mail_sign_in_prompt_title">ورود به ایمیل مدرسه</string>
     <string name="school_mail_source_failed">بارگذاری منبع ممکن نشد.</string>
+    <string name="school_mail_storage_delete_message">ایمیل‌های شما روی سرور مدرسه باقی می‌مانند. دفعهٔ بعد که ایمیل مدرسه را باز کنید دوباره دانلود می‌شوند و تا آن موقع ممکن است جست‌وجو برخی از آن‌ها را پیدا نکند.</string>
+    <string name="school_mail_storage_delete_title">ایمیل‌های دانلودشده حذف شوند؟</string>
+    <string name="school_mail_storage_footer">دانلود می‌شوند تا بتوانید در همهٔ ایمیل‌هایتان جست‌وجو کنید و بدون انتظار آن‌ها را مرور کنید.</string>
+    <string name="school_mail_storage_title">ایمیل‌های دانلودشده</string>
     <string name="school_mail_subject">موضوع</string>
     <string name="school_mail_to">گیرنده</string>
     <string name="school_mail_too_large">پیوست‌ها از محدودیت 50 مگابایت بیشتر است</string>

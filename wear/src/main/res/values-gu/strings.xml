@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">આ એટેચમેન્ટ ખોલવું છે?</string>
     <string name="school_mail_save_draft">ડ્રાફ્ટ સેવ કરો</string>
     <string name="school_mail_saved">સેવ થયું</string>
+    <string name="school_mail_search_index_partial">મેઇલ હજી ડાઉનલોડ થઈ રહ્યા છે. સર્ચમાં કેટલાક જૂના મેઇલ ન મળે એવું બની શકે.</string>
     <string name="school_mail_search_local_only">સર્વર આ સર્ચ ચલાવી શકતું નથી. ફક્ત લોડ થયેલા મેઇલમાંથી મેળ બતાવવામાં આવી રહ્યા છે.</string>
     <string name="school_mail_search_prompt">મેઇલ સર્ચ કરો</string>
     <string name="school_mail_send">મોકલો</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">તમારું ID અને પાસવર્ડ શૈક્ષણિક સિસ્ટમ જેવું જ હોવું જોઈએ. TigerDuck આ પાસવર્ડને ફક્ત આ ડિવાઇસ પર એન્ક્રિપ્ટ કરીને રાખે છે અને ક્યારેય અપલોડ કરતું નથી.</string>
     <string name="school_mail_sign_in_prompt_title">શાળા મેઇલમાં સાઇન ઇન કરો</string>
     <string name="school_mail_source_failed">સોર્સ લોડ થઈ શક્યું નહીં.</string>
+    <string name="school_mail_storage_delete_message">તમારા મેઇલ શાળાના સર્વર પર જ રહેશે. આગલી વખતે તમે શાળા મેઇલ ખોલશો ત્યારે તે ફરી ડાઉનલોડ થશે, ત્યાં સુધી સર્ચમાં કેટલાક મેઇલ ન મળે એવું બની શકે.</string>
+    <string name="school_mail_storage_delete_title">ડાઉનલોડ કરેલા મેઇલ ડિલીટ કરવા છે?</string>
+    <string name="school_mail_storage_footer">ડાઉનલોડ કરેલા રહે છે, જેથી તમે બધા મેઇલમાં સર્ચ કરી શકો અને રાહ જોયા વગર સ્ક્રોલ કરી શકો.</string>
+    <string name="school_mail_storage_title">ડાઉનલોડ કરેલા મેઇલ</string>
     <string name="school_mail_subject">વિષય</string>
     <string name="school_mail_to">પ્રતિ</string>
     <string name="school_mail_too_large">એટેચમેન્ટ 50 MB ની મર્યાદા કરતાં વધુ છે</string>

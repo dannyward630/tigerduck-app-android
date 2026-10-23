@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Aprire questo allegato?</string>
     <string name="school_mail_save_draft">Salva bozza</string>
     <string name="school_mail_saved">Salvato</string>
+    <string name="school_mail_search_index_partial">La posta è ancora in fase di download. La ricerca potrebbe non trovare alcuni messaggi meno recenti.</string>
     <string name="school_mail_search_local_only">Il server non può eseguire questa ricerca. Vengono mostrati solo i risultati della posta già caricata.</string>
     <string name="school_mail_search_prompt">Cerca nella posta</string>
     <string name="school_mail_send">Invia</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Il numero di matricola e la password devono essere gli stessi del sistema universitario. TigerDuck salva questa password solo in forma crittografata su questo dispositivo e non la carica mai online.</string>
     <string name="school_mail_sign_in_prompt_title">Accedi alla posta universitaria</string>
     <string name="school_mail_source_failed">Impossibile caricare il codice sorgente.</string>
+    <string name="school_mail_storage_delete_message">La tua posta resta sul server dell\'università. Verrà scaricata di nuovo la prossima volta che apri Posta universitaria e, fino ad allora, la ricerca potrebbe non trovarne una parte.</string>
+    <string name="school_mail_storage_delete_title">Eliminare la posta scaricata?</string>
+    <string name="school_mail_storage_footer">Viene scaricata per permetterti di cercare in tutta la posta e scorrerla senza attese.</string>
+    <string name="school_mail_storage_title">Posta scaricata</string>
     <string name="school_mail_subject">Oggetto</string>
     <string name="school_mail_to">A</string>
     <string name="school_mail_too_large">Gli allegati superano il limite di 50 MB</string>

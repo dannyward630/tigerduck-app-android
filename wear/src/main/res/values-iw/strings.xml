@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">לפתוח את הקובץ המצורף הזה?</string>
     <string name="school_mail_save_draft">שמור טיוטה</string>
     <string name="school_mail_saved">נשמר</string>
+    <string name="school_mail_search_index_partial">הדואר עדיין בהורדה. ייתכן שהחיפוש לא ימצא חלק מההודעות הישנות.</string>
     <string name="school_mail_search_local_only">השרת אינו יכול להריץ את החיפוש הזה. מוצגות התוצאות מההודעות שכבר נטענו בלבד.</string>
     <string name="school_mail_search_prompt">חיפוש בדואר</string>
     <string name="school_mail_send">שלח</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">מספר הסטודנט והסיסמה שלך צריכים להיות זהים לאלה של מערכת בית הספר. TigerDuck שומר את הסיסמה הזו מוצפנת במכשיר הזה בלבד ולעולם לא מעלה אותה.</string>
     <string name="school_mail_sign_in_prompt_title">התחברות לדואר בית הספר</string>
     <string name="school_mail_source_failed">לא ניתן היה לטעון את המקור.</string>
+    <string name="school_mail_storage_delete_message">הדואר שלך נשאר בשרת של בית הספר. הוא יורד שוב בפעם הבאה שייפתח דואר בית הספר, ועד אז ייתכן שהחיפוש לא ימצא חלק ממנו.</string>
+    <string name="school_mail_storage_delete_title">למחוק את הדואר שהורד?</string>
+    <string name="school_mail_storage_footer">הדואר מורד כדי שאפשר יהיה לחפש בכל הדואר ולגלול בו בלי להמתין.</string>
+    <string name="school_mail_storage_title">דואר שהורד</string>
     <string name="school_mail_subject">נושא</string>
     <string name="school_mail_to">אל</string>
     <string name="school_mail_too_large">הקבצים המצורפים חורגים מהמגבלה של 50MB</string>

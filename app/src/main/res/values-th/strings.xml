@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">เปิดไฟล์แนบนี้หรือไม่?</string>
     <string name="school_mail_save_draft">บันทึกแบบร่าง</string>
     <string name="school_mail_saved">บันทึกแล้ว</string>
+    <string name="school_mail_search_index_partial">กำลังดาวน์โหลดอีเมลอยู่ การค้นหาอาจไม่พบอีเมลเก่าบางฉบับ</string>
     <string name="school_mail_search_local_only">เซิร์ฟเวอร์ไม่รองรับการค้นหานี้ กำลังแสดงผลลัพธ์จากอีเมลที่โหลดแล้วเท่านั้น</string>
     <string name="school_mail_search_prompt">ค้นหาอีเมล</string>
     <string name="school_mail_send">ส่ง</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">รหัสนักศึกษาและรหัสผ่านควรตรงกับระบบของมหาวิทยาลัย TigerDuck จะจัดเก็บรหัสผ่านนี้แบบเข้ารหัสไว้ในอุปกรณ์นี้เท่านั้น ไม่อัปโหลดขึ้นที่ใดทั้งสิ้น</string>
     <string name="school_mail_sign_in_prompt_title">เข้าสู่ระบบอีเมลมหาวิทยาลัย</string>
     <string name="school_mail_source_failed">โหลดซอร์สโค้ดไม่สำเร็จ</string>
+    <string name="school_mail_storage_delete_message">อีเมลของคุณยังอยู่บนเซิร์ฟเวอร์ของมหาวิทยาลัย และจะดาวน์โหลดอีกครั้งเมื่อคุณเปิดอีเมลมหาวิทยาลัยครั้งถัดไป ระหว่างนี้การค้นหาอาจไม่พบอีเมลบางส่วน</string>
+    <string name="school_mail_storage_delete_title">ลบอีเมลที่ดาวน์โหลดไว้หรือไม่?</string>
+    <string name="school_mail_storage_footer">ดาวน์โหลดไว้เพื่อให้คุณค้นหาอีเมลทั้งหมดและเลื่อนดูได้โดยไม่ต้องรอ</string>
+    <string name="school_mail_storage_title">อีเมลที่ดาวน์โหลดไว้</string>
     <string name="school_mail_subject">หัวเรื่อง</string>
     <string name="school_mail_to">ถึง</string>
     <string name="school_mail_too_large">ไฟล์แนบเกินขีดจำกัด 50 MB</string>

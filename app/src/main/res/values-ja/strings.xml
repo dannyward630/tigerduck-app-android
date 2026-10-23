@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">この添付ファイルを開きますか？</string>
     <string name="school_mail_save_draft">下書きを保存</string>
     <string name="school_mail_saved">保存しました</string>
+    <string name="school_mail_search_index_partial">メールをダウンロード中です。古いメールの一部が検索で見つからない場合があります。</string>
     <string name="school_mail_search_local_only">サーバーはこの検索を実行できません。読み込み済みのメールのみを検索結果として表示します。</string>
     <string name="school_mail_search_prompt">メールを検索</string>
     <string name="school_mail_send">送信</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">学籍番号とパスワードは校務システムと同じものを使用してください。このパスワードは、TigerDuckがこの端末上で暗号化して保存するのみで、アップロードすることはありません。</string>
     <string name="school_mail_sign_in_prompt_title">学内メールにサインイン</string>
     <string name="school_mail_source_failed">ソースを読み込めませんでした。</string>
+    <string name="school_mail_storage_delete_message">メールは学校のサーバーに残ります。次に学内メールを開いたときに再びダウンロードされ、それまでは検索で一部のメールが見つからない場合があります。</string>
+    <string name="school_mail_storage_delete_title">ダウンロード済みのメールを削除しますか？</string>
+    <string name="school_mail_storage_footer">すべてのメールを検索したり、待たずにスクロールしたりできるようにダウンロードしています。</string>
+    <string name="school_mail_storage_title">ダウンロード済みのメール</string>
     <string name="school_mail_subject">件名</string>
     <string name="school_mail_to">宛先</string>
     <string name="school_mail_too_large">添付ファイルが50 MBの上限を超えています</string>

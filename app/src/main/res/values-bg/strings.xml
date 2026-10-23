@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Да отворя ли този прикачен файл?</string>
     <string name="school_mail_save_draft">Запази чернова</string>
     <string name="school_mail_saved">Запазено</string>
+    <string name="school_mail_search_index_partial">Пощата все още се изтегля. Търсенето може да не намери някои по-стари писма.</string>
     <string name="school_mail_search_local_only">Сървърът не поддържа това търсене. Показват се резултати само от вече заредените имейли.</string>
     <string name="school_mail_search_prompt">Търсене в пощата</string>
     <string name="school_mail_send">Изпрати</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Вашият студентски номер и парола трябва да са същите като в системата на училището. TigerDuck съхранява тази парола само криптирана на това устройство и никога не я качва в мрежата.</string>
     <string name="school_mail_sign_in_prompt_title">Влезте в училищната поща</string>
     <string name="school_mail_source_failed">Изходният код не можа да се зареди.</string>
+    <string name="school_mail_storage_delete_message">Пощата ви остава на сървъра на училището. Ще се изтегли отново, когато следващия път отворите Училищна поща, а дотогава търсенето може да не намери част от нея.</string>
+    <string name="school_mail_storage_delete_title">Да се изтрие ли изтеглената поща?</string>
+    <string name="school_mail_storage_footer">Изтегля се, за да можете да търсите в цялата си поща и да я преглеждате без чакане.</string>
+    <string name="school_mail_storage_title">Изтеглена поща</string>
     <string name="school_mail_subject">Тема</string>
     <string name="school_mail_to">До</string>
     <string name="school_mail_too_large">Прикачените файлове надвишават лимита от 50 MB</string>

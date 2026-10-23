@@ -810,6 +810,7 @@
     <string name="school_mail_risky_title">Buksan ang attachment na ito?</string>
     <string name="school_mail_save_draft">I-save ang draft</string>
     <string name="school_mail_saved">Na-save</string>
+    <string name="school_mail_search_index_partial">Dina-download pa ang mail. Baka hindi mahanap ng search ang ilang mas lumang mail.</string>
     <string name="school_mail_search_local_only">Hindi ma-run ng server ang search na ito. Ipinapakita lang ang mga match mula sa mail na na-load na.</string>
     <string name="school_mail_search_prompt">Maghanap ng mail</string>
     <string name="school_mail_send">Ipadala</string>
@@ -830,6 +831,10 @@
     <string name="school_mail_sign_in_note">Dapat magkapareho ang ID at password mo sa sistemang akademiko. Ino-encrypt lang ng TigerDuck ang password na ito at ise-save sa device na ito, at hindi kailanman ina-upload.</string>
     <string name="school_mail_sign_in_prompt_title">Mag-sign in sa mail ng paaralan</string>
     <string name="school_mail_source_failed">Hindi ma-load ang source.</string>
+    <string name="school_mail_storage_delete_message">Mananatili ang mail mo sa server ng paaralan. Ida-download itong muli sa susunod na buksan mo ang Mail ng paaralan, at hanggang doon, baka hindi mahanap ng search ang ilan dito.</string>
+    <string name="school_mail_storage_delete_title">Burahin ang na-download na mail?</string>
+    <string name="school_mail_storage_footer">Dina-download ito para mahanap mo ang lahat ng mail mo at ma-scroll nang hindi naghihintay.</string>
+    <string name="school_mail_storage_title">Na-download na mail</string>
     <string name="school_mail_subject">Paksa</string>
     <string name="school_mail_to">Kay</string>
     <string name="school_mail_too_large">Lumagpas sa 50 MB limit ang mga attachment</string>
