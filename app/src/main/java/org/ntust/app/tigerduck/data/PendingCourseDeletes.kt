@@ -106,6 +106,16 @@ class PendingCourseDeletes internal constructor(
         lastStamp.updateAndGet { last -> maxOf(last + 1, clock()) }
     }
 
+    /**
+     * Keeps the delete of [courseNo] in [semester], asked at [queuedAt], on
+     * disk without sending it, for [send] or the next full sync to send: the
+     * class table keeps it before its hide is marked, so a course selection
+     * answer never finds the mark without the delete
+     * (`DataCache.markDeletedCourse`). False once the data was wiped since.
+     */
+    suspend fun keep(semester: String, courseNo: String, queuedAt: Long): Boolean =
+        edit(dataCache.writeGeneration()) { it.with(semester, courseNo, queuedAt) }
+
     /** [send] with the delete asked now. */
     suspend fun send(semester: String, courseNo: String) = send(semester, courseNo, stamp())
 

@@ -131,6 +131,19 @@ class PendingCourseDeletesTest {
         assertEquals(emptySet<String>(), deletes.waitingIn(term))
     }
 
+    /** The class table keeps a delete before its hide is written, and sends it after. */
+    @Test
+    fun `a delete kept ahead of its send waits on disk, unsent, until the send takes it`() = runTest {
+        val queuedAt = deletes.stamp()
+        deletes.keep(term, typed, queuedAt)
+        assertEquals(mapOf(term to listOf(typed)), queued())
+        assertEquals(emptyList<String>(), keys())
+
+        deletes.send(term, typed, queuedAt)
+        assertEquals(listOf("client:1151:MA1010002"), keys())
+        assertEquals(emptyMap<String, List<String>>(), queued())
+    }
+
     @Test
     fun `a delete that lands is not kept`() = runTest {
         deletes.send(term, typed)

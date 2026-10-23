@@ -579,7 +579,8 @@ class HomeBackendSync @Inject constructor(
         }
         val migrated = CourseTombstoneKeys.migrateLegacyEntries(stored, rosters)
         if (migrated != stored) {
-            dataCache.saveDeletedCourseNos(migrated)
+            // Only the entries it pinned: a hide lifted while the rosters were read stays lifted.
+            dataCache.updateDeletedCourseNos(stored, migrated)
             Log.i(TAG, "[Sync] pinned ${stored.size - migrated.count { ':' !in it }} legacy tombstones to their terms")
         }
         return migrated

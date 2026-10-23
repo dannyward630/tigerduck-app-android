@@ -610,9 +610,12 @@ class DataCache @Inject constructor(
 
     /**
      * Hides [courseNo] in [semester] for the class table's delete. Binding
-     * until [markDeletedCourse], which comes once the delete's DELETE is
-     * queued: a hide lifted before it would go up with the roster, and the
-     * DELETE landing after would take the course off the server again.
+     * until [markDeletedCourse], which the class table calls once the
+     * delete's DELETE is kept (PendingCourseDeletes.keep) and before it is
+     * sent: a hide lifted before it is kept would go up with the roster, and
+     * the DELETE landing after would take the course off the server again;
+     * marked after the send, a process killed during it would leave a hide
+     * that binds.
      */
     suspend fun hideDeletedCourse(courseNo: String, semester: String) = courseHidesMutex.withLock {
         writeDeletedCourseNos(CourseTombstoneKeys.hide(courseNo, semester, loadDeletedCourseNos()))
