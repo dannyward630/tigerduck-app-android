@@ -23,6 +23,12 @@ interface MailIndexScheduler {
     /** Brings the index up to the server soon, on any network; a run already queued or going stays. */
     fun request()
 
+    /**
+     * A run of its own after the one queued or going, rather than that one: for mail found missing
+     * that a run under way may have planned without, or be past its last look for.
+     */
+    fun requestAgain()
+
     /** Stops it, for a sign-out. */
     fun cancel()
 }
@@ -31,13 +37,21 @@ class WorkManagerMailIndexScheduler @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) : MailIndexScheduler {
     override fun request() {
-        val request = OneTimeWorkRequestBuilder<MailIndexWorker>()
-            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
-            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.MINUTES)
-            .build()
         // KEEP: a run going already fetches whatever the server has.
-        WorkManager.getInstance(context).enqueueUniqueWork(NAME, ExistingWorkPolicy.KEEP, request)
+        WorkManager.getInstance(context).enqueueUniqueWork(NAME, ExistingWorkPolicy.KEEP, run())
     }
+
+    // After the run there is, or in its place should it have failed or been cancelled. The one
+    // after it finds the index due ([SchoolMailRepository.updateSearchIndex]) and downloads what is
+    // missing, or ends at once when the one before got it all.
+    override fun requestAgain() {
+        WorkManager.getInstance(context).enqueueUniqueWork(NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, run())
+    }
+
+    private fun run() = OneTimeWorkRequestBuilder<MailIndexWorker>()
+        .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+        .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 1, TimeUnit.MINUTES)
+        .build()
 
     override fun cancel() {
         WorkManager.getInstance(context).cancelUniqueWork(NAME)

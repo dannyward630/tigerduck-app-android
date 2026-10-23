@@ -722,8 +722,14 @@ class MailRepository @Inject constructor(
         // past what the catch-up fetches sits below the newest it has, where no later catch-up
         // looks, so a whole download within [INDEX_RESYNC_MS] must not hold that run off
         // ([gapsFound]).
-        if (!whole) gapsFound.incrementAndGet()
-        indexScheduler.request()
+        if (whole) {
+            indexScheduler.request()
+        } else {
+            gapsFound.incrementAndGet()
+            // A run of its own after the one under way, if any: that one may be past its last look
+            // at [gapsFound], or done and yet to be filed so, when a request would only join it.
+            indexScheduler.requestAgain()
+        }
         // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
         val (indexedUnder, matches) = withContext(Dispatchers.IO) {
             val owner = indexOwner() ?: return@withContext null to emptyList()

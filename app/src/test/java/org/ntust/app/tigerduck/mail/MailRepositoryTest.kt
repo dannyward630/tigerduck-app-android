@@ -857,7 +857,7 @@ class MailRepositoryTest {
 
         assertEquals(new, outcome.messages.first().uid)
         assertFalse("the oldest waits for the background", old.first() in outcome.messages.map { it.uid })
-        assertTrue(setup.indexScheduler.requests > 0)
+        assertTrue(setup.indexScheduler.followUps > 0)
     }
 
     @Test
@@ -885,7 +885,7 @@ class MailRepositoryTest {
 
         repo.search("INBOX", "期中")
         // The background run the search asked for, well within fifteen minutes of the whole one.
-        assertTrue(setup.indexScheduler.requests > 0)
+        assertTrue(setup.indexScheduler.requests + setup.indexScheduler.followUps > 0)
         repo.updateSearchIndex()
 
         assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late))
@@ -961,6 +961,24 @@ class MailRepositoryTest {
         visit(repo)
 
         assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late()))
+    }
+
+    /**
+     * The pass under way may be past its last look for gaps, or the background run past its last
+     * pass and yet to be filed as done, which a request then joins and is lost with: a gap asks for
+     * a run of its own after it.
+     */
+    @Test
+    fun `a search that leaves mail out asks for a run after the one under way`() = runTest {
+        server.deliver("期中考 0")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+        (1..MailRepository.SEARCH_CATCH_UP + 5).forEach { server.deliver("期中考 $it") }
+
+        repo.search("INBOX", "期中")
+
+        assertEquals(1, setup.indexScheduler.followUps)
     }
 
     @Test
@@ -1528,6 +1546,7 @@ class MailRepositoryTest {
         assertTrue(runCatching { repo.search("INBOX", "期中") }.exceptionOrNull() is MailError.AuthFailed)
 
         assertEquals(0, setup.indexScheduler.requests)
+        assertEquals(0, setup.indexScheduler.followUps)
     }
 
     /**

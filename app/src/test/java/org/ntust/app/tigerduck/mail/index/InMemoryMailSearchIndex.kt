@@ -160,11 +160,19 @@ class InMemoryMailSearchIndex : MailSearchIndex {
 class RecordingIndexScheduler : MailIndexScheduler {
     var requests = 0
         private set
+
+    /** Runs asked for after whatever run is under way ([MailIndexScheduler.requestAgain]). */
+    var followUps = 0
+        private set
     var cancels = 0
         private set
 
     override fun request() {
         requests++
+    }
+
+    override fun requestAgain() {
+        followUps++
     }
 
     override fun cancel() {
