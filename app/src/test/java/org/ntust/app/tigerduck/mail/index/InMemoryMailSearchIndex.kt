@@ -16,6 +16,9 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     var refusedWrites = 0
         private set
 
+    /** Fires once [clear] has emptied it: a test waits on the clear a sign-in runs on its own. */
+    @Volatile var onClear: (() -> Unit)? = null
+
     @Synchronized
     override fun uidValidity(owner: String, folder: String): Long? = if (this.owner == owner) validities[folder] else null
 
@@ -58,7 +61,11 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     }
 
     @Synchronized
-    override fun remove(owner: String, folder: String, uids: Collection<Long>) {
+    override fun remove(owner: String, folder: String, uids: Collection<Long>, stillCurrent: () -> Boolean) {
+        if (!stillCurrent()) {
+            refusedWrites++
+            return
+        }
         if (this.owner == owner) mail[folder]?.keys?.removeAll(uids.toSet())
     }
 
@@ -80,7 +87,11 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     }
 
     @Synchronized
-    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>) {
+    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>, stillCurrent: () -> Boolean) {
+        if (!stillCurrent()) {
+            refusedWrites++
+            return
+        }
         if (this.owner != owner) return
         val box = mail[folder] ?: return
         flags.forEach { (uid, now) ->
@@ -94,6 +105,7 @@ class InMemoryMailSearchIndex : MailSearchIndex {
         owner = null
         validities.clear()
         mail.clear()
+        onClear?.invoke()
     }
 
     /** What the entries would take: their text, roughly, as a test only compares it to none. */

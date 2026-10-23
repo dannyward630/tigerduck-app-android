@@ -30,6 +30,7 @@ import org.ntust.app.tigerduck.mail.imap.SpecialFolder
 import org.ntust.app.tigerduck.mail.index.InMemoryMailSearchIndex
 import org.ntust.app.tigerduck.mail.index.MailIndexProgress
 import org.ntust.app.tigerduck.mail.index.MailIndexer
+import org.ntust.app.tigerduck.mail.index.MailSearchIndex
 import org.ntust.app.tigerduck.mail.index.RecordingIndexScheduler
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
@@ -913,6 +914,82 @@ class MailRepositoryTest {
         runCurrent()
         assertTrue(first != setup.account.accountGeneration)
         assertEquals(listOf(MailChange.Seen("INBOX", uid, true, first)), changes)
+    }
+
+    /**
+     * Seeds [owner]'s index with [folder]'s [uid] as the server has it: the other student's copy of
+     * that mail, downloaded since they signed in.
+     */
+    private fun TestSetup.seedIndex(owner: String, folder: String, uid: Long) {
+        val summary = server.folders.getValue(folder).single { it.summary.uid == uid }.summary
+        assertTrue(searchIndex.open(owner, folder, server.uidValidity) { true })
+        assertTrue(searchIndex.add(owner, folder, server.uidValidity, listOf(MailSearchIndex.Entry(uid, "", summary.subject, "", summary))) { true })
+    }
+
+    /**
+     * Signs [studentId] in over the one signed in, from inside a write of the first one's on the
+     * server, and waits out the clear of the index that sign-in runs; then gives the new student
+     * their own copy of [folder]'s [uid]. Answers their index's owner.
+     */
+    private fun TestSetup.signInOverDuringWrite(studentId: String, folder: String, uid: Long): String {
+        val cleared = CountDownLatch(1)
+        searchIndex.onClear = { cleared.countDown() }
+        runBlocking { account.signIn(studentId, "pw") }
+        assertTrue("the sign-in's clear never ran", cleared.await(5, TimeUnit.SECONDS))
+        searchIndex.onClear = null
+        val owner = account.ownAddress!!.lowercase()
+        seedIndex(owner, folder, uid)
+        return owner
+    }
+
+    @Test
+    fun `a mark-read that ends after another student signed in leaves their downloaded mail as it was`() = runTest {
+        val uid = server.deliver("a")
+        server.passwords["B10000002"] = "pw"
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        var other: String? = null
+        server.onSetSeen = {
+            server.onSetSeen = null
+            other = setup.signInOverDuringWrite("b10000002", "INBOX", uid)
+        }
+
+        repo.setSeen("INBOX", uid, true)
+        runCurrent()
+
+        val theirs = setup.searchIndex.summaries(other!!, "INBOX", server.uidValidity, listOf(uid)).getValue(uid)
+        assertFalse("the first student's mark-read is not theirs", theirs.flags.seen)
+    }
+
+    @Test
+    fun `a move that ends after another student signed in leaves their downloaded mail in place`() = runTest {
+        val uid = server.deliver("a")
+        server.passwords["B10000002"] = "pw"
+        lateinit var setup: TestSetup
+        var other: String? = null
+        val interrupting = MailSessionFactory { credentials ->
+            val session = server.factory().open(credentials)
+            object : MailSession by session {
+                override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>): Boolean {
+                    val expunged = session.move(folder, uid, target, ownedDeleted)
+                    if (other == null) {
+                        // The other student's mail has the UID the moved one had, as a mailbox
+                        // of theirs would.
+                        server.nextUid = uid
+                        server.deliver("theirs")
+                        other = setup.signInOverDuringWrite("b10000002", "INBOX", uid)
+                    }
+                    return expunged
+                }
+            }
+        }
+        setup = TestSetup(backgroundScope, interrupting)
+        val repo = setup.signedIn()
+
+        repo.move("INBOX", uid, "回收筒")
+        runCurrent()
+
+        assertEquals(setOf(uid), setup.searchIndex.uids(other!!, "INBOX"))
     }
 
     @Test

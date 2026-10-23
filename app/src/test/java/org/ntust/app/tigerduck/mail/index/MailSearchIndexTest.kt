@@ -111,10 +111,22 @@ class MailSearchIndexTest {
     }
 
     @Test
+    fun `nothing is removed or flagged anew for an account that has left`() {
+        seed(entries = arrayOf(Entry(1, "a@example.com", "公告", ""), Entry(2, "b@example.com", "公告", "")))
+
+        index.remove(me, "INBOX", listOf(1L)) { false }
+        index.updateFlags(me, "INBOX", mapOf(2L to MailFlags.NONE.copy(seen = true))) { false }
+
+        val stored = index.summaries(me, "INBOX", 7, listOf(1L, 2L))
+        assertEquals(setOf(1L, 2L), stored.keys)
+        assertFalse(stored.getValue(2L).flags.seen)
+    }
+
+    @Test
     fun `mail gone from the server leaves the index`() {
         seed(entries = arrayOf(Entry(1, "a@example.com", "公告", ""), Entry(2, "b@example.com", "公告", "")))
 
-        index.remove(me, "INBOX", listOf(1L))
+        index.remove(me, "INBOX", listOf(1L), current)
 
         assertEquals(setOf(2L), index.uids(me, "INBOX"))
     }
@@ -146,7 +158,7 @@ class MailSearchIndexTest {
     fun `a mail read elsewhere reads as read, and one deleted there leaves`() {
         seed(entries = arrayOf(Entry(1, "a@example.com", "期中考", ""), Entry(2, "b@example.com", "公告", "")))
 
-        index.updateFlags(me, "INBOX", mapOf(1L to MailFlags.NONE.copy(seen = true), 2L to MailFlags.NONE.copy(deleted = true)))
+        index.updateFlags(me, "INBOX", mapOf(1L to MailFlags.NONE.copy(seen = true), 2L to MailFlags.NONE.copy(deleted = true)), current)
 
         val stored = index.summaries(me, "INBOX", 7, listOf(1L, 2L))
         assertTrue(stored.getValue(1L).flags.seen)

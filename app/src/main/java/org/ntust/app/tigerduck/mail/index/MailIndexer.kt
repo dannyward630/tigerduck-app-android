@@ -19,17 +19,26 @@ data class MailIndexProgress(val done: Int, val total: Int)
 internal class MailIndexer(
     private val index: MailSearchIndex,
     private val sessions: MailSessionRunner,
-    /** Who the index is for: the signed-in account's address, null while signed out. */
-    private val owner: () -> String?,
-    /** Moved by every sign-in and sign-out, which a run that outlives one has no business writing past. */
-    private val generation: () -> Int,
+    /** Who the index is for now; null while signed out. */
+    private val owner: () -> Owner?,
+    /**
+     * Whether the index is still [Owner]'s: no sign-in or sign-out since it was read, which a run
+     * that outlives one has no business writing past.
+     */
+    private val stillOwner: (Owner) -> Boolean,
 ) {
+    /**
+     * Whom a run downloads for: the signed-in account's [address], read together with the
+     * [generation] it signed in at, so a run never pairs one account's address with the sign-in
+     * of the next, whose credentials its requests would then go out under.
+     */
+    data class Owner(val address: String, val generation: Int)
+
     /** What [folder]'s index lacks, newest first, as [plan] found it for [owner] under [uidValidity]. */
     class Plan internal constructor(
         val folder: String,
-        internal val owner: String,
+        internal val owner: Owner,
         internal val uidValidity: Long,
-        internal val generation: Int,
         val missing: List<Long>,
     )
 
@@ -41,19 +50,18 @@ internal class MailIndexer(
      */
     suspend fun plan(folder: String, newOnly: Boolean = false, stillWanted: () -> Boolean = { true }): Plan? {
         val owner = owner() ?: return null
-        val started = generation()
-        val current = { stillWanted() && generation() == started }
+        val current = { stillWanted() && stillOwner(owner) }
         val (uidValidity, onServer) = sessions.run(current) { s ->
             // The UIDs first: the session then answers the UIDVALIDITY from the folder they opened.
             val uids = s.undeletedUids(folder)
             s.uidValidity(folder) to uids
         }
-        if (!index.open(owner, folder, uidValidity, current)) return null
-        val indexed = index.uids(owner, folder)
-        index.remove(owner, folder, indexed - onServer.toSet())
+        if (!index.open(owner.address, folder, uidValidity, current)) return null
+        val indexed = index.uids(owner.address, folder)
+        index.remove(owner.address, folder, indexed - onServer.toSet(), current)
         val newest = if (newOnly) indexed.maxOrNull() ?: 0L else 0L
         val missing = onServer.filter { it !in indexed && it > newest }.sortedDescending()
-        return Plan(folder, owner, uidValidity, started, missing)
+        return Plan(folder, owner, uidValidity, missing)
     }
 
     /**
@@ -66,7 +74,7 @@ internal class MailIndexer(
         stillWanted: () -> Boolean = { true },
         onAdded: (Int) -> Unit = {},
     ): Boolean {
-        val current = { stillWanted() && generation() == plan.generation }
+        val current = { stillWanted() && stillOwner(plan.owner) }
         for (batch in plan.missing.take(limit).chunked(BATCH)) {
             val entries = sessions.run(current) { s ->
                 val texts = s.fetchSearchTexts(plan.folder, batch)
@@ -74,7 +82,7 @@ internal class MailIndexer(
                     MailSearchIndex.Entry(it.uid, senderOf(it), it.subject, texts[it.uid].orEmpty(), it)
                 }
             }
-            if (!index.add(plan.owner, plan.folder, plan.uidValidity, entries, current)) return false
+            if (!index.add(plan.owner.address, plan.folder, plan.uidValidity, entries, current)) return false
             // The batch is done with, mail since deleted included, which the next run will not see.
             onAdded(batch.size)
         }
@@ -86,12 +94,11 @@ internal class MailIndexer(
      * answered or deleted on another device or the web shows so on the phone's copy too.
      */
     suspend fun refreshFlags(plan: Plan, stillWanted: () -> Boolean = { true }) {
-        val current = { stillWanted() && generation() == plan.generation }
-        val downloaded = index.uids(plan.owner, plan.folder).toList()
+        val current = { stillWanted() && stillOwner(plan.owner) }
+        val downloaded = index.uids(plan.owner.address, plan.folder).toList()
         for (chunk in downloaded.chunked(FLAGS_BATCH)) {
             val flags = sessions.run(current) { s -> s.refreshFlags(plan.folder, chunk) }
-            if (!current()) return
-            index.updateFlags(plan.owner, plan.folder, flags)
+            index.updateFlags(plan.owner.address, plan.folder, flags, current)
         }
     }
 

@@ -248,8 +248,8 @@ class MailRepository @Inject constructor(
         object : MailSessionRunner {
             override suspend fun <T> run(stillWanted: () -> Boolean, block: (MailSession) -> T): T = withSession(stillWanted, block)
         },
-        owner = { indexOwner() },
-        generation = { account.accountGeneration },
+        owner = ::indexOwnerNow,
+        stillOwner = ::stillIndexOwner,
     )
     /** The server's folders as resolved for one account: [generation] is the [MailAccount.accountGeneration] that asked, and the list is nobody else's. */
     private class Resolved(val generation: Int, val folders: ResolvedFolders)
@@ -310,23 +310,25 @@ class MailRepository @Inject constructor(
      */
     private suspend fun changed(change: MailChange) {
         withContext(Dispatchers.IO) {
+            if (change is MailChange.Removed) numberings.remove(change.folder)
+            // The copy of the account that made the write, and only while it is still the one
+            // signed in: a write that ended after another student signed in names a mail of
+            // theirs by its UID (see [MailChange.generation]), which it must neither mark nor drop.
+            // Asked again under the index's lock, which the sign-in's clear takes too.
+            val owner = indexOwnerNow()?.takeIf { it.generation == change.generation } ?: return@withContext
             when (change) {
-                is MailChange.Seen -> markSeenInIndex(change.folder, change.uid, change.seen)
-                is MailChange.Removed -> {
-                    numberings.remove(change.folder)
-                    indexOwner()?.let { searchIndex.remove(it, change.folder, listOf(change.uid)) }
-                }
+                is MailChange.Seen -> markSeenInIndex(owner, change.folder, change.uid, change.seen)
+                is MailChange.Removed -> searchIndex.remove(owner.address, change.folder, listOf(change.uid)) { stillIndexOwner(owner) }
                 is MailChange.Changed -> Unit
             }
         }
         _changes.emit(change)
     }
 
-    private fun markSeenInIndex(folder: String, uid: Long, seen: Boolean) {
-        val owner = indexOwner() ?: return
-        val validity = searchIndex.uidValidity(owner, folder) ?: return
-        val summary = searchIndex.summaries(owner, folder, validity, listOf(uid))[uid] ?: return
-        searchIndex.updateFlags(owner, folder, mapOf(uid to summary.flags.copy(seen = seen)))
+    private fun markSeenInIndex(owner: MailIndexer.Owner, folder: String, uid: Long, seen: Boolean) {
+        val validity = searchIndex.uidValidity(owner.address, folder) ?: return
+        val summary = searchIndex.summaries(owner.address, folder, validity, listOf(uid))[uid] ?: return
+        searchIndex.updateFlags(owner.address, folder, mapOf(uid to summary.flags.copy(seen = seen))) { stillIndexOwner(owner) }
     }
 
     /**
@@ -363,6 +365,16 @@ class MailRepository @Inject constructor(
 
     /** Whose the search index is: the signed-in account's address, whatever its case. */
     private fun indexOwner(): String? = account.ownAddress?.lowercase()
+
+    /**
+     * Whom a write to the search index is for: [indexOwner] with the sign-in it belongs to, read
+     * together. A read of the encrypted store, so not for the main thread.
+     */
+    private fun indexOwnerNow(): MailIndexer.Owner? =
+        account.snapshot()?.let { MailIndexer.Owner(it.credentials.address.lowercase(), it.generation) }
+
+    /** Whether the index is still [owner]'s: no sign-in or sign-out since it was read. */
+    private fun stillIndexOwner(owner: MailIndexer.Owner): Boolean = account.accountGeneration == owner.generation
 
     private fun credentials() = account.credentialsOrNull() ?: throw MailError.Protocol("not signed in")
 

@@ -48,8 +48,8 @@ interface MailSearchIndex {
      */
     fun add(owner: String, folder: String, uidValidity: Long, entries: List<Entry>, stillCurrent: () -> Boolean): Boolean
 
-    /** Drops [uids], gone from the server, from [folder]. */
-    fun remove(owner: String, folder: String, uids: Collection<Long>)
+    /** Drops [uids], gone from the server, from [folder], unless [stillCurrent] says the account left. */
+    fun remove(owner: String, folder: String, uids: Collection<Long>, stillCurrent: () -> Boolean)
 
     /** The UIDs, newest first, of [owner]'s mail in [folder] whose sender, subject or text holds [query]. */
     fun search(owner: String, folder: String, query: String): List<Long>
@@ -59,9 +59,9 @@ interface MailSearchIndex {
 
     /**
      * Brings the flags of [folder]'s downloaded mail to [flags], as the server has them now; mail
-     * flagged `\Deleted` leaves it.
+     * flagged `\Deleted` leaves it. Nothing changes once [stillCurrent] says the account left.
      */
-    fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>)
+    fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>, stillCurrent: () -> Boolean)
 
     /** Empties it, for a sign-out or the user deleting it, and gives back the disk it took. */
     fun clear()
@@ -176,8 +176,8 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
     }
 
     @Synchronized
-    override fun remove(owner: String, folder: String, uids: Collection<Long>) {
-        if (uids.isEmpty() || ownerLocked() != owner) return
+    override fun remove(owner: String, folder: String, uids: Collection<Long>, stillCurrent: () -> Boolean) {
+        if (uids.isEmpty() || !stillCurrent() || ownerLocked() != owner) return
         transaction { uids.forEach { db.delete("mail", "folder = ? AND uid = ?", arrayOf(folder, it.toString())) } }
     }
 
@@ -215,8 +215,8 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
     }
 
     @Synchronized
-    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>) {
-        if (flags.isEmpty() || ownerLocked() != owner) return
+    override fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>, stillCurrent: () -> Boolean) {
+        if (flags.isEmpty() || !stillCurrent() || ownerLocked() != owner) return
         val stored = validityLocked(folder)?.let { summariesLocked(folder, flags.keys) }.orEmpty()
         transaction {
             stored.values.forEach { summary ->
