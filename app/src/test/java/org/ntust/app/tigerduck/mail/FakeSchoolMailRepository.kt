@@ -454,7 +454,7 @@ class FakeSchoolMailRepository : SchoolMailRepository {
      */
     var searchPageGate: CompletableDeferred<Unit>? = null
 
-    /** The UIDVALIDITY [searchPage] reports; the search itself always reports 1. */
+    /** The UIDVALIDITY [searchPage] reports; the search itself reports [searchValidity]. */
     var searchPageValidity = 1L
 
     override suspend fun searchPage(folder: String, uids: List<Long>, stillWanted: () -> Boolean): SearchPage {
