@@ -286,6 +286,13 @@ class SchoolMailListViewModel @Inject constructor(
     private var searchGeneration = 0
 
     /**
+     * The delete question [delete] is still finding out which of its two to ask, from the server.
+     * One question at a time ([mayAsk]): a second swipe while this one is out would otherwise
+     * replace its question, and the first delete be dropped without a word.
+     */
+    private var asking: Job? = null
+
+    /**
      * When the folders on screen were last looked at, by [clock]: a first page that landed, or a
      * poll that ran to the end. What a return's own look at the inbox is decided against
      * ([pollsOnResume]).
@@ -308,6 +315,8 @@ class SchoolMailListViewModel @Inject constructor(
     private fun forgetAccount() {
         loadJob?.cancel()
         loadJob = null
+        asking?.cancel()
+        asking = null
         prefetchJob?.cancel()
         prefetchJob = null
         prefetchDone = false
@@ -600,9 +609,9 @@ class SchoolMailListViewModel @Inject constructor(
      * question is then nobody's: put to them, its Delete would act on a mail of theirs.
      */
     fun delete(row: MailRow) {
-        if (row.key in _state.value.writing) return
+        if (!mayAsk(row)) return
         val generation = account.accountGeneration
-        viewModelScope.launch {
+        asking = viewModelScope.launch {
             try {
                 val permanently = repository.deletesPermanently(row.folder)
                 if (account.accountGeneration != generation) return@launch
@@ -629,7 +638,7 @@ class SchoolMailListViewModel @Inject constructor(
     }
 
     fun requestMove(row: MailRow) {
-        if (row.key in _state.value.writing) return
+        if (!mayAsk(row)) return
         _state.update { it.copy(pendingMove = PendingMove(row, account.accountGeneration)) }
     }
 
@@ -642,6 +651,16 @@ class SchoolMailListViewModel @Inject constructor(
         val pending = _state.value.pendingMove ?: return
         _state.update { it.copy(pendingMove = null) }
         write(pending.row, pending.generation) { repository.move(it.folder, it.uid, target) }
+    }
+
+    /**
+     * Whether a delete or move of [row] may be asked now: no question is up or on its way, of this
+     * row or another, and no write of this one is still out ([UiState.writing]). A question
+     * refused is simply not asked; the row it was for is still on the list to ask it again.
+     */
+    private fun mayAsk(row: MailRow): Boolean {
+        val s = _state.value
+        return asking?.isActive != true && s.pendingDelete == null && s.pendingMove == null && row.key !in s.writing
     }
 
     /**

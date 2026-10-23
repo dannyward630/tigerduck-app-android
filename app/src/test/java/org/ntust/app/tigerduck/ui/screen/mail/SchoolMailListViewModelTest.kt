@@ -2723,4 +2723,47 @@ class SchoolMailListViewModelTest {
         assertEquals(listOf("INBOX" to 1L), repo.deleted)
         assertTrue(vm.state.value.displayed.isEmpty())
     }
+
+    @Test
+    fun `a second swipe before the first delete's question is up leaves the first one asked`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val first = vm.state.value.displayed.first { it.uid == 2L }
+        val second = vm.state.value.displayed.first { it.uid == 1L }
+        // The first swipe's answer is still out when the second row is swiped.
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(first)
+        vm.delete(second)
+        repo.trashGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the second swipe dropped the first delete without a word", first, vm.state.value.pendingDelete?.row)
+        vm.confirmDelete(true)
+        assertNull(vm.state.value.pendingDelete)
+        assertEquals(listOf("INBOX" to 2L), repo.deleted)
+    }
+
+    @Test
+    fun `nothing else is asked while a question is up, and the next can be once it is answered`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        val first = vm.state.value.displayed.first { it.uid == 2L }
+        val second = vm.state.value.displayed.first { it.uid == 1L }
+        vm.delete(first)
+        vm.delete(second)
+        vm.requestMove(second)
+        assertEquals(first, vm.state.value.pendingDelete?.row)
+        assertNull("a move was asked over a delete's question", vm.state.value.pendingMove)
+        vm.confirmDelete(false)
+
+        vm.requestMove(second)
+        vm.delete(first)
+        assertEquals(second, vm.state.value.pendingMove?.row)
+        assertNull("a delete was asked over a move's question", vm.state.value.pendingDelete)
+        vm.dismissMove()
+
+        vm.delete(second)
+        assertEquals(second, vm.state.value.pendingDelete?.row)
+    }
 }
