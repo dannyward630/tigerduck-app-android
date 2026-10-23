@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.ui.screen.library
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
@@ -26,10 +27,14 @@ class LibraryQRCycleTest {
     private val errors = MutableStateFlow<String?>(null)
     private var codes = 0
 
+    /** While set, a request waits for it before the library answers, as one still out. */
+    private var outstanding: CompletableDeferred<Unit>? = null
+
     private fun TestScope.cycle(): LibraryQRCycle<String> = LibraryQRCycle(
         scope = backgroundScope,
         fetch = {
             fetchedAt += testScheduler.currentTime
+            outstanding?.await()
             val answer = answers.removeFirstOrNull() ?: Result.success("code-${++codes}")
             answer.getOrThrow()
         },
@@ -163,6 +168,137 @@ class LibraryQRCycleTest {
         runCurrent()
         assertEquals("image of code-1", cycle.image.value)
         advanceTimeBy(1_000)
+        runCurrent()
+        assertNull(cycle.image.value)
+    }
+
+    /**
+     * Retry on the error banner cuts the wait after a failed request short, as on the iPhone
+     * (tigerduck-app/tigerduck-app#556).
+     */
+    @Test
+    fun `a retry during the wait after a failure asks for a code at once`() = runTest {
+        answers += fail()
+        val cycle = cycle()
+        cycle.start()
+        runCurrent()
+        assertTrue(cycle.waitingToRetry.value)
+
+        advanceTimeBy(10_000)
+        cycle.retryNow()
+        runCurrent()
+
+        assertEquals(listOf(0L, 10_000L), fetchedAt)
+        assertEquals("image of code-1", cycle.image.value)
+        assertNull(errors.value)
+        assertFalse(cycle.waitingToRetry.value)
+    }
+
+    /**
+     * The user's request starts the backoff over: a retry that fails waits a minute, not the
+     * step the failures before it had reached. The countdown row stays hidden meanwhile.
+     */
+    @Test
+    fun `a retry that fails too waits the first backoff step again`() = runTest {
+        answers += listOf(fail(), fail(), fail())
+        val cycle = cycle()
+        cycle.start()
+        // Fails at 0 and again at 60, so the backoff's next try is two minutes on.
+        advanceTimeBy(60_000)
+        runCurrent()
+        advanceTimeBy(10_000)
+        cycle.retryNow()
+        runCurrent()
+        assertTrue(cycle.waitingToRetry.value)
+        assertEquals(0, cycle.countdown.value)
+
+        advanceTimeBy(60_000)
+        runCurrent()
+        assertEquals(listOf(0L, 60_000L, 70_000L, 130_000L), fetchedAt)
+        assertEquals("image of code-1", cycle.image.value)
+    }
+
+    @Test
+    fun `a second retry while the first one's request is out sends no second one`() = runTest {
+        answers += fail()
+        val cycle = cycle()
+        cycle.start()
+        runCurrent()
+        val reply = CompletableDeferred<Unit>()
+        outstanding = reply
+
+        cycle.retryNow()
+        runCurrent()
+        cycle.retryNow()
+        runCurrent()
+        assertEquals(listOf(0L, 0L), fetchedAt)
+
+        reply.complete(Unit)
+        runCurrent()
+        assertEquals("image of code-1", cycle.image.value)
+        assertEquals(listOf(0L, 0L), fetchedAt)
+    }
+
+    @Test
+    fun `a retry while the backoff's own request is out sends no second one`() = runTest {
+        answers += fail()
+        val cycle = cycle()
+        cycle.start()
+        runCurrent()
+        val reply = CompletableDeferred<Unit>()
+        outstanding = reply
+        advanceTimeBy(60_000)
+        runCurrent()
+
+        cycle.retryNow()
+        runCurrent()
+        assertEquals(listOf(0L, 60_000L), fetchedAt)
+
+        reply.complete(Unit)
+        runCurrent()
+        assertEquals("image of code-1", cycle.image.value)
+        assertEquals(listOf(0L, 60_000L), fetchedAt)
+    }
+
+    /** A page that has paused asks for nothing until it comes back. */
+    @Test
+    fun `a retry after the cycle stopped asks for nothing`() = runTest {
+        answers += fail()
+        val cycle = cycle()
+        cycle.start()
+        runCurrent()
+
+        cycle.stop()
+        assertFalse(cycle.waitingToRetry.value)
+        cycle.retryNow()
+        advanceTimeBy(600_000)
+        runCurrent()
+
+        assertEquals(listOf(0L), fetchedAt)
+    }
+
+    /** A code still valid when a retry fails goes the moment it runs out, as after any failure. */
+    @Test
+    fun `a code still valid when a retry fails goes the moment it runs out`() = runTest {
+        val cycle = cycle()
+        cycle.start()
+        runCurrent()
+        cycle.stop()
+        // Too little left to show again, so the page asks for a new one, and that fails.
+        advanceTimeBy(20_000)
+        answers += listOf(fail(), fail())
+        cycle.start()
+        runCurrent()
+        advanceTimeBy(5_000)
+        cycle.retryNow()
+        runCurrent()
+        assertEquals(listOf(0L, 20_000L, 25_000L), fetchedAt)
+        assertEquals("image of code-1", cycle.image.value)
+
+        advanceTimeBy(4_999)
+        runCurrent()
+        assertEquals("image of code-1", cycle.image.value)
+        advanceTimeBy(1)
         runCurrent()
         assertNull(cycle.image.value)
     }

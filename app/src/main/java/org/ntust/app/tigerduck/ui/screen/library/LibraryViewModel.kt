@@ -77,6 +77,9 @@ class LibraryViewModel @Inject constructor(
     val isLoadingQR: StateFlow<Boolean> = pass.isLoading
     val isLoggedIn: StateFlow<Boolean> = pass.isLoggedIn
 
+    /** Whether the error banner offers Retry; see [LibraryPassState.waitingToRetry]. */
+    val isWaitingToRetry: StateFlow<Boolean> = pass.waitingToRetry
+
     /** For the sync dot's "Last synced" row; see [LibraryPassState.syncedAt]. */
     val syncedAtMs: StateFlow<Long> = pass.syncedAt
 
@@ -155,6 +158,8 @@ class LibraryViewModel @Inject constructor(
     }
 
     fun onPause() = pass.pause()
+
+    fun retryNow() = pass.retryNow()
 
     /**
      * Counts the page as shown while its back stack entry is resumed; the

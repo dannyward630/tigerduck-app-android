@@ -133,6 +133,24 @@ class LibraryPassStateTest {
         assertEquals(1, fetched)
     }
 
+    /** Retry on the page's error banner asks for a code at once (tigerduck-app/tigerduck-app#556). */
+    @Test
+    fun `Retry on the error banner asks for a code at once`() = runTest {
+        fetches += { throw IOException("HTTP 503") }
+        val pass = pass()
+        pass.load()
+        runCurrent()
+        assertTrue(pass.waitingToRetry.value)
+
+        pass.retryNow()
+        runCurrent()
+
+        assertEquals(2, fetched)
+        assertEquals("image of code-2", pass.image.value)
+        assertNull(pass.errors.value)
+        assertFalse(pass.waitingToRetry.value)
+    }
+
     /** The form's own failure, such as a password typed wrong, stays when the session reads signed out. */
     @Test
     fun `a page already on the sign-in form keeps what it says`() = runTest {
