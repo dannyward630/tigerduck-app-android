@@ -618,6 +618,45 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a search reads and writes the downloaded mail off the thread that asked`() = runTest {
+        repeat(3) { server.deliver("期中考 $it") }
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        setup.searchIndex.callers.clear()
+
+        repo.search("INBOX", "期中")
+
+        assertTrue(setup.searchIndex.callers.isNotEmpty())
+        assertFalse("SQLite on the main thread", Thread.currentThread() in setup.searchIndex.callers)
+    }
+
+    @Test
+    fun `the download in the app reads and writes the downloaded mail off the scope's thread`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        setup.searchIndex.callers.clear()
+
+        visit(repo)
+
+        assertTrue(setup.searchIndex.callers.isNotEmpty())
+        assertFalse(Thread.currentThread() in setup.searchIndex.callers)
+    }
+
+    @Test
+    fun `an older page from the phone reads the account off the thread that asked`() = runTest {
+        (1..60).forEach { server.deliver("信 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.updateSearchIndex()
+        val newest = repo.loadPage("INBOX", null)
+        credentials.idReaders.clear()
+
+        repo.loadPage("INBOX", newest.nextBeforeSeq)
+
+        assertFalse("the encrypted store on the main thread", Thread.currentThread() in credentials.idReaders)
+    }
+
+    @Test
     fun `an older page not downloaded yet comes from the server`() = runTest {
         (1..120).forEach { server.deliver("信 $it") }
         val repo = TestSetup(backgroundScope).signedIn()

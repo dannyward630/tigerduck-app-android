@@ -1,5 +1,7 @@
 package org.ntust.app.tigerduck.mail.index
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.model.MailSummary
 
@@ -14,7 +16,8 @@ data class MailIndexProgress(val done: Int, val total: Int)
 /**
  * Brings the [MailSearchIndex] up to the server's mail, a folder at a time and [BATCH] mails at a
  * time. Each batch holds the shared connection once, so a page the user opens waits on one batch
- * at most.
+ * at most. All of it on the IO dispatcher, its reads and writes of the index included: a search
+ * calls it from the main thread.
  */
 internal class MailIndexer(
     private val index: MailSearchIndex,
@@ -49,20 +52,20 @@ internal class MailIndexer(
      * search catches up on without waiting for the first download's backlog. Null for no account,
      * or one that left meanwhile.
      */
-    suspend fun plan(folder: String, newOnly: Boolean = false, stillWanted: () -> Boolean = { true }): Plan? {
-        val owner = owner() ?: return null
+    suspend fun plan(folder: String, newOnly: Boolean = false, stillWanted: () -> Boolean = { true }): Plan? = withContext(Dispatchers.IO) {
+        val owner = owner() ?: return@withContext null
         val current = { stillWanted() && stillOwner(owner) }
         val (uidValidity, onServer) = sessions.run(current) { s ->
             // The UIDs first: the session then answers the UIDVALIDITY from the folder they opened.
             val uids = s.undeletedUids(folder)
             s.uidValidity(folder) to uids
         }
-        if (!index.open(owner.address, folder, uidValidity, current)) return null
+        if (!index.open(owner.address, folder, uidValidity, current)) return@withContext null
         val indexed = index.uids(owner.address, folder)
         index.remove(owner.address, folder, indexed - onServer.toSet(), current)
         val newest = if (newOnly) indexed.maxOrNull() ?: 0L else 0L
         val missing = onServer.filter { it !in indexed && it > newest }.sortedDescending()
-        return Plan(folder, owner, uidValidity, missing)
+        Plan(folder, owner, uidValidity, missing)
     }
 
     /**
@@ -74,7 +77,7 @@ internal class MailIndexer(
         limit: Int = Int.MAX_VALUE,
         stillWanted: () -> Boolean = { true },
         onAdded: (Int) -> Unit = {},
-    ): Boolean {
+    ): Boolean = withContext(Dispatchers.IO) {
         val current = { stillWanted() && stillOwner(plan.owner) }
         for (batch in plan.missing.take(limit).chunked(BATCH)) {
             // Read and filed in one hold of the connection. A mark-read or a move holds it too, so
@@ -90,18 +93,18 @@ internal class MailIndexer(
                 }
                 index.add(plan.owner.address, plan.folder, plan.uidValidity, entries, current)
             }
-            if (!added) return false
+            if (!added) return@withContext false
             // The batch is done with, mail since deleted included, which the next run will not see.
             onAdded(batch.size)
         }
-        return plan.missing.size <= limit
+        plan.missing.size <= limit
     }
 
     /**
      * Brings the flags of the mail [plan]'s folder has downloaded to the server's: a mail read,
      * answered or deleted on another device or the web shows so on the phone's copy too.
      */
-    suspend fun refreshFlags(plan: Plan, stillWanted: () -> Boolean = { true }) {
+    suspend fun refreshFlags(plan: Plan, stillWanted: () -> Boolean = { true }) = withContext(Dispatchers.IO) {
         val current = { stillWanted() && stillOwner(plan.owner) }
         val downloaded = index.uids(plan.owner.address, plan.folder).toList()
         for (chunk in downloaded.chunked(FLAGS_BATCH)) {
@@ -112,7 +115,7 @@ internal class MailIndexer(
                 index.updateFlags(plan.owner.address, plan.folder, plan.uidValidity, s.refreshFlags(plan.folder, chunk), current)
                 true
             }
-            if (!applied) return
+            if (!applied) return@withContext
         }
     }
 

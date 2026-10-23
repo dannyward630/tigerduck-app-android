@@ -345,17 +345,18 @@ class MailRepository @Inject constructor(
      * has been downloaded; null sends it to the server. As [MailSession.fetchPage] answers: newest
      * first, the UIDs it spans, and where the next one starts.
      */
-    private suspend fun localOlderPage(folder: String, beforeSeq: Int, limit: Int): MailPage? {
-        val owner = indexOwner() ?: return null
-        val numbering = numberings[folder]?.takeIf { it.generation == account.accountGeneration } ?: return null
+    private suspend fun localOlderPage(folder: String, beforeSeq: Int, limit: Int): MailPage? = withContext(Dispatchers.IO) {
+        // The account's address is a read of the encrypted store: on the IO dispatcher too.
+        val owner = indexOwner() ?: return@withContext null
+        val numbering = numberings[folder]?.takeIf { it.generation == account.accountGeneration } ?: return@withContext null
         val end = beforeSeq - 1
-        if (end < 1 || end > numbering.uids.size) return null
+        if (end < 1 || end > numbering.uids.size) return@withContext null
         val start = maxOf(1, end - limit + 1)
         val window = numbering.uids.copyOfRange(start - 1, end).asList()
-        val stored = withContext(Dispatchers.IO) { searchIndex.summaries(owner, folder, numbering.uidValidity, window) }
+        val stored = searchIndex.summaries(owner, folder, numbering.uidValidity, window)
         // A mail not downloaded yet, or flagged \Deleted, which the copy leaves out: the server's.
-        if (stored.size < window.size) return null
-        return MailPage(
+        if (stored.size < window.size) return@withContext null
+        MailPage(
             uidValidity = numbering.uidValidity,
             totalMessages = numbering.uids.size,
             messages = stored.values.sortedByDescending { it.uid },
@@ -728,7 +729,7 @@ class MailRepository @Inject constructor(
      */
     private suspend fun downloadIndex(stillWanted: () -> Boolean = { true }) {
         if (account.isDemo || state.authFailed) return
-        val owner = indexOwnerNow() ?: return
+        val owner = withContext(Dispatchers.IO) { indexOwnerNow() } ?: return
         try {
             // The folder list a first run resolves is the account's request too.
             downloadEveryFolder(owner) { stillWanted() && stillIndexOwner(owner) }

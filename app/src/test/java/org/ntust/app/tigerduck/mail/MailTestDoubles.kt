@@ -15,6 +15,7 @@ import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.notify.MailNotifier
 import org.ntust.app.tigerduck.mail.store.MailCredentialStore
 import org.ntust.app.tigerduck.mail.sync.MailBackgroundScheduler
+import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
  * Stands in for the app-wide `@ApplicationScope`: the only thing [MailAccount]
@@ -46,7 +47,14 @@ class InMemoryMailDevServerStore(
 fun schoolMailSite(): MailSite = MailSite(InMemoryMailDevServerStore())
 
 class InMemoryCredentialStore : MailCredentialStore {
+    /** The thread of every read of the student ID: the real store decrypts it, so never on the main thread. */
+    val idReaders = ConcurrentLinkedQueue<Thread>()
+
     override var mailStudentId: String? = null
+        get() {
+            idReaders += Thread.currentThread()
+            return field
+        }
     override var mailPassword: String? = null
 
     /** Fires inside [clearMailCredentials], before anything is removed: lets a test act mid-sign-out. */
