@@ -42,7 +42,8 @@ class FakeMailServer {
         callErrors.clear()
         callErrors.addAll(errors)
     }
-    var searchUnsupported = false
+    /** How many times a session listed a folder's UIDs, which the search index does before it fetches. */
+    var undeletedUidsCalls = 0
     var expungeOnMove = true
 
     /** Every name a session was asked to CREATE, in order — what a test asserts on to prove nothing is created speculatively. */
@@ -201,9 +202,9 @@ class FakeMailServer {
             list(folder).remove(find(folder, uid))
         }
 
-        override fun search(folder: String, query: String) = call {
-            if (searchUnsupported) throw MailError.SearchUnsupported()
-            list(folder).map { it.summary }.filter { query in it.subject }.map { it.uid }.sortedDescending()
+        override fun undeletedUids(folder: String) = call {
+            undeletedUidsCalls++
+            list(folder).filterNot { it.summary.flags.deleted }.map { it.summary.uid }
         }
 
         override fun append(folder: String, rfc822: ByteArray, flags: Set<AppendFlag>) = call {

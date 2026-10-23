@@ -19,6 +19,10 @@ import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.ResolvedFolders
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.MailIndexScheduler
+import org.ntust.app.tigerduck.mail.index.MailIndexer
+import org.ntust.app.tigerduck.mail.index.MailSearchIndex
+import org.ntust.app.tigerduck.mail.index.MailSessionRunner
 import org.ntust.app.tigerduck.mail.mime.MailCharsets
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
@@ -42,9 +46,9 @@ sealed interface SearchOutcome {
     val messages: List<MailSummary>
 
     /**
-     * The newest page of the server's matches, and [remaining]: the UIDs of every match not
-     * fetched yet, newest first, for [SchoolMailRepository.searchPage] to fetch as the list
-     * scrolls.
+     * The newest page of the matches the search index found, as the server has them now, and
+     * [remaining]: the UIDs of every match not fetched yet, newest first, for
+     * [SchoolMailRepository.searchPage] to fetch as the list scrolls.
      */
     data class Server(
         override val messages: List<MailSummary>,
@@ -53,7 +57,7 @@ sealed interface SearchOutcome {
         val uidValidity: Long? = null,
     ) : SearchOutcome
     /**
-     * The server couldn't search; these are matches among the folder's cached newest page, with
+     * The demo mailbox, which has no index; these are matches among the folder's newest page, with
      * [uidValidity] the page was read under (null where unknown). The list page substitutes the
      * rows it has loaded, pages back included, where they were read under the same UIDVALIDITY.
      */
@@ -155,8 +159,18 @@ interface SchoolMailRepository {
     suspend fun deletesPermanently(folder: String): Boolean
     suspend fun delete(folder: String, uid: Long)
 
-    /** [stillWanted] as on [loadPage]. */
+    /**
+     * The mail of [folder] whose sender, subject or text holds [query], found in the search index
+     * on this phone: the school's server cannot search in Chinese. Mail come in since the index
+     * last caught up is added first, the newest few. [stillWanted] as on [loadPage].
+     */
     suspend fun search(folder: String, query: String, stillWanted: () -> Boolean = { true }): SearchOutcome
+
+    /**
+     * Downloads into the search index every mail it lacks, in every folder, Inbox and Sent first.
+     * Long: the first run fetches the text of the whole mailbox. [stillWanted] as on [loadPage].
+     */
+    suspend fun updateSearchIndex(stillWanted: () -> Boolean = { true })
 
     /**
      * The summaries of [uids], matches [search] left in [SearchOutcome.Server.remaining]; mail gone
@@ -201,10 +215,21 @@ class MailRepository @Inject constructor(
     private val sender: MailSender,
     private val builder: MessageBuilder,
     private val demo: MailDemoGate,
+    private val searchIndex: MailSearchIndex,
+    private val indexScheduler: MailIndexScheduler,
     @ApplicationScope scope: CoroutineScope,
 ) : SchoolMailRepository {
     @VisibleForTesting
     internal val holder = SessionHolder(sessions, scope)
+
+    private val indexer = MailIndexer(
+        searchIndex,
+        object : MailSessionRunner {
+            override suspend fun <T> run(stillWanted: () -> Boolean, block: (MailSession) -> T): T = withSession(stillWanted, block)
+        },
+        owner = { indexOwner() },
+        generation = { account.accountGeneration },
+    )
     /** The server's folders as resolved for one account: [generation] is the [MailAccount.accountGeneration] that asked, and the list is nobody else's. */
     private class Resolved(val generation: Int, val folders: ResolvedFolders)
 
@@ -236,12 +261,24 @@ class MailRepository @Inject constructor(
         // subscriber, and a fresh repository has nothing of its own to clear.
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             account.signOuts.collect {
-                withContext(Dispatchers.IO) { holder.closeNow() }
+                indexScheduler.cancel()
+                withContext(Dispatchers.IO) {
+                    holder.closeNow()
+                    searchIndex.clear()
+                }
                 resolved = null
                 synchronized(demoFolders) { demoFolders.clear(); demoUidSeq = 9_000L }
             }
         }
+        // Another student signing in over this one leaves no mail of this one's to search. The
+        // index refuses a write from a run this one started, and starts over for the next.
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            account.studentChanges.collect { withContext(Dispatchers.IO) { searchIndex.clear() } }
+        }
     }
+
+    /** Whose the search index is: the signed-in account's address, whatever its case. */
+    private fun indexOwner(): String? = account.ownAddress?.lowercase()
 
     private fun credentials() = account.credentialsOrNull() ?: throw MailError.Protocol("not signed in")
 
@@ -502,18 +539,25 @@ class MailRepository @Inject constructor(
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
         val q = query.trim()
         if (account.isDemo) return demoPage(folder).let { page -> SearchOutcome.LoadedOnly(page.messages.filter { matchesLoadedMail(it, q) }, page.uidValidity) }
-        return try {
-            // Newest first, so the first page is the newest matches and the rest page back. One
-            // hold of the connection, so the page and the UIDVALIDITY are those the search saw.
-            withSession(stillWanted) { session ->
-                val matches = session.search(folder, q)
-                val validity = session.uidValidity(folder)
-                val newest = matches.take(PAGE_SIZE)
-                SearchOutcome.Server(session.fetchByUids(folder, newest), matches.drop(newest.size), validity)
-            }
-        } catch (e: MailError.SearchUnsupported) {
-            val cached = cachedPage(folder)
-            SearchOutcome.LoadedOnly(cached?.messages.orEmpty().filter { matchesLoadedMail(it, q) }, cached?.uidValidity)
+        // The rest of what the index lacks comes in the background, the first run all of it.
+        indexScheduler.request()
+        indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
+        val matches = withContext(Dispatchers.IO) { indexOwner()?.let { searchIndex.search(it, folder, q) }.orEmpty() }
+        // Newest first, so the first page is the newest matches and the rest page back. One hold
+        // of the connection, so the page and the UIDVALIDITY are the server's at the same time.
+        return withSession(stillWanted) { session ->
+            val validity = session.uidValidity(folder)
+            val newest = matches.take(PAGE_SIZE)
+            SearchOutcome.Server(session.fetchByUids(folder, newest), matches.drop(newest.size), validity)
+        }
+    }
+
+    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
+        if (account.isDemo || indexOwner() == null) return
+        val folders = folders(stillWanted)
+        val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
+        for (folder in first + (folders.special.values + folders.others).filter { it !in first }) {
+            indexer.update(folder, stillWanted = stillWanted)
         }
     }
 
@@ -657,7 +701,10 @@ class MailRepository @Inject constructor(
     override fun release() = holder.releaseLater()
 
     override fun acquire() {
-        if (!account.isDemo) holder.hold()
+        if (account.isDemo) return
+        holder.hold()
+        // The mail screen is in use: whatever mail the search index lacks comes in now.
+        indexScheduler.request()
     }
 
     // --- helpers -------------------------------------------------------------------------
@@ -827,6 +874,12 @@ class MailRepository @Inject constructor(
 
     companion object {
         const val PAGE_SIZE = 50
+
+        /**
+         * The newest mail a search adds to the index before it looks, of what came in since the
+         * index last caught up: the background run fetches the rest.
+         */
+        const val SEARCH_CATCH_UP = 10
 
         /** The only roles [ensureFolder] may create; see its doc for why the other two are out. */
         private val CREATED_ON_DEMAND = setOf(SpecialFolder.SENT, SpecialFolder.DRAFTS, SpecialFolder.TRASH)

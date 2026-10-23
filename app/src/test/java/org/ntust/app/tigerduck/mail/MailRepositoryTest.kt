@@ -27,6 +27,8 @@ import org.ntust.app.tigerduck.mail.compose.OutgoingMail
 import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.index.InMemoryMailSearchIndex
+import org.ntust.app.tigerduck.mail.index.RecordingIndexScheduler
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.model.MailBody
@@ -61,11 +63,13 @@ class MailRepositoryTest {
         sessions: MailSessionFactory = server.factory(),
     ) {
         val cache = MailCache(tmp.root)
+        val searchIndex = InMemoryMailSearchIndex()
+        val indexScheduler = RecordingIndexScheduler()
         val notifier = RecordingNotifier()
         val account = MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), RecordingScheduler(), notifier, scope)
         val repository = MailRepository(
             account, sessions, cache, state,
-            MailSender(MessageBuilder(), transport, pause = {}), MessageBuilder(), demo, scope,
+            MailSender(MessageBuilder(), transport, pause = {}), MessageBuilder(), demo, searchIndex, indexScheduler, scope,
         )
 
         /** Signs out as Settings does, and waits for the cleanup the sign-out then runs on its own. */
@@ -455,21 +459,24 @@ class MailRepositoryTest {
     }
 
     @Test
-    fun `search falls back to loaded mail when the server can't`() = runTest {
-        server.deliver("期中考公告"); server.deliver("other")
+    fun `a search finds Chinese in a mail's subject, sender or text, which the server cannot search`() = runTest {
+        val notice = server.deliver("Weekly", body = MailBody(null, "本週停課公告", emptyList(), emptyMap()))
+        val html = server.deliver("Reminder", body = MailBody("<p>期末<b>公告</b></p>", null, emptyList(), emptyMap()))
+        val board = server.deliver("Hello", from = MailAddress("公告欄", "board@example.com"))
+        server.deliver("unrelated")
         val repo = TestSetup(backgroundScope).signedIn()
-        repo.loadPage("INBOX", null)
-        assertTrue(repo.search("INBOX", "期中") is SearchOutcome.Server)
-        server.searchUnsupported = true
-        val local = repo.search("INBOX", "期中")
-        assertTrue(local is SearchOutcome.LoadedOnly)
-        assertEquals(listOf("期中考公告"), local.messages.map { it.subject })
+
+        val outcome = repo.search("INBOX", "公告") as SearchOutcome.Server
+
+        assertEquals(listOf(board, html, notice), outcome.messages.map { it.uid })
+        assertEquals(server.uidValidity, outcome.uidValidity)
     }
 
     @Test
-    fun `search returns the newest page of matches and keeps the rest to fetch`() = runTest {
+    fun `a search returns the newest page of matches and keeps the rest to fetch`() = runTest {
         val uids = (1..MailRepository.PAGE_SIZE + 2).map { server.deliver("期中考 $it") }
         val repo = TestSetup(backgroundScope).signedIn()
+        repo.updateSearchIndex()
         val outcome = repo.search("INBOX", "期中") as SearchOutcome.Server
         assertEquals(uids.takeLast(MailRepository.PAGE_SIZE).reversed(), outcome.messages.map { it.uid })
         assertEquals(uids.take(2).reversed(), outcome.remaining)
@@ -477,6 +484,111 @@ class MailRepositoryTest {
         val page = repo.searchPage("INBOX", outcome.remaining)
         assertEquals(uids.take(2).reversed(), page.messages.map { it.uid })
         assertEquals(server.uidValidity, page.uidValidity)
+    }
+
+    @Test
+    fun `the first search finds among the newest mail at once, and asks for the rest in the background`() = runTest {
+        val old = (1..MailRepository.SEARCH_CATCH_UP).map { server.deliver("期中考 $it") }
+        val new = server.deliver("期中考 newest")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+
+        val outcome = repo.search("INBOX", "期中") as SearchOutcome.Server
+
+        assertEquals(new, outcome.messages.first().uid)
+        assertFalse("the oldest waits for the background", old.first() in outcome.messages.map { it.uid })
+        assertTrue(setup.indexScheduler.requests > 0)
+    }
+
+    @Test
+    fun `a search catches up on new mail alone, leaving the older backlog to the background`() = runTest {
+        (1..3 * MailRepository.SEARCH_CATCH_UP).forEach { server.deliver("期中考 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.search("INBOX", "期中")
+        val fetched = server.bodyFetches
+
+        repo.search("INBOX", "期中")
+
+        assertEquals(fetched, server.bodyFetches)
+    }
+
+    @Test
+    fun `mail come in since the index caught up is searched too`() = runTest {
+        server.deliver("期中考")
+        val repo = TestSetup(backgroundScope).signedIn()
+        repo.updateSearchIndex()
+        val late = server.deliver("期中考 補考")
+
+        val outcome = repo.search("INBOX", "補考") as SearchOutcome.Server
+
+        assertEquals(listOf(late), outcome.messages.map { it.uid })
+    }
+
+    @Test
+    fun `the background download indexes every folder`() = runTest {
+        server.deliver("收件 公告")
+        server.deliver("寄出 公告", folder = "寄件備份匣")
+        server.deliver("草稿 公告", folder = "草稿匣")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+
+        repo.updateSearchIndex()
+        val owner = setup.account.ownAddress!!.lowercase()
+
+        listOf("INBOX", "寄件備份匣", "草稿匣").forEach { folder ->
+            assertEquals(folder, 1, setup.searchIndex.search(owner, folder, "公告").size)
+        }
+    }
+
+    @Test
+    fun `mail gone from the server leaves the index`() = runTest {
+        val gone = server.deliver("期中考 A")
+        val kept = server.deliver("期中考 B")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+        server.folders.getValue("INBOX").removeAll { it.summary.uid == gone }
+
+        repo.updateSearchIndex()
+
+        assertEquals(setOf(kept), setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX"))
+    }
+
+    @Test
+    fun `a sign-out empties the index and stops its download`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+        val owner = setup.account.ownAddress!!.lowercase()
+
+        setup.signOutAndSettle()
+        runCurrent()
+        // The repository empties it on the IO pool once it hears of the sign-out.
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isNotEmpty()) Thread.sleep(10) }
+        }
+
+        assertEquals(emptySet<Long>(), setup.searchIndex.uids(owner, "INBOX"))
+        assertTrue(setup.indexScheduler.cancels > 0)
+    }
+
+    @Test
+    fun `another student signing in finds nothing of the first one's in the index`() = runTest {
+        server.deliver("期中考")
+        server.passwords["B10000002"] = "pw2"
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+        val first = setup.account.ownAddress!!.lowercase()
+
+        setup.account.signIn("b10000002", "pw2")
+        runCurrent()
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (setup.searchIndex.uids(first, "INBOX").isNotEmpty()) Thread.sleep(10) }
+        }
+
+        assertEquals(emptySet<Long>(), setup.searchIndex.uids(first, "INBOX"))
     }
 
     @Test

@@ -409,6 +409,13 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     /** The UIDVALIDITY [searchPage] reports; the search itself always reports 1. */
     var searchPageValidity = 1L
 
+    /** How many times the search index was asked to catch up with the server. */
+    var searchIndexUpdates = 0
+
+    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) {
+        searchIndexUpdates++
+    }
+
     override suspend fun searchPage(folder: String, uids: List<Long>, stillWanted: () -> Boolean): SearchPage {
         foldersTouched += folder
         searchPages += folder to uids

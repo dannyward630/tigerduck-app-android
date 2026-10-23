@@ -244,17 +244,20 @@ class AngusMailSessionWriteTest {
     }
 
     @Test
-    fun `search by subject, sender and body, including Chinese`() {
-        server.deliver("課程公告", body = "期中考")
-        server.deliver("hello", from = "prof@mail.ntust.edu.tw")
+    fun `the search index reads each mail's text, Chinese and HTML alike, and only mail not deleted`() {
+        server.deliver("課程公告", body = "期中考\n時間")
+        server.deliver("html only", body = "", html = "<p>期末<b>報告</b></p>")
+        server.deliver("gone", body = "x")
         session().use { s ->
-            val bySubject = s.search("INBOX", "課程")
-            assertEquals(1, bySubject.size)
-            // RFC 3501 FROM is a substring match; GreenMail matches exactly;
-            // confirm against the real server.
-            assertEquals(1, s.search("INBOX", "prof@mail.ntust.edu.tw").size)
-            assertEquals(1, s.search("INBOX", "期中").size)
-            assertTrue(s.search("INBOX", "nothing-matches").isEmpty())
+            val uids = s.undeletedUids("INBOX").sorted()
+            assertEquals(3, uids.size)
+            s.deletePermanently("INBOX", uids[2], ownedDeleted = emptySet())
+
+            val left = s.undeletedUids("INBOX").sorted()
+            assertEquals(uids.take(2), left)
+            val texts = s.fetchSearchTexts("INBOX", left)
+            assertEquals("期中考 時間", texts.getValue(uids[0]))
+            assertEquals("期末報告", texts.getValue(uids[1]))
         }
     }
 

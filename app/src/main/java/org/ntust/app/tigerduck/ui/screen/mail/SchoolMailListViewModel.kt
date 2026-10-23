@@ -906,10 +906,11 @@ class SchoolMailListViewModel @Inject constructor(
         val since = changeSeq
         _state.update { it.copy(isSearching = true) }
         try {
-            // One SEARCH per real folder, merged the same way the list itself is. A folder whose
-            // server refused the search, or could not be reached, still contributes its matches
-            // among the mail already loaded, and the "loaded only" note appears as soon as any
-            // one of them fell back.
+            // One search per real folder, in the search index on this phone, merged the same way
+            // the list itself is; the server fetches the matches it finds. A folder that could not
+            // be reached, or the demo mailbox, which has no index, still contributes its matches
+            // among the mail already loaded, and the "loaded only" note appears as soon as any one
+            // of them fell back.
             //
             // A failure is the search's, never the list's: the list it would replace is as good as
             // it was a moment ago, so it reaches [UiState.actionError] and not [UiState.loadState]
@@ -938,8 +939,8 @@ class SchoolMailListViewModel @Inject constructor(
                 } else {
                     try {
                         val outcome = repository.search(folder, query) { stillCurrent(selection, generation) && search == searchGeneration }
-                        // The server could not search: the repository's fallback knows only the
-                        // folder's cached newest page, while the list may have paged further, so
+                        // The demo mailbox: the repository's answer knows only the folder's
+                        // newest page, while the list may have paged further, so
                         // the matches are read from the rows it has loaded, as a failed folder's
                         // are -- but only rows read under the UIDVALIDITY that page has. A refresh
                         // can have cached a recreated folder's new page and then failed on another

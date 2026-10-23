@@ -3,18 +3,15 @@ package org.ntust.app.tigerduck.mail.imap
 import jakarta.mail.FetchProfile
 import jakarta.mail.Flags
 import jakarta.mail.Folder
+import jakarta.mail.Message
 import jakarta.mail.Part
 import jakarta.mail.Session
 import jakarta.mail.UIDFolder
 import jakarta.mail.internet.ContentType
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimePart
-import jakarta.mail.search.BodyTerm
 import jakarta.mail.search.FlagTerm
-import jakarta.mail.search.FromStringTerm
-import jakarta.mail.search.OrTerm
 import jakarta.mail.search.SearchTerm
-import jakarta.mail.search.SubjectTerm
 import org.eclipse.angus.mail.imap.IMAPFolder
 import org.eclipse.angus.mail.imap.IMAPMessage
 import org.eclipse.angus.mail.imap.IMAPStore
@@ -29,6 +26,7 @@ import org.ntust.app.tigerduck.mail.MailLimits
 import org.ntust.app.tigerduck.mail.MailProperties
 import org.ntust.app.tigerduck.mail.MailServerConfig
 import org.ntust.app.tigerduck.mail.MailServerConfigSource
+import org.ntust.app.tigerduck.mail.index.MailSearchText
 import org.ntust.app.tigerduck.mail.mime.AddressParser
 import org.ntust.app.tigerduck.mail.mime.EncodedWords
 import org.ntust.app.tigerduck.mail.mime.MailCharsets
@@ -417,20 +415,41 @@ class AngusMailSession internal constructor(
         expungeIfOnlyOurs(f, ownedDeleted + uid)
     }
 
-    override fun search(folder: String, query: String): List<Long> = io {
+    override fun undeletedUids(folder: String): List<Long> = io {
         val f = folder(folder, Folder.READ_ONLY)
-        val term = OrTerm(arrayOf(FromStringTerm(query), SubjectTerm(query), BodyTerm(query)))
-        val uids = try {
-            uidSearch(f, term)
-        } catch (e: Exception) {
-            // Classify first so a real Network/Certificate/AuthFailed/ServerBusy
-            // failure is never mislabeled as "search unsupported"; only the
-            // generic fallback (a NO/BAD we don't otherwise recognize) and an
-            // already-classified SearchException become SearchUnsupported.
-            val classified = MailErrors.classify(e)
-            throw if (classified is MailError.Protocol) MailError.SearchUnsupported(e) else classified
+        uidSearch(f, FlagTerm(Flags(Flags.Flag.DELETED), false)).toList()
+    }
+
+    override fun fetchSearchTexts(folder: String, uids: List<Long>): Map<Long, String> = io {
+        val f = folder(folder, Folder.READ_ONLY)
+        val messages = f.getMessagesByUID(uids.toLongArray()).filterNotNull()
+        // Every mail's structure in one FETCH, so each then costs one more per text part.
+        f.fetch(messages.toTypedArray(), FetchProfile().apply {
+            add(UIDFolder.FetchProfileItem.UID)
+            add(FetchProfile.Item.CONTENT_INFO)
+        })
+        messages.associate { m ->
+            val text = try {
+                searchText(m)
+            } catch (e: Exception) {
+                // One mail that will not parse is searched by its sender and subject alone; a
+                // connection that went fails the lot, to be fetched again.
+                if (!f.isOpen) throw e
+                ""
+            }
+            f.getUID(m) to text
         }
-        uids.sortedDescending()
+    }
+
+    /** [m]'s text parts, as [fetchBody] reads them, without its images or attachments. */
+    private fun searchText(m: Message): String {
+        val html = mutableListOf<String>()
+        val plain = mutableListOf<String>()
+        for (leaf in MimeWalker.leaves(m)) {
+            val kind = kindOf(leaf.part) as? PartKind.Text ?: continue
+            if (kind.html) html += readText(leaf.part) else plain += readText(leaf.part)
+        }
+        return MailSearchText.of(plain.joinToString("\n\n").ifEmpty { null }, html.joinToString("\n").ifEmpty { null })
     }
 
     override fun append(folder: String, rfc822: ByteArray, flags: Set<AppendFlag>) = io {
