@@ -31,6 +31,7 @@
     <string name="action_allow">اجازت دیں</string>
     <string name="action_back">واپس</string>
     <string name="action_cancel">منسوخ کریں</string>
+    <string name="action_change">تبدیل کریں</string>
     <string name="action_clear_text">متن صاف کریں</string>
     <string name="action_close">بند کریں</string>
     <string name="action_confirm">تصدیق کریں</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">انٹرفیس اسٹائل</string>
     <string name="settings_whats_new">کیا نیا ہے</string>
     <string name="share_code_needs_update_message">اس شیئر کوڈ کے لیے ایپ کا نیا ورژن درکار ہے۔</string>
+    <string name="sign_in_change_account_title">اکاؤنٹ تبدیل کریں</string>
     <string name="sign_in_password">پاس ورڈ</string>
     <string name="sign_in_student_id">طالب علم کی شناخت</string>
     <string name="source_code_picker_current_app_badge">موجودہ ایپ</string>

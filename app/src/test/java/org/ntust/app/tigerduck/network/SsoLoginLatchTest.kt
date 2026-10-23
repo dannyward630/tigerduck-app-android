@@ -35,7 +35,9 @@ class SsoLoginLatchTest {
 
     private lateinit var latch: PersistedStoredPasswordLatch
     private lateinit var service: SsoLoginService
+    private lateinit var sessionManager: NtustSessionManager
     private var stored: Pair<String, String>? = STUDENT to PASSWORD
+    private var clock = 1_800_000_000_000L
 
     /** Whether the school takes the password posted to it. */
     private var accepts = false
@@ -50,8 +52,8 @@ class SsoLoginLatchTest {
         val context = RuntimeEnvironment.getApplication()
         val latchPrefs = context.getSharedPreferences("sso-latch-test", Context.MODE_PRIVATE)
         latchPrefs.edit().clear().commit()
-        latch = PersistedStoredPasswordLatch(latchPrefs) { stored }
-        val sessionManager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
+        latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) { stored }
+        sessionManager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
         val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain.request()) }.build()
         service = SsoLoginService(sessionManager, latch) { school }
     }
@@ -151,6 +153,58 @@ class SsoLoginLatchTest {
 
         assertEquals(1, posts.size)
         assertFalse(latch.isRejected)
+    }
+
+    @Test
+    fun `an automatic sign-in the school accepts once the wait is over ends the refusals`() = runTest {
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        clock += 10_000
+        accepts = true
+
+        assertTrue(service.ensureServiceLogin(SERVICE, STUDENT, PASSWORD))
+
+        assertEquals(1, posts.size)
+        assertEquals(0, latch.refusals.value)
+        assertFalse(latch.isRejected)
+    }
+
+    @Test
+    fun `a sign-in again empties the session before its visit, and the school's yes ends the refusals`() = runTest {
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        clock += 10_000
+        accepts = true
+        sessionManager.markLoginSuccess()
+        val sessionAtFirstVisit = mutableListOf<Long>()
+        onVisit = { if (it == 0) sessionAtFirstVisit += sessionManager.loginTimestampMs }
+
+        assertTrue(service.signInAgain(SERVICE, STUDENT, PASSWORD) { true })
+
+        assertEquals(listOf(0L), sessionAtFirstVisit)
+        assertEquals(1, posts.size)
+        assertEquals(0, latch.refusals.value)
+    }
+
+    @Test
+    fun `a sign-in again still waits out a refusal's wait`() = runTest {
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+
+        val failure = runCatching { service.signInAgain(SERVICE, STUDENT, PASSWORD) { true } }.exceptionOrNull()
+
+        assertTrue("got $failure", failure is SsoLoginError.LoginFailed)
+        assertEquals(0, posts.size)
+    }
+
+    /** Another automatic sign-in that held the lock first, and that the school took, settled it. */
+    @Test
+    fun `a sign-in again whose refusal is gone once it holds the lock keeps the session and posts nothing`() = runTest {
+        sessionManager.markLoginSuccess()
+        val session = sessionManager.loginTimestampMs
+
+        assertTrue(service.signInAgain(SERVICE, STUDENT, PASSWORD) { false })
+
+        assertEquals(session, sessionManager.loginTimestampMs)
+        assertEquals(0, visits)
+        assertEquals(0, posts.size)
     }
 
     private fun answer(request: Request): Response {

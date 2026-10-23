@@ -14,6 +14,14 @@ object MailNotificationPlanner {
     const val AUTH_FAILED_ID = 40_999
     const val SUMMARY_ID = 41_000
 
+    /**
+     * Posted with every mail's and every count's notification. A mail's id comes from its UID,
+     * across a range of 100 000 ids, and the app's other notifications pick theirs by themselves
+     * (the Live Update's is in that range): a tag of its own keeps a mail from replacing one of
+     * them, and its take-back from taking one down.
+     */
+    const val TAG = "school_mail"
+
     data class Item(val uid: Long, val title: String, val text: String)
 
     sealed interface Plan {

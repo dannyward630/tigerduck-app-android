@@ -11,6 +11,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.data.CourseTombstoneKeys
+import org.ntust.app.tigerduck.network.CourseService
 import org.ntust.app.tigerduck.shared.Course
 
 /**
@@ -27,11 +28,12 @@ class ClassTableTermFetchTest {
     private val failing = mutableSetOf<String>()
 
     /** Every code answered with a fresh row in IB-202, but the unanswered and the failing ones. */
-    private val fetch = ClassTableTermFetch { _, courseNo, _, onFailed ->
+    private val fetch = ClassTableTermFetch { _, courseNo, moodle, kept, onFailed ->
         asked += courseNo
         gate.await()
         when (courseNo) {
-            in failing -> { onFailed(); null }
+            // As CourseService.lookupOrFallback comes to it.
+            in failing -> { onFailed(); CourseService.afterFailedLookup(courseNo, moodle, kept) }
             in unanswered -> null
             else -> Course.fromSchedule(courseNo, "$courseNo now", classroom = "IB-202", schedule = mapOf(2 to listOf("5")))
         }
@@ -67,7 +69,7 @@ class ClassTableTermFetchTest {
         assertTrue(out[1].isManual)
         assertEquals(manual("NEW"), out[2])
         assertEquals(setOf("A", "MINE", "GONE"), asked.toSet())
-        assertTrue(answers!!.answered)
+        assertTrue(answers.answered)
     }
 
     @Test
@@ -105,6 +107,19 @@ class ClassTableTermFetchTest {
         val out = fold(answers, latest)
         assertEquals(listOf("A", "MINE"), out.map { it.courseNo })
         assertEquals("T4-101", out[1].classroom)
+    }
+
+    /** tigerduck-app-android#417, as iOS tigerduck-app#243: a failure says nothing of the course. */
+    @Test
+    fun `a roster course whose query fails keeps the times and room the term has for it`() = runTest {
+        gate.complete(Unit)
+        failing += "B"
+        val scheduled = Course.fromSchedule("B", "B", classroom = "TR-313", schedule = mapOf(3 to listOf("6", "7")))
+        val latest = listOf(course("A"), scheduled)
+        val out = fold(lookUp(listOf("A", "B"), before = latest), latest)
+        assertEquals(listOf("A", "B"), out.map { it.courseNo })
+        assertEquals("TR-313", out[1].classroom)
+        assertEquals(mapOf(3 to listOf("6", "7")), out[1].schedule)
     }
 
     @Test

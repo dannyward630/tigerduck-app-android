@@ -1,20 +1,17 @@
 package org.ntust.app.tigerduck.auth
 
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
 /**
- * The user's own sign-out takes a school mail account signed in as the same student with it. The
- * mail account is matched by the stored student ID, so [AuthService.logout] has to ask before
- * `signOutSchoolAccount` clears the school credentials; asked afterwards, there is no ID left and
- * the mail account stays.
- * AuthService needs the Android Keystore, so this reads its source, as
- * ImportedClassTablesClearingTest does; MailAccountTest covers the same and the other student.
+ * The school sign-out takes the school account alone: the school mail and the library account stay
+ * signed in, whoever's they are, as each account signs in and out by itself (decided for Android
+ * on 2026-10-22). AuthService needs the Android Keystore, so this reads its source, as
+ * ImportedClassTablesClearingTest does.
  */
-class SchoolMailSignOutOrderTest {
+class SchoolSignOutKeepsOtherAccountsTest {
 
     private val source: String = File(appDir(), "src/main/java/org/ntust/app/tigerduck/auth/AuthService.kt").readText()
 
@@ -48,21 +45,15 @@ class SchoolMailSignOutOrderTest {
         throw AssertionError("`$declaration` has no closing brace")
     }
 
-    private val mailSignOut = Regex("""\bmailAccount\.signOutIfSchoolAccount\(""")
-    private val schoolClear = Regex("""\bcredentials\.signOutSchoolAccount\(\)""")
-
     @Test
-    fun `the sign-out signs the school mail out with the stored student ID`() {
+    fun `the school sign-out leaves the school mail signed in`() {
         val logout = body("fun logout()")
-        assertEquals(1, mailSignOut.findAll(logout).count())
-        assertTrue(Regex("""credentials\.ntustStudentId\?\.let \{ mailAccount\.signOutIfSchoolAccount\(it\) \}""").containsMatchIn(logout))
+        assertFalse(Regex("""\bmailAccount\.""").containsMatchIn(logout))
     }
 
     @Test
-    fun `the school mail goes before the school credentials are cleared`() {
+    fun `the school sign-out leaves the library account signed in`() {
         val logout = body("fun logout()")
-        val mail = mailSignOut.find(logout) ?: throw AssertionError("logout() never signs the school mail out")
-        val clear = schoolClear.find(logout) ?: throw AssertionError("logout() never clears the school credentials")
-        assertTrue("the mail sign-out runs after the student ID is gone", mail.range.first < clear.range.first)
+        assertFalse(Regex("""clearLibraryCredentials|signOutLibrary""").containsMatchIn(logout))
     }
 }

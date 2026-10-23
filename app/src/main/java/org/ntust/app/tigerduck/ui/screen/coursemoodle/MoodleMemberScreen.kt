@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,12 +17,14 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,13 +36,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
@@ -48,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.moodle.MoodleLookup
 import org.ntust.app.tigerduck.data.moodle.MoodleMemberPlacement
@@ -78,6 +86,8 @@ fun MoodleMemberScreen(
     val current = store
     val members = current?.members?.state?.collectAsStateWithLifecycle()?.value?.value
     val pictures = current?.pictures?.collectAsStateWithLifecycle()?.value.orEmpty()
+    val openingPictures = current?.openingPictures?.collectAsStateWithLifecycle()?.value.orEmpty()
+    val scope = rememberCoroutineScope()
     val member = members?.members?.firstOrNull { it.id == memberId }
     LaunchedEffect(member?.pictureUrl) { if (member != null) current.loadPicture(member) }
     // Opened with no members cached, as after the system ended the app: fetched, or its failure
@@ -112,6 +122,15 @@ fun MoodleMemberScreen(
                 MemberProfile(
                     member = member,
                     picture = member.pictureUrl?.let { pictures[it] },
+                    // Moodle's default picture, or none, opens nothing.
+                    onOpenPicture = member.pictureUrl?.let {
+                        {
+                            scope.launch {
+                                current.fullPicture(member)?.let { launchMoodleFile(context, it.file, it.mimeType) }
+                            }
+                        }
+                    },
+                    openingPicture = member.id in openingPictures,
                     onWrite = { address ->
                         if (schoolMail) onComposeSchoolMail(address) else writeWithMailApp(context, address)
                     },
@@ -154,7 +173,9 @@ internal fun memberRows(member: MoodleMember): List<MemberRow> {
 @Composable
 private fun MemberProfile(
     member: MoodleMember,
-    picture: androidx.compose.ui.graphics.ImageBitmap?,
+    picture: ImageBitmap?,
+    onOpenPicture: (() -> Unit)?,
+    openingPicture: Boolean,
     onWrite: (String) -> Unit,
 ) {
     val rows = memberRows(member)
@@ -168,7 +189,7 @@ private fun MemberProfile(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MoodleAvatar(member.name, picture, 88.dp)
+            MemberPicture(member.name, picture, onOpenPicture, openingPicture)
             Spacer(Modifier.width(4.dp))
             SelectionContainer {
                 Text(
@@ -275,4 +296,27 @@ private fun ProfileRow(row: MemberRow, onWrite: (String) -> Unit) {
 private fun copyAddress(context: Context, address: String) {
     context.getSystemService(ClipboardManager::class.java)
         ?.setPrimaryClip(ClipData.newPlainText("email", address))
+}
+
+/**
+ * The picture at the top of a member's page. Their own picture is a button that opens it full
+ * screen ([onOpen]; `MoodleCourseStore.fullPicture`), labelled for TalkBack, with a spinner while
+ * it gets ready ([opening]), which takes no second tap; with [onOpen] null, as for Moodle's
+ * default picture, it is a plain picture. As the iPhone's (tigerduck-app/tigerduck-app#741).
+ */
+@Composable
+internal fun MemberPicture(name: String, picture: ImageBitmap?, onOpen: (() -> Unit)?, opening: Boolean) {
+    val label = stringResource(R.string.course_member_profile_picture)
+    val button = if (onOpen == null) {
+        Modifier
+    } else {
+        Modifier
+            .clip(CircleShape)
+            .clickable(enabled = !opening, role = Role.Button, onClick = onOpen)
+            .semantics { contentDescription = label }
+    }
+    Box(button, contentAlignment = Alignment.Center) {
+        MoodleAvatar(name, picture, 88.dp)
+        if (opening) CircularProgressIndicator(Modifier.size(32.dp))
+    }
 }

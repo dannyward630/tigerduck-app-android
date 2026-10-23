@@ -286,11 +286,15 @@ object MoodleJson {
         val team = attempt?.get("teamsubmission")?.objOrNull()
         val record = if (team?.str("status") == SUBMITTED || own?.str("status") == null) team ?: own else own
         val plugins = record?.array("plugins").orEmpty().mapNotNull { it.objOrNull() }
+        // What was handed in, from the group's record whenever there is one: a team assignment
+        // keeps it there, also while it waits for every member to submit and the status above
+        // follows the student's own.
+        val handedIn = (team ?: record)?.array("plugins").orEmpty().mapNotNull { it.objOrNull() }
         return MoodleAssignmentSubmission(
             status = record?.str("status"),
             modified = record?.long("timemodified")?.takeIf { it > 0 },
-            files = pluginFiles(plugins.filter { it.str("type") == "file" }),
-            onlineText = pluginText(plugins.firstOrNull { it.str("type") == "onlinetext" }),
+            files = pluginFiles(handedIn.filter { it.str("type") == "file" }),
+            onlineText = pluginText(handedIn.firstOrNull { it.str("type") == "onlinetext" }),
             id = record?.int("id"),
             takesComments = plugins.any { it.str("type") == "comments" },
             groupId = attempt?.int("submissiongroup")?.takeIf { it > 0 },

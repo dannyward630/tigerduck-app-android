@@ -157,8 +157,8 @@ class ClassTableViewModel @Inject constructor(
     private var warmJob: Job? = null
 
     // One term's lookups and their fold onto its list; see fetchTermCourses.
-    private val termFetch = ClassTableTermFetch { semester, courseNo, moodle, onFailed ->
-        courseService.lookupOrFallback(semester, courseNo, moodle, onFailed)
+    private val termFetch = ClassTableTermFetch { semester, courseNo, moodle, kept, onFailed ->
+        courseService.lookupOrFallback(semester, courseNo, moodle, kept, onFailed)
     }
 
     // This screen's tombstone edits whose write has not landed; see ClassTableTombstoneEdits.
@@ -235,18 +235,6 @@ class ClassTableViewModel @Inject constructor(
 
     private val _selectedCourse = MutableStateFlow<Course?>(null)
     val selectedCourse: StateFlow<Course?> = _selectedCourse
-
-    private val _courseSheetRoutes = MutableStateFlow<List<String?>>(emptyList())
-
-    /**
-     * The routes on the course detail sheet's own back stack while it shows, none otherwise: what
-     * a reminder's link asks before closing the sheet (see `CourseDetailSheetRules.closesForLink`).
-     */
-    val courseSheetRoutes: StateFlow<List<String?>> = _courseSheetRoutes
-
-    fun setCourseSheetRoutes(routes: List<String?>) {
-        _courseSheetRoutes.value = routes
-    }
 
     // Cached idnumber → numeric Moodle course id, harvested off the
     // `fetchEnrolledCourses` response. The course-detail popup uses this

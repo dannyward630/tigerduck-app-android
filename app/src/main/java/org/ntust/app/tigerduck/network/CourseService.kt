@@ -316,13 +316,15 @@ class CourseService @Inject constructor(
      * course-level fields.
      *
      * Returns null only when both sources come up empty. A lookup that throws
-     * degrades to the Moodle fallback rather than failing the whole roster —
-     * one unreachable course must not blank out a timetable.
+     * does not fail the whole roster: it comes to [afterFailedLookup] — one
+     * unreachable course must not blank out a timetable.
      */
     suspend fun lookupOrFallback(
         semester: String,
         courseNo: String,
         moodle: MoodleEnrolledCourse?,
+        /** The row the term already has for the course, which a failed query keeps. */
+        kept: Course? = null,
         /**
          * Told of a query that failed, which the fallback otherwise hides: a
          * caller fetching term after term stops at the first, since the rest
@@ -345,7 +347,7 @@ class CourseService @Inject constructor(
     } catch (e: Exception) {
         Log.e(TAG_LOOKUP, "Failed to look up a course: ${e.logSummary()}")
         onLookupFailed?.invoke()
-        fallbackCourseFromMoodle(courseNo, moodle)
+        afterFailedLookup(courseNo, moodle, kept)
     }
 
     /**
@@ -442,6 +444,16 @@ class CourseService @Inject constructor(
 
         fun firstNonEmpty(values: List<String?>): String? =
             values.firstOrNull { !it.isNullOrBlank() }?.trim()
+
+        /**
+         * What a lookup of [courseNo] whose query failed comes to: [kept], the
+         * row the term already has, or Moodle's stand-in when there is none. The
+         * failure says nothing of the course, and the stand-in has no times and
+         * no room: saved and uploaded in the kept row's place, it took them off
+         * this phone and every other device (tigerduck-app#243 on iOS).
+         */
+        fun afterFailedLookup(courseNo: String, moodle: MoodleEnrolledCourse?, kept: Course?): Course? =
+            kept ?: fallbackCourseFromMoodle(courseNo, moodle)
 
         /**
          * Build a stub [Course] from Moodle enrolment metadata when QueryCourse

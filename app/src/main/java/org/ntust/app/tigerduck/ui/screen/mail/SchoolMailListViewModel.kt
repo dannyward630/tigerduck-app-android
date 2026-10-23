@@ -101,7 +101,10 @@ class SchoolMailListViewModel @Inject constructor(
         val searchText: String = "",
         val searchResults: List<MailRow>? = null,
         val searchLocalOnly: Boolean = false,
+        /** A search under way: one [runSearch] that has not ended, and is still the latest. */
         val isSearching: Boolean = false,
+        /** A further page of the latest search's matches on its way ([loadMoreSearchResults]). */
+        val isPagingSearch: Boolean = false,
         /**
          * When the folders on screen last had their newest page fetched -- for All mail the older
          * of its two -- or 0 while one of them never has. For the sync dot's "Last synced" row;
@@ -114,6 +117,9 @@ class SchoolMailListViewModel @Inject constructor(
         val confirmDeleteForever: Boolean = false,
         val pendingMoveRow: MailRow? = null,
     ) {
+        /** A search under way, or a further page of its matches on its way: the search field spins. */
+        val searchBusy: Boolean get() = isSearching || isPagingSearch
+
         val displayed: List<MailRow>
             get() = (searchResults ?: messages).let { list -> if (unreadOnly) list.filter { !it.summary.flags.seen } else list }
 
@@ -274,23 +280,26 @@ class SchoolMailListViewModel @Inject constructor(
         // Signing out must not leave the previous account's mail on screen for
         // whoever signs in next (spec §7.5).
         viewModelScope.launch {
-            account.signedIn.collect { signedIn ->
-                if (!signedIn) {
-                    loadJob?.cancel()
-                    loadJob = null
-                    prefetchJob?.cancel()
-                    prefetchJob = null
-                    prefetchDone = false
-                    forgetSearch()
-                    lookedAt = null
-                    staleFolders.clear()
-                    changedAt.clear()
-                    listGeneration++
-                    folderValidity = emptyMap()
-                    _state.value = UiState()
-                }
-            }
+            account.signedIn.collect { signedIn -> if (!signedIn) forgetAccount() }
         }
+        // Nor may another student signing in over a rejected account, which never signs out:
+        // their taps and swipes would act on their own mailbox with this one's UIDs.
+        viewModelScope.launch { account.studentChanges.collect { forgetAccount() } }
+    }
+
+    private fun forgetAccount() {
+        loadJob?.cancel()
+        loadJob = null
+        prefetchJob?.cancel()
+        prefetchJob = null
+        prefetchDone = false
+        forgetSearch()
+        lookedAt = null
+        staleFolders.clear()
+        changedAt.clear()
+        listGeneration++
+        folderValidity = emptyMap()
+        _state.value = UiState()
     }
 
     /**
@@ -516,6 +525,8 @@ class SchoolMailListViewModel @Inject constructor(
     private fun forgetSearch() {
         searchGeneration++
         unfetchedMatches = emptyMap()
+        // A search still out is nobody's now, so its end must not be waited on to stop the spinner.
+        _state.update { it.copy(isSearching = false, isPagingSearch = false) }
     }
 
     fun submitSearch() {
@@ -1069,7 +1080,8 @@ class SchoolMailListViewModel @Inject constructor(
             // rejected password, the LOGIN that was just decided against (spec §7.4).
             if (!serverUnreachable && _state.value.displayed.isEmpty()) loadMoreSearchResults()
         } finally {
-            _state.update { it.copy(isSearching = false) }
+            // Only the latest search's end stops the spinner: one it overtook may end while it runs.
+            if (search == searchGeneration) _state.update { it.copy(isSearching = false) }
         }
     }
 
@@ -1091,7 +1103,7 @@ class SchoolMailListViewModel @Inject constructor(
         val selection = _state.value.selected
         val search = searchGeneration
         val generation = account.accountGeneration
-        _state.update { it.copy(isPaginating = true) }
+        _state.update { it.copy(isPaginating = true, isPagingSearch = true) }
         try {
             var walkedBack = 0
             while (true) {
@@ -1137,7 +1149,8 @@ class SchoolMailListViewModel @Inject constructor(
                 walkedBack++
             }
         } finally {
-            _state.update { it.copy(isPaginating = false) }
+            // A page of a search since replaced leaves the spinner to the search that replaced it.
+            _state.update { it.copy(isPaginating = false, isPagingSearch = it.isPagingSearch && search != searchGeneration) }
         }
     }
 

@@ -1,10 +1,14 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package org.ntust.app.tigerduck.data
 
 import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -81,6 +85,28 @@ class PendingCourseAddsTest {
 
         assertEquals(Upload(listOf("MA1010002"), term, listOf("client:1151:MA1010002")), uploads.last())
         assertEquals(emptyMap<String, List<String>>(), cache.loadPendingCourseAdds())
+    }
+
+    /**
+     * A full sync for an account that has since signed out runs under the generation it began
+     * with; the snapshot it brings back lists that account's courses, and must not take the
+     * next account's waiting add of the same course as landed.
+     */
+    @Test
+    fun `a snapshot for an account that signed out leaves the next account's waiting adds alone`() = runTest {
+        val departed = cache.userDataGeneration
+        cache.clearAllUserData()
+        signIn = 2
+        cache.saveCourses(listOf(typed), term)
+        answer = { throw IOException("offline") }
+        adds.send(listOf(typed), term, typed.courseNo)
+
+        withContext(DataCache.Generation(departed)) {
+            adds.listed(listOf(row("MA1010002")))
+            adds.forgetAll()
+        }
+
+        assertEquals(mapOf(term to listOf("MA1010002")), cache.loadPendingCourseAdds())
     }
 
     @Test
@@ -218,6 +244,40 @@ class PendingCourseAddsTest {
 
         adds.listed(listOf(row("MA1010002")))
         assertEquals(emptyMap<String, List<String>>(), cache.loadPendingCourseAdds())
+    }
+
+    /** What the reconcile keeps meanwhile; see CourseSyncReconciler.reconcileSemester's pendingAddNos. */
+    @Test
+    fun `the adds still waiting are read per term`() = runTest {
+        cache.saveCourses(listOf(typed), term)
+        answer = { throw IOException("offline") }
+        adds.send(listOf(typed), term, typed.courseNo)
+
+        assertEquals(setOf("MA1010002"), adds.waitingIn(term))
+        assertEquals(emptySet<String>(), adds.waitingIn("1142"))
+
+        answer = { listOf("MA1010002") }
+        adds.retry()
+        assertEquals(emptySet<String>(), adds.waitingIn(term))
+    }
+
+    /** HomeBackendSync.applyCourseReset: a course reset made on another device takes the waiting adds' courses. */
+    @Test
+    fun `a reset made elsewhere lets every waiting add go`() = runTest {
+        val other = Course(courseNo = "PE1010003", courseName = "Other", isManual = true)
+        cache.saveCourses(listOf(typed), term)
+        cache.saveCourses(listOf(other), "1142")
+        answer = { throw IOException("offline") }
+        adds.send(listOf(typed), term, typed.courseNo)
+        adds.send(listOf(other), "1142", other.courseNo)
+        uploads.clear()
+
+        adds.forgetAll()
+
+        assertEquals(emptyMap<String, List<String>>(), cache.loadPendingCourseAdds())
+        answer = { emptyList() }
+        adds.retry()
+        assertEquals(emptyList<Upload>(), uploads)
     }
 
     @Test

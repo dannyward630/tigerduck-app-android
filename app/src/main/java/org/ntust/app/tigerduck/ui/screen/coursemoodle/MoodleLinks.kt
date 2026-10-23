@@ -192,9 +192,8 @@ fun openMoodleContentLink(
 ) {
     val uri = url.toUri()
     when {
-        uri.scheme.equals("mailto", ignoreCase = true) -> {
-            runCatching { context.startActivity(Intent(Intent.ACTION_SENDTO, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-        }
+        // openLink makes it a new message, and says so when no mail app can.
+        uri.scheme.equals("mailto", ignoreCase = true) -> openLink(context, url, browserPreference)
         uri.host.equals(MoodleWebservice.SITE_HOST, ignoreCase = true) ->
             openMoodleWebPage(context, moodleWebLink(url), browserPreference, pages)
         else -> openLink(context, url, browserPreference)

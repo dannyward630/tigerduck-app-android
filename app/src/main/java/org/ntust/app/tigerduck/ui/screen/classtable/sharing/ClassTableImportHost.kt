@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -93,9 +94,21 @@ fun ClassTableImportHost(viewModel: ClassTableImportViewModel, onImported: () ->
  * offers while the person is being saved; [onFinished] is the import done, saved or called off by
  * a sign-in change.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun ClassTableImportPage(
+    model: ClassTableImportModel,
+    onClose: () -> Unit,
+    onFinished: () -> Unit,
+    onPickPicture: () -> Unit,
+) {
+    // Keyed by the import: a link's import takes the place of the one on screen, and read for a
+    // frame through the old one's state, called off, the new one would be closed with it.
+    key(model) { ImportPage(model, onClose, onFinished, onPickPicture) }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImportPage(
     model: ClassTableImportModel,
     onClose: () -> Unit,
     onFinished: () -> Unit,
@@ -108,6 +121,10 @@ internal fun ClassTableImportPage(
     }
     // Not while the person is being written: the import then ends saved, and closes itself.
     val close: () -> Unit = { if (!model.state.value.isSaving) onClose() }
+    val latestOnClose by rememberUpdatedState(onClose)
+    LaunchedEffect(state.isLinkDone) {
+        if (state.isLinkDone) latestOnClose()
+    }
 
     Dialog(
         onDismissRequest = close,
@@ -134,25 +151,28 @@ internal fun ClassTableImportPage(
                     )
                 },
                 bottomBar = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .windowInsetsPadding(WindowInsets.navigationBars)
-                            .padding(bottom = 24.dp, top = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        FilledTonalButton(
-                            onClick = onPickPicture,
-                            enabled = state.isIdle,
-                            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    // A link's page has nothing to pick: the code came with it.
+                    if (!state.fromLink) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .windowInsetsPadding(WindowInsets.navigationBars)
+                                .padding(bottom = 24.dp, top = 12.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                Icons.Outlined.PhotoLibrary,
-                                contentDescription = null,
-                                modifier = Modifier.size(ButtonDefaults.IconSize),
-                            )
-                            Spacer(Modifier.width(ButtonDefaults.IconSpacing))
-                            Text(stringResource(R.string.class_table_import_choose_photo))
+                            FilledTonalButton(
+                                onClick = onPickPicture,
+                                enabled = state.isIdle,
+                                contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                            ) {
+                                Icon(
+                                    Icons.Outlined.PhotoLibrary,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                                )
+                                Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                                Text(stringResource(R.string.class_table_import_choose_photo))
+                            }
                         }
                     }
                 },
@@ -163,7 +183,10 @@ internal fun ClassTableImportPage(
                         .padding(padding),
                     contentAlignment = Alignment.Center,
                 ) {
-                    QrScannerCamera(onScanned = model::scanned, modifier = Modifier.fillMaxSize())
+                    // Not for a link: no one came to scan, so the camera is not asked for.
+                    if (!state.fromLink) {
+                        QrScannerCamera(onScanned = model::scanned, modifier = Modifier.fillMaxSize())
+                    }
                     // An update has no confirm dialog to wait in, so it waits here, as a picture does.
                     if (state.isReadingImage || (state.isLookingUp && state.pending == null)) {
                         CircularProgressIndicator()
@@ -245,20 +268,21 @@ private fun ImportConfirmDialog(model: ClassTableImportModel, code: ClassTableSh
 @Composable
 private fun ImportPromptDialog(model: ClassTableImportModel, prompt: Prompt) {
     val title = when (prompt) {
-        Prompt.Invalid, Prompt.NoCode, Prompt.OwnCode, is Prompt.SaveFailed ->
+        Prompt.Invalid, Prompt.NeedsUpdate, Prompt.NoCode, Prompt.OwnCode, is Prompt.SaveFailed ->
             stringResource(R.string.class_table_import_failed)
         is Prompt.Replace -> stringResource(R.string.class_table_import_replace_title, prompt.job.nickname)
         is Prompt.LookupFailed -> stringResource(R.string.class_table_import_lookup_failed)
     }
     val message = when (prompt) {
         Prompt.Invalid -> stringResource(R.string.class_table_import_invalid_message)
+        Prompt.NeedsUpdate -> stringResource(R.string.share_code_needs_update_message)
         Prompt.NoCode -> stringResource(R.string.class_table_import_no_code_message)
         Prompt.OwnCode -> stringResource(R.string.class_table_import_own_code_message)
         is Prompt.Replace -> stringResource(R.string.class_table_import_replace_message)
         is Prompt.LookupFailed, is Prompt.SaveFailed -> null
     }
     when (prompt) {
-        Prompt.Invalid, Prompt.NoCode, Prompt.OwnCode -> TigerDuckDialog(
+        Prompt.Invalid, Prompt.NeedsUpdate, Prompt.NoCode, Prompt.OwnCode -> TigerDuckDialog(
             onDismissRequest = model::dismissPrompt,
             title = title,
             message = message,

@@ -73,6 +73,16 @@ android {
         buildConfig = true
     }
 
+    // As in :app. The watch takes the language the phone app is set to
+    // (MainActivity.attachBaseContext), not the watch's own, and Play's
+    // per-language splits install only the watch's: any other choice would
+    // fall back to values/ (English). Every language goes in the base APK.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     testOptions {
         unitTests {
             // Merged resources, so a Robolectric test reads the strings the watch ships.

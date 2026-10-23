@@ -26,11 +26,14 @@ import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.auth.isSessionRefused
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
@@ -115,6 +118,7 @@ class HomeBackendSync @Inject constructor(
     private val pendingCourseAdds: PendingCourseAdds,
     private val pendingCourseDeletes: org.ntust.app.tigerduck.data.PendingCourseDeletes,
     private val pendingCourseOverrides: PendingCourseOverrides,
+    private val pendingHolidayOverrides: org.ntust.app.tigerduck.data.PendingHolidayOverrides,
     private val reenableCheck: ReenableCheck,
     @param:ApplicationScope private val appScope: CoroutineScope,
 ) {
@@ -124,12 +128,45 @@ class HomeBackendSync @Inject constructor(
     )
 
     /**
+     * Sends what waits to go up: course-ignore changes, marks, course adds and
+     * deletes, course colours and names, and holiday choices. A full sync
+     * starts with this.
+     */
+    suspend fun retryUnsent() {
+        courseIgnoreSync.retryPending()
+        unsentMarks.retry()
+        pendingCourseAdds.retry()
+        pendingCourseDeletes.retry()
+        pendingCourseOverrides.retry()
+        pendingHolidayOverrides.retry()
+    }
+
+    /**
+     * What a full sync sends besides taking its snapshot, for a revision poll
+     * that moves the watermark without one (`pollRevisionOnce`): what waits
+     * ([retryUnsent]), and a notification-settings edit whose push never
+     * landed, which [pull] re-sends once it lands. The feed read before this
+     * proves a session and a network as a full sync does. As the iPhone's
+     * `retryUnsentEdits`.
+     */
+    suspend fun sendWhatWaits() {
+        retryUnsent()
+        notificationSettingsSync.pushIfUnconfirmed()
+    }
+
+    /**
      * Pull everything from the backend and reconcile it into [state].
      *
      * [retried] guards the 401 path against looping: a relogin that still
      * produces a 401 gives up rather than recursing.
      */
     suspend fun pull(state: HomeSyncState, retried: Boolean = false) {
+        // Pinned to the data this sync began with: once a sign-out wipes it, every cache write
+        // below drops, so a sync that outlives one cannot write the departing account's courses,
+        // deletions and marks into the files the next account starts from.
+        if (currentCoroutineContext()[DataCache.Generation] == null) {
+            return withContext(DataCache.Generation(dataCache.userDataGeneration)) { pull(state, retried) }
+        }
         // cloudSyncEnabled already reads false on fdroid at its source
         // (AppPreferences.cloudSyncEnabled), so no separate flavor check
         // is needed here.
@@ -145,13 +182,8 @@ class HomeBackendSync @Inject constructor(
             if (BuildConfig.DEBUG) ServerFailureSimulator.check(ServerKind.BACKEND)
             val account = authService.storedStudentId
             val generation = courseIgnoreSync.currentGeneration()
-            // Unsent course-ignore changes, marks, course adds and deletes and
-            // course colours and names go first, so the snapshot has them.
-            courseIgnoreSync.retryPending()
-            unsentMarks.retry()
-            pendingCourseAdds.retry()
-            pendingCourseDeletes.retry()
-            pendingCourseOverrides.retry()
+            // What waits to go up goes first, so the snapshot has it.
+            retryUnsent()
             // The first-sync mark upload is pinned to the sign-in read here:
             // a sign-out and another sign-in meanwhile must not send these
             // marks as theirs.
@@ -189,8 +221,17 @@ class HomeBackendSync @Inject constructor(
             // exception is a notification setting, not course or assignment
             // data, and the categories the user can turn off do not cover
             // it. Null means an older backend that does not send the
-            // section, so the local set stands.
-            result.holidayOverrides?.let(academicCalendar::applySyncedOverrides)
+            // section, so the local set stands. A choice whose PUT has not
+            // landed stays as this phone has it, and a snapshot that may
+            // predate one is not applied: see PendingHolidayOverrides.merged.
+            result.holidayOverrides?.let { snapshot ->
+                authTokenManager.runIfSignedIn(signIn) {
+                    // Under the sign-out's lock: applied after its clear, the
+                    // departing account's choices would come back.
+                    pendingHolidayOverrides.merged(snapshot, result.fetchedAtMs, academicCalendar.optedInHolidayIds)
+                        ?.let(academicCalendar::applySyncedOverrides)
+                }
+            }
             val syncCourses = CourseSyncReconciler.syncsCourseList(
                 switchOn = "courses" in switchedOn,
                 pendingConflictCategories = prefs.pendingConflictCategories,
@@ -208,7 +249,9 @@ class HomeBackendSync @Inject constructor(
                 coursesLoaded = coursesLoaded,
             )
             if (authService.isStillSignedInAs(account)) prefs.syncedCategories += categoriesSynced(switchedOn, took, prefs)
-            state.lastKnownRevision = result.currentRevision
+            // Only for the account this sync fetched for: set after a sign-out
+            // reset it, the departing account's would stand for the next one.
+            authTokenManager.runIfSignedIn(signIn) { state.lastKnownRevision = result.currentRevision }
             ServerStatusTracker.set(ServerStatus.OK, ServerKind.BACKEND)
             prefs.setLastSyncSource(SyncSource.BACKEND)
             widgetUpdater.requestUpdate()
@@ -251,7 +294,7 @@ class HomeBackendSync @Inject constructor(
             // because pullNow()'s check-and-apply requires it — the
             // application scope's own dispatcher is Default.
             appScope.launch(Dispatchers.Main) {
-                runCatching { notificationSettingsSync.pullNow() }
+                runCatching { notificationSettingsSync.pullNow(knownRevision = result.currentRevision) }
                     .onFailure { e ->
                         if (e is CancellationException) throw e
                         Log.w(TAG, "[Sync] notification settings pull failed: ${e.logSummary()}")
@@ -268,7 +311,7 @@ class HomeBackendSync @Inject constructor(
         } catch (e: Exception) {
             ServerStatusTracker.set(ServerStatus.FAILED, ServerKind.BACKEND)
             prefs.setLastSyncSource(SyncSource.LOCAL)
-            if (!retried && (e.message?.contains("401") == true || e.message?.contains("session_revoked") == true)) {
+            if (!retried && e.isSessionRefused()) {
                 // Delegates to AuthService so the relogin harvests a fresh
                 // Moodle token — the backend rejects stale stored tokens with
                 // 401 invalid_token.
@@ -395,6 +438,8 @@ class HomeBackendSync @Inject constructor(
             allCourses.removeAll { it.isManual }
             dataCache.saveCourses(allCourses)
             dataCache.saveDeletedCourseNos(emptySet())
+            // In every term: the reconcile would keep a course whose add waits.
+            pendingCourseAdds.forgetAll()
             Log.i(TAG, "[sync] courses reset detected, wiped manual courses")
         }
         if (authService.isStillSignedInAs(account)) {
@@ -451,6 +496,8 @@ class HomeBackendSync @Inject constructor(
                 serverKnownNos = serverKnown[semester].orEmpty().toSet(),
                 // Deletes the retry above could not land: the snapshot still lists them.
                 graceCourseNos = pendingCourseDeletes.waitingIn(semester),
+                // Adds the retry above could not land: the snapshot does not list them yet.
+                pendingAddNos = pendingCourseAdds.waitingIn(semester),
                 selectionDroppedNos = selectionDropped[semester].orEmpty().toSet(),
             )
             tombstones = outcome.tombstones

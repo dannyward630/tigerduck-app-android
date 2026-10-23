@@ -68,6 +68,7 @@ import org.ntust.app.tigerduck.data.moodle.name
 import org.ntust.app.tigerduck.data.moodle.studentId
 import org.ntust.app.tigerduck.network.model.moodle.MoodleMember
 import org.ntust.app.tigerduck.ui.component.EmptyStateView
+import org.ntust.app.tigerduck.ui.component.SearchFieldIcon
 import org.ntust.app.tigerduck.ui.component.searchClearIcon
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 import java.text.NumberFormat
@@ -312,7 +313,7 @@ private fun SearchRow(query: String, onQueryChange: (String) -> Unit) {
         onValueChange = onQueryChange,
         singleLine = true,
         placeholder = { Text(stringResource(R.string.action_search)) },
-        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+        leadingIcon = { SearchFieldIcon() },
         trailingIcon = searchClearIcon(query) { onQueryChange("") },
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         shape = RoundedCornerShape(28.dp),

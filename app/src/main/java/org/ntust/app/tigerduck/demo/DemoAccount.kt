@@ -85,10 +85,9 @@ class DemoAccount @Inject constructor(
     }
 
     /**
-     * The demo library sign-out. Also run after every real library sign-in,
-     * including the one a real NTUST sign-in makes on the side: otherwise
-     * the library screen goes on showing the demo QR and user name in place
-     * of the real account's.
+     * The demo library sign-out. Also run after every real library sign-in:
+     * otherwise the library screen goes on showing the demo QR and user name
+     * in place of the real account's.
      */
     fun signOutLibrary() {
         store.libraryFakeSignedIn = false
@@ -123,9 +122,12 @@ class DemoAccount @Inject constructor(
         load(currentLang())?.let { write(it) }
     }
 
-    /** Leave the demo account. Part of sign-out, which clears the cached data itself. */
+    /**
+     * Leave the demo account. Part of the school sign-out, which clears the cached data itself; a
+     * demo library signed in stays, as a real library account does, until [signOutLibrary].
+     */
     fun exit() {
-        store.clear()
+        store.clearSchool()
         ServerStatusTracker.exitDemoMode()
     }
 

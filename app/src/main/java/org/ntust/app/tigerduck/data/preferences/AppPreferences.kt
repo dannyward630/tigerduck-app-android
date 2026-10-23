@@ -1111,6 +1111,34 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
             .putStringSet("holidayNotifyOverrides", value.map(Int::toString).toSet())
             .apply()
 
+    /**
+     * Holidays whose choice in [holidayNotifyOverrides] the backend has not
+     * acknowledged yet, kept across a restart: the upload that never landed
+     * is the one that outlives the process that made it. See
+     * `PendingHolidayOverrides`; the iPhone's `holidayOverridesAwaitingUpload`.
+     */
+    var holidayOverridesAwaitingUpload: Set<Int>
+        get() = prefs.getStringSet("holidayOverridesAwaitingUpload", emptySet())
+            ?.mapNotNull(String::toIntOrNull)
+            ?.toSet()
+            ?: emptySet()
+        set(value) = prefs.edit()
+            .putStringSet("holidayOverridesAwaitingUpload", value.map(Int::toString).toSet())
+            .apply()
+
+    /**
+     * At sign-out: both holiday sets are the departing account's. Left
+     * behind, the next student would inherit their quiet days, and the
+     * awaiting set would send those choices up as the new account. As the
+     * iPhone's `forgetHolidayOverrides`.
+     */
+    fun forgetHolidayOverrides() {
+        prefs.edit()
+            .remove("holidayNotifyOverrides")
+            .remove("holidayOverridesAwaitingUpload")
+            .apply()
+    }
+
     var semesterCatalogTerms: List<String>
         get() = prefs.getString("semesterCatalogTerms", null)
             ?.split(SEMESTER_LIST_DELIMITER)

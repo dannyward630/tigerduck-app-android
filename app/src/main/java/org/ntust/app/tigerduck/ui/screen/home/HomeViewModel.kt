@@ -32,6 +32,7 @@ import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.academic.QuietDays
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.push.PushApiClient
 import org.ntust.app.tigerduck.ui.component.ServerFailureSimulator
 import org.ntust.app.tigerduck.ui.component.ServerKind
@@ -367,6 +368,11 @@ class HomeViewModel @Inject constructor(
                     _ignoredAssignmentIds.value = emptySet()
                     _markedCompletedIds.value = emptySet()
                     _ignoredCourseKeys.value = emptySet()
+                    // The watermark is the departing account's: the next
+                    // account's feed read after it would skip that account's
+                    // own earlier changes. From 0 the poll runs a full sync
+                    // until one lands for the account that signs in.
+                    syncState.lastKnownRevision = 0
                     hasLoaded = false
                     _initialLoadComplete.value = true
                 } else if (signedIn) {
@@ -644,8 +650,12 @@ class HomeViewModel @Inject constructor(
         online = networkChecker::isAvailable,
         signIn = authTokenManager::signInIfSignedOut,
         fetchRevision = syncApiClient::fetchRevision,
+        fetchChanges = syncApiClient::fetchChanges,
         lastKnownRevision = { syncState.lastKnownRevision },
+        setLastKnownRevision = { syncState.lastKnownRevision = it },
+        signInGeneration = { authTokenManager.signInGeneration },
         fullSyncsInFlight = backendPullsInFlight::get,
+        retryUnsent = backendSync::sendWhatWaits,
         fullSync = ::syncAndRepublish,
     ).also { outcome ->
         // Reached the server with nothing new: a re-enable check that failed
@@ -721,6 +731,8 @@ class HomeViewModel @Inject constructor(
                         courses = HomeCourseMerge.mergeRemote(
                             remote = remoteCourses,
                             cached = dataCache.loadCourses(),
+                            names = dataCache.loadCourseCustomNames(),
+                            locale = AppLanguageManager.resolvedCourseApiLanguage(prefs.appLanguage),
                             deletedNos = hiddenNow(),
                         )
                         dataCache.saveCourses(courses)
@@ -742,11 +754,16 @@ class HomeViewModel @Inject constructor(
                     }
                     if (written != null) {
                         assignments = written
-                        runCatching { pushApiClient.uploadAssignments(written) }
-                            .onFailure {
-                                prefs.setLastSyncSource(SyncSource.LOCAL)
-                                Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${it.logSummary()}")
-                            }
+                        try {
+                            pushApiClient.uploadAssignments(written)
+                        } catch (e: CancellationException) {
+                            // A sign-out cancels this fetch: taken for a failed upload, the
+                            // fetch would go on to show the departing account's lists again.
+                            throw e
+                        } catch (e: Exception) {
+                            prefs.setLastSyncSource(SyncSource.LOCAL)
+                            Log.w("HomeViewModel", "uploadAssignments failed (non-fatal): ${e.logSummary()}")
+                        }
                     }
                 }
             }
@@ -839,8 +856,14 @@ class HomeViewModel @Inject constructor(
 
             if (orderedCourseNos.isEmpty()) return@async emptyList()
 
+            // A course whose query fails keeps its row in the term, where
+            // Moodle's stand-in would take its times and room off this phone
+            // and, uploaded, off every other device (#417).
+            val cachedByNo = dataCache.loadCourses(semester).associateBy { it.courseNo }
             orderedCourseNos.map { courseNo ->
-                async { courseService.lookupOrFallback(semester, courseNo, moodleByNo[courseNo]) }
+                async {
+                    courseService.lookupOrFallback(semester, courseNo, moodleByNo[courseNo], kept = cachedByNo[courseNo])
+                }
             }.awaitAll().filterNotNull()
         }
 

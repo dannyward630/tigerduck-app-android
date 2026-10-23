@@ -31,6 +31,7 @@
     <string name="action_allow">Zezwól</string>
     <string name="action_back">Wstecz</string>
     <string name="action_cancel">Anuluj</string>
+    <string name="action_change">Zmień</string>
     <string name="action_clear_text">Wyczyść tekst</string>
     <string name="action_close">Zamknij</string>
     <string name="action_confirm">Potwierdź</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Styl interfejsu</string>
     <string name="settings_whats_new">Co nowego</string>
     <string name="share_code_needs_update_message">Ten kod udostępniania wymaga nowszej wersji aplikacji.</string>
+    <string name="sign_in_change_account_title">Zmień konto</string>
     <string name="sign_in_password">Hasło</string>
     <string name="sign_in_student_id">Numer studenta</string>
     <string name="source_code_picker_current_app_badge">Ta aplikacja</string>

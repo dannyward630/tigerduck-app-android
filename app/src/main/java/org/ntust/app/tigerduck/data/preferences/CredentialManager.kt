@@ -173,46 +173,24 @@ class CredentialManager private constructor(
     private var schoolAccount = 0
 
     /**
-     * Moved by each school sign-out. The school sign-in reads it before its
-     * SSO step, and its own library step stores nothing once it has moved
-     * (see [isSchoolAccount]). Only that step: a sign-in with another
-     * student's stored library credentials, which the sign-out keeps, still
-     * stores its token or its refusal, as on the iPhone.
+     * Moved by each school sign-out, so work begun for the school account,
+     * such as a bulletin fetch, stores nothing once it has left (see
+     * [isSchoolAccount]). The library account is not touched by it.
      */
     val schoolAccountGeneration: Int get() = libraryAccount.atomically { schoolAccount }
 
-    /**
-     * Whether no school sign-out has come since [read] was read from
-     * [schoolAccountGeneration]. Asked as the library step's answer is
-     * stored, under the same lock as the sign-out.
-     */
+    /** Whether no school sign-out has come since [read] was read from [schoolAccountGeneration]. */
     fun isSchoolAccount(read: Int): Boolean = libraryAccount.atomically { schoolAccount == read }
 
     /**
-     * The library sign-out a school sign-out makes: the library account goes
-     * when it is [ifSchoolAccount]'s, the departing student ID, compared as
-     * [sameStudentId] does; another student's stays. Either way the school
-     * sign-in's own library step, if still out, stores nothing. Atomic with
-     * the library's saves, so that step cannot store the departing account
-     * after this looked. Returns whether the library account went.
+     * A school sign-out's credentials: the school account goes, and the
+     * library account stays, whoever's it is, as each account signs in and
+     * out by itself. Moves [schoolAccountGeneration], under the library's
+     * lock as [isSchoolAccount] reads it.
      */
-    fun clearLibraryCredentials(ifSchoolAccount: String?): Boolean = libraryAccount.atomically {
-        schoolAccount++
-        val same = ifSchoolAccount != null && sameStudentId(libraryUsername, ifSchoolAccount)
-        if (same) clearLibraryCredentials()
-        same
-    }
-
-    /**
-     * A school sign-out's credentials: the school account goes, and the library
-     * account with it when it is the same student's, by the student ID read
-     * before the school's is wiped; see [clearLibraryCredentials]. Returns
-     * whether the library account went.
-     */
-    fun signOutSchoolAccount(): Boolean {
-        val departing = ntustStudentId
+    fun signOutSchoolAccount() {
         clearNtustCredentials()
-        return clearLibraryCredentials(ifSchoolAccount = departing)
+        libraryAccount.atomically { schoolAccount++ }
     }
 
     // ── School mail — its own account, never shared with the NTUST or library one ──
@@ -264,28 +242,54 @@ class CredentialManager private constructor(
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
                 )
             }
-            return try {
-                Opened(attempt(), encrypted = true, recreated = false)
-            } catch (e: Exception) {
-                // A corrupted prefs file (e.g. after a system restore onto a
-                // device whose keystore doesn't hold the original master key)
-                // makes `create` throw permanently. Wipe and retry once so the
-                // user only loses their stored credentials, not the whole app.
-                android.util.Log.w(
-                    "CredentialManager",
-                    "EncryptedSharedPreferences unusable; resetting: ${e.logSummary()}"
-                )
-                runCatching { context.deleteSharedPreferences(PREFS_NAME) }
-                try {
-                    Opened(attempt(), encrypted = true, recreated = true)
-                } catch (retry: Exception) {
-                    android.util.Log.e(
-                        "CredentialManager",
-                        "EncryptedSharedPreferences retry failed: ${retry.logSummary()}"
-                    )
-                    throw SecurityException("Cannot create encrypted credential storage", retry)
-                }
-            }
+            val (prefs, recreated) = openOrReset(
+                attempt = ::attempt,
+                reset = { runCatching { context.deleteSharedPreferences(PREFS_NAME) } },
+            )
+            return Opened(prefs, encrypted = true, recreated = recreated)
         }
+    }
+}
+
+/** How many times the store is opened before it is deleted, and the pause between the tries. */
+private const val OPEN_TRIES = 3
+private const val OPEN_RETRY_PAUSE_MS = 200L
+
+/**
+ * Opens the credential store with [attempt], [OPEN_TRIES] times [OPEN_RETRY_PAUSE_MS] apart, and
+ * only then lets [reset] delete it and opens it once more; says whether it had to. The keystore
+ * can refuse a call for a moment, busy or still starting after a boot, and deleting the store
+ * then signed the user out for nothing. A corrupted file (e.g. after a system restore onto a
+ * device whose keystore doesn't hold the original master key) refuses every try, so the user
+ * loses only their stored credentials, not the whole app.
+ */
+internal fun <T> openOrReset(
+    attempt: () -> T,
+    reset: () -> Unit,
+    pause: (Long) -> Unit = { Thread.sleep(it) },
+): Pair<T, Boolean> {
+    var failure: Exception? = null
+    repeat(OPEN_TRIES) { index ->
+        if (index > 0) pause(OPEN_RETRY_PAUSE_MS)
+        try {
+            return attempt() to false
+        } catch (e: Exception) {
+            failure = e
+        }
+    }
+    val last = checkNotNull(failure)
+    android.util.Log.w(
+        "CredentialManager",
+        "EncryptedSharedPreferences unusable; resetting: ${last.logSummary()}"
+    )
+    reset()
+    return try {
+        attempt() to true
+    } catch (retry: Exception) {
+        android.util.Log.e(
+            "CredentialManager",
+            "EncryptedSharedPreferences retry failed: ${retry.logSummary()}"
+        )
+        throw SecurityException("Cannot create encrypted credential storage", retry)
     }
 }

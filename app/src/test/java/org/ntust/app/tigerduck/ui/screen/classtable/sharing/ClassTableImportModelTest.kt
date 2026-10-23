@@ -72,7 +72,7 @@ class ClassTableImportModelTest {
         assertEquals(Prompt.NoCode, model.state.value.prompt)
         model.dismissPrompt()
 
-        model.imageRead(listOf("https://example.com", "HTTPS://TIGERDUCK.APP/T/1.X"))
+        model.imageRead(listOf("https://example.com", "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.X"))
         assertEquals(Prompt.Invalid, model.state.value.prompt)
         model.dismissPrompt()
 
@@ -80,6 +80,24 @@ class ClassTableImportModelTest {
         assertEquals("B11300001", model.state.value.pending?.studentId)
         // The nickname starts as the student ID.
         assertEquals("B11300001", model.state.value.nickname)
+    }
+
+    @Test
+    fun `a code from a newer app asks for an update, whether a version or a type this one does not know`() = runTest {
+        val newer = listOf(
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/2.B11300001",
+            "https://share.tigerduck.app/FRIEND/1.B11300001",
+        )
+        newer.forEach { text ->
+            val model = model()
+            assertTrue(text, model.scanned(text))
+            assertEquals(text, Prompt.NeedsUpdate, model.state.value.prompt)
+        }
+
+        // Asked of a picture too, before a damaged code beside it.
+        val picture = model()
+        picture.imageRead(listOf("https://example.com", "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/1.X", newer[1]))
+        assertEquals(Prompt.NeedsUpdate, picture.state.value.prompt)
     }
 
     @Test

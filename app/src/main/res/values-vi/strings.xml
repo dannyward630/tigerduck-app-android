@@ -31,6 +31,7 @@
     <string name="action_allow">Cho phép</string>
     <string name="action_back">Quay lại</string>
     <string name="action_cancel">Hủy</string>
+    <string name="action_change">Đổi</string>
     <string name="action_clear_text">Xóa văn bản</string>
     <string name="action_close">Đóng</string>
     <string name="action_confirm">Xác nhận</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Giao diện</string>
     <string name="settings_whats_new">Có gì mới</string>
     <string name="share_code_needs_update_message">Mã chia sẻ này cần phiên bản ứng dụng mới hơn.</string>
+    <string name="sign_in_change_account_title">Đổi tài khoản</string>
     <string name="sign_in_password">Mật khẩu</string>
     <string name="sign_in_student_id">Mã số sinh viên</string>
     <string name="source_code_picker_current_app_badge">Ứng dụng hiện tại</string>

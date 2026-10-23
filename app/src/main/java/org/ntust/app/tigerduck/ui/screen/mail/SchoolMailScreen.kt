@@ -40,7 +40,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.FilterAltOff
 import androidx.compose.material.icons.filled.Mail
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -128,6 +127,7 @@ import org.ntust.app.tigerduck.ui.component.rememberAppBarState
 import org.ntust.app.tigerduck.ui.component.rememberChromeContentPadding
 import org.ntust.app.tigerduck.ui.component.rememberSearchRevealState
 import org.ntust.app.tigerduck.ui.component.scrollbar
+import org.ntust.app.tigerduck.ui.component.SearchFieldIcon
 import org.ntust.app.tigerduck.ui.component.searchClearIcon
 import org.ntust.app.tigerduck.ui.component.statusText
 import org.ntust.app.tigerduck.ui.screen.settings.LoginSheet
@@ -407,7 +407,7 @@ fun SchoolMailScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 4.dp)
                             .onFocusChanged { searchFocused = it.isFocused },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+                        leadingIcon = { SearchFieldIcon(searching = state.searchBusy) },
                         trailingIcon = searchClearIcon(state.searchText) { viewModel.setSearchText("") },
                         placeholder = { Text(stringResource(R.string.school_mail_search_prompt)) },
                         singleLine = true,

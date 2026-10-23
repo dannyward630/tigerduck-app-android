@@ -12,6 +12,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.NotSignedInException
+import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.model.Assignment
@@ -45,12 +46,18 @@ class PushApiClient @Inject constructor(
     private val gson = Gson()
     private val jsonType = "application/json".toMediaType()
 
-    private val client = baseClient.newBuilder()
+    // Without the session's guard: the sign-out's unregister names its backend
+    // and token itself, from the debt.
+    private val unguarded = baseClient.newBuilder()
         .addInterceptor { chain ->
             val builder = chain.request().newBuilder()
                 .header("Accept", "application/json")
             chain.proceed(builder.build())
         }
+        .build()
+
+    private val client = unguarded.newBuilder()
+        .guardedBy(authTokenManager)
         .build()
 
     /**
@@ -135,7 +142,7 @@ class PushApiClient @Inject constructor(
     // DELETE gives up within a bound; and it is retried by its own debt, never
     // sent again by OkHttp on its own.
     internal val deleteClient: OkHttpClient by lazy {
-        client.newBuilder()
+        unguarded.newBuilder()
             .retryOnConnectionFailure(false)
             .callTimeout(DELETE_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .build()
@@ -147,16 +154,18 @@ class PushApiClient @Inject constructor(
      *
      * A no-op when cloud sync is off or on fdroid: the local preference has
      * already been written by then, and this call is only about agreement
-     * between devices, not about whether the guard works.
+     * between devices, not about whether the guard works. With [signIn], sent
+     * only as that sign-in: see `PendingHolidayOverrides`. Says whether it was
+     * sent, so a skipped PUT is not taken for one that landed.
      */
-    suspend fun putHolidayOverride(holidayId: Int, notify: Boolean): Unit =
+    suspend fun putHolidayOverride(holidayId: Int, notify: Boolean, signIn: Int? = null): Boolean =
         withContext(Dispatchers.IO) {
-            if (!isSyncCapable) return@withContext
+            if (!isSyncCapable) return@withContext false
             val body = gson.toJson(HolidayOverrideRequest(notify)).toRequestBody(jsonType)
             val request = Request.Builder()
                 .url("$baseUrl/sync/holiday-overrides/$holidayId")
                 .put(body)
-                .addAuthHeader()
+                .addAuthHeader(signIn)
                 .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
@@ -164,6 +173,7 @@ class PushApiClient @Inject constructor(
                         "holiday override failed: HTTP ${response.code}"
                     )
                 }
+                true
             }
         }
 
@@ -402,6 +412,7 @@ class PushApiClient @Inject constructor(
             // Recorded under the sign-in lock, so a sign-out's clear cannot
             // fall between the check and the record; see UploadLedger.sendIfDue.
             ifCurrent = { record -> authTokenManager.runIfSignedIn(signIn, record) },
+            signIn = signIn,
         ) {
             val request = Request.Builder()
                 .url("$base/sync/assignments/upload")
@@ -410,7 +421,7 @@ class PushApiClient @Inject constructor(
                 .build()
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw PushApiException("uploadAssignments failed: HTTP ${response.code}")
+                    throw PushApiException("uploadAssignments failed: HTTP ${response.code}", response.code)
                 }
             }
         }
@@ -475,6 +486,7 @@ class PushApiClient @Inject constructor(
             // fall between the check and the record; see UploadLedger.sendIfDue.
             ifCurrent = { record -> authTokenManager.runIfSignedIn(startedIn, record) },
             always = resend || forceKeys.isNotEmpty(),
+            signIn = startedIn,
         ) {
             val request = Request.Builder()
                 .url("$base/sync/courses/upload")
@@ -483,7 +495,7 @@ class PushApiClient @Inject constructor(
                 .build()
             accepted = uploadCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw PushApiException("uploadCourses failed: HTTP ${response.code}")
+                    throw PushApiException("uploadCourses failed: HTTP ${response.code}", response.code)
                 }
                 // A 2xx with an unreadable body (a captive portal, a proxy) is
                 // still an upload that landed; it just cannot say what was accepted.

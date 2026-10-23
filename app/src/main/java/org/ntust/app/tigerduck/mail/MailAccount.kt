@@ -119,11 +119,12 @@ class MailAccount @Inject constructor(
 
         if (demo.matches(creds.studentId, password)) {
             if (!sameStudent) cache.clearAll()
-            if (replacing) _studentChanges.tryEmit(Unit)
-            state.clear()
+            if (replacing) leaveStudent()
+            resetState(sameStudent)
             state.demoMailbox = true
             state.displayName = keptName ?: demo.mailbox().displayName
             save(creds)
+            notifier.cancelAuthFailure()
             return@withContext null
         }
         if (demo.appDemoActive) return@withContext MailError.AuthFailed()
@@ -136,8 +137,8 @@ class MailAccount @Inject constructor(
                     runCatching { session.newestSenderName(sent, creds.address, window = 20) }.getOrNull()
                 }
                 if (!sameStudent) cache.clearAll()
-                if (replacing) _studentChanges.tryEmit(Unit)
-                state.clear()
+                if (replacing) leaveStudent()
+                resetState(sameStudent)
                 state.inboxUidValidity = status.uidValidity
                 state.inboxSeenUidNext = status.uidNext
                 state.displayName = keptName ?: name
@@ -146,9 +147,23 @@ class MailAccount @Inject constructor(
             return@withContext MailErrors.classify(e)
         }
         save(creds)
+        notifier.cancelAuthFailure()
         scheduler.schedule()
         null
     }
+
+    /**
+     * Another student signs in over this one, which is no sign-out: the screens drop this one's
+     * mail on [studentChanges], and this one's notifications go, whose taps would open the next
+     * student's mail with this one's UIDs.
+     */
+    private fun leaveStudent() {
+        _studentChanges.tryEmit(Unit)
+        notifier.cancelAll()
+    }
+
+    /** A password typed again keeps what the student chose; see [MailStateStore.clearSignIn]. */
+    private fun resetState(sameStudent: Boolean) = if (sameStudent) state.clearSignIn() else state.clear()
 
     /**
      * Both callers are on the main thread, so only the cheap part runs there:
@@ -172,16 +187,6 @@ class MailAccount @Inject constructor(
             cache.clearAll()
             notifier.cancelAll()
         }
-    }
-
-    /**
-     * Signs out when the mail account is [studentId]'s, as a school sign-out takes the library
-     * account; another student's mail account stays signed in.
-     */
-    fun signOutIfSchoolAccount(studentId: String): Boolean {
-        if (credentials.mailStudentId?.equals(studentId, ignoreCase = true) != true) return false
-        signOut()
-        return true
     }
 
     /** The server rejected the stored password: stop everything, never retry (spec §7.4). */

@@ -88,8 +88,9 @@ class SsoLoginService internal constructor(
     /**
      * Ensures the user is logged in to the given service via NTUST SSO, with
      * the stored account. Returns true on success, throws SsoLoginError on
-     * failure. Once the school has refused the stored password, it posts it
-     * no more and throws [SsoLoginError.LoginFailed] — see [StoredPasswordLatch].
+     * failure. While a refusal of the stored password holds its next post
+     * back, it posts none and throws [SsoLoginError.LoginFailed] — see
+     * [StoredPasswordLatch].
      */
     suspend fun ensureServiceLogin(
         serviceUrl: String,
@@ -110,6 +111,22 @@ class SsoLoginService internal constructor(
     ): Boolean = loginMutex.lockedUnlessStale(isStillWanted, stale = false) {
         logIn(serviceUrl, studentId, password)
     }
+
+    /**
+     * [ensureServiceLogin] past the session the jar holds, for the retry of a refused stored
+     * password: a session still live lets [ensureServiceLogin] through without a post, which says
+     * nothing about the password, so the jar is emptied first, under the same lock, and the
+     * school's answer to the post is what the latch records. A refusal's wait still holds it back.
+     *
+     * [stillRefused] is asked once the lock is held: an automatic sign-in that held it first, and
+     * that the school took, settles the refusal, and this then keeps its session and posts nothing.
+     */
+    suspend fun signInAgain(serviceUrl: String, studentId: String, password: String, stillRefused: () -> Boolean): Boolean =
+        loginMutex.withLock {
+            if (!stillRefused()) return@withLock true
+            sessionManager.invalidateSession()
+            logIn(serviceUrl, studentId, password)
+        }
 
     /**
      * A sign-in with credentials just entered. [ensureServiceLogin] takes a
@@ -162,9 +179,12 @@ class SsoLoginService internal constructor(
         }
 
         // The session needs the password now, and each refusal of it counts
-        // toward the account's lockout. Before step 4, which would empty the
-        // jar for a sign-in that is not going to happen.
-        if (!typed) passwordLatch.rejection.value?.let { throw SsoLoginError.LoginFailed(it.reason) }
+        // toward the account's lockout, so a refusal's wait holds it back.
+        // Before step 4, which would empty the jar for a sign-in that is not
+        // going to happen.
+        if (!typed && passwordLatch.postMustWait()) {
+            throw SsoLoginError.LoginFailed(passwordLatch.rejection.value?.reason)
+        }
 
         // Step 4: Clear cookies and retry
         sessionManager.invalidateSession()
@@ -202,10 +222,11 @@ class SsoLoginService internal constructor(
         // names as the form's action. As on the iPhone (ssoActionHostAllowlist).
         if (!isSignInHost(actionUrl)) throw SsoLoginError.InvalidResponse()
         if (typed) return@withContext submitLoginForm(actionUrl, fields)
-        // Under the lock every automatic post of the stored password takes, with the latch and
+        // Under the lock every automatic post of the stored password takes, with the refusals and
         // the stored account checked again right before the password goes out: a refusal
         // another sign-in got, the Moodle token renewal's included, has landed by then, and
-        // none lands while this one is posting.
+        // none lands while this one is posting. The school taking it ends the refusals; the
+        // returns above, which a live session let through without a post, leave them.
         passwordLatch.postAutomatically(
             generation = latchGeneration,
             studentId = studentId,
@@ -214,7 +235,9 @@ class SsoLoginService internal constructor(
             stale = { SsoLoginError.AccountChanged() },
         ) {
             try {
-                submitLoginForm(actionUrl, fields)
+                submitLoginForm(actionUrl, fields).also { signedIn ->
+                    if (signedIn) passwordLatch.markAccepted(latchGeneration, studentId, password)
+                }
             } catch (e: SsoLoginError.LoginFailed) {
                 passwordLatch.markRejected(latchGeneration, studentId, password, e.reason)
                 throw e

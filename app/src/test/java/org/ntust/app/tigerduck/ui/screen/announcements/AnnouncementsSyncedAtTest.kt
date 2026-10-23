@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package org.ntust.app.tigerduck.ui.screen.announcements
 
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.SavedStateHandle
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient

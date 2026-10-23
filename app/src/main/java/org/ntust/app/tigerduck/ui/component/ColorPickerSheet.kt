@@ -56,6 +56,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
+import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
 import org.ntust.app.tigerduck.util.replaceIosArg
 
 /**
@@ -77,6 +79,7 @@ fun ColorPickerSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val style = LocalVisualStylePolicy.current
 
     val initialHsv = remember(currentColor) {
         FloatArray(3).also { android.graphics.Color.colorToHSV(currentColor.toArgb(), it) }
@@ -124,13 +127,14 @@ fun ColorPickerSheet(
 
             Spacer(Modifier.height(20.dp))
 
-            // Preview — matches the alpha used on the schedule grid tile.
+            // Preview: see-through, as on the schedule grid's blocks, or under
+            // TAT the pastel its tiles take.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(64.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(selectedColor.copy(alpha = 0.85f)),
+                    .background(style.courseAccentColor(selectedColor, tint = selectedColor.copy(alpha = 0.85f))),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -138,8 +142,10 @@ fun ColorPickerSheet(
                         courseName.ifBlank { stringResource(R.string.color_picker_preview_fallback) },
                         maxChars = 30
                     ),
-                    color = if (selectedColor.red * 0.299f + selectedColor.green * 0.587f + selectedColor.blue * 0.114f > 0.5f)
-                        Color(0xFF1C1C1E) else Color.White,
+                    color = style.courseAccentTextColor(
+                        tintText = if (selectedColor.red * 0.299f + selectedColor.green * 0.587f + selectedColor.blue * 0.114f > 0.5f)
+                            Color(0xFF1C1C1E) else Color.White
+                    ),
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -161,7 +167,7 @@ fun ColorPickerSheet(
                 presetPalette.forEachIndexed { index, preset ->
                     val presetArgb = preset.toArgb() or 0xFF000000.toInt()
                     ColorSwatch(
-                        color = preset,
+                        color = style.courseAccentColor(preset, tint = preset),
                         // Numbered from 1, as iOS reads them.
                         label = stringResource(R.string.a11y_course_color_swatch)
                             .replaceIosArg(1, index + 1L),
@@ -255,6 +261,8 @@ private fun ColorSwatch(
 ) {
     val surface = MaterialTheme.colorScheme.surface
     val onSurface = MaterialTheme.colorScheme.onSurface
+    // The ring and check of the chosen one: white, or dark on a pastel.
+    val mark = LocalVisualStylePolicy.current.courseAccentTextColor(tintText = Color.White)
     Box(
         modifier = Modifier.size(44.dp)
     ) {
@@ -267,7 +275,7 @@ private fun ColorSwatch(
                 .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
                 .semantics { contentDescription = label }
                 .then(
-                    if (selected) Modifier.border(3.dp, Color.White, CircleShape)
+                    if (selected) Modifier.border(3.dp, mark, CircleShape)
                     else Modifier
                 ),
             contentAlignment = Alignment.Center
@@ -276,7 +284,7 @@ private fun ColorSwatch(
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,
-                    tint = Color.White,
+                    tint = mark,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -408,3 +416,11 @@ private fun HueSlider(
         )
     }
 }
+
+/**
+ * Whether the color picker offers the palette's dark variants: in dark mode,
+ * as the class table's blocks draw them, but not under TAT, whose pastel is
+ * made from the light color in either theme.
+ */
+internal fun VisualStylePolicy.colorPickerOffersDarkPalette(isDark: Boolean): Boolean =
+    isDark && courseColorStyle == VisualStylePolicy.CourseColorStyle.Tint

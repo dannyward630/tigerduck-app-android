@@ -28,6 +28,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.shared.blockClassroomFrom
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -58,7 +59,10 @@ fun ConflictCoursePickerSheet(
 
 @Composable
 private fun ConflictCourseRow(course: Course, weekday: Int, periodId: String?, onPick: (Course) -> Unit) {
-    val swatch = TigerDuckTheme.courseColor(course.courseNo)
+    val swatch = LocalVisualStylePolicy.current.courseAccentColor(
+        courseColor = TigerDuckTheme.courseColorVibrant(course.courseNo),
+        tint = TigerDuckTheme.courseColor(course.courseNo),
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()

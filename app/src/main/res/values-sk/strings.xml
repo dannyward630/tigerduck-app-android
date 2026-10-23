@@ -31,6 +31,7 @@
     <string name="action_allow">Povoliť</string>
     <string name="action_back">Späť</string>
     <string name="action_cancel">Zrušiť</string>
+    <string name="action_change">Zmeniť</string>
     <string name="action_clear_text">Vymazať text</string>
     <string name="action_close">Zavrieť</string>
     <string name="action_confirm">Potvrdiť</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Štýl rozhrania</string>
     <string name="settings_whats_new">Čo je nové</string>
     <string name="share_code_needs_update_message">Tento kód na zdieľanie vyžaduje novšiu verziu aplikácie.</string>
+    <string name="sign_in_change_account_title">Zmeniť účet</string>
     <string name="sign_in_password">Heslo</string>
     <string name="sign_in_student_id">Číslo študenta</string>
     <string name="source_code_picker_current_app_badge">Táto aplikácia</string>

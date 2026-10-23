@@ -554,7 +554,11 @@ class AppState @Inject constructor(
     private val fullReset = FullReset(
         // Its password, caches, alarms and posted notifications.
         signOutMail = { mailAccount.signOut() },
-        signOutSchool = { authService.logout() },
+        // The school sign-out keeps a demo library signed in; a full reset does not.
+        signOutSchool = {
+            authService.logout()
+            demoAccount.signOutLibrary()
+        },
         clearCaches = { dataCache.clearEverything() },
         credentials = credentials,
         prefs = prefs,

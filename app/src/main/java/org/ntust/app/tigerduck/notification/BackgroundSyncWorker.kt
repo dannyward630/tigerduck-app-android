@@ -25,12 +25,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.academic.SemesterTerm
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.data.CourseIgnoreSync
 import org.ntust.app.tigerduck.data.CourseTombstoneKeys
 import org.ntust.app.tigerduck.auth.StoredPasswordLatch
+import org.ntust.app.tigerduck.auth.retryingAfterRelogin
 import org.ntust.app.tigerduck.data.PendingCourseAdds
 import org.ntust.app.tigerduck.data.PendingCourseOverrides
 import org.ntust.app.tigerduck.data.UnsentMarks
@@ -80,6 +83,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
     private val pendingCourseAdds: PendingCourseAdds,
     private val pendingCourseDeletes: org.ntust.app.tigerduck.data.PendingCourseDeletes,
     private val pendingCourseOverrides: PendingCourseOverrides,
+    private val pendingHolidayOverrides: org.ntust.app.tigerduck.data.PendingHolidayOverrides,
     private val academicCalendar: AcademicCalendarStore,
     @param:ApplicationScope private val appScope: CoroutineScope,
 ) : CoroutineWorker(context, params) {
@@ -169,10 +173,15 @@ class BackgroundSyncWorker @AssistedInject constructor(
         }
 
         if (coursesOk && assignmentsOk) return Result.success()
-        return resultForFailedSync(triggered, runAttemptCount, passwordRejected = storedPasswordLatch.isRejected)
+        return resultForFailedSync(triggered, runAttemptCount, passwordRejected = storedPasswordLatch.postMustWait())
     }
 
     private suspend fun syncOverridesFromBackend() {
+        // Pinned to the data this sync began with, as Home's is: once a sign-out wipes it, every
+        // cache write below drops rather than land in the files the next account starts from.
+        if (currentCoroutineContext()[DataCache.Generation] == null) {
+            return withContext(DataCache.Generation(dataCache.userDataGeneration)) { syncOverridesFromBackend() }
+        }
         // cloudSyncEnabled already reads false on fdroid at its source
         // (AppPreferences.cloudSyncEnabled), so no separate flavor check
         // is needed here.
@@ -191,14 +200,18 @@ class BackgroundSyncWorker @AssistedInject constructor(
             val account = authService.storedStudentId
             val generation = courseIgnoreSync.currentGeneration()
             courseIgnoreSync.retryPending()
-            // Marks and course colours and names whose PATCH failed, and
-            // course adds and deletes whose request did, go first, so the
-            // snapshot has them.
+            // Marks, course colours and names and holiday choices whose
+            // request failed, and course adds and deletes whose request did,
+            // go first, so the snapshot has them.
             unsentMarks.retry()
             pendingCourseAdds.retry()
             pendingCourseDeletes.retry()
             pendingCourseOverrides.retry()
-            val result = syncApiClient.fetchFullSync()
+            pendingHolidayOverrides.retry()
+            // A session the backend ended before its access token ran out
+            // draws a 401 until a sign-in, and the uploads below would draw
+            // one too; as Home's full sync, this signs in again once.
+            val result = retryingAfterRelogin(authService::attemptRelogin) { syncApiClient.fetchFullSync() }
             pendingCourseAdds.listed(result.serverCourses)
             // With the Assignments switch off, the re-enable check pending,
             // or marks the server lacks on the account's first sync here
@@ -231,7 +244,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
             // check-and-apply requires it. It catches its own transport
             // failures; the guard keeps anything else from failing this sync.
             appScope.async(Dispatchers.Main) {
-                runCatching { notificationSettingsSync.pullNow() }
+                runCatching { notificationSettingsSync.pullNow(knownRevision = result.currentRevision) }
                     .onFailure { e ->
                         if (e is CancellationException) throw e
                         Log.w(TAG, "notification settings pull failed: ${e.logSummary()}")
@@ -286,6 +299,12 @@ class BackgroundSyncWorker @AssistedInject constructor(
         val localCourses = dataCache.loadCourses(semester)
         val stored = dataCache.loadDeletedCourseNos()
         val storedKnown = dataCache.loadServerKnownNos()
+        // A course reset made on another device, which this worker leaves to
+        // Home's sync (HomeBackendSync.applyCourseReset): it wipes the
+        // hand-added courses and their waiting adds, so none is kept here.
+        val resetElsewhere = CourseSyncReconciler.coursesReset(
+            result.coursesResetAt, prefs.lastSeenCoursesResetAt, prefs.legacyLastCourseSyncAtMs,
+        ).apply
         val knownHere = storedKnown[semester].orEmpty().toSet()
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = semester,
@@ -296,6 +315,8 @@ class BackgroundSyncWorker @AssistedInject constructor(
             serverKnownNos = knownHere,
             // Deletes the retry above could not land: the snapshot still lists them.
             graceCourseNos = pendingCourseDeletes.waitingIn(semester),
+            // Adds the retry above could not land: the snapshot does not list them yet.
+            pendingAddNos = if (resetElsewhere) emptySet() else pendingCourseAdds.waitingIn(semester),
             selectionDroppedNos = dataCache.loadSelectionDroppedNos()[semester].orEmpty().toSet(),
         )
         if (outcome.tombstones != stored) {
@@ -665,7 +686,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
         ): ListenableWorker.Result =
             // A retry could only fail the same way: once the school refused
             // the stored password, no automatic sign-in posts it until the
-            // user signs in again (StoredPasswordLatch).
+            // refusal's wait is over, which StoredPasswordRetry keeps.
             if (passwordRejected || (triggered && runAttemptCount >= TRIGGERED_RETRIES)) {
                 ListenableWorker.Result.success()
             } else {

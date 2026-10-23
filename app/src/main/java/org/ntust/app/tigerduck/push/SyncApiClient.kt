@@ -7,6 +7,7 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
 import org.ntust.app.tigerduck.auth.AuthTokenManager
+import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.shared.Course
@@ -17,6 +18,7 @@ data class CourseOverrideResult(
     val moodleCourseId: String,
     val courseNo: String?,
     val colorHex: String?,
+    /** Per language; an empty name is one the user cleared. */
     val customNames: Map<String, String> = emptyMap(),
     /** The term of the course row the override belongs to. */
     val semester: String? = null,
@@ -93,6 +95,41 @@ data class BackendSyncResult(
     val holidayOverrides: Set<Int>? = null,
 )
 
+// The change feed's answer when the changes after the asked revision are gone.
+private const val HTTP_GONE = 410
+
+/** One entry of the change feed: only what a poll's plan reads (`ChangeFeedPlan`). */
+data class SyncChange(val revision: Long, val entityType: String)
+
+/**
+ * One page of `GET /sync?since_revision=`, oldest change first, as the backend
+ * answers it; as the iPhone's `PushAPI.SyncChangesPage`.
+ */
+data class SyncChangesPage(
+    val currentRevision: Long,
+    val returnedUntilRevision: Long,
+    val hasMore: Boolean,
+    val changes: List<SyncChange>,
+)
+
+/**
+ * A page as read off the wire. A field missing or a change unreadable reads as
+ * what makes the poll run a full sync (more to come, revision 0, no entity
+ * type), never as a change it may pass over.
+ */
+internal fun parseChangesPage(json: JSONObject): SyncChangesPage {
+    val changes = json.optJSONArray("changes")
+    return SyncChangesPage(
+        currentRevision = json.optLong("current_revision", 0),
+        returnedUntilRevision = json.optLong("returned_until_revision", 0),
+        hasMore = json.optBoolean("has_more", true),
+        changes = (0 until (changes?.length() ?: 0)).map { i ->
+            val change = changes?.optJSONObject(i)
+            SyncChange(change?.optLong("revision", 0) ?: 0, change?.optString("entity_type").orEmpty())
+        },
+    )
+}
+
 @Singleton
 class SyncApiClient @Inject constructor(
     private val authTokenManager: AuthTokenManager,
@@ -105,7 +142,9 @@ class SyncApiClient @Inject constructor(
     private val baseUrl: String
         get() = resolveAnnouncementEndpoint(prefs).url.trimEnd('/')
 
-    private val client = baseClient.newBuilder().build()
+    private val client = baseClient.newBuilder()
+        .guardedBy(authTokenManager)
+        .build()
 
     suspend fun fetchRevision(): Long = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
@@ -120,6 +159,27 @@ class SyncApiClient @Inject constructor(
             }
             val json = JSONObject(response.body.string())
             json.optLong("revision", 0)
+        }
+    }
+
+    /**
+     * The changes after [sinceRevision], one page of them; null when the server
+     * no longer keeps them (410 `sync_revision_expired`), so only a full sync
+     * can catch up. See `ChangeFeedPlan`.
+     */
+    suspend fun fetchChanges(sinceRevision: Long): SyncChangesPage? = withContext(Dispatchers.IO) {
+        val authHeader = authTokenManager.requireAuthHeader()
+        val request = Request.Builder()
+            .url("$baseUrl/sync?since_revision=$sinceRevision")
+            .get()
+            .header("Authorization", authHeader)
+            .build()
+        client.newCall(request).execute().use { response ->
+            if (response.code == HTTP_GONE) return@withContext null
+            if (!response.isSuccessful) {
+                throw PushApiException("sync changes failed: HTTP ${response.code}", response.code)
+            }
+            parseChangesPage(JSONObject(response.body.string()))
         }
     }
 
@@ -298,10 +358,11 @@ internal fun parseCourseOverrides(
         val moodleId = nullableString(co, "moodle_id") ?: continue
         val namesObj = co.optJSONObject("custom_names")
         val names = mutableMapOf<String, String>()
+        // Kept when empty: "" is a name the user cleared (tigerduck-backend#122),
+        // which the merge takes off this phone too.
         if (namesObj != null) {
             for (key in namesObj.keys()) {
-                val v = namesObj.optString(key, "")
-                if (v.isNotEmpty()) names[key] = v
+                names[key] = namesObj.optString(key, "")
             }
         }
         val resolvedNo = nullableString(co, "course_no") ?: courseMoodleIdToNo[moodleId]

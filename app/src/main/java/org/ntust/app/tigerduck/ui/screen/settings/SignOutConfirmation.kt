@@ -32,13 +32,16 @@ data class LocalEdits(
     val assignmentMarks: Boolean = false,
     /** Courses whose assignments are ignored, which sync only with assignments and courses both. */
     val ignoredCourses: Boolean = false,
+    /** Holidays the user kept class reminders on, which sync with TigerSync alone. */
+    val holidays: Boolean = false,
 )
 
 /**
  * Edits the server has not confirmed, which a sign-out deletes even with their kind synced: a
- * course added by hand that has not been uploaded, a removal whose DELETE still waits
- * (PendingCourseDeletes), a colour or name still waiting to go up (PendingCourseOverrides), an
- * ignore not yet confirmed, a done or ignored mark still waiting to be sent (UnsentMarks), and
+ * course added by hand that has not been uploaded or whose add still waits (PendingCourseAdds),
+ * a removal whose DELETE still waits (PendingCourseDeletes), a colour or name still waiting to go
+ * up (PendingCourseOverrides), a holiday choice still waiting to go up (PendingHolidayOverrides),
+ * an ignore not yet confirmed, a done or ignored mark still waiting to be sent (UnsentMarks), and
  * edits whose upload the re-enable check holds back (the sign-out drops the hold).
  */
 data class Unconfirmed(
@@ -46,6 +49,7 @@ data class Unconfirmed(
     val courseNames: Boolean = false,
     val courseColours: Boolean = false,
     val assignments: Boolean = false,
+    val holidays: Boolean = false,
 )
 
 /** What TigerSync keeps for the account; on fdroid, nothing. */
@@ -80,6 +84,9 @@ fun signOutLosses(
         (edits.assignmentMarks && !keepsAssignments) ||
         // CourseIgnoreSync.syncsCourseIgnores: both switches.
         (edits.ignoredCourses && !(keepsAssignments && keepsCourses)) ||
+        // No switch of their own: a full sync sends and takes them with TigerSync on.
+        (edits.holidays && !synced.enabled) ||
+        unconfirmed.holidays ||
         unconfirmed.courses || unconfirmed.courseNames || unconfirmed.courseColours || unconfirmed.assignments
     return buildSet {
         if (unsynced) add(SignOutLoss.UNSYNCED_DATA)
@@ -107,6 +114,7 @@ class SignOutLossCheck @Inject constructor(
             assignmentMarks = dataCache.loadIgnoredAssignments().isNotEmpty() ||
                 dataCache.loadMarkedCompletedAssignments().isNotEmpty(),
             ignoredCourses = dataCache.loadIgnoredCourses().isNotEmpty(),
+            holidays = prefs.holidayNotifyOverrides.isNotEmpty(),
         )
         val synced = SyncedKinds(
             enabled = prefs.cloudSyncEnabled,
@@ -121,9 +129,14 @@ class SignOutLossCheck @Inject constructor(
         val held = prefs.pendingConflictCategories
         val serverKnown = dataCache.loadServerKnownNos()
         val overrides = dataCache.loadPendingCourseOverrides()
+        // Only adds whose course is still here: PendingCourseAdds lets the others go unsent.
+        val adds = dataCache.loadPendingCourseAdds()
         val unconfirmed = Unconfirmed(
             courses = (edits.courses && "courses" in held) || terms.any { (semester, termCourses) ->
-                termCourses.any { it.isManual && it.courseNo !in serverKnown[semester].orEmpty() }
+                termCourses.any {
+                    (it.isManual && it.courseNo !in serverKnown[semester].orEmpty()) ||
+                        it.courseNo in adds[semester].orEmpty()
+                }
             } || dataCache.loadPendingCourseDeletes().values.any { it.isNotEmpty() },
             courseNames = (edits.courseNames && "course_names" in held) || overrides.any { it.customName != null },
             courseColours = (edits.courseColours && "course_colors" in held) || overrides.any { it.colorHex != null },
@@ -131,6 +144,7 @@ class SignOutLossCheck @Inject constructor(
                 dataCache.loadPendingCourseIgnores().isNotEmpty() ||
                 // A mark tapped offline waits in unsent_marks.json for the next sync.
                 dataCache.loadUnsentMarks().isNotEmpty(),
+            holidays = prefs.holidayOverridesAwaitingUpload.isNotEmpty(),
         )
         return signOutLosses(edits, synced, importedClassTables.load().hasImportedClassTables, unconfirmed)
     }

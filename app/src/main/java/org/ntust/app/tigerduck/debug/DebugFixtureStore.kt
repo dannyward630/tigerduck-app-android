@@ -13,7 +13,7 @@ import javax.inject.Singleton
  * library sign-in with no demo account.
  *
  * Written by [org.ntust.app.tigerduck.demo.DemoAccount] at the demo sign-in
- * and cleared at sign-out. Only the display sites consult the overrides, so
+ * and cleared at sign-out, all but a demo library signed in ([clearSchool]). Only the display sites consult the overrides, so
  * clearing this one preferences file is all it takes to leave.
  *
  * Backed by its own SharedPreferences file, for the same reason
@@ -90,6 +90,19 @@ class DebugFixtureStore @Inject constructor(
 
     fun clear() {
         prefs.edit().clear().apply()
+    }
+
+    /**
+     * Leaving the demo account, a school sign-out: everything goes but a demo library signed in,
+     * which stays until its own sign-out, as a real library account stays through a school
+     * sign-out.
+     */
+    fun clearSchool() {
+        if (!libraryFakeSignedIn) return clear()
+        // The demo sign-in shows the library under the demo student ID, which goes below.
+        if (libraryUsername == null) libraryUsername = studentIdOverride
+        val library = listOf(KEY_QR_CONTENT, KEY_QR_FAKE_SIGNED_IN, KEY_LIBRARY_USERNAME)
+        prefs.edit().apply { prefs.all.keys.filter { it !in library }.forEach(::remove) }.apply()
     }
 
     private companion object {
