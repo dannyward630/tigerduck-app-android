@@ -180,4 +180,16 @@ class MoodleSubmissionStateTest {
             )
         }
     }
+
+    @Test
+    fun `the extension comes from the status this round asked, and from the cache when it did not ask`() {
+        val cached = mapOf("1" to Date(1_000_000L))
+        fun attempt(extensionSeconds: Long?) = MoodleSubmissionLastAttempt(extensionduedate = extensionSeconds)
+
+        assertEquals(Date(2_000_000L), MoodleService.extensionDueDate(1, asked = true, attempt(2_000), cached))
+        assertEquals("asked, and none", null, MoodleService.extensionDueDate(1, asked = true, attempt(0), cached))
+        assertEquals("asked, and none", null, MoodleService.extensionDueDate(1, asked = true, attempt(null), cached))
+        assertEquals("not asked this round", Date(1_000_000L), MoodleService.extensionDueDate(1, asked = false, null, cached))
+        assertEquals(null, MoodleService.extensionDueDate(2, asked = false, null, cached))
+    }
 }

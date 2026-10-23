@@ -19,6 +19,9 @@ sealed interface ReminderStatusAnswer {
 
     /** No network, an error, a page from the NTUST edge: anything but an answer. */
     data object NoAnswer : ReminderStatusAnswer
+
+    /** An answer that came after one asked for later, which the cache already has. */
+    data object Superseded : ReminderStatusAnswer
 }
 
 /** Why a reminder that fired was not shown. */
@@ -39,6 +42,12 @@ enum class ReminderDropReason {
     SUBMISSIONS_DISABLED,
     LOCKED,
     EXTENDED,
+
+    /**
+     * Moodle's answer came after one asked for later, a page's or a round's: the cache has that
+     * one, and the reminder drops as with no answer when the cache does not drop it already.
+     */
+    SUPERSEDED,
 
     /** The whole check ran past its budget; the receiver's own reason. */
     TIMED_OUT,
@@ -93,6 +102,7 @@ object AssignmentReminderPolicy {
             ReminderStatusAnswer.NoToken -> ReminderDropReason.NO_TOKEN
             ReminderStatusAnswer.TokenRejected -> ReminderDropReason.TOKEN_REJECTED
             ReminderStatusAnswer.NoAnswer -> ReminderDropReason.NO_ANSWER
+            ReminderStatusAnswer.Superseded -> ReminderDropReason.SUPERSEDED
             is ReminderStatusAnswer.Answered -> attemptDrop(answer.lastAttempt, dueAtMs)
         }
 
@@ -107,6 +117,8 @@ object AssignmentReminderPolicy {
             !open -> ReminderDropReason.UNKNOWN_STATUS
             attempt.submissionsenabled == false -> ReminderDropReason.SUBMISSIONS_DISABLED
             attempt.locked == true -> ReminderDropReason.LOCKED
+            // [dueAtMs] is the student's own date as the cache has it, an extension it knows of
+            // included: one later still is news to the cache, and the next fetch arms for it.
             extendedToMs > dueAtMs -> ReminderDropReason.EXTENDED
             else -> null
         }

@@ -74,7 +74,7 @@ private fun List<Assignment>.toCalendarEvents(): List<CalendarEvent> =
         CalendarEvent(
             eventId = "moodle-${assignment.assignmentId}",
             title = assignment.title,
-            date = assignment.dueDate,
+            date = assignment.studentDueDate,
             sourceRaw = EventSource.MOODLE.raw
         )
     }

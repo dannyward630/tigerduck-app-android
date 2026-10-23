@@ -164,4 +164,17 @@ class HomeAssignmentFiltersTest {
             ids(HomeAssignmentFilters.unfinishedFor(all, "C2", ignoredWithCourses(all), emptySet())),
         )
     }
+
+    @Test
+    fun `an extended assignment is ordered and counted upcoming by the student's own date`() {
+        val all = listOf(
+            assignment("extended", at(-2)).copy(extensionDueDate = at(10)),
+            assignment("soon", at(5)),
+            assignment("past", at(-1)),
+        )
+        val incomplete = HomeAssignmentFilters.visible(all, emptySet(), emptySet(), AssignmentFilter.INCOMPLETE, now)
+        assertEquals(listOf("past", "soon", "extended"), ids(incomplete))
+        val everything = HomeAssignmentFilters.visible(all, emptySet(), emptySet(), AssignmentFilter.ALL, now)
+        assertEquals(listOf("soon", "extended", "past"), ids(everything))
+    }
 }

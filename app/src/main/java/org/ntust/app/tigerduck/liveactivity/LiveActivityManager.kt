@@ -303,10 +303,10 @@ class LiveActivityManager internal constructor(
         nextClassBoundaries(courses, skippedDates, now, classPrepLead).forEach { candidates += it }
 
         assignments.asSequence()
-            .filter { !it.isCompleted && it.dueDate.after(now) }
-            .minByOrNull { it.dueDate }?.let { a ->
-                candidates += a.dueDate.time - assignmentLead
-                candidates += a.dueDate.time
+            .filter { !it.isCompleted && it.studentDueDate.after(now) }
+            .minByOrNull { it.studentDueDate }?.let { a ->
+                candidates += a.studentDueDate.time - assignmentLead
+                candidates += a.studentDueDate.time
             }
 
         // And 開學 and 結業, which change what today shows and which term the

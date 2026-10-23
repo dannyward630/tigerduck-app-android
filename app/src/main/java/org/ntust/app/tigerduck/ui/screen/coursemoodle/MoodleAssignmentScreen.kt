@@ -91,9 +91,11 @@ internal object AssignmentPageRules {
     fun submitPath(entry: MoodleAssignmentEntry): String? =
         if (entry.record.noSubmissions) null else moodlePath(entry)
 
-    /** The due time the page shows, Unix seconds: the record's, else Home's row's; null for an undated one. */
-    fun dueSeconds(entry: MoodleAssignmentEntry): Long? =
-        entry.record.dueDate.takeIf { it > 0 } ?: entry.listed?.dueDate?.let { it.time / 1000 }
+    /**
+     * The due time the page shows, Unix seconds: the student's own, the extension they were granted
+     * included ([MoodleAssignmentEntry.studentDueSeconds]); null for an undated one.
+     */
+    fun dueSeconds(entry: MoodleAssignmentEntry): Long? = entry.studentDueSeconds.takeIf { it > 0 }
 
     /**
      * The submission's time, Unix seconds, and before the first fetch answers, the one the

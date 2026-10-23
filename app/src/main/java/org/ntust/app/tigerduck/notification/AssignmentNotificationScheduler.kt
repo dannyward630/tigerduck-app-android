@@ -41,43 +41,21 @@ class AssignmentNotificationScheduler @Inject constructor(
      * before any gets a second) so a few early assignments can't crowd out
      * later ones. Far-future reminders that get dropped will be rescheduled on
      * the next sync once the nearest ones fire.
+     *
+     * [stillCurrent] is asked under the lock, before anything is cancelled:
+     * false leaves every reminder as it is.
      */
     fun scheduleAll(
         assignments: List<Assignment>,
         offsets: Set<AssignmentReminderOffset> = AssignmentReminderOffset.DEFAULTS,
+        stillCurrent: () -> Boolean = { true },
     ): Unit = synchronized(schedulerLock) {
+        if (!stillCurrent()) return
         cancelAllTracked()
         if (offsets.isEmpty()) return
 
         val now = AppClock.nowMillis()
-        data class Pending(
-            val assignmentId: String,
-            val offset: AssignmentReminderOffset,
-            val triggerTime: Long,
-            val dueAt: Long,
-            val title: String,
-            val courseName: String,
-        )
-
-        val pending = mutableListOf<Pending>()
-        for (assignment in assignments) {
-            if (assignment.isCompleted) continue
-            val applicable = offsets
-                .map { it to assignment.dueDate.time - it.milliseconds }
-                .filter { it.second > now }
-            for ((offset, triggerTime) in applicable) {
-                pending.add(
-                    Pending(
-                        assignmentId = assignment.assignmentId,
-                        offset = offset,
-                        triggerTime = triggerTime,
-                        dueAt = assignment.dueDate.time,
-                        title = assignment.title,
-                        courseName = assignment.courseName,
-                    )
-                )
-            }
-        }
+        val pending = assignments.flatMap { pendingFor(it, offsets, now) }
 
         // Soft cap, distributed across assignments. Selecting globally by
         // fire time lets a few early assignments expand into all their
@@ -111,52 +89,83 @@ class AssignmentNotificationScheduler @Inject constructor(
         }
         val scheduledKeys = mutableSetOf<String>()
 
-        for (item in capped) {
-            val key = trackerKey(item.assignmentId, item.offset)
+        for (item in capped) scheduledKeys.add(arm(item))
 
-            val intent = Intent(context, AssignmentNotificationReceiver::class.java).apply {
-                putExtra(AssignmentNotificationReceiver.EXTRA_TITLE, item.title)
-                putExtra(AssignmentNotificationReceiver.EXTRA_COURSE_NAME, item.courseName)
-                putExtra(AssignmentNotificationReceiver.EXTRA_ASSIGNMENT_ID, item.assignmentId)
-                putExtra(AssignmentNotificationReceiver.EXTRA_OFFSET, item.offset.rawValue)
-                putExtra(AssignmentNotificationReceiver.EXTRA_DUE_AT, item.dueAt)
+        trackerPrefs.edit().putStringSet("scheduled_ids", scheduledKeys).apply()
+    }
+
+    /** One reminder to arm: an offset of an assignment's due date, the student's own. */
+    private data class Pending(
+        val assignmentId: String,
+        val offset: AssignmentReminderOffset,
+        val triggerTime: Long,
+        val dueAt: Long,
+        val title: String,
+        val courseName: String,
+    )
+
+    /** [assignment]'s reminders for [offsets] still ahead of [now]; none once it is handed in. */
+    private fun pendingFor(assignment: Assignment, offsets: Set<AssignmentReminderOffset>, now: Long): List<Pending> {
+        if (assignment.isCompleted) return emptyList()
+        return offsets
+            .map { it to assignment.studentDueDate.time - it.milliseconds }
+            .filter { it.second > now }
+            .map { (offset, triggerTime) ->
+                Pending(
+                    assignmentId = assignment.assignmentId,
+                    offset = offset,
+                    triggerTime = triggerTime,
+                    dueAt = assignment.studentDueDate.time,
+                    title = assignment.title,
+                    courseName = assignment.courseName,
+                )
             }
+    }
 
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                key.hashCode() and 0x7FFFFFFF,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+    /** Arms [item]'s alarm; its tracker key. Under [schedulerLock]. */
+    private fun arm(item: Pending): String {
+        val key = trackerKey(item.assignmentId, item.offset)
 
-            // Without exact alarms, which Android 14 grants no app by default,
-            // the reminder is still allowed through Doze: a plain set() would
-            // wait for Doze's next maintenance window, however late that is.
-            try {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        AppClock.realTimeFor(item.triggerTime),
-                        pendingIntent
-                    )
-                } else {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        AppClock.realTimeFor(item.triggerTime),
-                        pendingIntent
-                    )
-                }
-            } catch (_: SecurityException) {
+        val intent = Intent(context, AssignmentNotificationReceiver::class.java).apply {
+            putExtra(AssignmentNotificationReceiver.EXTRA_TITLE, item.title)
+            putExtra(AssignmentNotificationReceiver.EXTRA_COURSE_NAME, item.courseName)
+            putExtra(AssignmentNotificationReceiver.EXTRA_ASSIGNMENT_ID, item.assignmentId)
+            putExtra(AssignmentNotificationReceiver.EXTRA_OFFSET, item.offset.rawValue)
+            putExtra(AssignmentNotificationReceiver.EXTRA_DUE_AT, item.dueAt)
+        }
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            key.hashCode() and 0x7FFFFFFF,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Without exact alarms, which Android 14 grants no app by default,
+        // the reminder is still allowed through Doze: a plain set() would
+        // wait for Doze's next maintenance window, however late that is.
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     AppClock.realTimeFor(item.triggerTime),
                     pendingIntent
                 )
+            } else {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    AppClock.realTimeFor(item.triggerTime),
+                    pendingIntent
+                )
             }
-            scheduledKeys.add(key)
+        } catch (_: SecurityException) {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                AppClock.realTimeFor(item.triggerTime),
+                pendingIntent
+            )
         }
-
-        trackerPrefs.edit().putStringSet("scheduled_ids", scheduledKeys).apply()
+        return key
     }
 
     /**
@@ -166,10 +175,40 @@ class AssignmentNotificationScheduler @Inject constructor(
      * them. An empty cache cancels them all, since an answer from Moodle with
      * no assignments takes the reminders of the ones it dropped with it, such
      * as those of a course the user TAs (issue #160).
+     *
+     * With [generation], the cache's when the caller's work began, nothing is
+     * armed once the data has been wiped since: what it read may be the
+     * departing account's, and the next account's reminders stay as they are.
      */
-    suspend fun rescheduleFromCache(dataCache: DataCache, prefs: AssignmentReminderPrefs) {
+    suspend fun rescheduleFromCache(dataCache: DataCache, prefs: AssignmentReminderPrefs, generation: Int? = null) {
         if (!prefs.notifyAssignments) return
-        scheduleAll(dataCache.loadOutstandingAssignments(), prefs.notifyAssignmentOffsets)
+        scheduleAll(dataCache.loadOutstandingAssignments(), prefs.notifyAssignmentOffsets) {
+            generation == null || generation == dataCache.userDataGeneration
+        }
+    }
+
+    /**
+     * Arms [assignmentId]'s reminders again from the cache, and leaves every other assignment's
+     * as they are. For a reminder check that learned one assignment's news: rebuilding them all
+     * arms only times still ahead, so it would cancel another assignment's reminder that is due
+     * but not delivered yet, as Doze delivers a batch of them one by one. With [generation],
+     * nothing once the data has been wiped since; see [rescheduleFromCache].
+     */
+    suspend fun rescheduleOne(
+        assignmentId: String,
+        dataCache: DataCache,
+        prefs: AssignmentReminderPrefs,
+        generation: Int? = null,
+    ) {
+        val assignment = dataCache.loadOutstandingAssignments().firstOrNull { it.assignmentId == assignmentId }
+        val offsets = prefs.notifyAssignmentOffsets
+        synchronized(schedulerLock) {
+            if (generation != null && generation != dataCache.userDataGeneration) return
+            cancel(assignmentId)
+            if (!prefs.notifyAssignments || assignment == null) return
+            val armed = pendingFor(assignment, offsets, AppClock.nowMillis()).map(::arm)
+            if (armed.isNotEmpty()) trackerPrefs.edit().putStringSet("scheduled_ids", trackedKeys() + armed).apply()
+        }
     }
 
     fun cancelAllTracked(): Unit = synchronized(schedulerLock) {

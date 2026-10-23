@@ -10,6 +10,7 @@ import okhttp3.Protocol
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -17,10 +18,14 @@ import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.CourseIgnores
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.Assignment
+import org.ntust.app.tigerduck.data.moodle.AssignmentStatusLedger
+import org.ntust.app.tigerduck.data.moodle.AssignmentStatusWriter
+import org.ntust.app.tigerduck.data.moodle.SubmissionStatusAnswer
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.network.SubmissionStatusProbe
 import org.ntust.app.tigerduck.shared.clock.AppClock
+import org.ntust.app.tigerduck.shared.clock.ClockOverride
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
@@ -38,7 +43,12 @@ class AssignmentReminderCheckTest {
     private lateinit var dataCache: DataCache
     private lateinit var scheduler: AssignmentNotificationScheduler
     private lateinit var fixtures: DebugFixtureStore
+    private lateinit var ledger: AssignmentStatusLedger
+    private lateinit var writer: AssignmentStatusWriter
     private lateinit var check: AssignmentReminderCheck
+
+    /** The monotonic clock the check reads before its request goes out. */
+    private var monotonicNow = 1_000L
 
     private var storedToken: String? = "stored-token"
 
@@ -67,9 +77,13 @@ class AssignmentReminderCheckTest {
                 .build()
         }.build()
         fixtures = DebugFixtureStore(context)
+        ledger = AssignmentStatusLedger { dataCache.userDataGeneration }
+        // The pages' writer, which tells no one here: what the check itself tells is what is tested.
+        writer = AssignmentStatusWriter(ledger, dataCache) {}
         check = AssignmentReminderCheck(
-            dataCache, scheduler, SubmissionStatusProbe({ storedToken }, client), fixtures,
-        )
+            dataCache, scheduler, SubmissionStatusProbe({ storedToken }, client), fixtures, AppPreferences(context),
+            writer,
+        ) { monotonicNow }
     }
 
     private fun dueInThreeDays(id: String) = Assignment(
@@ -109,7 +123,8 @@ class AssignmentReminderCheckTest {
 
     @Test
     fun `a reminder still due shows and leaves the cache and the other reminders alone`() = runBlocking {
-        val assignment = dueInThreeDays("20977")
+        // The draft's time, as the round that asked about it stored it.
+        val assignment = dueInThreeDays("20977").copy(submittedAt = Date(SUBMITTED_AT_SECONDS * 1000))
         armAll(assignment)
 
         moodle = { answer(own = "new") }
@@ -155,7 +170,8 @@ class AssignmentReminderCheckTest {
                 ),
                 dataCache.loadAssignments(),
             )
-            assertEquals(listOf("20978", "20978"), armedIds())
+            // Armed again from the cache, for the offsets the user chose: the other assignment's alone.
+            assertEquals(setOf("20978"), armedIds().toSet())
         }
 
     @Test
@@ -246,11 +262,25 @@ class AssignmentReminderCheckTest {
                 answer(own = "submitted")
             }
 
-            check.verdict("20977", assignment.dueDate.time)
+            val verdict = check.verdict("20977", assignment.dueDate.time)
 
+            // The departed account's "handed in" decides nothing for the next one.
+            assertEquals(ReminderVerdict.Drop(ReminderDropReason.SUPERSEDED), verdict)
             assertEquals(listOf(assignment), dataCache.loadAssignments())
             assertEquals(listOf("20977", "20977"), armedIds())
         }
+
+    @Test
+    fun `an answer that outlived a sign-out, with no account since, finds nothing to remind of`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        moodle = {
+            runBlocking { dataCache.clearAllUserData() }
+            answer(own = "new")
+        }
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.NOT_IN_CACHE), check.verdict("20977", assignment.dueDate.time))
+    }
 
     @Test
     fun `the demo account's reminder answers from its own data and asks Moodle nothing`() = runBlocking {
@@ -328,6 +358,201 @@ class AssignmentReminderCheckTest {
 
     private companion object {
         const val DAY_MS = 24 * 60 * 60 * 1000L
+        const val HOUR_MS = 60 * 60 * 1000L
+        const val MINUTE_MS = 60 * 1000L
         const val SUBMITTED_AT_SECONDS = 1_760_400_000L
     }
+
+    @Test
+    fun `a reminder armed for an extension shows, not dropped as a changed or extended due date`() = runBlocking {
+        // Whole seconds, as Moodle gives it.
+        val extension = (AppClock.nowMillis() + 5 * DAY_MS) / 1000 * 1000
+        val assignment = dueInThreeDays("20977").copy(extensionDueDate = Date(extension))
+        armAll(assignment)
+
+        moodle = {
+            """{"lastattempt":{"submissionsenabled":true,"locked":false,"extensionduedate":${extension / 1000}},"warnings":[]}"""
+        }
+
+        assertEquals(ReminderVerdict.Show, check.verdict("20977", extension))
+    }
+
+    /** A status answer with nothing handed in and the student's extension, epoch milliseconds. */
+    private fun extendedTo(ms: Long?) =
+        """{"lastattempt":{"submissionsenabled":true,"locked":false,"extensionduedate":${(ms ?: 0L) / 1000}},"warnings":[]}"""
+
+    // Robolectric 4.17 deprecates the operation field but has no getter for it.
+    @Suppress("DEPRECATION")
+    private fun armedDueAts(): List<Long> =
+        shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.map {
+            shadowOf(it.operation).savedIntent.getLongExtra(AssignmentNotificationReceiver.EXTRA_DUE_AT, 0L)
+        }
+
+    @Test
+    fun `an extension the reminder learns of is kept, and the reminders armed again for it`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+
+        moodle = { extendedTo(extension) }
+        val verdict = check.verdict("20977", assignment.dueDate.time)
+
+        assertTrue("armed for the date before", verdict is ReminderVerdict.Drop)
+        assertEquals(Date(extension), dataCache.loadAssignments().single().extensionDueDate)
+        assertTrue(armedDueAts().isNotEmpty())
+        assertTrue("every reminder now for the extension", armedDueAts().all { it == extension })
+    }
+
+    @Test
+    fun `an extension taken back leaves the cache, and the reminder armed for it does not show`() = runBlocking {
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+        val assignment = dueInThreeDays("20977").copy(extensionDueDate = Date(extension))
+        armAll(assignment)
+
+        moodle = { extendedTo(null) }
+        val verdict = check.verdict("20977", extension)
+
+        assertTrue(verdict is ReminderVerdict.Drop)
+        assertEquals(null, dataCache.loadAssignments().single().extensionDueDate)
+        assertTrue("armed again for the assignment's own date", armedDueAts().all { it == assignment.dueDate.time })
+    }
+
+    @Test
+    fun `a submission and an extension found together are both kept`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+
+        moodle = {
+            """{"lastattempt":{"submission":{"status":"submitted","timemodified":$SUBMITTED_AT_SECONDS},""" +
+                """"submissionsenabled":true,"locked":false,"extensionduedate":${extension / 1000}},"warnings":[]}"""
+        }
+        val verdict = check.verdict("20977", assignment.dueDate.time)
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.SUBMITTED_ON_MOODLE), verdict)
+        assertEquals(
+            // Handed in within the extension: on time, which the next round, skipping it, never re-asks.
+            assignment.copy(isCompleted = true, submittedAt = Date(SUBMITTED_AT_SECONDS * 1000), extensionDueDate = Date(extension)),
+            dataCache.loadAssignments().single(),
+        )
+        assertEquals(emptyList<String?>(), armedIds())
+    }
+
+    @Test
+    fun `a page's answer asked for after the reminder's call is not overwritten by it`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val fromPage = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+        val fromReminder = (AppClock.nowMillis() + 5 * DAY_MS) / 1000 * 1000
+
+        moodle = {
+            // The assignment's page asks after the reminder's call went out, and answers first.
+            runBlocking {
+                writer.take(
+                    SubmissionStatusAnswer("20977", false, null, monotonicNow + 1, dataCache.userDataGeneration, fromPage),
+                )
+            }
+            extendedTo(fromReminder)
+        }
+        check.verdict("20977", assignment.dueDate.time)
+
+        assertEquals(Date(fromPage), dataCache.loadAssignments().single().extensionDueDate)
+    }
+
+    @Test
+    fun `a round asked for before the reminder's call takes what the call answered`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+        val generation = dataCache.userDataGeneration
+        val roundAskedAt = monotonicNow - 1
+
+        moodle = { extendedTo(extension) }
+        check.verdict("20977", assignment.dueDate.time)
+        // The round writes after the call, with what Moodle told it before: no extension.
+        val written = ledger.reconcile(
+            listOf(assignment),
+            mapOf("20977" to SubmissionStatusAnswer("20977", false, null, roundAskedAt, generation)),
+            generation,
+        )
+
+        assertEquals(Date(extension), written.single().extensionDueDate)
+    }
+
+    @Test
+    fun `a reminder armed without its date does not show once an extension moves it`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+
+        moodle = { extendedTo(extension) }
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.DUE_DATE_CHANGED), check.verdict("20977", null))
+    }
+
+    @Test
+    fun `an older call's answer the page has since overtaken does not decide the reminder`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+
+        moodle = {
+            // The page asks after the reminder's call went out and hears the work was reopened, then
+            // the call's older answer arrives: handed in.
+            runBlocking {
+                writer.take(SubmissionStatusAnswer("20977", false, null, monotonicNow + 1, dataCache.userDataGeneration))
+            }
+            answer(own = "submitted")
+        }
+        val verdict = check.verdict("20977", assignment.dueDate.time)
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.SUPERSEDED), verdict)
+        assertEquals(false, dataCache.loadAssignments().single().isCompleted)
+    }
+
+    /** The offsets of [assignmentId]'s armed reminders. */
+    // Robolectric 4.17 deprecates the operation field but has no getter for it.
+    @Suppress("DEPRECATION")
+    private fun armedOffsetsOf(assignmentId: String): List<String?> =
+        shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms
+            .map { shadowOf(it.operation).savedIntent }
+            .filter { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_ASSIGNMENT_ID) == assignmentId }
+            .map { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_OFFSET) }
+
+    /** The due date each of [assignmentId]'s armed reminders carries. */
+    // Robolectric 4.17 deprecates the operation field but has no getter for it.
+    @Suppress("DEPRECATION")
+    private fun armedDueAtsOf(assignmentId: String): List<Long> =
+        shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms
+            .map { shadowOf(it.operation).savedIntent }
+            .filter { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_ASSIGNMENT_ID) == assignmentId }
+            .map { it.getLongExtra(AssignmentNotificationReceiver.EXTRA_DUE_AT, 0L) }
+
+    @Test
+    fun `learning one assignment's extension leaves another's reminder that is due but not delivered`() = runBlocking {
+        val start = AppClock.nowMillis()
+        val extended = dueInThreeDays("20977")
+        // Its two-hour reminder is armed for an hour from now; its 24-hour one is long past.
+        val other = dueInThreeDays("20978").copy(dueDate = Date(start + 3 * HOUR_MS))
+        armAll(extended, other)
+        assertEquals(listOf(AssignmentReminderOffset.HR2.rawValue), armedOffsetsOf("20978"))
+        val extension = (start + 6 * DAY_MS) / 1000 * 1000
+        try {
+            // Half an hour past the other's reminder, which Doze or an inexact alarm has not
+            // delivered yet: it still waits in the alarm manager.
+            AppClock.setOverride(ClockOverride(start + 90 * MINUTE_MS, frozen = true, savedAtRealMillis = 0L))
+            moodle = { extendedTo(extension) }
+
+            check.verdict("20977", extended.dueDate.time)
+
+            assertTrue(
+                "the other assignment's reminder waiting to go off",
+                AssignmentReminderOffset.HR2.rawValue in armedOffsetsOf("20978"),
+            )
+            assertTrue("this one's reminders armed again", armedOffsetsOf("20977").isNotEmpty())
+            assertTrue("this one's reminders moved to the extension", armedDueAtsOf("20977").all { it == extension })
+        } finally {
+            AppClock.setOverride(null)
+        }
+    }
 }
+

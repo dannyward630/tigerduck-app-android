@@ -894,7 +894,7 @@ class HomeViewModel @Inject constructor(
 
     private fun updateCoursesAndAssignments(courses: List<Course>, assignments: List<Assignment>) {
         _allCourses.value = courses
-        _allAssignments.value = assignments.sortedBy { it.dueDate }
+        _allAssignments.value = assignments.sortedBy { it.studentDueDate }
 
         if (prefs.notifyAssignments) {
             rescheduleAssignmentNotifications(assignments)

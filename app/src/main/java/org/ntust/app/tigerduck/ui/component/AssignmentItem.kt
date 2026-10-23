@@ -65,8 +65,8 @@ fun AssignmentItem(
     val status = remember(
         assignment.assignmentId,
         assignment.isCompleted,
-        assignment.dueDate,
-        assignment.cutoffDate,
+        assignment.studentDueDate,
+        assignment.studentCutoffDate,
         assignment.submittedAt,
         clockVersion,
     ) { assignment.status() }
@@ -151,8 +151,8 @@ private fun AssignmentTrailing(
             markCompleteLabel to BadgeGreen
         (status == AssignmentStatus.SUBMITTED || status == AssignmentStatus.SUBMITTED_LATE) && isIgnored ->
             ignoredLabel to secondaryColor
-        (markedCompleted || isIgnored) && assignment.dueDate.before(now) -> {
-            if (assignment.cutoffDate != null && now.after(assignment.cutoffDate))
+        (markedCompleted || isIgnored) && assignment.studentDueDate.before(now) -> {
+            if (assignment.studentCutoffDate?.let(now::after) == true)
                 overdueRejectedLabel to BadgeRed
             else overdueLabel to BadgeRed
         }
@@ -182,12 +182,13 @@ private fun AssignmentTrailing(
         }
 
         val useAbsolute = showAbsoluteTime ||
-                ((assignment.isCompleted || markedCompleted || isIgnored) && assignment.dueDate.before(now))
-        val timeText = if (useAbsolute) formatAbsolute(assignment.dueDate)
-        else formatRelative(assignment.dueDate, now)
+                ((assignment.isCompleted || markedCompleted || isIgnored) && assignment.studentDueDate.before(now))
+        // The student's own date, an extension included, as everything here judges by.
+        val timeText = if (useAbsolute) formatAbsolute(assignment.studentDueDate)
+        else formatRelative(assignment.studentDueDate, now)
         val timeColor = when {
             isOverdue -> BadgeRed
-            (isIgnored || markedCompleted) && assignment.dueDate.before(now) -> BadgeRed
+            (isIgnored || markedCompleted) && assignment.studentDueDate.before(now) -> BadgeRed
             else -> MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY)
         }
         val timeWeight = if (emphasise) FontWeight.Bold else FontWeight.Normal

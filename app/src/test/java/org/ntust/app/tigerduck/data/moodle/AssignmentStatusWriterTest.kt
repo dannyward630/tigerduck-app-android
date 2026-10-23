@@ -93,4 +93,14 @@ class AssignmentStatusWriterTest {
 
         assertTrue(published.isEmpty())
     }
+
+    @Test
+    fun `an extension the page found, and nothing else, is written and published`() = runTest {
+        cache.saveAssignments(listOf(row("701")))
+
+        assertTrue(writer.take(answer("701", askedAtMs = 10, submitted = false).copy(extensionDueMs = 1_790_900_000_000L)))
+
+        assertEquals(Date(1_790_900_000_000L), cache.loadAssignments().single().extensionDueDate)
+        assertEquals(1, published.size)
+    }
 }

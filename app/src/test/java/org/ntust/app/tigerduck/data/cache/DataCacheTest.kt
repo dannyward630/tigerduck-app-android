@@ -57,6 +57,20 @@ class DataCacheTest {
     )
 
     @Test
+    fun `an assignment's extension is kept, and a cache with none reads as none`() = runTest {
+        val extended = assignment("extended").copy(extensionDueDate = Date(1_700_300_000_000))
+        cache.saveAssignments(listOf(extended, assignment("plain")))
+
+        // The plain one is written with no extension key at all, as a cache from before it was.
+        val json = java.io.File(context.cacheDir, "TigerDuckCache/assignments.json").readText()
+        assertEquals(1, Regex("extensionDueDate").findAll(json).count())
+        val loaded = cache.loadAssignments().associateBy { it.assignmentId }
+        assertEquals(Date(1_700_300_000_000), loaded.getValue("extended").extensionDueDate)
+        assertEquals(null, loaded.getValue("plain").extensionDueDate)
+        assertEquals(Date(1_700_000_000_000), loaded.getValue("plain").studentDueDate)
+    }
+
+    @Test
     fun `outstanding assignments leave out submitted, ignored and marked-done work`() = runTest {
         cache.saveAssignments(
             listOf(

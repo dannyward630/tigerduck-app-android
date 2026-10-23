@@ -314,4 +314,11 @@ class MoodleSubmissionJsonTest {
 
         assertEquals(mapOf(31 to "Group 3 & friends", 32 to "Lab B"), groups)
     }
+
+    @Test
+    fun `an extension granted to the student comes with the submission, and none reads as none`() {
+        val extended = MoodleJson.submission(json("""{"lastattempt":{"extensionduedate":1790900000,"submission":{"status":"new"}}}"""))
+        assertEquals(1_790_900_000L, extended.extensionDue)
+        assertNull(MoodleJson.submission(json("""{"lastattempt":{"extensionduedate":0,"submission":{"status":"new"}}}""")).extensionDue)
+    }
 }
