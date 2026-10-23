@@ -1037,12 +1037,14 @@ class ClassTableViewModel @Inject constructor(
      * back. As the iPhone's `removeUserAddedCourse`, which sends the same
      * `DELETE /sync/courses/{key}`.
      *
-     * That DELETE writes a server tombstone binding every device (the
-     * backend's `delete_course`), which the next full sync imports into
-     * `deletedCourseNos` here and on the iPhone alike, and which a portal
-     * upload cannot lift: the course stays hidden until it is added back by
-     * hand, whose upload forces its key. The two apps agree on this; whether
-     * the backend should tombstone a take-back is an open question for both.
+     * That DELETE writes a server tombstone (the backend's `delete_course`),
+     * which hides the course on every other device. From tigerduck-backend
+     * 3.3.6 the backend records it as a hand-added course's, leaves it out of
+     * this device's full sync, and lifts it on this device's next roster
+     * upload that lists the course: once course selection lists it, the class
+     * table shows it, with no hide here in the way, and that upload names it.
+     * Adding it back by hand, whose upload forces its key, lifts it at once.
+     * The iPhone's take-back works the same way.
      *
      * Only a hand-added course: the sheet gates on its own session, and this
      * is the net under it, so an enrolled course leaves only through
@@ -1160,14 +1162,16 @@ class ClassTableViewModel @Inject constructor(
 
     /**
      * Removes [courseNo] from the term, here and on the backend. With a
-     * [tombstone] the course stays hidden here whatever the server lists;
-     * without one, for [removeAddedCourse], only the queued DELETE keeps it
-     * out, and the server tombstone that DELETE writes hides it from the next
-     * sync on.
+     * [tombstone] the course stays hidden here whatever the server lists; one
+     * added by hand that course selection did not list then stays hidden only
+     * until it does, as the student has enrolled ([DataCache.hideDeletedCourse]).
+     * Without one, for [removeAddedCourse], only the queued DELETE keeps it
+     * out.
      */
     fun deleteCourse(courseNo: String, tombstone: Boolean = true) {
         if (isShowingSomeoneElse) return
-        val moodleId = _courses.value.firstOrNull { it.courseNo == courseNo }?.moodleIdNumber
+        val deletedCourse = _courses.value.firstOrNull { it.courseNo == courseNo }
+        val moodleId = deletedCourse?.moodleIdNumber
         val updated = _courses.value.filter { it.courseNo != courseNo }
         _courses.value = updated
         val semester = _currentSemester.value
@@ -1195,10 +1199,7 @@ class ClassTableViewModel @Inject constructor(
             val queuedAt = pendingCourseDeletes.stamp()
             if (tombstoneEdit != null) {
                 try {
-                    val deleted = CourseTombstoneKeys.hide(
-                        courseNo, semester, dataCache.loadDeletedCourseNos()
-                    )
-                    dataCache.saveDeletedCourseNos(deleted)
+                    dataCache.hideDeletedCourse(courseNo, semester, handAdded = deletedCourse?.isManual == true)
                 } finally {
                     tombstoneEdits.saved(tombstoneEdit)
                 }

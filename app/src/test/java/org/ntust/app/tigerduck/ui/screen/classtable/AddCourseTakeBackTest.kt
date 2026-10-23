@@ -57,10 +57,14 @@ class AddCourseTakeBackTest {
         val delete = body(lines, "deleteCourse")
 
         assertTrue("deleteCourse defaults to a tombstone", delete.first().contains("tombstone: Boolean = true"))
-        // Twice: the edit a fetch reads until the write lands (see ClassTableTombstoneEdits), then the write.
-        val hides = delete.indices.filter { "CourseTombstoneKeys.hide(" in delete[it] }
-        assertTrue("deleteCourse still tombstones a regular delete", hides.size == 2)
-        val (edit, write) = hides
+        // The edit a fetch reads until the write lands (see ClassTableTombstoneEdits), then the write,
+        // which marks a hand-added course's hide (DataCache.hideDeletedCourse).
+        val edits = delete.indices.filter { "CourseTombstoneKeys.hide(" in delete[it] }
+        val writes = delete.indices.filter { "dataCache.hideDeletedCourse(" in delete[it] }
+        assertTrue("deleteCourse still tombstones a regular delete", edits.size == 1 && writes.size == 1)
+        val edit = edits.single()
+        val write = writes.single()
+        assertTrue("the write says whether the course was added by hand", "handAdded = " in delete[write])
         assertTrue(
             "the edit a fetch reads is made under `if (tombstone)`",
             delete.subList(0, edit + 1).any { "if (tombstone)" in it },
