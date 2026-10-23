@@ -4,6 +4,10 @@ import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
@@ -43,13 +47,19 @@ class SwipeableMailCardTest {
     /** Every callback the card made, in order. */
     private val calls = mutableListOf<String>()
 
+    /** What the card is shown with; a test changes either while the card stays composed. */
+    private var writing by mutableStateOf(false)
+    private var direction by mutableStateOf(LayoutDirection.Ltr)
+
     private fun show(writing: Boolean = false, direction: LayoutDirection = LayoutDirection.Ltr) {
+        this.writing = writing
+        this.direction = direction
         composeRule.setContent {
-            CompositionLocalProvider(LocalLayoutDirection provides direction) {
+            CompositionLocalProvider(LocalLayoutDirection provides this.direction) {
                 SwipeableMailCard(
                     row = MailRow("INBOX", mailSummary(1)),
                     mailDomain = "mail.ntust.edu.tw",
-                    writing = writing,
+                    writing = this.writing,
                     onClick = { calls += "open" },
                     onToggleRead = { calls += "read" },
                     onMove = { calls += "move" },
@@ -102,6 +112,43 @@ class SwipeableMailCardTest {
 
         assertEquals(listOf("read"), swipe(towardRight = false))
         assertEquals(listOf("delete"), swipe(towardRight = true))
+    }
+
+    @Test
+    fun `a card that stays on screen through a change of layout direction swipes the new way`() {
+        show()
+        assertEquals(listOf("read"), swipe(towardRight = true))
+
+        // The app's language changes to a right-to-left one, which the activity takes without
+        // being recreated.
+        direction = LayoutDirection.Rtl
+        composeRule.waitForIdle()
+
+        assertEquals(listOf("read"), swipe(towardRight = false))
+        assertEquals(listOf("delete"), swipe(towardRight = true))
+    }
+
+    @Test
+    fun `a card held for its write in the middle of a swipe is back in place when it is given back`() {
+        show()
+        val left = card().fetchSemanticsNode().boundsInRoot.left
+        // Partway through a swipe, short of the threshold, the card's write starts.
+        card().performTouchInput {
+            down(center)
+            moveBy(Offset(-60f, 0f))
+            moveBy(Offset(-60f, 0f))
+        }
+        composeRule.waitForIdle()
+        assertTrue("the swipe never moved the card", card().fetchSemanticsNode().boundsInRoot.left < left)
+        writing = true
+        composeRule.waitForIdle()
+        assertEquals("a held card was left half swiped", left, card().fetchSemanticsNode().boundsInRoot.left)
+        writing = false
+        composeRule.waitForIdle()
+        card().performTouchInput { up() }
+        composeRule.waitForIdle()
+        assertEquals("the card came back half swiped", left, card().fetchSemanticsNode().boundsInRoot.left)
+        assertEquals(emptyList<String>(), calls)
     }
 
     @Test

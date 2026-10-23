@@ -663,6 +663,11 @@ internal fun SwipeableMailCard(
     val offset = remember(row.key) { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    // The drag handler below starts again whenever either changes -- the activity takes a change
+    // of language, and so of layout direction, without being recreated -- and a drag it was in the
+    // middle of ends without its onDragEnd or onDragCancel. So the card is put back at rest here,
+    // which also stops a fling-out still running before it acts on a card that no longer offers it.
+    LaunchedEffect(writing, isRtl) { offset.snapTo(0f) }
     val isRead = message.flags.seen
     val readIcon = readToggleIcon(isRead = isRead)
     val readDescription = stringResource(if (isRead) R.string.school_mail_mark_unread else R.string.school_mail_mark_read)
@@ -710,7 +715,7 @@ internal fun SwipeableMailCard(
             Modifier
                 .fillMaxWidth()
                 .offset { IntOffset(offset.value.roundToInt(), 0) }
-                .pointerInput(row.key, writing) {
+                .pointerInput(row.key, writing, isRtl) {
                     if (writing) return@pointerInput
                     detectHorizontalDragGestures(
                         onDragEnd = {
