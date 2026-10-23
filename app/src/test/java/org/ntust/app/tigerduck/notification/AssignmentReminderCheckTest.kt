@@ -25,6 +25,7 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.network.SubmissionStatusProbe
 import org.ntust.app.tigerduck.shared.clock.AppClock
+import org.ntust.app.tigerduck.shared.clock.ClockOverride
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
@@ -357,6 +358,8 @@ class AssignmentReminderCheckTest {
 
     private companion object {
         const val DAY_MS = 24 * 60 * 60 * 1000L
+        const val HOUR_MS = 60 * 60 * 1000L
+        const val MINUTE_MS = 60 * 1000L
         const val SUBMITTED_AT_SECONDS = 1_760_400_000L
     }
 
@@ -504,6 +507,42 @@ class AssignmentReminderCheckTest {
 
         assertEquals(ReminderVerdict.Drop(ReminderDropReason.SUPERSEDED), verdict)
         assertEquals(false, dataCache.loadAssignments().single().isCompleted)
+    }
+
+    /** The offsets of [assignmentId]'s armed reminders. */
+    // Robolectric 4.17 deprecates the operation field but has no getter for it.
+    @Suppress("DEPRECATION")
+    private fun armedOffsetsOf(assignmentId: String): List<String?> =
+        shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms
+            .map { shadowOf(it.operation).savedIntent }
+            .filter { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_ASSIGNMENT_ID) == assignmentId }
+            .map { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_OFFSET) }
+
+    @Test
+    fun `learning one assignment's extension leaves another's reminder that is due but not delivered`() = runBlocking {
+        val start = AppClock.nowMillis()
+        val extended = dueInThreeDays("20977")
+        // Its two-hour reminder is armed for an hour from now; its 24-hour one is long past.
+        val other = dueInThreeDays("20978").copy(dueDate = Date(start + 3 * HOUR_MS))
+        armAll(extended, other)
+        assertEquals(listOf(AssignmentReminderOffset.HR2.rawValue), armedOffsetsOf("20978"))
+        val extension = (start + 6 * DAY_MS) / 1000 * 1000
+        try {
+            // Half an hour past the other's reminder, which Doze or an inexact alarm has not
+            // delivered yet: it still waits in the alarm manager.
+            AppClock.setOverride(ClockOverride(start + 90 * MINUTE_MS, frozen = true, savedAtRealMillis = 0L))
+            moodle = { extendedTo(extension) }
+
+            check.verdict("20977", extended.dueDate.time)
+
+            assertTrue(
+                "the other assignment's reminder waiting to go off",
+                AssignmentReminderOffset.HR2.rawValue in armedOffsetsOf("20978"),
+            )
+            assertTrue("this one's reminders moved to the extension", armedDueAts().isNotEmpty())
+        } finally {
+            AppClock.setOverride(null)
+        }
     }
 }
 

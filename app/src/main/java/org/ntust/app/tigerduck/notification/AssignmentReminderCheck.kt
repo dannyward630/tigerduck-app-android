@@ -101,8 +101,8 @@ class AssignmentReminderCheck internal constructor(
     /**
      * What Moodle answered, written as an assignment's page writes its answer: the submission and
      * the extension together, and never over an answer asked for later, a round's or a page's.
-     * The reminders are armed again from what it wrote, as the next round can come after the
-     * first of them is due. The rest a page's answer tells, the upload among them, waits for the
+     * This assignment's reminders are armed again from what it wrote, as the next round can come
+     * after the first of them is due; every other assignment's are left as they are. The rest a page's answer tells, the upload among them, waits for the
      * next round: the receiver has seconds.
      */
     private suspend fun record(
@@ -118,7 +118,7 @@ class AssignmentReminderCheck internal constructor(
             assignmentId, submitted, submittedAt?.time, askedAtMs, generation, extensionDueMs = extension?.time,
         )
         val write = statusWriter.write(status)
-        if (write is StatusWrite.Written) scheduler.rescheduleFromCache(dataCache, reminderPrefs, generation)
+        if (write is StatusWrite.Written) scheduler.rescheduleOne(assignmentId, dataCache, reminderPrefs, generation)
         return write
     }
 
