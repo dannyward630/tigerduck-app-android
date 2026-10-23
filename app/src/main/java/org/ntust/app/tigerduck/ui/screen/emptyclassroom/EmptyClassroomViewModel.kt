@@ -381,6 +381,5 @@ class EmptyClassroomViewModel internal constructor(
 
     override fun onCleared() {
         stopLoading()
-        super.onCleared()
     }
 }

@@ -578,8 +578,8 @@ class SchoolMailMessageViewModel @Inject constructor(
 
     /**
      * Mark read / Mark unread, whichever the mail is not: the flag changes on the server and on
-     * screen, and the mail stays open, as on the iPhone. The list reads it from the cache the
-     * repository updated when it is shown again.
+     * screen, and the mail stays open, as on the iPhone. The list behind this screen hears of it
+     * from the repository ([SchoolMailRepository.changes]) and shows it on the way back.
      */
     fun toggleSeen() {
         val ready = _state.value.content as? Content.Ready ?: return
@@ -605,9 +605,8 @@ class SchoolMailMessageViewModel @Inject constructor(
      * already dropped its cache) surfaces through [act] like any other action error, so the mail
      * stays open with a toast rather than popping as if the move had gone through. It does not
      * need to reach into the list screen: both screens share the same singleton
-     * [SchoolMailRepository], and the list's own `load()` always re-fetches the selected folder
-     * from the server whenever the list screen is re-entered, so once the user backs out it
-     * shows the fresh page on its own.
+     * [SchoolMailRepository], which tells the list the folder changed
+     * ([SchoolMailRepository.changes]), and the list fetches the fresh page as it is shown again.
      */
     fun moveTo(target: String) = act {
         repository.move(folder, uid, target)
@@ -655,16 +654,12 @@ class SchoolMailMessageViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Nothing to release here. `SessionHolder`'s hold is a flag, not a count, and only the list
-     * view model owns it -- it pairs `acquire()` with `release()` around the page's lifecycle.
-     * This view model never calls `acquire()`, so the `release()` that used to live here armed
-     * an idle close on a connection someone else was holding: popping back to the list runs the
-     * list's ON_RESUME `acquire()` first and this `onCleared()` after it.
-     */
-    override fun onCleared() {
-        super.onCleared()
-    }
+    // No onCleared(): there is nothing to release here. `SessionHolder`'s hold is a flag, not a
+    // count, and only the list view model owns it -- it pairs `acquire()` with `release()` around
+    // the page's lifecycle. This view model never calls `acquire()`, so the `release()` its
+    // onCleared() used to make armed an idle close on a connection someone else was holding:
+    // popping back to the list runs the list's ON_RESUME `acquire()` first and this view model's
+    // onCleared() after it.
 
     companion object {
         private const val DAY_MS = 24L * 60 * 60 * 1000

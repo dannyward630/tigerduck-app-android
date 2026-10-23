@@ -1,20 +1,11 @@
 package org.ntust.app.tigerduck.data.sharing
 
-import org.ntust.app.tigerduck.AppConstants
-import java.io.ByteArrayOutputStream
 import java.time.Instant
-import java.util.Calendar
-import java.util.GregorianCalendar
-import java.util.Locale
-import java.util.zip.CRC32
-import java.util.zip.DataFormatException
-import java.util.zip.Deflater
-import java.util.zip.Inflater
 
 /**
  * A class table share code read from a QR code: whose class table it is and the course codes of
- * each term it shares. The iOS app reads and writes the same codes; the format is
- * https://github.com/tigerduck-app/tigerduck-app/blob/dev/docs/decisions/0023-class-table-share-code.md
+ * each term it shares. The iOS app reads and writes the same codes: ours in the packed layout both
+ * apps agreed on 2026-10-19 ([PackedClassTableCode]), under the share host ([PREFIX]), and TAT's.
  */
 data class ClassTableShareCode(
     val format: Format,
@@ -41,7 +32,18 @@ data class ClassTableShareCode(
     )
 
     companion object {
-        const val PREFIX = "HTTPS://TIGERDUCK.APP/T/"
+        private const val SHARE_HOST = "HTTPS://SHARE.TIGERDUCK.APP"
+
+        /**
+         * Where every share link lives, in the upper case that keeps a QR code in alphanumeric
+         * mode: `HTTPS://SHARE.TIGERDUCK.APP/<TYPE>/<content>`, so a later version can share
+         * other things beside class tables. Codes written on tigerduck.app before the move are
+         * not read (decided for both apps): that format never reached a release of this app.
+         */
+        const val SHARE_ROOT = "$SHARE_HOST/"
+
+        /** A class table's share code: the type `CLASSTABLE`, then the packed layout's version and payload. */
+        const val PREFIX = SHARE_ROOT + "CLASSTABLE/"
 
         /**
          * Reads any share code the app accepts, ignoring surrounding whitespace and letter case,
@@ -50,16 +52,29 @@ data class ClassTableShareCode(
         fun decode(text: String): ClassTableShareCode {
             val code = text.trim { it in TRIMMED }.uppercase()
             return when {
-                code.startsWith(PREFIX) -> decodeTigerDuck(code)
+                code.startsWith(PREFIX) -> PackedClassTableCode.decode(code)
+                isOnShareHost(code) -> throw if (code.startsWith(SHARE_ROOT) && namesType(code.substring(SHARE_ROOT.length))) {
+                    ClassTableShareCodeError.UnknownType()
+                } else {
+                    ClassTableShareCodeError.Malformed()
+                }
                 code.startsWith(TAT_PREFIX) -> decodeTat(code)
                 else -> throw ClassTableShareCodeError.UnknownPrefix()
             }
         }
 
+        /** The share host alone, or with a path, query or fragment after it; not a host that only starts the same. */
+        private fun isOnShareHost(code: String): Boolean =
+            code == SHARE_HOST || code.startsWith(SHARE_HOST) && code[SHARE_HOST.length] in "/?#"
+
+        /** Whether [path] starts with a type, as a newer app may write one: letters or digits, then `/`. */
+        private fun namesType(path: String): Boolean = isUpperAlphanumerics(path.substringBefore('/', ""))
+
         /**
          * Our code for [terms]: one of the user's terms, or every term that has courses. Course
          * codes outside NTUST's shape are left out, and so is a term left without courses; null
-         * when no course is left or the student ID cannot be written.
+         * when no course is left, the student ID cannot be written, or the table is past the
+         * layout's limits ([PackedClassTableCode.encode]).
          */
         fun encode(studentId: String, sharedAt: Instant, terms: List<Term>): String? {
             val id = studentId.uppercase()
@@ -72,75 +87,17 @@ data class ClassTableShareCode(
                 else Term(semester, courseNos)
             }
             if (kept.isEmpty()) return null
-            val text = kept.joinToString(";") { it.courseNos.joinToString(",") }
-            val payload = base32(deflated(text.toByteArray(Charsets.US_ASCII)))
-            val fields = listOf("1", id, stamp(sharedAt), kept.joinToString("-") { it.semester }, payload)
-            val body = PREFIX + fields.joinToString(".")
-            return body + "." + checksum(body)
+            return PackedClassTableCode.encode(id, sharedAt, kept)
         }
-
-        // --- Our format, version 1 ---
-
-        private fun decodeTigerDuck(code: String): ClassTableShareCode {
-            val fields = code.substring(PREFIX.length).split('.')
-            if (fields[0] != "1") {
-                throw if (isDigits(fields[0])) ClassTableShareCodeError.UnknownVersion()
-                else ClassTableShareCodeError.Malformed()
-            }
-            if (!isAscii(code) || fields.size != 6) throw ClassTableShareCodeError.Malformed()
-            if (checksum(code.substring(0, code.lastIndexOf('.'))) != fields[5]) {
-                throw ClassTableShareCodeError.ChecksumMismatch()
-            }
-
-            val semesters = fields[3].split('-')
-            val sharedAt = instant(fields[2])
-            if (!isUpperAlphanumerics(fields[1]) || sharedAt == null || !semesters.all(::isSemester) ||
-                semesters.toSet().size != semesters.size
-            ) {
-                throw ClassTableShareCodeError.Malformed()
-            }
-
-            val groups = inflatedText(fields[4]).split(';')
-            if (groups.size != semesters.size) throw ClassTableShareCodeError.Malformed()
-            val terms = semesters.zip(groups) { semester, group -> Term(semester, checkedCourseNos(group.split(','))) }
-            return ClassTableShareCode(Format.TIGER_DUCK, fields[1], sharedAt, terms)
-        }
-
-        /** `yyyyMMddHHmm` in Taipei time. */
-        private fun stamp(instant: Instant): String {
-            val calendar = taipeiCalendar().apply { timeInMillis = instant.toEpochMilli() }
-            return String.format(
-                Locale.ROOT, "%04d%02d%02d%02d%02d",
-                calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) + 1, calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE),
-            )
-        }
-
-        private fun instant(text: String): Instant? {
-            if (text.length != 12 || !isDigits(text)) return null
-            fun number(from: Int, to: Int) = text.substring(from, to).toInt()
-            val calendar = taipeiCalendar().apply {
-                clear()
-                set(number(0, 4), number(4, 6) - 1, number(6, 8), number(8, 10), number(10, 12))
-            }
-            // The calendar rolls an impossible date such as February 30 over to another day, so a
-            // stamp names a date only when that date writes back to the same stamp.
-            return Instant.ofEpochMilli(calendar.timeInMillis).takeIf { stamp(it) == text }
-        }
-
-        /**
-         * Julian before 15 October 1582, like Apple's Gregorian calendar, so the two apps accept
-         * the same share times.
-         */
-        private fun taipeiCalendar() = GregorianCalendar(AppConstants.TAIPEI_TZ, Locale.ROOT)
 
         // --- Shared rules ---
 
-        private val COURSE_NO = Regex("3?[A-Z]{2}[A-Z0-9]{6,7}")
+        private val COURSE_NO = Regex("(3[A-Z]{2}|[A-Z]{2}|3[A-Z])[A-Z0-9]{6,7}")
 
         /**
-         * NTUST's course-number shape, the one `MoodleService` reads from the course-selection
-         * list: an optional `3`, two letters, then six or seven letters or digits.
+         * NTUST's course-number shape, as the packed layout holds it: a head of `3` and two letters,
+         * two letters, or `3` and one letter (courses taken at NTU and NTNU, such as `3N1004701`),
+         * then six or seven letters or digits.
          */
         internal fun isCourseNo(text: String): Boolean = COURSE_NO.matches(text)
 
@@ -174,112 +131,13 @@ data class ClassTableShareCode(
         private const val TRIMMED =
             "\t\n\u000B\u000C\r \u0085\u00A0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007" +
                 "\u2008\u2009\u200A\u200B\u2028\u2029\u202F\u205F\u3000"
-
-        // --- Checksum, compression and Base32 ---
-
-        /** CRC-32 as zlib computes it, written big-endian in Base32. */
-        private fun checksum(text: String): String {
-            val crc = CRC32().apply { update(text.toByteArray(Charsets.US_ASCII)) }.value
-            return base32(ByteArray(4) { (crc shr (24 - 8 * it)).toByte() })
-        }
-
-        /**
-         * No class table's course codes come near this, and a payload that inflates past it is
-         * refused rather than read in full.
-         */
-        private const val INFLATED_LIMIT = 65_536
-
-        /** Raw DEFLATE (RFC 1951), with no zlib or gzip wrapper. */
-        private fun deflated(bytes: ByteArray): ByteArray {
-            val deflater = Deflater(Deflater.BEST_COMPRESSION, true)
-            try {
-                deflater.setInput(bytes)
-                deflater.finish()
-                val output = ByteArrayOutputStream()
-                val buffer = ByteArray(1024)
-                while (!deflater.finished()) output.write(buffer, 0, deflater.deflate(buffer))
-                return output.toByteArray()
-            } finally {
-                deflater.end()
-            }
-        }
-
-        /**
-         * The payload's text. A stream that stops before its final block ends is refused: Apple's
-         * decoder returns whatever it read by then, but no encoder writes such a stream.
-         */
-        private fun inflatedText(base32Text: String): String {
-            val compressed = base32Decoded(base32Text)?.takeIf { it.isNotEmpty() }
-                ?: throw ClassTableShareCodeError.Malformed()
-            val output = ByteArray(INFLATED_LIMIT)
-            var count = 0
-            val inflater = Inflater(true)
-            try {
-                inflater.setInput(compressed)
-                while (!inflater.finished() && count < output.size) {
-                    val read = inflater.inflate(output, count, output.size - count)
-                    if (read == 0) break
-                    count += read
-                }
-                // A full buffer may hold a cut-off text.
-                if (!inflater.finished() || count == 0 || count == output.size) {
-                    throw ClassTableShareCodeError.Malformed()
-                }
-            } catch (_: DataFormatException) {
-                throw ClassTableShareCodeError.Malformed()
-            } finally {
-                inflater.end()
-            }
-            if ((0 until count).any { output[it] < 0 }) throw ClassTableShareCodeError.Malformed()
-            return String(output, 0, count, Charsets.US_ASCII)
-        }
-
-        private const val BASE32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
-
-        /** RFC 4648 Base32 without `=` padding. */
-        internal fun base32(bytes: ByteArray): String {
-            val output = StringBuilder()
-            var buffer = 0
-            var bits = 0
-            for (byte in bytes) {
-                buffer = ((buffer shl 8) or (byte.toInt() and 0xFF)) and 0xFFF
-                bits += 8
-                while (bits >= 5) {
-                    bits -= 5
-                    output.append(BASE32_ALPHABET[(buffer shr bits) and 31])
-                }
-            }
-            if (bits > 0) output.append(BASE32_ALPHABET[(buffer shl (5 - bits)) and 31])
-            return output.toString()
-        }
-
-        /**
-         * Null for a character outside the alphabet, or for a length or trailing bits no encoder
-         * writes (RFC 4648, section 3.5).
-         */
-        internal fun base32Decoded(text: String): ByteArray? {
-            val output = ByteArrayOutputStream()
-            var buffer = 0
-            var bits = 0
-            for (character in text) {
-                val value = BASE32_ALPHABET.indexOf(character)
-                if (value < 0) return null
-                buffer = ((buffer shl 5) or value) and 0xFFF
-                bits += 5
-                if (bits >= 8) {
-                    bits -= 8
-                    output.write(buffer shr bits)
-                }
-            }
-            if (bits >= 5 || buffer and ((1 shl bits) - 1) != 0) return null
-            return output.toByteArray()
-        }
     }
 }
 
 /**
- * Why a share code was refused. The import screen shows one message for all but
- * [UnknownPrefix], which a scanner skips, but they stay apart for tests and logs.
+ * Why a share code was refused. A scanner skips an [UnknownPrefix]; the import screen asks for a
+ * newer app for an [UnknownVersion] or an [UnknownType], and shows one message for the rest,
+ * which stay apart for tests and logs.
  */
 sealed class ClassTableShareCodeError : Exception() {
     /** Not a share code, such as another app's QR code. */
@@ -288,9 +146,13 @@ sealed class ClassTableShareCodeError : Exception() {
     /** A share code in a format version this app does not know yet. */
     class UnknownVersion : ClassTableShareCodeError()
 
+    /** A share link of a type this app does not know yet, which a newer one writes. */
+    class UnknownType : ClassTableShareCodeError()
+
     class Malformed : ClassTableShareCodeError()
 
     class ChecksumMismatch : ClassTableShareCodeError()
 
+    /** A TAT code's course code outside NTUST's shape; every course ours decodes to has that shape. */
     data class InvalidCourseCode(val courseNo: String) : ClassTableShareCodeError()
 }

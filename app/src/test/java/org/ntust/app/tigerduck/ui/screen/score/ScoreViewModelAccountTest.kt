@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package org.ntust.app.tigerduck.ui.screen.score
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +52,7 @@ class ScoreViewModelAccountTest {
         isOnline = { online },
         isDemo = { false },
         strings = { "string $it" },
+        rosterCourses = { emptyList() },
     )
 
     private fun signIn(id: String) {

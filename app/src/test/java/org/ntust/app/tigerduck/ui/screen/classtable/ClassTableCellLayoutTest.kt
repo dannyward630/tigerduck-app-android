@@ -4,6 +4,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import org.junit.Test
 import org.ntust.app.tigerduck.shared.Course
 
@@ -188,6 +190,82 @@ class ClassTableCellLayoutTest {
         val byNo = role.members.associateBy { it.course.courseNo }
         assertEquals("6", byNo.getValue("A").firstPeriodId)
         assertEquals("8", byNo.getValue("C").firstPeriodId)
+    }
+
+    // ---- lane runs (tigerduck-app-android#85, as the iPhone's tigerduck-app#153) ----
+
+    private fun member(no: String, span: Int, offset: Int, lane: Int) =
+        CellRole.MultiConflictStart.Member(course(no, emptyMap()), span, offset, lane, firstPeriodId = "1")
+
+    private fun runsOf(role: CellRole.MultiConflictStart, no: String) =
+        ClassTableCellLayout.laneRuns(role.members.first { it.course.courseNo == no }, role)
+
+    @Test
+    fun `a chain's end widens across every lane where it is alone`() {
+        // A on 6-7, B on 6-8, C on 8-9: C meets B on 8 and is alone on 9.
+        val courses = listOf(
+            course("A", mapOf(1 to listOf("6", "7"))),
+            course("B", mapOf(1 to listOf("6", "7", "8"))),
+            course("C", mapOf(1 to listOf("8", "9"))),
+        )
+        val role = roleAt(courses, 1, "6") as CellRole.MultiConflictStart
+        val laneOf = role.members.associate { it.course.courseNo to it.lane }
+
+        assertEquals(listOf(LaneRun(0, 2, laneOf.getValue("A")..laneOf.getValue("A"))), runsOf(role, "A"))
+        assertEquals(listOf(LaneRun(0, 3, laneOf.getValue("B")..laneOf.getValue("B"))), runsOf(role, "B"))
+        assertEquals(
+            listOf(LaneRun(2, 1, laneOf.getValue("C")..laneOf.getValue("C")), LaneRun(3, 1, 0..1)),
+            runsOf(role, "C"),
+        )
+    }
+
+    @Test
+    fun `a long course beside two short ones widens in each row it has alone`() {
+        val role = CellRole.MultiConflictStart(
+            members = listOf(member("L", span = 4, offset = 0, lane = 0), member("S", 1, 0, 1), member("T", 1, 2, 1)),
+            combinedSpan = 4,
+            laneCount = 2,
+        )
+        assertEquals(
+            listOf(LaneRun(0, 1, 0..0), LaneRun(1, 1, 0..1), LaneRun(2, 1, 0..0), LaneRun(3, 1, 0..1)),
+            runsOf(role, "L"),
+        )
+        assertEquals(listOf(LaneRun(0, 1, 1..1)), runsOf(role, "S"))
+        assertEquals(listOf(LaneRun(2, 1, 1..1)), runsOf(role, "T"))
+    }
+
+    @Test
+    fun `courses that always meet keep their own lanes`() {
+        val role = CellRole.MultiConflictStart(
+            members = listOf(member("A", 2, 0, 0), member("B", 2, 0, 1), member("C", 2, 0, 2)),
+            combinedSpan = 2,
+            laneCount = 3,
+        )
+        listOf("A" to 0, "B" to 1, "C" to 2).forEach { (no, lane) ->
+            assertEquals(no, listOf(LaneRun(0, 2, lane..lane)), runsOf(role, no))
+        }
+    }
+
+    // ---- the outline around a course's runs ----
+
+    @Test
+    fun `a course that widens is one outline, its seam bridged across the width the runs share`() {
+        // Its own lane on top, then both lanes, a 1px seam between the two.
+        val strips = ConflictLaneOutline.strips(listOf(Rect(0f, 0f, 10f, 10f), Rect(0f, 11f, 21f, 21f)))
+        assertEquals(listOf(Rect(0f, 0f, 10f, 10f), Rect(0f, 10f, 10f, 11f), Rect(0f, 11f, 21f, 21f)), strips)
+        assertEquals(
+            listOf(Offset(10f, 0f), Offset(10f, 11f), Offset(21f, 11f), Offset(21f, 21f), Offset(0f, 21f), Offset(0f, 0f)),
+            ConflictLaneOutline.corners(strips),
+        )
+    }
+
+    @Test
+    fun `one run is a plain rectangle`() {
+        val strips = ConflictLaneOutline.strips(listOf(Rect(2f, 3f, 12f, 30f)))
+        assertEquals(
+            listOf(Offset(12f, 3f), Offset(12f, 30f), Offset(2f, 30f), Offset(2f, 3f)),
+            ConflictLaneOutline.corners(strips),
+        )
     }
 
     @Test

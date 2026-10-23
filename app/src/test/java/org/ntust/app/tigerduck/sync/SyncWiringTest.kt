@@ -42,6 +42,16 @@ class SyncWiringTest {
         for (call in calls) assertTrue("$rel $name no longer calls $call", call in body)
     }
 
+    /**
+     * A sign-in at another backend, the one the endpoint setting names since the sign-out, moved
+     * nothing at the backend the unregister is owed to, so it does not end the debt there.
+     */
+    @Test
+    fun `the sign-out's unregister asks for a session from the backend it is owed to`() {
+        val source = source("push/DepartingDeviceUnregister.kt").joinToString("\n")
+        assertTrue("sessionAt = authTokenManager::hasSessionAt" in source)
+    }
+
     @Test
     fun `Home's sync and the worker hold colours and names for their re-enable checks`() {
         assertCalls(
@@ -49,6 +59,21 @@ class SyncWiringTest {
             "CourseSyncReconciler.syncsCourseColors(", "CourseSyncReconciler.syncsCourseNames(",
         )
         assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "CourseSyncReconciler.syncsCourseColors(")
+    }
+
+    /**
+     * tigerduck-app#727's Android side: a course added back is kept while its add waits, but not
+     * past a course reset made on another device, which takes the hand-added courses.
+     */
+    @Test
+    fun `Home's sync and the worker keep a course whose add still waits`() {
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "syncCourseList", "pendingAddNos = pendingCourseAdds.waitingIn(semester)")
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "applyCourseReset", "pendingCourseAdds.forgetAll()")
+        assertCalls(
+            "notification/BackgroundSyncWorker.kt", "reconcileCurrentSemester",
+            "CourseSyncReconciler.coursesReset(",
+            "pendingAddNos = if (resetElsewhere) emptySet() else pendingCourseAdds.waitingIn(semester)",
+        )
     }
 
     @Test
@@ -97,12 +122,13 @@ class SyncWiringTest {
     @Test
     fun `a hand-added course's upload is kept until it lands, and every full sync sends what waits first`() {
         assertCalls("ui/screen/classtable/ClassTableViewModel.kt", "addCourse", "pendingCourseAdds.send(")
-        for ((rel, name) in listOf(
-            "ui/screen/home/HomeBackendSync.kt" to "pull",
-            "notification/BackgroundSyncWorker.kt" to "syncOverridesFromBackend",
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "retryUnsent", "pendingCourseAdds.retry()")
+        for ((rel, name, sends) in listOf(
+            Triple("ui/screen/home/HomeBackendSync.kt", "pull", "retryUnsent()"),
+            Triple("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "pendingCourseAdds.retry()"),
         )) {
             val body = body(rel, name)
-            val retry = body.indexOf("pendingCourseAdds.retry()")
+            val retry = body.indexOf(sends)
             val fetch = body.indexOf("syncApiClient.fetchFullSync()")
             val listed = body.indexOf("pendingCourseAdds.listed(result.serverCourses)")
             assertTrue("$rel $name no longer sends the waiting course adds before the snapshot", retry in 0 until fetch)
@@ -110,16 +136,99 @@ class SyncWiringTest {
         }
     }
 
+    /** tigerduck-app-android#120: a revision move ran a full sync, whatever moved it. */
+    @Test
+    fun `Home's revision poll reads the change feed and sends what waits before moving the watermark`() {
+        assertCalls(
+            "ui/screen/home/HomeViewModel.kt", "pollRevision",
+            "fetchChanges = syncApiClient::fetchChanges", "retryUnsent = backendSync::sendWhatWaits",
+            "setLastKnownRevision = { syncState.lastKnownRevision = it }",
+        )
+        assertCalls(
+            "ui/screen/home/HomeBackendSync.kt", "retryUnsent",
+            "courseIgnoreSync.retryPending()", "unsentMarks.retry()", "pendingCourseAdds.retry()",
+            "pendingCourseDeletes.retry()", "pendingCourseOverrides.retry()", "pendingHolidayOverrides.retry()",
+        )
+        // And the notification-settings repair a full sync makes once it lands.
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "sendWhatWaits", "retryUnsent()", "notificationSettingsSync.pushIfUnconfirmed()")
+    }
+
+    /** tigerduck-app-android#120: the departing account's watermark let the next one's feed read skip its own data. */
+    @Test
+    fun `the watermark is the signed-in account's alone`() {
+        val home = source("ui/screen/home/HomeViewModel.kt").joinToString("\n")
+        val signedOut = home.indexOf("if (!isAuthed) {")
+        val reset = home.indexOf("syncState.lastKnownRevision = 0", signedOut)
+        assertTrue("Home no longer forgets the watermark at a sign-out", signedOut >= 0 && reset in signedOut until home.indexOf("} else if (signedIn)", signedOut))
+        assertTrue(
+            "Home's sync no longer sets the watermark only under the sign-in it fetched with",
+            Regex("""authTokenManager\.runIfSignedIn\(signIn\) \{\s*state\.lastKnownRevision = result\.currentRevision""")
+                .containsMatchIn(body("ui/screen/home/HomeBackendSync.kt", "pull")),
+        )
+    }
+
+    /** tigerduck-app-android#404. */
+    @Test
+    fun `a holiday choice whose PUT failed is kept, and Home's sync sends what waits first and keeps it over the snapshot`() {
+        assertCalls("ui/screen/calendar/CalendarViewModel.kt", "setNotifyOnHoliday", "pendingHolidayOverrides.send(")
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "retryUnsent", "pendingHolidayOverrides.retry()")
+        val body = body("ui/screen/home/HomeBackendSync.kt", "pull")
+        val retry = body.indexOf("retryUnsent()")
+        val fetch = body.indexOf("syncApiClient.fetchFullSync()")
+        val merged = body.indexOf("pendingHolidayOverrides.merged(")
+        assertTrue("Home's sync no longer sends the waiting holiday choices before the snapshot", retry in 0 until fetch)
+        assertTrue("Home's sync no longer keeps the waiting holiday choices over the snapshot", merged > fetch)
+        assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "pendingHolidayOverrides.retry()")
+    }
+
+    /** tigerduck-app-android#404: applied after the sign-out cleared them, the departing account's choices came back. */
+    @Test
+    fun `Home's sync applies the holiday snapshot only under the sign-in it fetched with`() {
+        val body = body("ui/screen/home/HomeBackendSync.kt", "pull")
+        assertTrue(
+            "the holiday snapshot is no longer applied under authTokenManager.runIfSignedIn(signIn)",
+            Regex("""authTokenManager\.runIfSignedIn\(signIn\) \{\s*(?://[^\n]*\s*)*pendingHolidayOverrides\.merged\(""").containsMatchIn(body),
+        )
+    }
+
+    /** tigerduck-app-android#404: the switches kept the set they were built with. */
+    @Test
+    fun `the Calendar's holiday switches follow a sync's choices and a sign-out's clear`() {
+        val source = source("ui/screen/calendar/CalendarViewModel.kt").joinToString("\n")
+        val refresh = "_holidayOverrides.value = academicCalendar.optedInHolidayIds"
+        val changes = source.indexOf("academicCalendar.changes.collect")
+        assertTrue("Calendar no longer follows the store's changes", changes >= 0 && source.indexOf(refresh, changes) in changes until changes + 300)
+        val signedOut = source.indexOf("if (!isAuthed) {")
+        assertTrue("Calendar no longer redraws the switches at a sign-out", signedOut >= 0 && source.indexOf(refresh, signedOut) in signedOut until source.indexOf("} else if (signedIn)", signedOut))
+    }
+
+    /** tigerduck-app-android#404: sent directly, a PUT is lost when it fails. */
+    @Test
+    fun `every holiday choice PUT goes through the outbox`() {
+        var root: File? = File("").absoluteFile
+        while (root != null && !File(root, "app/src/main/java").isDirectory && !File(root, "src/main/java").isDirectory) {
+            root = root.parentFile
+        }
+        val main = File(root ?: throw AssertionError("no :app module"), if (File(root, "app").isDirectory) "app/src/main/java" else "src/main/java")
+        // A call or a reference, outside comments.
+        val use = Regex("""(?:\.|::)putHolidayOverride\b""")
+        val callers = main.walk().filter { it.isFile && it.extension == "kt" }
+            .filter { file -> file.readLines().any { line -> !line.trimStart().startsWith("*") && !line.trimStart().startsWith("//") && use.containsMatchIn(line) } }
+            .map { it.name }.toSet()
+        assertEquals(setOf("PendingHolidayOverrides.kt"), callers)
+    }
+
     /** tigerduck-app-android#380. */
     @Test
     fun `a colour or name whose PATCH failed is kept, and every full sync sends what waits first and holds it against the snapshot`() {
         assertCalls("ui/screen/classtable/ClassTableViewModel.kt", "syncCourseOverride", "pendingCourseOverrides.send(")
-        for ((rel, name) in listOf(
-            "ui/screen/home/HomeBackendSync.kt" to "pull",
-            "notification/BackgroundSyncWorker.kt" to "syncOverridesFromBackend",
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "retryUnsent", "pendingCourseOverrides.retry()")
+        for ((rel, name, sends) in listOf(
+            Triple("ui/screen/home/HomeBackendSync.kt", "pull", "retryUnsent()"),
+            Triple("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "pendingCourseOverrides.retry()"),
         )) {
             val body = body(rel, name)
-            val retry = body.indexOf("pendingCourseOverrides.retry()")
+            val retry = body.indexOf(sends)
             val fetch = body.indexOf("syncApiClient.fetchFullSync()")
             val held = body.indexOf("pendingCourseOverrides.held(result.fetchedAtMs)")
             assertTrue("$rel $name no longer sends the waiting colours and names before the snapshot", retry in 0 until fetch)
@@ -191,12 +300,46 @@ class SyncWiringTest {
     @Test
     fun `the closed assignments are written only for the account that asked`() {
         val body = body("network/MoodleService.kt", "fetchAssignmentsRound")
-        val guard = body.indexOf("if (tokenService.currentToken() == askedWith && closedNow != closedBefore) {")
-        val save = body.indexOf("dataCache.saveClosedAssignments(closedNow)")
+        // The same check also guards the assignment records' write, inside it after this one.
+        val guard = body.indexOf("if (tokenService.currentToken() == askedWith) {")
+        val save = body.indexOf("if (closedNow != closedBefore) dataCache.saveClosedAssignments(closedNow)")
         assertTrue("the closed assignments are no longer written behind the token check", guard in 0 until save)
         assertTrue(
             "nothing else between the check and the write",
             body.substring(guard, save).count { it == '\n' } == 1,
         )
+    }
+
+    /**
+     * A full sync still out when the user signs out comes back after the wipe. Its cache writes
+     * run under the data generation it began with, so they drop rather than put the departing
+     * account's courses, deletions and marks into the files the next account starts from.
+     */
+    @Test
+    fun `Home's sync and the worker write nothing once a sign-out has wiped the data`() {
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "pull", "DataCache.Generation(dataCache.userDataGeneration)")
+        assertCalls("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend", "DataCache.Generation(dataCache.userDataGeneration)")
+    }
+
+    /**
+     * The sign-out cancels Home's fetch, and a `runCatching` around its last upload would take
+     * that cancellation for a failed upload: the fetch would go on to put the departing
+     * account's courses and assignments back on the screen the sign-out just emptied.
+     */
+    @Test
+    fun `Home's fetch lets a sign-out's cancellation through its assignment upload`() {
+        val body = body("ui/screen/home/HomeViewModel.kt", "fetchData")
+        assertTrue("fetchData no longer uploads the assignments", "pushApiClient.uploadAssignments(written)" in body)
+        assertTrue("fetchData catches the upload's cancellation", "runCatching { pushApiClient.uploadAssignments" !in body)
+    }
+
+    /**
+     * tigerduck-app-android#417: Home's fetch saves the current term's list and the upload sends
+     * it, so a course whose query failed has to keep the row the term has, as the class table's
+     * fetch does (ClassTableTermFetchTest).
+     */
+    @Test
+    fun `Home's fetch keeps a course's row when its query fails`() {
+        assertCalls("ui/screen/home/HomeViewModel.kt", "fetchCoursesAndAssignments", "kept = cachedByNo[courseNo]")
     }
 }

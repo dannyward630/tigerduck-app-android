@@ -287,8 +287,8 @@ class MoodleFileDownloads internal constructor(
                 var dir = location.parentFile
                 repeat(3) {
                     if (dir?.list()?.isEmpty() == true) {
-                        dir?.delete()
-                        dir = dir?.parentFile
+                        dir.delete()
+                        dir = dir.parentFile
                     }
                 }
             }

@@ -2,11 +2,10 @@ package org.ntust.app.tigerduck.ui.screen.coursemoodle
 
 import android.app.Application
 import android.content.ActivityNotFoundException
+import android.content.ComponentName
 import android.content.ContextWrapper
 import android.content.Intent
-import android.content.pm.ActivityInfo
-import android.content.pm.ResolveInfo
-import androidx.core.net.toUri
+import android.content.IntentFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -17,9 +16,7 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
-import org.ntust.app.tigerduck.ui.screen.home.openAssignmentInMoodle
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
@@ -47,14 +44,17 @@ class MoodleWebPagesTest {
     }
 
     private fun installBrowser(pkg: String = "com.example.browser") {
-        val probe = Intent(Intent.ACTION_VIEW, "https://example.com/".toUri()).addCategory(Intent.CATEGORY_BROWSABLE)
-        val info = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply {
-                packageName = pkg
-                name = "$pkg.Browser"
-            }
-        }
-        shadowOf(app.packageManager).addResolveInfoForIntent(probe, info)
+        val browser = ComponentName(pkg, "$pkg.Browser")
+        val packages = shadowOf(app.packageManager)
+        packages.addActivityIfNotPresent(browser)
+        packages.addIntentFilterForActivity(
+            browser,
+            IntentFilter(Intent.ACTION_VIEW).apply {
+                addCategory(Intent.CATEGORY_DEFAULT)
+                addCategory(Intent.CATEGORY_BROWSABLE)
+                addDataScheme("https")
+            },
+        )
     }
 
     private var asked = mutableListOf<String>()
@@ -172,21 +172,25 @@ class MoodleWebPagesTest {
     }
 
     @Test
-    fun `an assignment without the Moodle app opens on the website through the signed-in path`() {
+    fun `a Moodle page opens in the Moodle app, and nothing else`() {
+        openMoodlePage(context, "/mod/assign/view.php?id=890") { recording }
+
+        assertEquals(listOf("moodlemobile://https://moodle2.ntust.edu.tw?redirect=/mod/assign/view.php?id%3D890"), started.map { it.dataString })
+        assertTrue("the website is not opened behind the app", routed.isEmpty())
+    }
+
+    @Test
+    fun `without the Moodle app a Moodle page opens on the website through the signed-in path`() {
         val noMoodleApp = object : ContextWrapper(app) {
             override fun startActivity(intent: Intent) {
                 if (intent.data?.scheme == "moodlemobile") throw ActivityNotFoundException()
                 started += intent
             }
         }
-        val assignment = Assignment(
-            assignmentId = "1", courseNo = "CS3005301", courseName = "DS", title = "HW3",
-            dueDate = java.util.Date(0), isCompleted = false,
-            moodleUrl = "https://moodle2.ntust.edu.tw/mod/assign/view.php?id=9",
-        )
 
-        openAssignmentInMoodle(noMoodleApp, assignment) { recording }
+        openMoodlePage(noMoodleApp, "/mod/assign/view.php?id=890") { recording }
 
-        assertEquals(listOf("https://moodle2.ntust.edu.tw/mod/assign/view.php?id=9" to null), routed)
+        assertEquals(listOf("https://moodle2.ntust.edu.tw/mod/assign/view.php?id=890" to null), routed)
+        assertTrue(started.isEmpty())
     }
 }

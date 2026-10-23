@@ -137,8 +137,9 @@ class AuthTokenManagerRefreshTest {
 
         assertEquals("Bearer access-2", manager.authHeader())
 
-        // The send's count, then the pair, whose count starts over.
-        assertEquals(listOf(setOf(KEY_REFRESH_TOKEN_SENDS), PAIR_KEYS), file.commits)
+        // The send's count, then the pair, whose count starts over, with the backend that issued
+        // it: the one the refresh went to.
+        assertEquals(listOf(setOf(KEY_REFRESH_TOKEN_SENDS), PAIR_KEYS + KEY_ISSUED_BY), file.commits)
         assertEquals(0, file.applies)
         assertEquals(listOf("refresh-1"), sentRefreshTokens)
         assertEquals("refresh-2", tokens.refreshToken)
@@ -158,18 +159,46 @@ class AuthTokenManagerRefreshTest {
     }
 
     @Test
-    fun `a send whose count the disk refuses does not go out`() = runTest {
-        // Counted in memory only, it would be forgotten by a restart.
+    fun `a send whose count the disk refuses does not go out, and a sign-in takes its place`() = runTest {
+        // Counted in memory only, it would be forgotten by a restart. A sign-in sends no
+        // refresh token, so a full disk does not leave the phone without a session.
+        file.failCommitsOf = KEY_REFRESH_TOKEN_SENDS
+        val manager = manager(Reply.Pair("access-2", "refresh-2"), reloginSucceeds = true)
+
+        assertEquals("Bearer access-relogin", manager.authHeader())
+
+        assertEquals(emptyList<String>(), sentRefreshTokens)
+        assertEquals(1, relogins)
+    }
+
+    @Test
+    fun `a resend whose count the disk refuses keeps the tokens when the sign-in fails`() = runTest {
+        // The first send is counted and its reply lost; the disk then refuses the resend's count.
+        file.failCommitsOf = KEY_REFRESH_TOKEN_SENDS
+        file.failCommitsAfter = 1
+        val manager = manager(Reply.Lost)
+
+        assertNull(manager.authHeader())
+
+        assertEquals(listOf("refresh-1"), sentRefreshTokens)
+        assertEquals(1, relogins)
+        assertEquals("refresh-1", tokens.refreshToken)
+    }
+
+    @Test
+    fun `a sign-in that fails after a refused count keeps the tokens and waits out the pause`() = runTest {
         file.failCommitsOf = KEY_REFRESH_TOKEN_SENDS
         val manager = manager(Reply.Pair("access-2", "refresh-2"))
 
         assertNull(manager.authHeader())
 
         assertEquals(emptyList<String>(), sentRefreshTokens)
-        assertEquals(0, relogins)
+        assertEquals(1, relogins)
         assertEquals("refresh-1", tokens.refreshToken)
         // Put back in memory too, so the next refresh does not take it as sent.
         assertEquals(0, tokens.refreshTokenSends)
+        assertNull(manager.authHeader())
+        assertEquals(1, relogins)
     }
 
     @Test
@@ -1101,6 +1130,10 @@ private class SavesRecorder(private val inner: SharedPreferences) : SharedPrefer
     /** Reports each commit that writes this key as failed, as a disk that refuses the write does, after the edit is in memory. */
     var failCommitsOf: String? = null
 
+    /** How many commits of [failCommitsOf] go through before the disk starts refusing them. */
+    var failCommitsAfter = 0
+    private var commitsOfFailing = 0
+
     override fun edit(): SharedPreferences.Editor = Editor(inner.edit())
 
     private inner class Editor(private val editor: SharedPreferences.Editor) :
@@ -1133,7 +1166,8 @@ private class SavesRecorder(private val inner: SharedPreferences) : SharedPrefer
 
         override fun commit(): Boolean {
             commits += keys.toSet()
-            return editor.commit() && failCommitsOf.let { it == null || it !in keys }
+            val failing = failCommitsOf?.let { it in keys && ++commitsOfFailing > failCommitsAfter } ?: false
+            return editor.commit() && !failing
         }
 
         override fun apply() {

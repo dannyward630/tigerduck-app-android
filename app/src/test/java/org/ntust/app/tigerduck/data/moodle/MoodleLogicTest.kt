@@ -5,6 +5,9 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.ntust.app.tigerduck.data.model.Assignment
+import org.ntust.app.tigerduck.data.model.AssignmentStatus
+import org.ntust.app.tigerduck.network.model.moodle.MoodleAssignmentRecord
 import org.ntust.app.tigerduck.network.model.moodle.MoodleCourseGrades
 import org.ntust.app.tigerduck.network.model.moodle.MoodleCourseSummary
 import org.ntust.app.tigerduck.network.model.moodle.MoodleDiscussionList
@@ -13,6 +16,7 @@ import org.ntust.app.tigerduck.network.model.moodle.MoodleMember
 import org.ntust.app.tigerduck.network.model.moodle.MoodleMemberList
 import org.ntust.app.tigerduck.network.model.moodle.MoodleMemberRole
 import org.ntust.app.tigerduck.network.model.moodle.MoodleTermForums
+import java.util.Date
 import java.util.Locale
 
 class MoodleLogicTest {
@@ -21,7 +25,7 @@ class MoodleLogicTest {
         MoodleGradeItem(id, "Item $id", type, "assign", 30 + id, grade, max, hidden, "")
 
     private fun member(id: Int, fullName: String, vararg roles: String, idNumber: String? = null) = MoodleMember(
-        id = id, fullName = fullName, idNumber = idNumber, department = null, email = null,
+        id = id, fullName = fullName, idNumber = idNumber, email = null,
         groups = emptyList(), roles = roles.map { MoodleMemberRole(it, "", 0) }, pictureUrl = null,
         description = "", interests = emptyList(), fields = emptyList(),
     )
@@ -133,17 +137,77 @@ class MoodleLogicTest {
     }
 
     @Test
-    fun `the search matches name, student ID or department`() {
-        val members = listOf(member(1, "B11300001 @ Amy", "student"), member(2, "B11300002 @ Bob", "student"))
-        assertEquals(listOf(2), MoodleMembers.sections(members, "bob").flatMap { it.members }.map { it.id })
-        assertEquals(listOf(1), MoodleMembers.sections(members, "00001").flatMap { it.members }.map { it.id })
-        assertTrue(MoodleMembers.sections(members, "zzz").isEmpty())
+    fun `the search matches name, student ID or the department name the row shows`() {
+        val members = listOf(
+            member(1, "B00015001 @ Amy", "student"),
+            // Moodle's own field: the degree level, which the row no longer shows.
+            member(2, "B00000002 @ Bob", "student"),
+        )
+        val names = mapOf("cs" to "Computer Science and Information Engineering")
+        fun found(query: String) = MoodleMembers.sections(members, query, departmentNames = names).flatMap { it.members }.map { it.id }
+
+        assertEquals(listOf(2), found("bob"))
+        assertEquals(listOf(1), found("15001"))
+        assertEquals("the name shown beside the ID", listOf(1), found("computer science"))
+        assertTrue(found("zzz").isEmpty())
+    }
+
+    @Test
+    fun `a bachelor's student ID names the department its code stands for`() {
+        assertEquals("15", MoodleDepartment.code("B00015999"))
+        assertEquals("cs", MoodleDepartment.key("B00015999"))
+        // The 12 confirmed codes, and no other (#697).
+        val confirmed = mapOf(
+            "B00001999" to "im", "B00002999" to "et", "B00003999" to "me", "B00004999" to "tx",
+            "B00005999" to "ct", "B00006999" to "ch", "B00007999" to "ee", "B00008999" to "ba",
+            "B00010999" to "dt", "B00013999" to "ad", "B00015999" to "cs", "B00030999" to "hc",
+        )
+        assertEquals(confirmed, confirmed.keys.associateWith(MoodleDepartment::key))
+        assertEquals(confirmed.values.toSet(), MoodleDepartment.keys)
+    }
+
+    @Test
+    fun `only a bachelor's ID has a department code`() {
+        for (id in listOf("M00015999", "D00015999", "T00015999")) {
+            assertNull(id, MoodleDepartment.code(id))
+            assertNull(id, MoodleDepartment.key(id))
+        }
+        assertNull(MoodleDepartment.key(null))
+        assertNull(MoodleDepartment.key(""))
+        assertNull("too short to carry a code", MoodleDepartment.key("B000"))
+    }
+
+    @Test
+    fun `a lowercase b is a bachelor's ID too, as on the iPhone`() {
+        assertEquals("15", MoodleDepartment.code("b00015999"))
+        assertEquals("cs", MoodleDepartment.key("b00015999"))
+    }
+
+    @Test
+    fun `a code the app has no name for shows no department`() {
+        assertEquals("09", MoodleDepartment.code("B00009999"))
+        assertNull(MoodleDepartment.key("B00009999"))
+        assertNull(MoodleDepartment.key("B00099999"))
+    }
+
+    @Test
+    fun `an ID that is not B and eight digits has no department, whatever its 5th and 6th characters`() {
+        // Cut short at 6, 7 and 8 characters, or one too long, each with a confirmed code in place.
+        for (id in listOf("B00015", "B000159", "B0001599", "B000159999")) {
+            assertNull(id, MoodleDepartment.code(id))
+            assertNull(id, MoodleDepartment.key(id))
+        }
+        // Nine characters, but not digits after the B: letters, a space, or another script's digits.
+        for (id in listOf("B000AB999", "BX0015999", "B0001599X", "B000 5999", "B000１５999")) {
+            assertNull(id, MoodleDepartment.code(id))
+            assertNull(id, MoodleDepartment.key(id))
+        }
     }
 
     @Test
     fun `names read from NTUST's ID @ name form`() {
-        assertEquals("Amy", MoodlePersonName.displayName("B11300001 @ Amy"))
-        assertEquals("B11300001", MoodlePersonName.studentId("B11300001 @ Amy"))
+        assertEquals("Amy", MoodlePersonName.displayName("B00000001 @ Amy"))
+        assertEquals("B00000001", MoodlePersonName.studentId("B00000001 @ Amy"))
         assertEquals("Teacher Wang", MoodlePersonName.displayName("Teacher Wang"))
         assertNull(MoodlePersonName.studentId("Teacher Wang"))
     }
@@ -167,6 +231,104 @@ class MoodleLogicTest {
     fun `groups are listed with the language's own separator`() {
         assertEquals("A 組、B 組", MoodleMembers.groupsText(listOf("A 組", "B 組"), Locale.TRADITIONAL_CHINESE))
         assertEquals("Team A, Team B", MoodleMembers.groupsText(listOf("Team A", "Team B"), Locale.ENGLISH))
+    }
+
+    private fun record(id: Int, courseId: Int = 5, due: Long = 0, noSubmissions: Boolean = false) = MoodleAssignmentRecord(
+        assignId = id, cmid = id * 10, courseId = courseId, name = "A$id", dueDate = due, cutoffDate = 0,
+        allowSubmissionsFrom = 0, intro = "", introAttachments = emptyList(), noSubmissions = noSubmissions,
+        teamSubmission = false,
+    )
+
+    private fun listed(id: Int, dueMs: Long, completed: Boolean = false, submittedAtMs: Long? = null, cutoffMs: Long? = null) = Assignment(
+        assignmentId = id.toString(), courseNo = "CS3005301", courseName = "DS", title = "A$id", dueDate = Date(dueMs),
+        isCompleted = completed, moodleUrl = "https://moodle2.ntust.edu.tw/mod/assign/view.php?id=${id * 10}",
+        cutoffDate = cutoffMs?.let(::Date), submittedAt = submittedAtMs?.let(::Date),
+    )
+
+    @Test
+    fun `the assignments row counts every assignment of the course, after the materials, before the grades`() {
+        val term = MoodleTermForums(listOf(5), listOf(testForum(id = 1, courseId = 5, type = "news", count = 3)))
+        val grades = MoodleCourseGrades(listOf(grade(1)))
+
+        val rows = MoodleSections.rows(term, courseId = 5, grades = grades, members = null, materials = testMaterials(), assignmentCount = 4)
+
+        assertEquals(
+            listOf(MoodleSectionRow.Kind.ANNOUNCEMENTS, MoodleSectionRow.Kind.MATERIALS, MoodleSectionRow.Kind.ASSIGNMENTS, MoodleSectionRow.Kind.GRADES),
+            rows.map { it.kind },
+        )
+        assertEquals(MoodleSectionRow(MoodleSectionRow.Kind.ASSIGNMENTS, 4, hasUnread = false), rows[2])
+        assertTrue("a course with no assignments has no row",
+            MoodleSections.rows(null, 5, null, null, assignmentCount = 0).isEmpty())
+    }
+
+    @Test
+    fun `an entry pairs the record with Home's row, and a row no round recorded gets a record from the row`() {
+        val records = listOf(record(701, due = 1_790_600_000L), record(702))
+        val rows = listOf(listed(701, dueMs = 1_790_600_000_000L), listed(703, dueMs = 1_790_700_000_000L, cutoffMs = 1_790_800_000_000L))
+
+        val recorded = MoodleAssignmentEntries.of("701", records, rows)!!
+        assertEquals(records[0], recorded.record)
+        assertEquals(rows[0], recorded.listed)
+
+        val unlisted = MoodleAssignmentEntries.of("702", records, rows)!!
+        assertEquals(records[1], unlisted.record)
+        assertNull("Home leaves out an undated assignment", unlisted.listed)
+
+        val fromRow = MoodleAssignmentEntries.of("703", records, rows)!!
+        assertEquals(rows[1], fromRow.listed)
+        assertEquals(703, fromRow.record.assignId)
+        assertEquals("the course module comes from the row's Moodle link", 7030, fromRow.record.cmid)
+        assertEquals(0, fromRow.record.courseId)
+        assertEquals("A703", fromRow.record.name)
+        assertEquals(1_790_700_000L, fromRow.record.dueDate)
+        assertEquals(1_790_800_000L, fromRow.record.cutoffDate)
+        assertEquals("", fromRow.record.intro)
+        assertFalse(fromRow.record.noSubmissions)
+
+        assertNull("an id in neither is not this account's homework", MoodleAssignmentEntries.of("999", records, rows))
+    }
+
+    @Test
+    fun `the course module is read from an assignment's Moodle link only`() {
+        assertEquals(9101, MoodleAssignmentEntries.cmidOf("https://moodle2.ntust.edu.tw/mod/assign/view.php?id=9101"))
+        assertNull(MoodleAssignmentEntries.cmidOf("https://moodle2.ntust.edu.tw/mod/forum/view.php?id=9101"))
+        assertNull(MoodleAssignmentEntries.cmidOf("https://moodle2.ntust.edu.tw/mod/assign/view.php?id=x"))
+        assertNull(MoodleAssignmentEntries.cmidOf(null))
+    }
+
+    @Test
+    fun `the list shows what is to come by due time, then the undated in Moodle's order, then the past, latest first`() {
+        val now = 1_790_000_000_000L
+        val entries = listOf(
+            MoodleAssignmentEntry(record(1, due = 1_789_000_000L), listed(1, 1_789_000_000_000L, completed = true, submittedAtMs = 1_788_000_000_000L)),
+            MoodleAssignmentEntry(record(2), null),
+            MoodleAssignmentEntry(record(3, due = 1_791_000_000L), listed(3, 1_791_000_000_000L)),
+            MoodleAssignmentEntry(record(4), null),
+            MoodleAssignmentEntry(record(5, due = 1_789_500_000L), listed(5, 1_789_500_000_000L)),
+            MoodleAssignmentEntry(record(6, due = 1_790_500_000L), listed(6, 1_790_500_000_000L)),
+        )
+
+        val rows = MoodleAssignmentLists.rows(entries, now)
+
+        assertEquals(listOf(6, 3, 2, 4, 5, 1), rows.map { it.entry.record.assignId })
+        assertEquals(listOf(null, null, null, null, AssignmentStatus.OVERDUE_ACCEPTABLE, AssignmentStatus.SUBMITTED), rows.map { it.status })
+    }
+
+    @Test
+    fun `a row says what Moodle says of the submission, not what the user marked`() {
+        val now = 1_790_000_000_000L
+        assertNull(MoodleAssignmentLists.shownStatus(listed(1, now + 1), now))
+        assertEquals(AssignmentStatus.SUBMITTED, MoodleAssignmentLists.shownStatus(listed(1, now + 1, completed = true), now))
+        assertEquals(
+            AssignmentStatus.SUBMITTED_LATE,
+            MoodleAssignmentLists.shownStatus(listed(1, now - 10, completed = true, submittedAtMs = now - 5), now),
+        )
+        assertEquals(AssignmentStatus.OVERDUE_ACCEPTABLE, MoodleAssignmentLists.shownStatus(listed(1, now - 10), now))
+        assertEquals(
+            "past the cutoff reads as overdue too, as Home's badge for the list",
+            AssignmentStatus.OVERDUE_ACCEPTABLE,
+            MoodleAssignmentLists.shownStatus(listed(1, now - 10, cutoffMs = now - 5), now),
+        )
     }
 
     @Test

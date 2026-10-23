@@ -97,6 +97,7 @@ import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableShareSheet
 import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.ui.component.ColorPickerSheet
+import org.ntust.app.tigerduck.ui.component.colorPickerOffersDarkPalette
 import org.ntust.app.tigerduck.ui.component.ConflictCoursePickerSheet
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.component.CourseCard
@@ -108,6 +109,7 @@ import org.ntust.app.tigerduck.ui.component.SyncStatusDot
 import org.ntust.app.tigerduck.ui.component.TigerPullToRefresh
 import org.ntust.app.tigerduck.ui.component.PageLeftEffect
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import org.ntust.app.tigerduck.ui.theme.courseColorPalette
 import org.ntust.app.tigerduck.ui.theme.courseColorPaletteDark
@@ -207,6 +209,8 @@ fun ClassTableScreen(
     }
     val activeWeekdays = remember(shownCourses) { ClassTableCellLayout.activeWeekdays(shownCourses) }
     val showClassroomInClassTable by viewModel.showClassroomInClassTable.collectAsStateWithLifecycle()
+    val pinTodayCoursesOnClassTable by viewModel.pinTodayCoursesOnClassTable.collectAsStateWithLifecycle()
+    val outlineRequiredCourses by viewModel.outlineRequiredCourses.collectAsStateWithLifecycle()
     // Someone else's class table is kept on the device, so no sign-in stands in front of it.
     val showsTable = isLoggedIn || shownPerson != null
     val hasGrid = showsTable && activePeriods.isNotEmpty() && activeWeekdays.isNotEmpty() && shownCourses.isNotEmpty()
@@ -460,8 +464,10 @@ fun ClassTableScreen(
                 // one. It reads the live term's roster, not the selected one —
                 // see ClassTableViewModel.liveCourses — so an old timetable
                 // can never present a class from two years ago as ongoing.
-                // The user's own day, which would read as the other person's on theirs.
-                if (shownPerson == null && todayCourses.isNotEmpty()) {
+                // The user's own day, which would read as the other person's on theirs,
+                // and only where Settings pins it here: Home already lists it, and
+                // without it the grid starts at the top of the page.
+                if (pinTodayCoursesOnClassTable && shownPerson == null && todayCourses.isNotEmpty()) {
                     SectionHeader(title = stringResource(R.string.home_section_today_courses))
                     val today =
                         AppClock.calendar().get(java.util.Calendar.DAY_OF_WEEK)
@@ -639,6 +645,7 @@ fun ClassTableScreen(
                         courseNosWithAssignments = if (shownPerson == null) courseNosWithAssignments else emptySet(),
                         courseNosIgnoringAssignments =
                             if (shownPerson == null) courseNosIgnoringAssignments else emptySet(),
+                        outlineRequiredCourses = outlineRequiredCourses,
                         onSelect = { course, weekday, periodId ->
                             viewModel.selectCourse(course, weekday, periodId)
                         },
@@ -719,6 +726,7 @@ fun ClassTableScreen(
                     showRoomHints = showClassroomInClassTable,
                     weekdays = activeWeekdays,
                     periods = activePeriods,
+                    outlineRequiredCourses = outlineRequiredCourses,
                 )
             }
         }
@@ -729,14 +737,16 @@ fun ClassTableScreen(
     }
 
     courseToRecolor?.let { course ->
-        val isDark = TigerDuckTheme.isDarkMode
-        val displayPalette = if (isDark) courseColorPaletteDark else courseColorPalette
-        val currentColor = TigerDuckTheme.courseColor(course.courseNo)
-        val usedByOthers = remember(courses, course.courseNo, isDark) {
+        val darkPalette = LocalVisualStylePolicy.current.colorPickerOffersDarkPalette(TigerDuckTheme.isDarkMode)
+        val displayPalette = if (darkPalette) courseColorPaletteDark else courseColorPalette
+        // Each course's color as the palette above has it.
+        val shown = if (darkPalette) TigerDuckTheme::courseColor else TigerDuckTheme::courseColorVibrant
+        val currentColor = shown(course.courseNo)
+        val usedByOthers = remember(courses, course.courseNo, darkPalette) {
             courses
                 .asSequence()
                 .filter { it.courseNo != course.courseNo }
-                .map { TigerDuckTheme.courseColor(it.courseNo).toArgb() or 0xFF000000.toInt() }
+                .map { shown(it.courseNo).toArgb() or 0xFF000000.toInt() }
                 .toSet()
         }
         ColorPickerSheet(
@@ -905,6 +915,7 @@ fun ClassTableScreen(
                 courseService = viewModel.courseService,
                 sheetState = addCourseSheetState,
                 onAdd = { viewModel.addCourse(it) },
+                onRemove = { viewModel.removeAddedCourse(it) },
                 onDismiss = { showAddCourse = false }
             )
         }

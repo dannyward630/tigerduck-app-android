@@ -34,16 +34,24 @@ class ClassTableImportModel(
      */
     private val lookup: suspend (semester: String, courseNos: List<String>) -> List<Course>,
     private val scope: CoroutineScope,
+    /**
+     * Opened by a link rather than the import menu: the page shows no camera or photo button, as
+     * no one came to scan, and closes once the link's code is done with, saved or not.
+     */
+    fromLink: Boolean = false,
 ) {
     /** What a lookup imports: the code, and the nickname a new person is saved under. */
     data class ImportJob(val code: ClassTableShareCode, val nickname: String)
 
     /** The prompts that start a lookup carry its job, so their buttons need nothing else. */
     sealed interface Prompt {
-        /** A wrong checksum, layout or course code, or a format version this app does not know. */
+        /** A wrong checksum, layout or course code. */
         data object Invalid : Prompt
 
         data object NoCode : Prompt
+
+        /** A code a newer app wrote: a format version or a share type this one does not know. */
+        data object NeedsUpdate : Prompt
 
         data object OwnCode : Prompt
 
@@ -69,13 +77,19 @@ class ClassTableImportModel(
         val isReadingImage: Boolean = false,
         /** Set once the person is saved, or once the account signed out meanwhile; the import closes then. */
         val isFinished: Boolean = false,
+        val fromLink: Boolean = false,
+        /** Set once a code was taken, so a link's page is not done before its code is read. */
+        val tookCode: Boolean = false,
     ) {
         val isIdle: Boolean get() = prompt == null && pending == null && !isLookingUp && !isReadingImage && !isFinished
 
         val canImport: Boolean get() = nickname.isNotBlank() && !isLookingUp && !isFinished
+
+        /** A link's code is done with, called off or refused: its page closes rather than turn into a scanner. */
+        val isLinkDone: Boolean get() = fromLink && tookCode && isIdle
     }
 
-    private val _state = MutableStateFlow(State())
+    private val _state = MutableStateFlow(State(fromLink = fromLink))
     val state: StateFlow<State> = _state.asStateFlow()
 
     private var lookupJob: Job? = null
@@ -93,9 +107,20 @@ class ClassTableImportModel(
         when (val reading = reading(text)) {
             Reading.NotShareCode -> return false
             Reading.Invalid -> _state.update { it.copy(prompt = Prompt.Invalid) }
+            Reading.NeedsUpdate -> _state.update { it.copy(prompt = Prompt.NeedsUpdate) }
             is Reading.Code -> open(reading.code)
         }
+        _state.update { it.copy(tookCode = true) }
         return true
+    }
+
+    /**
+     * The code a link opened, read as [scanned] reads one, except that a link the decoder does not
+     * take says the code is damaged: a link's page has no camera to try another code with.
+     */
+    fun linkOpened(text: String) {
+        if (scanned(text)) return
+        _state.update { it.copy(prompt = Prompt.Invalid, tookCode = true) }
     }
 
     /**
@@ -109,7 +134,12 @@ class ClassTableImportModel(
         if (code != null) {
             open(code)
         } else {
-            val prompt = if (readings.any { it == Reading.Invalid }) Prompt.Invalid else Prompt.NoCode
+            // A newer app's code is one this one could read once updated, so that comes first.
+            val prompt = when {
+                Reading.NeedsUpdate in readings -> Prompt.NeedsUpdate
+                Reading.Invalid in readings -> Prompt.Invalid
+                else -> Prompt.NoCode
+            }
             _state.update { it.copy(prompt = prompt) }
         }
     }
@@ -239,6 +269,8 @@ class ClassTableImportModel(
 
         data object Invalid : Reading
 
+        data object NeedsUpdate : Reading
+
         data class Code(val code: ClassTableShareCode) : Reading
     }
 
@@ -246,6 +278,10 @@ class ClassTableImportModel(
         Reading.Code(ClassTableShareCode.decode(text))
     } catch (_: ClassTableShareCodeError.UnknownPrefix) {
         Reading.NotShareCode
+    } catch (_: ClassTableShareCodeError.UnknownVersion) {
+        Reading.NeedsUpdate
+    } catch (_: ClassTableShareCodeError.UnknownType) {
+        Reading.NeedsUpdate
     } catch (e: ClassTableShareCodeError) {
         Log.i(TAG, "Share code refused: ${e.javaClass.simpleName}")
         Reading.Invalid

@@ -58,6 +58,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.ui.component.OutlinedAccountIdField
+import org.ntust.app.tigerduck.ui.component.usesStandardKeyboard
+import org.ntust.app.tigerduck.ui.component.hardwareKeyboardInUse
+import org.ntust.app.tigerduck.ui.component.rememberStandardKeyboardChoice
 import org.ntust.app.tigerduck.ui.component.PasswordTrailingIcons
 import org.ntust.app.tigerduck.ui.component.SecureScreen
 
@@ -121,7 +124,9 @@ fun LoginSheet(
     // inline in the action row instead of as a floating popup chip — the
     // popup approach got fiddly inside Compose `Dialog` (IME insets,
     // window-z ordering, position math).
-    var useStandardKeyboard by rememberSaveable { mutableStateOf(false) }
+    // Null until the user taps the toggle; see [usesStandardKeyboard].
+    var standardKeyboardChoice by rememberStandardKeyboardChoice()
+    val useStandardKeyboard = usesStandardKeyboard(standardKeyboardChoice, hardwareKeyboardInUse())
 
     val passwordFocusRequester = remember { FocusRequester() }
     val usernameFocusRequester = remember { FocusRequester() }
@@ -274,7 +279,7 @@ fun LoginSheet(
                 if (usernameEditable) {
                     FilterChip(
                         selected = useStandardKeyboard,
-                        onClick = { useStandardKeyboard = !useStandardKeyboard },
+                        onClick = { standardKeyboardChoice = !useStandardKeyboard },
                         // Icon goes inside the label slot so the chip's content
                         // can be centered as a unit (the leadingIcon slot pins
                         // its child to the chip's start edge, which leaves the

@@ -130,6 +130,38 @@ class VisualStylePolicyTest {
         }
     }
 
+    // ---- required courses ----
+
+    @Test
+    fun `TigerDuck outlines a required course in its own colour`() {
+        colours.forEach { colour ->
+            assertEquals(colour, tigerDuck.classTableCourseOutline(colour))
+        }
+    }
+
+    @Test
+    fun `TAT outlines a required course so it stands out from its pastel`() {
+        colours.forEach { colour ->
+            val fill = tat.classTableCourseFill(colour, Color.Magenta, isDark = false)
+            val outline = contrast(tat.classTableCourseOutline(colour), fill)
+            assertTrue("outline on the pastel of $colour: $outline", outline >= 3.0)
+        }
+    }
+
+    @Test
+    fun `the pastel outline mixes each sRGB channel half toward black, as the iPhone app does`() {
+        // Within one step: an sRGB Color holds 8 bits a channel, so 0.5 lands on 128/255.
+        val step = 1 / 255f
+        val white = Color.White.pastelOutline()
+        assertEquals(0.5f, white.red, step)
+        assertEquals(0.5f, white.green, step)
+        assertEquals(0.5f, white.blue, step)
+        assertEquals(1f, white.alpha, 0f)
+        val coral = Color(0xFFFF6B6B).pastelOutline()
+        assertEquals(0.5f, coral.red, step)
+        assertEquals(0x6B / 255f * 0.5f, coral.green, step)
+    }
+
     // ---- course cards ----
 
     @Test
@@ -210,6 +242,34 @@ class VisualStylePolicyTest {
                 assertTrue("mark on $colour, muted $muted: $mark", mark >= 4.5)
             }
         }
+    }
+
+    // ---- every other course color ----
+
+    @Test
+    fun `TigerDuck draws a course's color and its text as each place picks them`() {
+        val color = Color(0xFFFF6B6B)
+        val dark = Color(0xFF994747)
+        assertEquals(dark, tigerDuck.courseAccentColor(color, tint = dark))
+        assertEquals(color.copy(alpha = 0.85f), tigerDuck.courseAccentColor(color, tint = color.copy(alpha = 0.85f)))
+        assertEquals(Color.White, tigerDuck.courseAccentTextColor(tintText = Color.White))
+        assertEquals(Color.White.copy(alpha = 0.85f), tigerDuck.courseAccentSecondaryTextColor(Color.White.copy(alpha = 0.85f)))
+    }
+
+    @Test
+    fun `TAT draws a course's color as the class table's pastel in either theme, with dark text`() {
+        colours.forEach { color ->
+            val tile = tat.classTableCourseFill(color, Color.Magenta, isDark = false)
+            listOf(color, Color.Magenta, color.copy(alpha = 0.85f)).forEach { tint ->
+                assertEquals("$color drawn for $tint", tile, tat.courseAccentColor(color, tint))
+            }
+            val text = contrast(tat.courseAccentTextColor(tintText = Color.White), tile)
+            val details = contrast(tat.courseAccentSecondaryTextColor(tintText = Color.White), tile)
+            assertTrue("text on $color: $text", text >= 7.0)
+            assertTrue("details on $color: $details", details >= 4.5)
+        }
+        assertEquals(VisualStylePolicy.TextOnPastel, tat.courseAccentTextColor(Color.White))
+        assertEquals(VisualStylePolicy.TextOnPastelSecondary, tat.courseAccentSecondaryTextColor(Color.White))
     }
 
     // ---- time slider track ----

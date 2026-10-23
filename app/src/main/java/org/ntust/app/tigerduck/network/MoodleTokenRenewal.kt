@@ -111,7 +111,7 @@ internal class MoodleTokenRenewal(
  * Each is named by a fingerprint of the student ID and password, never the password itself.
  *
  * The fingerprint is an unsalted SHA-256, fit only to compare in memory, and never written
- * anywhere. The app keeps the refusal in the app-wide StoredPasswordLatch, a flag
+ * anywhere. The app keeps the refusal in the app-wide StoredPasswordLatch, a count
  * ([LatchedRefusal]); [InMemory] is for tests.
  */
 internal interface StoredPasswordRefusal {

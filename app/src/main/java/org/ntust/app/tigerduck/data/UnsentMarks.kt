@@ -84,7 +84,7 @@ class UnsentMarks internal constructor(
      * otherwise go up later over it.
      */
     suspend fun send(assignmentId: String, status: String) {
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         if (!records()) {
             mutex.withLock {
@@ -118,7 +118,7 @@ class UnsentMarks internal constructor(
     /** Sends every mark still waiting; each full sync starts with this. */
     suspend fun retry() {
         if (!sends()) return
-        val generation = dataCache.userDataGeneration
+        val generation = dataCache.writeGeneration()
         val signIn = signInGeneration()
         requeueParked(generation, firstInProcess = parkedRequeued.compareAndSet(false, true))
         for ((id, mark) in waiting()) {

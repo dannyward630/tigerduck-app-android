@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.ui.screen.announcements
 import org.intellij.markdown.MarkdownElementTypes
 import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
+import org.intellij.markdown.parser.CancellationToken
 import org.intellij.markdown.parser.MarkdownParser
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -127,8 +128,10 @@ class BulletinBodyRendererTest {
         }
     }
 
-    private fun strongNodes(markdown: String): Int {
-        val tree = MarkdownParser(GFMFlavourDescriptor()).buildMarkdownTreeFromString(markdown)
+    // A CharSequence, for the parser's overload that is not deprecated.
+    private fun strongNodes(markdown: CharSequence): Int {
+        val tree = MarkdownParser(GFMFlavourDescriptor(), true, CancellationToken.NonCancellable)
+            .buildMarkdownTreeFromString(markdown)
         fun count(node: ASTNode): Int =
             (if (node.type == MarkdownElementTypes.STRONG) 1 else 0) + node.children.sumOf(::count)
         return count(tree)

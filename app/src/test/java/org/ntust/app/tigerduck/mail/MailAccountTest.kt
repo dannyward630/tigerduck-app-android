@@ -48,21 +48,6 @@ class MailAccountTest {
     }
 
     @Test
-    fun `a school sign-out signs out only the same student's mail`() = runTest {
-        // As the library goes with the school account (tigerduck-app/tigerduck-app#454).
-        val account = account()
-        account.signIn("b10000001", "pw")
-
-        assertFalse(account.signOutIfSchoolAccount("B10000002"))
-        assertTrue(account.signedIn.value)
-
-        assertTrue(account.signOutIfSchoolAccount("B10000001"))
-        assertFalse(account.signedIn.value)
-        assertNull(credentials.mailPassword)
-        assertEquals(1, scheduler.cancelled)
-    }
-
-    @Test
     fun `failures store nothing`() = runTest {
         val account = account()
         assertTrue(account.signIn("b10000001", "wrong") is MailError.AuthFailed)
@@ -107,6 +92,36 @@ class MailAccountTest {
         assertNull(account.signIn("B10000001", "pw"))
         assertEquals("我改的名字", state.displayName)
         assertFalse(account.authFailed.value)
+    }
+
+    /**
+     * A password typed again after the server rejected it is the same student's account: what
+     * they chose stays as they chose it, and the notice that their sign-in failed goes.
+     */
+    @Test
+    fun `signing in again as the same student keeps their new-mail switch and the mail still to be expunged`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        state.notificationsEnabled = false
+        state.setOwnedDeleted("INBOX", server.uidValidity, setOf(7L))
+        account.onAuthFailure()
+        val noticesTakenDown = notifier.authFailuresCancelled
+        assertNull(account.signIn("B10000001", "pw"))
+        assertFalse(state.notificationsEnabled)
+        assertEquals(setOf(7L), state.ownedDeleted("INBOX", server.uidValidity))
+        assertEquals(noticesTakenDown + 1, notifier.authFailuresCancelled)
+        assertEquals("the same student's new-mail notices stay", 0, notifier.cancelledAll)
+    }
+
+    @Test
+    fun `signing in as another student takes the previous one's notifications down`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        state.notificationsEnabled = false
+        server.passwords["B10000002"] = "pw"
+        assertNull(account.signIn("b10000002", "pw"))
+        assertEquals(1, notifier.cancelledAll)
+        assertTrue("another student starts from the default", state.notificationsEnabled)
     }
 
     @Test

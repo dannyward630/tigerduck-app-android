@@ -14,12 +14,12 @@ import org.ntust.app.tigerduck.auth.guardAutomaticHarvest
  * [PasswordPosting] it is handed.
  *
  * A renewal signs in with the stored password the user did not just type, so it runs under
- * [passwordLatch]: none at all once SSO has refused that password, a check again right before the
- * password goes out under the lock every automatic post takes, and a refusal latched for the
+ * [passwordLatch]: none at all while a refusal of that password waits, a check again right before
+ * the password goes out under the lock every automatic post takes, and a refusal counted for the
  * whole app. The sign-in the user makes ([obtain]) posts what they typed.
  *
  * One sign-in at a time: the sign-in a user makes and a renewal both take [mutex]. A renewal goes
- * through [MoodleTokenRenewal], so it keeps its pause and its stop at a refused password, and
+ * through [MoodleTokenRenewal], so it keeps its pause and its wait after a refused password, and
  * checks the stored token again once it holds the lock: one that waited behind a sign-in takes the
  * token that sign-in got rather than signing in a second time.
  */
@@ -99,12 +99,13 @@ internal class MoodleTokenCoordinator(
 }
 
 /**
- * [StoredPasswordRefusal] as the app-wide [StoredPasswordLatch], a flag, so no fingerprint of the
- * credentials is ever kept. Refused while the latch holds. [guardAutomaticHarvest] marks it, with
- * the school's message and only for the password still stored; a sign-in by hand lifts it.
+ * [StoredPasswordRefusal] as the app-wide [StoredPasswordLatch], a count, so no fingerprint of the
+ * credentials is ever kept. Refused while a refusal's wait holds. [guardAutomaticHarvest] counts
+ * each, with the school's message and only for the password still stored; a post the school
+ * takes and a sign-in by hand end the count.
  */
 internal class LatchedRefusal(private val latch: StoredPasswordLatch) : StoredPasswordRefusal {
-    override fun isRefused(fingerprint: String): Boolean = latch.isRejected
+    override fun isRefused(fingerprint: String): Boolean = latch.postMustWait()
     override fun markRefused(fingerprint: String) = Unit
     override fun clear() = latch.clear()
 }

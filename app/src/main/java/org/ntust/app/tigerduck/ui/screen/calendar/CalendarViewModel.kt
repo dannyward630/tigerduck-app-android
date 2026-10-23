@@ -38,7 +38,6 @@ import org.ntust.app.tigerduck.network.NetworkChecker
 import org.ntust.app.tigerduck.notification.SyncSource
 import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.util.SingleFlight
-import org.ntust.app.tigerduck.util.logSummary
 import org.ntust.app.tigerduck.widget.WidgetUpdater
 import java.time.LocalDate
 import java.util.Calendar
@@ -92,7 +91,7 @@ class CalendarViewModel @Inject constructor(
     @param:dagger.hilt.android.qualifiers.ApplicationContext
     private val context: android.content.Context,
     private val academicCalendar: org.ntust.app.tigerduck.academic.AcademicCalendarStore,
-    private val pushApiClient: org.ntust.app.tigerduck.push.PushApiClient,
+    private val pendingHolidayOverrides: org.ntust.app.tigerduck.data.PendingHolidayOverrides,
     private val widgetUpdater: WidgetUpdater,
     private val liveActivityManager: LiveActivityManager,
     private val notificationScheduler: org.ntust.app.tigerduck.notification.AssignmentNotificationScheduler,
@@ -180,9 +179,11 @@ class CalendarViewModel @Inject constructor(
      * Flip the exception for one holiday.
      *
      * The local write is what makes the guard behave; the upload only makes
-     * the user's other devices agree, so a failure there is logged and
-     * swallowed rather than rolled back — the setting the user just made on
-     * this device should stand either way.
+     * the user's other devices agree, so a failure there is not rolled back —
+     * the setting the user just made on this device stands either way. It
+     * waits in [org.ntust.app.tigerduck.data.PendingHolidayOverrides] until the
+     * backend has it, marked as this launch runs up to its first suspension
+     * (Main.immediate), so a sync meanwhile keeps it.
      */
     fun setNotifyOnHoliday(holidayId: Int, notify: Boolean) {
         if (!academicCalendar.setNotifyOnHoliday(holidayId, notify)) return
@@ -192,15 +193,7 @@ class CalendarViewModel @Inject constructor(
         // the old answer until their next class boundary or 30-minute refresh.
         widgetUpdater.requestUpdate()
         liveActivityManager.refresh()
-        viewModelScope.launch {
-            runCatching { pushApiClient.putHolidayOverride(holidayId, notify) }
-                .onFailure { e ->
-                    if (e is kotlinx.coroutines.CancellationException) throw e
-                    android.util.Log.w(
-                        "CalendarViewModel", "holiday override upload failed: ${e.logSummary()}"
-                    )
-                }
-        }
+        viewModelScope.launch { pendingHolidayOverrides.send(holidayId) }
     }
 
     /** Replaces the academic rows in [base] with freshly-built ones. */
@@ -225,6 +218,11 @@ class CalendarViewModel @Inject constructor(
             academicCalendar.calendar.collect {
                 _events.value = withAcademicEvents(_events.value)
             }
+        }
+        viewModelScope.launch {
+            // A sync took another device's holiday choices: the switches show
+            // the set as it now stands, not the one this screen was built with.
+            academicCalendar.changes.collect { _holidayOverrides.value = academicCalendar.optedInHolidayIds }
         }
         viewModelScope.launch {
             // Switching language recreates the Activity, but this ViewModel is
@@ -271,6 +269,9 @@ class CalendarViewModel @Inject constructor(
                     // on the calendar after a sign-out; only the account's
                     // own events go.
                     _events.value = academicEvents()
+                    // The sign-out cleared the departing account's holiday
+                    // choices before it said so, which the store does not emit.
+                    _holidayOverrides.value = academicCalendar.optedInHolidayIds
                     hasLoaded = false
                 } else if (signedIn) {
                     // As a launch, so the page counts as loaded and a return
@@ -453,11 +454,14 @@ class CalendarViewModel @Inject constructor(
             // submission stays submitted. This cache is every screen's, so a
             // status call that failed here used to mark the assignment
             // outstanding everywhere.
-            val assignments = CourseRosterMerge.assignmentsToStore(
-                remote = moodleService.fetchAssignments(enrolled),
+            val answer = moodleService.fetchAssignments(enrolled) ?: return cached
+            val merged = CourseRosterMerge.assignmentsToStore(
+                remote = answer.assignments,
                 cached = cached,
             ) ?: return cached
-            dataCache.saveAssignments(assignments)
+            // The list as written, which the write reconciles against newer
+            // answers; nothing to publish when the write was refused.
+            val assignments = moodleService.storeAssignments(merged, answer) ?: return cached
             // The reminders and the Live Update follow the cache, as Home
             // and the worker make them do.
             notificationScheduler.rescheduleFromCache(dataCache, prefs)

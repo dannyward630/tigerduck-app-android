@@ -6,8 +6,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -28,6 +30,7 @@ import org.ntust.app.tigerduck.network.NetworkChecker
 import org.ntust.app.tigerduck.network.NtustScoreError
 import org.ntust.app.tigerduck.network.NtustScoreService
 import org.ntust.app.tigerduck.notification.SyncSource
+import org.ntust.app.tigerduck.shared.Course
 import javax.inject.Inject
 
 @HiltViewModel
@@ -41,6 +44,8 @@ class ScoreViewModel internal constructor(
     private val isOnline: () -> Boolean,
     private val isDemo: () -> Boolean,
     private val strings: (Int) -> String,
+    /** The class table's cached courses of a term, portal and hand-added together; see [DataCache.loadCourses]. */
+    private val rosterCourses: suspend (term: String) -> List<Course>,
 ) : ViewModel() {
 
     @Inject
@@ -50,6 +55,7 @@ class ScoreViewModel internal constructor(
         scoreService: NtustScoreService,
         networkChecker: NetworkChecker,
         demoAccount: DemoAccount,
+        dataCache: DataCache,
     ) : this(
         authState = authService.authState,
         storedStudentId = { authService.storedStudentId },
@@ -59,6 +65,7 @@ class ScoreViewModel internal constructor(
         isOnline = networkChecker::isAvailable,
         isDemo = { demoAccount.isActive },
         strings = context::getString,
+        rosterCourses = { term -> dataCache.loadCourses(term) },
     )
 
     /** A refresh found no network; the page says so, as the other tabs do. */
@@ -101,7 +108,7 @@ class ScoreViewModel internal constructor(
     private var loadedFor: String? = null
 
     /** Runs the current student's loads and refreshes; an account change cancels it. */
-    private var accountJob = SupervisorJob(viewModelScope.coroutineContext[Job])
+    private var accountScope = newAccountScope()
 
     /** Courses grouped by term, newest-first. */
     val groupedCourses: List<Pair<String, List<CourseGrade>>>
@@ -125,7 +132,7 @@ class ScoreViewModel internal constructor(
         if (studentId == null || loadedFor == studentId) return
         loadedFor = studentId
 
-        viewModelScope.launch(accountJob) {
+        accountScope.launch {
             val cached = cachedSnapshot(studentId)
             syncedAt.show(cached)
             // report is nullable (Gson Unsafe defense) — skip the instant
@@ -140,7 +147,7 @@ class ScoreViewModel internal constructor(
 
     fun triggerRefresh() {
         if (_isRefreshing.value) return
-        viewModelScope.launch(accountJob) { refresh(force = true) }
+        accountScope.launch { refresh(force = true) }
     }
 
     /** Empties the page for another student, or for nobody, and drops the previous one's work. */
@@ -148,14 +155,18 @@ class ScoreViewModel internal constructor(
         if (to == reportStudentId) return
         reportStudentId = to
         loadedFor = null
-        accountJob.cancel()
-        accountJob = SupervisorJob(viewModelScope.coroutineContext[Job])
+        accountScope.cancel()
+        accountScope = newAccountScope()
         _report.value = ScoreReport.EMPTY
         _collapsedTerms.value = emptySet()
         hasSeededCollapse = false
         _errorMessage.value = null
         _isRefreshing.value = false
     }
+
+    /** A child of [viewModelScope] whose failures stay its own, so one refresh's throw cannot cancel the page. */
+    private fun newAccountScope(): CoroutineScope =
+        CoroutineScope(viewModelScope.coroutineContext + SupervisorJob(viewModelScope.coroutineContext[Job]))
 
     fun setRankingScope(scope: RankingScope) {
         _rankingScope.value = scope
@@ -167,6 +178,21 @@ class ScoreViewModel internal constructor(
     }
 
     fun isCollapsed(term: String): Boolean = term in _collapsedTerms.value
+
+    /**
+     * The class-table course [course] is, from the cached roster of its own
+     * term, or null when the app has none: the score page names a course only
+     * by number and term, and NTUST reissues numbers across terms when a
+     * student retakes, so another term's roster is never consulted. Read on
+     * demand, not with the report: a transcript spans years of terms, and
+     * only the tapped course's roster is wanted.
+     */
+    suspend fun rosterCourse(course: CourseGrade): Course? {
+        // The cache is keyed by the class table's semester code, which the
+        // score page's term may not spell the same way; see semesterCode.
+        val semester = ScoreCourseRoster.semesterCode(course.term) ?: return null
+        return ScoreCourseRoster.match(rosterCourses(semester), course)
+    }
 
     private suspend fun refresh(force: Boolean) {
         if (_isRefreshing.value) return

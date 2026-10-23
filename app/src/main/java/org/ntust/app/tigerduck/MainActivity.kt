@@ -1,12 +1,12 @@
 package org.ntust.app.tigerduck
 
 import android.Manifest
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.media.AudioManager
 import android.os.Bundle
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,20 +25,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.analytics.AnalyticsLogger
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
-import org.ntust.app.tigerduck.data.cache.DataCache
-import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
+import org.ntust.app.tigerduck.library.LibraryQrShortcut
 import org.ntust.app.tigerduck.liveactivity.LiveActivityManager
 import org.ntust.app.tigerduck.network.ApiVersionGate
 import org.ntust.app.tigerduck.network.MoodleTokenService
@@ -61,7 +64,6 @@ import org.ntust.app.tigerduck.ui.navigation.AppNavigation
 import org.ntust.app.tigerduck.ui.navigation.Screen
 import org.ntust.app.tigerduck.ui.openLink
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportViewModel
-import org.ntust.app.tigerduck.ui.screen.home.openAssignmentInMoodle
 import org.ntust.app.tigerduck.ui.screen.update.UpdatePromptDialog
 import org.ntust.app.tigerduck.ui.screen.whatsnew.WhatsNewCatalog
 import org.ntust.app.tigerduck.ui.screen.whatsnew.WhatsNewFlow
@@ -140,7 +142,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var libraryPagePresence: org.ntust.app.tigerduck.library.LibraryPagePresence
 
     @Inject
-    lateinit var dataCache: DataCache
+    lateinit var heldShareLink: HeldShareLink
 
     private val widgetStartRoute = mutableStateOf<String?>(null)
     private val whatsNewFlow = mutableStateOf<WhatsNewFlow?>(null)
@@ -164,6 +166,8 @@ class MainActivity : AppCompatActivity() {
         // manifest's configChanges, so a dark-mode switch recreates this
         // Activity — and HyperOS raises the prompt again on every request.
         if (savedInstanceState == null) requestNotificationPermissionIfNeeded()
+        // Here rather than at the app's start: the Activity has the app's own language.
+        LibraryQrShortcut.publish(this)
         // Only schedule on the first Activity creation. WorkManager.UPDATE would
         // be idempotent, but re-enqueuing on every rotation/config change is
         // wasted work (and thrashes WorkManager's internal bookkeeping DB).
@@ -171,10 +175,19 @@ class MainActivity : AppCompatActivity() {
             BackgroundSyncWorker.schedule(applicationContext)
         }
 
-        widgetStartRoute.value = resolveStartRoute(intent)
+        widgetStartRoute.value = resolveStartRoute(intent, restored = savedInstanceState != null)
         handleServerPushIntent(intent)
-        openLinkedAssignment(intent, restored = savedInstanceState != null)
         openSharedClassTable(intent, restored = savedInstanceState != null)
+        // A share link held while no one could import it opens once someone signs in and onboarding
+        // is finished, in either order. Only in the Activity on screen: another one, stopped in
+        // another app's task, would take it and open its import where no one sees it.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                combine(authService.authState, snapshotFlow { appState.showOnboarding }) { signedIn, onboarding ->
+                    signedIn && !onboarding
+                }.collect { mayImport -> heldShareLink.release(mayImport)?.let(::importSharedClassTable) }
+            }
+        }
 
         // Re-prompt for app updates only on a genuine fresh start, never on a
         // rotation/config-change recreation (issue #89).
@@ -375,6 +388,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        // A language change lands here, as the manifest handles locale: relabel the shortcut.
+        LibraryQrShortcut.publish(this)
         // Foldable unfold / external display attach changes smallestScreenWidthDp.
         // Re-evaluate so "auto" mode flips to/from sensor as the form factor changes.
         if (appState.rotationMode == AppPreferences.ROTATION_MODE_AUTO) {
@@ -403,9 +418,8 @@ class MainActivity : AppCompatActivity() {
         // that re-reads it (Compose recomposition, lifecycle observers) sees
         // the deep-link URI rather than the launcher MAIN intent.
         setIntent(intent)
-        widgetStartRoute.value = resolveStartRoute(intent)
+        widgetStartRoute.value = resolveStartRoute(intent, restored = false)
         handleServerPushIntent(intent)
-        openLinkedAssignment(intent, restored = false)
         openSharedClassTable(intent, restored = false)
     }
 
@@ -453,54 +467,43 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * The NavHost route [intent] asks for; see [startRouteOf].
-     * `widgetStartRoute` then drives the LaunchedEffect that navigates once
-     * Compose is ready. An assignment link has no route:
-     * [openLinkedAssignment] takes it, as [openSharedClassTable] takes a
-     * share code link.
+     * The NavHost route [intent] asks for; see [linkedStartRoute]. `widgetStartRoute` then drives
+     * the LaunchedEffect that navigates once Compose is ready. An assignment link, from a
+     * reminder, the due-soon Live Update or another app, opens the assignment's page in the app.
+     * It opens once per delivery: the link is dropped from the intent, and an Activity rebuilt from
+     * saved state ([restored]) or relaunched from Recents does not open it again. The page itself
+     * shows only an assignment this account has cached, so a link from elsewhere can open nothing
+     * but the user's own homework.
      */
-    private fun resolveStartRoute(intent: Intent?): String? = startRouteOf(intent)
-
-    /**
-     * Opens the assignment a `tigerduck://assignment/<id>` link names — from a
-     * reminder, the due-soon Live Update or another app — the way its Home
-     * row does: in the Moodle app, else in the browser, and not at all when
-     * Moodle gave it no address. As on iOS, only an assignment this account
-     * has cached opens, so a link from elsewhere can open nothing but the
-     * user's own homework, at the address Moodle gave.
-     *
-     * Once per delivery: the link is dropped from the intent, and an Activity
-     * rebuilt from saved state or relaunched from Recents does not open it
-     * again.
-     */
-    private fun openLinkedAssignment(intent: Intent?, restored: Boolean) {
-        intent ?: return
+    private fun resolveStartRoute(intent: Intent?, restored: Boolean): String? {
+        intent ?: return null
         val hadData = intent.data != null
-        val id = takeLinkedAssignmentId(intent, restored)
+        val route = linkedStartRoute(intent, restored)
         if (hadData && intent.data == null) setIntent(intent)
-        id ?: return
-        lifecycleScope.launch {
-            val assignment = linkedAssignment(id, dataCache.loadAssignments()) ?: return@launch
-            openAssignmentInMoodle(this@MainActivity, assignment)
-        }
+        return route
     }
 
     /**
      * Opens the class table with the import of the share code a link carries: an App Link from
-     * the camera, Google Lens, another QR app or a tapped link, or tigerduck.app's button. It
+     * the camera, Google Lens, another QR app or a tapped link, or the share page's button. It
      * takes the steps a scanned code does, and replaces an import already open. Only for someone
-     * signed in who has finished onboarding; otherwise the link just opens the app.
+     * signed in who has finished onboarding: before that the link is held ([HeldShareLink]), and
+     * opens then.
      *
-     * Once per delivery, as [openLinkedAssignment]: see [takeSharedClassTableCode]. The import
+     * Once per delivery, as [resolveStartRoute]: see [takeSharedClassTableCode]. The import
      * itself lives in [classTableImport], so a configuration change keeps it on screen.
      */
     private fun openSharedClassTable(intent: Intent?, restored: Boolean) {
         intent ?: return
         val hadData = intent.data != null
-        val mayImport = authService.authState.value && !appState.showOnboarding
-        val text = takeSharedClassTableCode(intent, restored, mayImport)
+        val text = takeSharedClassTableCode(intent, restored)
         if (hadData && intent.data == null) setIntent(intent)
         text ?: return
+        val mayImport = authService.authState.value && !appState.showOnboarding
+        heldShareLink.arrived(text, mayImport)?.let(::importSharedClassTable)
+    }
+
+    private fun importSharedClassTable(text: String) {
         // As a widget's tap opens it, on the user's own table; the import, once saved, shows the
         // person it added.
         widgetStartRoute.value = Screen.ClassTable.route
@@ -617,7 +620,7 @@ private fun ServerPushPopupHost(coordinator: ServerPushPopupCoordinator) {
  * when an update is awaiting the user's choice. Flavor-safe: on fdroid the
  * flow is permanently null, so the dialog never mounts.
  *
- * Pulls the hosting Activity from `LocalContext` because the "Update Now"
+ * Pulls the hosting Activity from `LocalActivity` because the "Update Now"
  * deep link needs an Activity context (FLAG_ACTIVITY_NEW_TASK is required
  * for the Play Store intent, and using the application context for that
  * silently no-ops on some OEM launchers).
@@ -625,7 +628,7 @@ private fun ServerPushPopupHost(coordinator: ServerPushPopupCoordinator) {
 @Composable
 private fun UpdatePromptHost(updateChecker: UpdateChecker) {
     val pending by updateChecker.pendingUpdate.collectAsStateWithLifecycle()
-    val activity = LocalContext.current as? Activity ?: return
+    val activity = LocalActivity.current ?: return
     if (pending != null) {
         UpdatePromptDialog(
             onUpdateNow = { updateChecker.onUpdateNow(activity) },
@@ -688,9 +691,15 @@ internal fun takeLinkedAssignmentId(intent: Intent, restored: Boolean): String? 
     return link.id.takeIf { !restored && !fromHistory }
 }
 
-/** The cached assignment [id] names, or null: as on iOS, only this account's own homework opens. */
-internal fun linkedAssignment(id: String, cached: List<Assignment>): Assignment? =
-    cached.firstOrNull { it.assignmentId == id }
+/**
+ * The NavHost route [intent] opens: the page of the assignment a `tigerduck://assignment/<id>`
+ * link names, once per delivery and not for an Activity [restored] from saved state (see
+ * [takeLinkedAssignmentId]), else whatever [startRouteOf] makes of it.
+ */
+internal fun linkedStartRoute(intent: Intent, restored: Boolean): String? {
+    takeLinkedAssignmentId(intent, restored)?.let { return Screen.Assignment.route(it) }
+    return startRouteOf(intent)
+}
 
 /**
  * Map intent input — the [StartRoute] extra of the app's own notifications,
@@ -710,16 +719,14 @@ internal fun startRouteOf(intent: Intent?): String? {
 }
 
 /**
- * The NavHost route [link] opens, or null for an assignment, which opens in
- * Moodle rather than on a screen of this app. Library goes through the
- * widget's sentinel so the library feature switch is read when the link
- * arrives.
+ * The NavHost route [link] opens. Library goes through the widget's sentinel
+ * so the library feature switch is read when the link arrives.
  */
 internal fun startRouteFor(link: AppLink): String? = when (link) {
     AppLink.Library -> LibraryShortcutWidget.ROUTE_SENTINEL
     AppLink.ClassTable -> Screen.ClassTable.route
     is AppLink.Announcement -> Screen.AnnouncementDetail.route(link.id)
-    is AppLink.Assignment -> null
+    is AppLink.Assignment -> Screen.Assignment.route(link.id)
 }
 
 /** Page ids of a pending What's New sheet, kept across a config-change recreation. */
@@ -740,7 +747,7 @@ private fun ReviewPromptHost(
     otherPromptShowing: Boolean,
 ) {
     val pending by reviewPrompt.pending.collectAsStateWithLifecycle()
-    val activity = LocalContext.current as? Activity ?: return
+    val activity = LocalActivity.current ?: return
     if (!pending || otherPromptShowing) return
     // Keyed on nothing: a recomposition while Play is being asked for the
     // flow must not ask twice. Leaving composition — the ask withdrawn, or

@@ -31,6 +31,7 @@
     <string name="action_allow">Permet</string>
     <string name="action_back">Enrere</string>
     <string name="action_cancel">Cancel·la</string>
+    <string name="action_change">Canvia</string>
     <string name="action_clear_text">Esborrar text</string>
     <string name="action_close">Tanca</string>
     <string name="action_confirm">Confirma</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Estil d\'interfície</string>
     <string name="settings_whats_new">Novetats</string>
     <string name="share_code_needs_update_message">Aquest codi per compartir necessita una versió més recent de l\'aplicació.</string>
+    <string name="sign_in_change_account_title">Canvia de compte</string>
     <string name="sign_in_password">Contrasenya</string>
     <string name="sign_in_student_id">ID d\'estudiant</string>
     <string name="source_code_picker_current_app_badge">App actual</string>

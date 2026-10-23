@@ -1067,6 +1067,41 @@ class NotificationSettingsSyncTest {
     }
 
     @Test
+    fun `a pull after a full sync reads no document again at the revision it found none at`() = runTest {
+        val device = Device(backgroundScope)
+        device.signIn("A")
+
+        device.sync.pullNow(knownRevision = 7)
+        device.sync.pullNow(knownRevision = 7)
+        assertEquals(1, device.server("A").reads)
+
+        // Any device's write of the document moves the revision.
+        device.sync.pullNow(knownRevision = 8)
+        assertEquals(2, device.server("A").reads)
+        // A settings screen's pull always reads.
+        device.sync.pullNow()
+        assertEquals(3, device.server("A").reads)
+    }
+
+    @Test
+    fun `a document found is read at every pull, and a missing one again after a sign-out`() = runTest {
+        val device = Device(backgroundScope)
+        device.signIn("A")
+        device.server("A").document = json("""{"live_activity": {"class_preparing_lead_seconds": 3600}}""")
+        device.sync.pullNow(knownRevision = 7)
+        device.sync.pullNow(knownRevision = 7)
+        assertEquals(2, device.server("A").reads)
+
+        device.signIn("B")
+        device.sync.pullNow(knownRevision = 7)
+        device.logOut()
+        device.signIn("B")
+        device.sync.pullNow(knownRevision = 7)
+
+        assertEquals(2, device.server("B").reads)
+    }
+
+    @Test
     fun `a relogin that fires inside a pull does not stop that pull from applying`() = runTest {
         val device = Device(backgroundScope)
         device.signIn("A")
