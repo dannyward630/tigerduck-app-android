@@ -415,6 +415,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
      */
     var searchErrorFolder: String? = null
 
+    /** The UIDVALIDITY a server search reports its matches under; null for a server that does not say. */
+    var searchValidity: Long? = 1
+
     /** How many times [search] went out, failed or not; [searchesSent] names them in order. */
     var searchCalls = 0
 
@@ -436,7 +439,7 @@ class FakeSchoolMailRepository : SchoolMailRepository {
             return cachedPages[folder].let { cached -> SearchOutcome.LoadedOnly(cached?.messages.orEmpty().filter { query in it.subject }, cached?.uidValidity) }
         }
         // Paged like the real repository: the newest [pageSize] matches, the rest left to fetch.
-        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = 1)
+        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = searchValidity)
     }
 
     /** Every `(folder, uids)` handed to [searchPage], in order -- asked for, whether or not it then went out. */

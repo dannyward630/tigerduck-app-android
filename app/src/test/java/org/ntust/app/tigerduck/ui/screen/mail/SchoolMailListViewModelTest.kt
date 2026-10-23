@@ -2476,7 +2476,7 @@ class SchoolMailListViewModelTest {
         vm.load()
         val row = vm.state.value.displayed.first { it.uid == 2L }
         vm.delete(row)
-        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false, account.accountGeneration, uidValidity = 1L), vm.state.value.pendingDelete)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false, account.accountGeneration), vm.state.value.pendingDelete)
 
         vm.confirmDelete(false)
         assertNull(vm.state.value.pendingDelete)
@@ -2498,7 +2498,7 @@ class SchoolMailListViewModelTest {
         vm.selectFolder(FolderSelection.Real(trash))
         val row = vm.state.value.displayed.first { it.uid == 8L }
         vm.delete(row)
-        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true, account.accountGeneration, uidValidity = 1L), vm.state.value.pendingDelete)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true, account.accountGeneration), vm.state.value.pendingDelete)
 
         vm.confirmDelete(false)
         assertNull(vm.state.value.pendingDelete)
@@ -2999,5 +2999,42 @@ class SchoolMailListViewModelTest {
         vm.moveTo("INBOX")
         assertTrue("a move went out under another UIDVALIDITY", repo.moved.isEmpty())
         assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+    }
+
+    @Test
+    fun `a search row's delete carries the folder version the search read it under`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        // The first page fails with nothing cached, so the list knows no version of the folder.
+        repo.loadError = MailError.Network()
+        vm.loadIfNeeded()
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        // The folder is recreated on the server while the question is up, its UIDs given out again.
+        repo.pageValidity = 2
+        vm.confirmDelete(true)
+        assertTrue("the delete went out unchecked for another mail under the same UID", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+    }
+
+    @Test
+    fun `a row whose folder version is not known is neither deleted nor moved`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        repo.loadError = MailError.Network()
+        vm.loadIfNeeded()
+        // A search whose server did not say which version of the folder it read.
+        repo.searchValidity = null
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        vm.confirmDelete(true)
+        assertTrue("a delete went out with no version to check", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+        vm.dismissActionError()
+        vm.requestMove(row)
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        assertTrue("a move went out with no version to check", repo.moved.isEmpty())
     }
 }

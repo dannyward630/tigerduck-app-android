@@ -66,16 +66,15 @@ class SchoolMailListViewModel @Inject constructor(
     /**
      * [row]'s delete, asked before it is made: [permanently] when it destroys the mail rather than
      * moving it to the trash ([SchoolMailRepository.deletesPermanently]), which asks the harder
-     * question. [generation] is the [MailAccount.accountGeneration] it was asked under, and
-     * [uidValidity] the UIDVALIDITY the list had read [row]'s folder under; see [write].
+     * question. [generation] is the [MailAccount.accountGeneration] it was asked under; see [write].
      */
-    data class PendingDelete(val row: MailRow, val permanently: Boolean, val generation: Int, val uidValidity: Long?)
+    data class PendingDelete(val row: MailRow, val permanently: Boolean, val generation: Int)
 
     /** A folder a mail can be moved to; [kind] when it is a special one, which is shown by its own name. */
     data class MoveTarget(val folder: String, val kind: SpecialFolder?)
 
-    /** [row]'s move, waiting on which of [targets] it goes to; [generation] and [uidValidity] as on [PendingDelete]. */
-    data class PendingMove(val row: MailRow, val targets: List<MoveTarget>, val generation: Int, val uidValidity: Long?)
+    /** [row]'s move, waiting on which of [targets] it goes to; [generation] as on [PendingDelete]. */
+    data class PendingMove(val row: MailRow, val targets: List<MoveTarget>, val generation: Int)
 
     data class UiState(
         val chips: List<FolderChip> = emptyList(),
@@ -626,14 +625,13 @@ class SchoolMailListViewModel @Inject constructor(
      * the next student's mailbox.
      */
     fun delete(row: MailRow) {
-        if (!mayAsk(row)) return
+        if (!mayAsk(row) || !knowsVersionOf(row)) return
         val generation = account.accountGeneration
-        val uidValidity = folderValidity[row.folder]
         asking = viewModelScope.launch {
             try {
                 val permanently = repository.deletesPermanently(row.folder) { account.accountGeneration == generation }
                 if (account.accountGeneration != generation) return@launch
-                _state.update { it.copy(pendingDelete = PendingDelete(row, permanently, generation, uidValidity)) }
+                _state.update { it.copy(pendingDelete = PendingDelete(row, permanently, generation)) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -647,7 +645,7 @@ class SchoolMailListViewModel @Inject constructor(
     fun confirmDelete(confirm: Boolean) {
         val pending = _state.value.pendingDelete ?: return
         _state.update { it.copy(pendingDelete = null) }
-        if (confirm) write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted -> repository.delete(row.folder, row.uid, pending.uidValidity, stillWanted) }
+        if (confirm) write(pending.row, pending.generation) { row, stillWanted -> repository.delete(row.folder, row.uid, row.uidValidity, stillWanted) }
     }
 
     /**
@@ -659,16 +657,15 @@ class SchoolMailListViewModel @Inject constructor(
      * held as [delete] holds it.
      */
     fun requestMove(row: MailRow) {
-        if (!mayAsk(row)) return
+        if (!mayAsk(row) || !knowsVersionOf(row)) return
         val generation = account.accountGeneration
-        val uidValidity = folderValidity[row.folder]
         asking = viewModelScope.launch {
             try {
                 val folders = repository.folders { account.accountGeneration == generation }
                 if (account.accountGeneration != generation) return@launch
                 val targets = SpecialFolder.entries.mapNotNull { kind -> folders.nameOf(kind)?.let { MoveTarget(it, kind) } } +
                     folders.others.map { MoveTarget(it, null) }
-                _state.update { it.copy(pendingMove = PendingMove(row, targets.filter { t -> t.folder != row.folder }, generation, uidValidity)) }
+                _state.update { it.copy(pendingMove = PendingMove(row, targets.filter { t -> t.folder != row.folder }, generation)) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -694,10 +691,22 @@ class SchoolMailListViewModel @Inject constructor(
     fun moveTo(target: String) {
         val pending = _state.value.pendingMove ?: return
         _state.update { it.copy(pendingMove = null) }
-        write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted ->
-            repository.move(row.folder, row.uid, target, pending.uidValidity, stillWanted)
+        write(pending.row, pending.generation) { row, stillWanted ->
+            repository.move(row.folder, row.uid, target, row.uidValidity, stillWanted)
             if (stillWanted() && target in _state.value.targets) refetch()
         }
+    }
+
+    /**
+     * Whether the UIDVALIDITY [row] was read under is known, without which a delete or move of it
+     * could not be checked against the folder it reaches and is refused, as one of a recreated
+     * folder is, before anything is asked. Every page and server search says; only a search the
+     * server answered without one leaves a row without it.
+     */
+    private fun knowsVersionOf(row: MailRow): Boolean {
+        if (row.uidValidity != null) return true
+        actionFail(MailError.FolderChanged())
+        return false
     }
 
     /**
@@ -717,13 +726,14 @@ class SchoolMailListViewModel @Inject constructor(
      * behind other requests while another student signs in. Nor while another write of [row] is
      * still out ([UiState.writing]), which holds the row from here to its end.
      *
-     * Nor once a page of [row]'s folder has come back under another UIDVALIDITY than [uidValidity],
-     * the one the list had when the question was asked: the folder was recreated on the server
-     * while the question was up -- a poll's page can land meanwhile -- and the UID names another
-     * mail there. The repository's own check compares the server with its cache, which that page
-     * has replaced by then, so it would let the write through. A folder recreated with no page of
-     * it on the list yet is refused by the server as the write selects it, since the write carries
-     * [uidValidity] there too ([SchoolMailRepository.move]).
+     * Nor once a page of [row]'s folder has come back under another UIDVALIDITY than the row's own
+     * ([MailRow.uidValidity]), the one its page or search read it under: the folder was recreated
+     * on the server while the question was up -- a poll's page can land meanwhile -- and the UID
+     * names another mail there. The repository's own check compares the server with its cache,
+     * which that page has replaced by then, so it would let the write through. A folder recreated
+     * with no page of it on the list -- a search's row, whose folder's first page never came -- is
+     * refused by the server as the write selects it, since the write carries the row's
+     * UIDVALIDITY there too ([SchoolMailRepository.move]). A row without one is never sent.
      *
      * The row leaves the list through the repository's feed ([apply]), as a swipe's mark-read
      * changes it ([toggleRead]), and not here as well: a write held on the connection can end
@@ -731,9 +741,10 @@ class SchoolMailListViewModel @Inject constructor(
      * Nor is such a write's failure theirs to see ([dropped]), and least of all a rejected
      * password, which would mark theirs rejected.
      */
-    private fun write(row: MailRow, generation: Int, uidValidity: Long?, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
+    private fun write(row: MailRow, generation: Int, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
         if (account.accountGeneration != generation || row.key in _state.value.writing) return
-        if (folderValidity[row.folder] != uidValidity) {
+        val listed = folderValidity[row.folder]
+        if (row.uidValidity == null || (listed != null && listed != row.uidValidity)) {
             actionFail(MailError.FolderChanged())
             return
         }
@@ -1127,9 +1138,11 @@ class SchoolMailListViewModel @Inject constructor(
             var failure: MailError? = null
             var serverUnreachable = false
             val outcomes = _state.value.targets.map { folder ->
+                // Under the version the list read the folder's rows under, which they then keep.
                 val loadedMatches = {
                     SearchOutcome.LoadedOnly(
                         _state.value.messages.filter { it.folder == folder && matchesLoadedMail(it.summary, query) }.map { it.summary },
+                        folderValidity[folder],
                     )
                 }
                 folder to if (serverUnreachable) {
@@ -1167,7 +1180,14 @@ class SchoolMailListViewModel @Inject constructor(
                 failure?.takeIf { it is MailError.Certificate || it is MailError.AuthFailed }?.let(::searchFail)
                 return
             }
-            val rows = outcomes.flatMap { (folder, outcome) -> outcome.messages.map { MailRow(folder, it) } }
+            val rows = outcomes.flatMap { (folder, outcome) ->
+                // Each row keeps the version of the folder its matches were read under.
+                val version = when (outcome) {
+                    is SearchOutcome.Server -> outcome.uidValidity
+                    is SearchOutcome.LoadedOnly -> outcome.uidValidity
+                }
+                outcome.messages.map { MailRow(folder, it, version) }
+            }
             unfetchedMatches = outcomes.mapNotNull { (folder, outcome) ->
                 (outcome as? SearchOutcome.Server)?.takeIf { it.remaining.isNotEmpty() }
                     ?.let { folder to UnfetchedMatches(it.uidValidity, it.remaining) }
@@ -1247,7 +1267,7 @@ class SchoolMailListViewModel @Inject constructor(
                     _state.update { st ->
                         val results = st.searchResults ?: return@update st
                         val listed = results.mapTo(HashSet()) { it.key }
-                        val added = page.messages.map { MailRow(folder, it) }.filter { it.key !in listed }
+                        val added = page.messages.map { MailRow(folder, it, page.uidValidity) }.filter { it.key !in listed }
                         st.copy(searchResults = ordered(selection, results + added))
                     }
                     refetchIfChangedSince(listOf(folder), since)
@@ -1425,7 +1445,7 @@ class SchoolMailListViewModel @Inject constructor(
     }
 
     private fun rowsOf(selection: FolderSelection, pages: List<Pair<String, MailPage>>): List<MailRow> =
-        ordered(selection, pages.flatMap { (folder, page) -> page.messages.map { MailRow(folder, it) } })
+        ordered(selection, pages.flatMap { (folder, page) -> page.messages.map { MailRow(folder, it, page.uidValidity) } })
 
     /**
      * A merged view is ordered by date, because the folders' UID spaces say nothing about each
@@ -1448,7 +1468,7 @@ class SchoolMailListViewModel @Inject constructor(
         val window = page.windowUids
             ?: page.messages.takeIf { it.isNotEmpty() }?.let { m -> m.minOf { it.uid }..m.maxOf { it.uid } }
         val kept = if (window == null) rows else rows.filterNot { it.folder == folder && it.uid in window }
-        val fresh = page.messages.map { MailRow(folder, it) }
+        val fresh = page.messages.map { MailRow(folder, it, page.uidValidity) }
         val freshKeys = fresh.mapTo(HashSet()) { it.key }
         return kept.filterNot { it.key in freshKeys } + fresh
     }
