@@ -272,6 +272,7 @@
     <string name="color_name_pink">Roz</string>
     <string name="color_name_purple">Mov</string>
     <string name="color_name_red">Roșu</string>
+    <string name="color_name_wallpaper">Culorile imaginii de fundal</string>
     <string name="color_picker_apply">Aplică</string>
     <string name="color_picker_custom">Personalizat</string>
     <string name="color_picker_presets_note">Culori prestabilite</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">Deschizi acest atașament?</string>
     <string name="school_mail_save_draft">Salvează ciorna</string>
     <string name="school_mail_saved">Salvat</string>
+    <string name="school_mail_search_index_partial">E-mailurile încă se descarcă. Căutarea s-ar putea să nu găsească unele e-mailuri mai vechi.</string>
     <string name="school_mail_search_local_only">Serverul nu poate efectua această căutare. Se afișează doar rezultatele din e-mailurile deja încărcate.</string>
     <string name="school_mail_search_prompt">Caută în e-mailuri</string>
     <string name="school_mail_send">Trimite</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">Numărul de matricol și parola ta trebuie să fie aceleași ca în sistemul universitar. TigerDuck stochează această parolă doar criptată pe acest dispozitiv și nu o încarcă niciodată online.</string>
     <string name="school_mail_sign_in_prompt_title">Conectează-te la e-mailul universitar</string>
     <string name="school_mail_source_failed">Sursa nu a putut fi încărcată.</string>
+    <string name="school_mail_storage_delete_message">E-mailurile tale rămân pe serverul universității. Vor fi descărcate din nou data viitoare când deschizi E-mail universitar, iar până atunci căutarea s-ar putea să nu le găsească pe toate.</string>
+    <string name="school_mail_storage_delete_title">Ștergi e-mailurile descărcate?</string>
+    <string name="school_mail_storage_footer">Sunt descărcate ca să poți căuta în toate e-mailurile și să le derulezi fără să aștepți.</string>
+    <string name="school_mail_storage_title">E-mailuri descărcate</string>
     <string name="school_mail_subject">Subiect</string>
     <string name="school_mail_to">Către</string>
     <string name="school_mail_too_large">Atașamentele depășesc limita de 50 MB</string>
