@@ -442,6 +442,7 @@
     <string name="error_invalid_server_response">Neplatná odpoveď servera</string>
     <string name="error_library_credentials_not_found">Prihlasovacie údaje knižnice sa nenašli</string>
     <string name="error_library_sign_in_failed_format">Prihlásenie do knižnice zlyhalo: %1$@</string>
+    <string name="error_link_no_app">Tento odkaz nedokáže otvoriť žiadna aplikácia</string>
     <string name="error_moodle_http_status_format">Moodle vrátil neočakávaný stav HTTP: %1$d</string>
     <string name="error_moodle_invalid_credentials">Moodle odmietol aktuálne prihlasovacie údaje.</string>
     <string name="error_moodle_invalid_token">Token Moodle už nie je platný; vyžaduje sa opätovné overenie.</string>
@@ -1016,6 +1017,7 @@
     <string name="settings_view_source_code">Zobraziť zdrojový kód</string>
     <string name="settings_visual_preset_label">Štýl rozhrania</string>
     <string name="settings_whats_new">Čo je nové</string>
+    <string name="share_code_needs_update_message">Tento kód na zdieľanie vyžaduje novšiu verziu aplikácie.</string>
     <string name="sign_in_password">Heslo</string>
     <string name="sign_in_student_id">Číslo študenta</string>
     <string name="source_code_picker_current_app_badge">Táto aplikácia</string>
