@@ -764,7 +764,7 @@ class MailRepository @Inject constructor(
         } catch (e: MailError.AuthFailed) {
             // Unless the account that was refused has left since: its rejection must not stop the
             // next one, whose password the server has not seen.
-            if (account.accountGeneration == owner.generation) account.onAuthFailure()
+            account.onAuthFailure(owner.generation)
             throw e
         }
     }

@@ -125,6 +125,23 @@ class MailAccountTest {
     }
 
     @Test
+    fun `a refusal of a login sent under a sign-in that has left marks nothing and stops nothing`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        val before = account.accountGeneration
+        // Signed in again, as the same student with the same password.
+        account.signIn("b10000001", "pw")
+
+        account.onAuthFailure(before)
+        assertFalse(account.authFailed.value)
+        assertEquals(0, scheduler.cancelled)
+
+        account.onAuthFailure(account.accountGeneration)
+        assertTrue(account.authFailed.value)
+        assertEquals(1, scheduler.cancelled)
+    }
+
+    @Test
     fun `auth failure stops background checks`() = runTest {
         val account = account()
         account.signIn("b10000001", "pw")
