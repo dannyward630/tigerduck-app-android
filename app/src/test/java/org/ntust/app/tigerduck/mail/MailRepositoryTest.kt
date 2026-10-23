@@ -715,6 +715,28 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `deleting the mail kept on the phone empties it, stops its download, and the next visit downloads it again`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
+        visit(repo)
+        val owner = setup.account.ownAddress!!.lowercase()
+        assertTrue(repo.searchIndexBytes() > 0)
+        val cancels = setup.indexScheduler.cancels
+
+        repo.deleteSearchIndex()
+
+        assertEquals(0L, repo.searchIndexBytes())
+        assertTrue(setup.searchIndex.uids(owner, "INBOX").isEmpty())
+        assertTrue(setup.indexScheduler.cancels > cancels)
+        now += 1_000
+        visit(repo)
+        assertEquals("downloaded again, however soon", 1, setup.searchIndex.uids(owner, "INBOX").size)
+    }
+
+    @Test
     fun `mail gone from the server leaves the index`() = runTest {
         val gone = server.deliver("期中考 A")
         val kept = server.deliver("期中考 B")

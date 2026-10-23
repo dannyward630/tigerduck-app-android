@@ -96,6 +96,11 @@ class InMemoryMailSearchIndex : MailSearchIndex {
         mail.clear()
     }
 
+    /** What the entries would take: their text, roughly, as a test only compares it to none. */
+    @Synchronized
+    override fun sizeBytes(): Long =
+        mail.values.sumOf { box -> box.values.sumOf { (it.sender.length + it.subject.length + it.body.length).toLong() } }
+
     private fun String.asciiLower() = map { if (it in 'A'..'Z') it + 32 else it }.joinToString("")
 }
 

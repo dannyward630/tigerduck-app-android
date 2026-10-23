@@ -13,6 +13,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.mail.FakeDemoGate
 import org.ntust.app.tigerduck.mail.FakeMailServer
+import org.ntust.app.tigerduck.mail.FakeSchoolMailRepository
 import org.ntust.app.tigerduck.mail.InMemoryCredentialStore
 import org.ntust.app.tigerduck.mail.InMemoryMailStateStore
 import org.ntust.app.tigerduck.mail.MailAccount
@@ -34,6 +35,8 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
 class SchoolMailSettingsPermissionTest {
+    private val repository = FakeSchoolMailRepository()
+
     @get:Rule val main = MainDispatcherRule()
     @get:Rule val tmp = TemporaryFolder()
 
@@ -47,7 +50,7 @@ class SchoolMailSettingsPermissionTest {
             RecordingScheduler(), RecordingNotifier(), testApplicationScope(),
         )
         return SchoolMailSettingsViewModel(
-            state, RecordingScheduler(), ExactAlarmAccess { true }, cache, main.dispatcher, account, SystemPermissions(context),
+            state, RecordingScheduler(), ExactAlarmAccess { true }, cache, repository, main.dispatcher, account, SystemPermissions(context),
         )
     }
 

@@ -11,6 +11,7 @@ import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.store.toDto
 import org.ntust.app.tigerduck.mail.store.toModel
 import java.io.Closeable
+import java.io.File
 
 /**
  * Every mail's sender, subject and text, kept on the phone so a search runs here: the school's
@@ -62,15 +63,18 @@ interface MailSearchIndex {
      */
     fun updateFlags(owner: String, folder: String, flags: Map<Long, MailFlags>)
 
-    /** Empties it, for a sign-out. */
+    /** Empties it, for a sign-out or the user deleting it, and gives back the disk it took. */
     fun clear()
+
+    /** The disk it takes, in bytes. */
+    fun sizeBytes(): Long
 }
 
 /**
  * [MailSearchIndex] in SQLite, in the app's own storage, which no backup or device transfer copies
  * (data_extraction_rules.xml). [name] null keeps it in memory.
  */
-class SqliteMailSearchIndex(context: Context, name: String? = DB_NAME) : MailSearchIndex, Closeable {
+class SqliteMailSearchIndex(private val context: Context, private val name: String? = DB_NAME) : MailSearchIndex, Closeable {
 
     private val gson = Gson()
 
@@ -242,7 +246,17 @@ class SqliteMailSearchIndex(context: Context, name: String? = DB_NAME) : MailSea
         runCatching { gson.fromJson(json, MailSummaryDto::class.java)?.toModel() }.getOrNull()
 
     @Synchronized
-    override fun clear() = transaction { clearLocked() }
+    override fun clear() {
+        transaction { clearLocked() }
+        // Rows deleted leave their pages in the file: rewritten, it gives the disk back.
+        db.execSQL("VACUUM")
+    }
+
+    @Synchronized
+    override fun sizeBytes(): Long {
+        val file = name?.let(context::getDatabasePath) ?: return 0L
+        return listOf(file, File(file.path + "-journal"), File(file.path + "-wal")).sumOf { it.length() }
+    }
 
     @Synchronized
     override fun close() = helper.close()

@@ -25,6 +25,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
+import org.ntust.app.tigerduck.mail.SchoolMailRepository
 
 object MailDiagnostics {
     private val FORMAT = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss").withZone(ZoneId.of("Asia/Taipei"))
@@ -44,6 +45,7 @@ class SchoolMailSettingsViewModel @Inject constructor(
     private val scheduler: MailBackgroundScheduler,
     private val exactAlarms: ExactAlarmAccess,
     private val cache: MailCache,
+    private val repository: SchoolMailRepository,
     @IoDispatcher private val io: CoroutineDispatcher,
     account: MailAccount,
     val systemPermissions: SystemPermissions,
@@ -95,6 +97,26 @@ class SchoolMailSettingsViewModel @Inject constructor(
     /** Walking a directory tree is IO, so the measurement never runs on the main thread. */
     fun refreshCacheSize() {
         viewModelScope.launch { _cacheBytes.value = withContext(io) { cache.sizeBytes() } }
+        viewModelScope.launch { _storageBytes.value = repository.searchIndexBytes() }
+    }
+
+    private val _storageBytes = MutableStateFlow<Long?>(null)
+
+    /**
+     * The disk the mail downloaded for search and the list takes; null until measured. Apart from
+     * the cache, which the system may empty on its own: this one only the user or a sign-out does.
+     */
+    val storageBytes: StateFlow<Long?> = _storageBytes.asStateFlow()
+
+    /**
+     * Deletes the mail downloaded for search and the list, and measures again. The mail screen
+     * downloads it again when next opened, which for a large mailbox takes a while.
+     */
+    fun deleteStorage() {
+        viewModelScope.launch {
+            repository.deleteSearchIndex()
+            _storageBytes.value = repository.searchIndexBytes()
+        }
     }
 
     /**

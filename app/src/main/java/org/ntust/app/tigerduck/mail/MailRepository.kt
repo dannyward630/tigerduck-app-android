@@ -5,6 +5,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -181,6 +183,15 @@ interface SchoolMailRepository {
 
     /** How far [updateSearchIndex] has come while it downloads; null otherwise. */
     val searchIndexProgress: StateFlow<MailIndexProgress?>
+
+    /** The disk the mail downloaded for search and the list takes on the phone, in bytes. */
+    suspend fun searchIndexBytes(): Long
+
+    /**
+     * Deletes the mail downloaded for search and the list, stopping any download under way. The
+     * mail screen downloads it again when it is next opened.
+     */
+    suspend fun deleteSearchIndex()
 
     /**
      * The summaries of [uids], matches [search] left in [SearchOutcome.Server.remaining]; mail gone
@@ -833,6 +844,19 @@ class MailRepository @Inject constructor(
 
     override fun release() = holder.releaseLater()
 
+    /** The download running in the app, which deleting what it downloads stops. */
+    @Volatile private var inAppIndexing: Job? = null
+
+    override suspend fun searchIndexBytes(): Long = withContext(Dispatchers.IO) { searchIndex.sizeBytes() }
+
+    override suspend fun deleteSearchIndex() {
+        indexScheduler.cancel()
+        inAppIndexing?.cancelAndJoin()
+        indexedAt = 0L
+        numberings.clear()
+        withContext(Dispatchers.IO) { searchIndex.clear() }
+    }
+
     /** A download got through every folder for the account [generation] names, if it still is. */
     private fun indexed(generation: Int) {
         if (account.accountGeneration == generation) indexedAt = clock()
@@ -846,7 +870,7 @@ class MailRepository @Inject constructor(
         // when the system next runs the background download, which some phones hold back for
         // minutes. That one still finishes what this leaves, should the app go.
         indexScheduler.request()
-        scope.launch {
+        inAppIndexing = scope.launch {
             if (!indexing.tryLock()) return@launch
             try {
                 downloadIndex()

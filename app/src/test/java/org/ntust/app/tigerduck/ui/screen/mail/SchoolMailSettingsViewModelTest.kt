@@ -24,9 +24,12 @@ import org.ntust.app.tigerduck.mail.sync.ExactAlarmAccess
 import org.ntust.app.tigerduck.mail.testApplicationScope
 import org.ntust.app.tigerduck.notification.SystemPermissions
 import java.io.File
+import org.ntust.app.tigerduck.mail.FakeSchoolMailRepository
 import org.ntust.app.tigerduck.mail.schoolMailSite
 
 class SchoolMailSettingsViewModelTest {
+    private val repository = FakeSchoolMailRepository()
+
     @get:Rule val main = MainDispatcherRule()
     @get:Rule val tmp = TemporaryFolder()
 
@@ -50,7 +53,7 @@ class SchoolMailSettingsViewModelTest {
         // cache walk stays synchronous under the test. The permission check reads the stub SDK
         // level, which predates the notification permission, so it never touches the context.
         return SchoolMailSettingsViewModel(
-            state, scheduler, ExactAlarmAccess { false }, cache, main.dispatcher, account, SystemPermissions(Application()),
+            state, scheduler, ExactAlarmAccess { false }, cache, repository, main.dispatcher, account, SystemPermissions(Application()),
         )
     }
 
@@ -146,5 +149,18 @@ class SchoolMailSettingsViewModelTest {
     fun `the demo mailbox counts as signed in`() {
         signIn(demo.box.studentId.orEmpty(), demo.box.password.orEmpty())
         assertTrue(viewModel().signedIn.value)
+    }
+
+    @Test
+    fun `the mail kept on the phone is measured apart from the cache, and deleting it empties the row`() {
+        repository.searchIndexBytes = 7_000_000L
+        val vm = viewModel()
+        vm.refreshCacheSize()
+        assertEquals(7_000_000L, vm.storageBytes.value)
+
+        vm.deleteStorage()
+
+        assertEquals(1, repository.searchIndexDeletes)
+        assertEquals(0L, vm.storageBytes.value)
     }
 }

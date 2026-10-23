@@ -420,6 +420,18 @@ class FakeSchoolMailRepository : SchoolMailRepository {
 
     override val searchIndexProgress = MutableStateFlow<MailIndexProgress?>(null)
 
+    /** What the mail downloaded for search takes, as the settings page reads it. */
+    var searchIndexBytes = 0L
+
+    override suspend fun searchIndexBytes(): Long = searchIndexBytes
+
+    var searchIndexDeletes = 0
+
+    override suspend fun deleteSearchIndex() {
+        searchIndexDeletes++
+        searchIndexBytes = 0L
+    }
+
     override suspend fun searchPage(folder: String, uids: List<Long>, stillWanted: () -> Boolean): SearchPage {
         foldersTouched += folder
         searchPages += folder to uids
