@@ -97,6 +97,24 @@ class CoursePagesTest {
     }
 
     @Test
+    fun `the page on top reads as on top from its first frame`() {
+        // A sheet open across a change of dark mode would otherwise close for a frame, and come
+        // back rebuilt at half height.
+        var firstFrame: Boolean? = null
+        composeRule.setContent {
+            navController = rememberNavController()
+            NavHost(navController = navController, startDestination = Screen.ClassTable.route) {
+                composable(Screen.ClassTable.route) { entry ->
+                    val onTop = navController.isOnTop(entry)
+                    if (firstFrame == null) firstFrame = onTop
+                }
+            }
+        }
+        composeRule.waitForIdle()
+        assertTrue(firstFrame == true)
+    }
+
+    @Test
     fun `the sheet's page is off the top while a page it opened shows, and back on top after a back`() {
         // A stand-in page under a course route: the Moodle screens need Hilt, which this test has not.
         composeRule.setContent {

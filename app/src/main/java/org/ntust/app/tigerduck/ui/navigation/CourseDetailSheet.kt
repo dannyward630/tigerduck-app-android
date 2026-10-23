@@ -14,6 +14,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
@@ -25,7 +26,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.CourseDetailSheetPage
@@ -50,7 +50,9 @@ internal object CourseDetailSheetRules {
 /** Whether [entry] is the page on top: false from the moment a page is opened over it. */
 @Composable
 internal fun NavController.isOnTop(entry: NavBackStackEntry): Boolean {
-    val current by currentBackStackEntryAsState()
+    // Seeded with the page on top now: the flow's first answer comes a frame late, and a sheet
+    // open across a change of dark mode would close for that frame.
+    val current by currentBackStackEntryFlow.collectAsState(initial = currentBackStackEntry)
     return current?.id == entry.id
 }
 

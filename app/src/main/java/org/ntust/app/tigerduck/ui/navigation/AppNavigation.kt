@@ -606,8 +606,9 @@ fun MainNavigation(
                     navArgument("mailto") { type = NavType.StringType; defaultValue = "" },
                     navArgument("to") { type = NavType.StringType; defaultValue = "" },
                 ),
-            ) {
-                org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeScreen(onDone = { navController.popBackStack() })
+            ) { entry ->
+                // Not a bare pop: a send can finish after a link has opened another page over it.
+                org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeScreen(onDone = { navController.popIfTop(entry) })
             }
             page(Screen.Score.route) {
                 ScoreScreen(onOpenSignInSettings = openSignInSettings)
