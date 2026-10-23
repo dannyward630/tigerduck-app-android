@@ -518,6 +518,15 @@ class AssignmentReminderCheckTest {
             .filter { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_ASSIGNMENT_ID) == assignmentId }
             .map { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_OFFSET) }
 
+    /** The due date each of [assignmentId]'s armed reminders carries. */
+    // Robolectric 4.17 deprecates the operation field but has no getter for it.
+    @Suppress("DEPRECATION")
+    private fun armedDueAtsOf(assignmentId: String): List<Long> =
+        shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms
+            .map { shadowOf(it.operation).savedIntent }
+            .filter { it.getStringExtra(AssignmentNotificationReceiver.EXTRA_ASSIGNMENT_ID) == assignmentId }
+            .map { it.getLongExtra(AssignmentNotificationReceiver.EXTRA_DUE_AT, 0L) }
+
     @Test
     fun `learning one assignment's extension leaves another's reminder that is due but not delivered`() = runBlocking {
         val start = AppClock.nowMillis()
@@ -539,7 +548,8 @@ class AssignmentReminderCheckTest {
                 "the other assignment's reminder waiting to go off",
                 AssignmentReminderOffset.HR2.rawValue in armedOffsetsOf("20978"),
             )
-            assertTrue("this one's reminders moved to the extension", armedDueAts().isNotEmpty())
+            assertTrue("this one's reminders armed again", armedOffsetsOf("20977").isNotEmpty())
+            assertTrue("this one's reminders moved to the extension", armedDueAtsOf("20977").all { it == extension })
         } finally {
             AppClock.setOverride(null)
         }
