@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!--
+        Temporary. color_name_wallpaper is written by hand in three locales
+        until it moves into the app-translation submodule, which then gives it
+        every locale. Delete this file with the strings_wallpaper.xml files.
+    -->
+    <issue id="MissingTranslation">
+        <ignore path="src/main/res/values/strings_wallpaper.xml" />
+    </issue>
+</lint>
