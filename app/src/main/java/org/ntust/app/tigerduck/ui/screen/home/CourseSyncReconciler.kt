@@ -236,6 +236,26 @@ object CourseSyncReconciler {
     fun withoutRestored(semester: String, tombstones: Set<String>, restoredNos: Set<String>): Set<String> =
         tombstones - restoredNos.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
 
+    /**
+     * The term's courses as a sync commits them: [current], the list as it
+     * stands now, without the courses the sync pruned from [read], its own
+     * earlier load, as [kept] says, and with the rows it merged down
+     * ([merged]) that [current] still lacks. A course a delete or a fetch
+     * took out or put in since the read stays as that left it, where writing
+     * [kept] back would undo it.
+     */
+    fun committedCourses(
+        current: List<Course>,
+        read: List<Course>,
+        kept: List<Course>,
+        merged: List<Course> = emptyList(),
+    ): List<Course> {
+        val pruned = read.mapTo(mutableSetOf()) { it.courseNo } - kept.mapTo(mutableSetOf()) { it.courseNo }
+        val held = current.filter { it.courseNo !in pruned }
+        val heldNos = held.mapTo(mutableSetOf()) { it.courseNo }
+        return held + merged.filter { it.courseNo !in heldNos }
+    }
+
     data class SemesterOutcome(
         val tombstones: Set<String>,
         val merged: List<Course>,

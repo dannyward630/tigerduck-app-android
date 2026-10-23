@@ -335,7 +335,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
         // the cache is pruned on the first run, not the next change.
         CourseSyncReconciler.pruneHidden(semester, localCourses, outcome.tombstones, legacyBare = false)
             ?.let { kept ->
-                dataCache.saveCourses(kept, semester)
+                dataCache.updateCourses(semester) { CourseSyncReconciler.committedCourses(it, localCourses, kept) }
                 // A course hidden since takes its waiting colour and name
                 // with it; see PendingCourseOverrides.forget.
                 pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })

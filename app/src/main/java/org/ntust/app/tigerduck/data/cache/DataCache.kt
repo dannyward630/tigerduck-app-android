@@ -158,7 +158,22 @@ class DataCache @Inject constructor(
      * Manual courses have no remote source — if the cache is evicted they
      * can only be recovered from userDataDir.
      */
-    suspend fun saveCourses(courses: List<Course>, semester: String) {
+    suspend fun saveCourses(courses: List<Course>, semester: String) = coursesMutex.withLock { writeCourses(courses, semester) }
+
+    /**
+     * [semester]'s courses as [change] makes them of the list as it stands,
+     * with no other save of a term between the read and the write, for a sync
+     * that commits only what it changed: a delete or a fetch saved while it
+     * ran stays as that left it.
+     */
+    suspend fun updateCourses(semester: String, change: (List<Course>) -> List<Course>) = coursesMutex.withLock {
+        writeCourses(change(loadCourses(semester)), semester)
+    }
+
+    // Every write of a term's courses, one at a time; see updateCourses.
+    private val coursesMutex = Mutex()
+
+    private suspend fun writeCourses(courses: List<Course>, semester: String) {
         absorbLegacyCourseCache()
         val (manual, remote) = courses.partition { it.isManual }
         save(remote, coursesFilename(semester))

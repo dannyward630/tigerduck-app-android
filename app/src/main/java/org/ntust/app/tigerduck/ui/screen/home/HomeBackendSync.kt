@@ -523,8 +523,8 @@ class HomeBackendSync @Inject constructor(
                 pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
             }
             if (outcome.uploadLocal) {
-                pruned?.let {
-                    dataCache.saveCourses(it, semester)
+                pruned?.let { kept ->
+                    dataCache.updateCourses(semester) { CourseSyncReconciler.committedCourses(it, localCourses, kept) }
                     if (semester == currentSemester) touchedCurrent = true
                 }
                 // Sent whatever the upload ledger remembers (resend): the
@@ -549,7 +549,10 @@ class HomeBackendSync @Inject constructor(
                 if (outcome.merged.isNotEmpty()) {
                     Log.i(TAG, "[Sync] $semester: merged from server ${outcome.merged.map { it.courseNo }}")
                 }
-                dataCache.saveCourses((pruned ?: localCourses) + outcome.merged, semester)
+                // Onto the list as it stands: a delete or fetch saved since the load stays.
+                dataCache.updateCourses(semester) {
+                    CourseSyncReconciler.committedCourses(it, localCourses, pruned ?: localCourses, outcome.merged)
+                }
                 if (semester == currentSemester) touchedCurrent = true
             }
         }

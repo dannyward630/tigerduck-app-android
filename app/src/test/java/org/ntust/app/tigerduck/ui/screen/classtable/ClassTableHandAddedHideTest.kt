@@ -100,7 +100,7 @@ class ClassTableHandAddedHideTest {
         cache.updateDeletedCourseNos(stored, outcome.tombstones)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
         val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones) ?: localCourses
-        cache.saveCourses(kept + outcome.merged, TERM)
+        cache.updateCourses(TERM) { CourseSyncReconciler.committedCourses(it, localCourses, kept, outcome.merged) }
     }
 
     /**
@@ -316,6 +316,24 @@ class ClassTableHandAddedHideTest {
     }
 
     @Test
+    fun `a delete made while a sync merges another course down stays out of the term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        val read = cache.loadDeletedCourseNos()
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+
+        // The sync merges down a course another device added, which writes the term's courses,
+        // and is held before its commit while the student deletes the course again.
+        syncListing(enrolled.courseNo, MERGED, hides = read, beforeCommit = { delete(handAdded) })
+
+        assertEquals(setOf(handAdded.courseNo), hidden())
+        assertEquals(listOf(enrolled.courseNo, MERGED), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+    }
+
+    @Test
     fun `a snapshot fetched before a course came back does not end its hold`() = runTest {
         cache.saveCourses(listOf(enrolled, handAdded), TERM)
         syncListing(enrolled.courseNo, handAdded.courseNo)
@@ -368,5 +386,8 @@ class ClassTableHandAddedHideTest {
 
     private companion object {
         const val TERM = "1151"
+
+        /** A course another device added, which a sync merges down. */
+        const val MERGED = "EE1010007"
     }
 }
