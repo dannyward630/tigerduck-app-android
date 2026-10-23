@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onRoot
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -28,7 +29,11 @@ import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.model.CalendarEvent
 import org.ntust.app.tigerduck.data.model.EventSource
+import org.ntust.app.tigerduck.data.model.GpaTrendPoint
+import org.ntust.app.tigerduck.data.model.RankingStats
 import org.ntust.app.tigerduck.ui.screen.calendar.CalendarGrid
+import org.ntust.app.tigerduck.ui.screen.score.RankingsTrendCard
+import org.ntust.app.tigerduck.ui.screen.score.ScoreViewModel
 import org.ntust.app.tigerduck.ui.screen.settings.AccentColorSwatches
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -99,6 +104,26 @@ class OnWallpaperPrimaryTest {
         // The two 4dp dots add their own onPrimary under the number.
         val dots = dotted.count(wallpaper.onPrimary) - bare.count(wallpaper.onPrimary)
         assertTrue("the dots add $dots onPrimary pixels", dots >= 8)
+    }
+
+    @Test
+    fun `the trend's selected term is marked in onPrimary on its point, not white`() {
+        TigerDuckTheme.setDarkMode(true)
+        composeRule.setContent {
+            TigerDuckAppTheme(darkTheme = true, useDynamicColor = true) {
+                RankingsTrendCard(
+                    // Every term confirmed, so the last one, selected, is a filled point.
+                    points = listOf("1131" to 3.2, "1132" to 3.6, "1141" to 3.9).map { (term, gpa) ->
+                        GpaTrendPoint(term, RankingStats(gpa = gpa), RankingStats(gpa = gpa), isProvisional = false)
+                    },
+                    scope = ScoreViewModel.RankingScope.SEMESTER,
+                    onScopeChange = {},
+                )
+            }
+        }
+
+        val chart = composeRule.onRoot().captureToImage().toPixelMap()
+        assertTrue("the point at the selected term is marked in onPrimary", chart.count(wallpaper.onPrimary) > 0)
     }
 
     @Test
