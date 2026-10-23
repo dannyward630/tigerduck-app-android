@@ -108,6 +108,7 @@ import org.ntust.app.tigerduck.ui.screen.settings.SourceCodePickerScreen
 import org.ntust.app.tigerduck.ui.screen.settings.TabEditorScreen
 import org.ntust.app.tigerduck.ui.screen.settings.VibrationSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.signin.NtustSignInSheetHost
+import org.ntust.app.tigerduck.ui.screen.signin.NtustSignInViewModel
 import org.ntust.app.tigerduck.widget.LibraryShortcutWidget
 
 sealed class Screen(val route: String) {
@@ -312,6 +313,17 @@ fun MainNavigation(
     }
     // The same once the page on screen lets go of the user, a mail being written above all.
     val openTab: (String) -> Unit = { route -> leaveGuard.leave { goToTab(route) } }
+    // The same instance NtustSignInSheetHost shows, both held at the activity.
+    val ntustSignInViewModel: NtustSignInViewModel = hiltViewModel()
+    // What a link closes over the pages on its way to another page.
+    val linkOverlays =remember(classTableViewModel, ntustSignInViewModel, classTableImportViewModel) {
+        LinkOverlays(
+            closeCourseSheet = classTableViewModel::clearSelection,
+            closeTabMenu = { showClassTableSwitcher = false },
+            closeSignInSheet = ntustSignInViewModel::closeForLink,
+            endImport = classTableImportViewModel::end,
+        )
+    }
 
     LaunchedEffect(widgetStartRoute) {
         widgetStartRoute ?: return@LaunchedEffect
@@ -330,16 +342,10 @@ fun MainNavigation(
         snapshotFlow { navController.currentBackStackEntry }
             .filterNotNull()
             .first()
-        // A link to the page on screen leaves it, and the course sheet over it, as they are.
-        // Anywhere else, the page on screen is asked first, and the course sheet closes, as on
-        // iOS, rather than come back over its page on the way back.
-        if (!navController.currentBackStackEntry.showsPage(target)) {
-            leaveGuard.leave {
-                classTableViewModel.clearSelection()
-                // A tab through the bottom bar's own path: launchSingleTop alone looks only at the
-                // page on top, and pushed a second class table over its course detail.
-                navController.openStartRoute(target, tabRoutes, firstTab = popUpToDest, tabTap)
-            }
+        navController.followLink(target, leaveGuard, linkOverlays) {
+            // A tab through the bottom bar's own path: launchSingleTop alone looks only at the
+            // page on top, and pushed a second class table over its course detail.
+            navController.openStartRoute(target, tabRoutes, firstTab = popUpToDest, tabTap)
         }
         // Consume so that re-tapping the same notification (which delivers the
         // identical route string) re-fires this LaunchedEffect instead of

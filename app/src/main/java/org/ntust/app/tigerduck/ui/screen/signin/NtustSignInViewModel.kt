@@ -44,6 +44,15 @@ internal suspend fun signInAsStoredAccount(
 ): Boolean = signsInAsStoredAccount(studentId, stored) && login(studentId, password)
 
 /**
+ * Whether a link that opens another page closes the "Sign in again" sheet
+ * ([NtustSignInSheetHost]), as on iOS: when it is [open], as a tap outside it would, and not while
+ * its sign-in is under way, which holds it open until it ends, as it holds it against that tap.
+ * With none open there is nothing to close, and the error of a sign-in elsewhere, such as
+ * Settings' own, which shares the sheet's, stays.
+ */
+internal fun signInSheetClosesForLink(open: Boolean, signingIn: Boolean): Boolean = open && !signingIn
+
+/**
  * Whether the TigerSync status asks the user to sign in again, in place of the latest error: sync
  * is on, the school account is signed in with credentials to read, the device has no TigerSync
  * session, and the last sign-in that had something to send failed, so none came. Not while
@@ -106,6 +115,11 @@ class NtustSignInViewModel @Inject constructor(
     fun dismissSheet() {
         appState.ntustSignInSheetRequested = false
         authService.clearLoginError()
+    }
+
+    /** A link opens another page; see [signInSheetClosesForLink]. */
+    fun closeForLink() {
+        if (signInSheetClosesForLink(open = sheetRequested, signingIn = isLoggingIn.value)) dismissSheet()
     }
 
     fun dismissBanner(rejection: StoredPasswordLatch.Rejection) {
