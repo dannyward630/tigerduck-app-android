@@ -653,6 +653,67 @@ class MailRepositoryTest {
         assertEquals(1, setup.searchIndex.uids(owner, "INBOX").size)
     }
 
+    /** Opens the mail screen, as the page appearing does, and waits for its download in the app to end. */
+    private suspend fun kotlinx.coroutines.test.TestScope.visit(repo: MailRepository) {
+        repo.acquire()
+        runCurrent()
+        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) Thread.sleep(10) } }
+        repo.release()
+    }
+
+    @Test
+    fun `coming back to the mail page soon after a whole download does not download again`() = runTest {
+        server.deliver("期中考")
+        val repo = TestSetup(backgroundScope).signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
+        visit(repo)
+        val listed = server.undeletedUidsCalls
+
+        now += MailRepository.INDEX_RESYNC_MS - 1
+        visit(repo)
+
+        assertEquals(listed, server.undeletedUidsCalls)
+    }
+
+    @Test
+    fun `coming back once the interval has passed downloads again`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
+        visit(repo)
+        val listed = server.undeletedUidsCalls
+        val requested = setup.indexScheduler.requests
+
+        now += MailRepository.INDEX_RESYNC_MS
+        visit(repo)
+
+        assertTrue(server.undeletedUidsCalls > listed)
+        assertTrue(setup.indexScheduler.requests > requested)
+    }
+
+    @Test
+    fun `a download cut short goes on at the next visit, however soon`() = runTest {
+        server.deliver("期中考")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
+        repo.folders()
+        // The liveness probe through, then the folder's UID list fails.
+        server.queueCallErrors(null, MailError.Network())
+        visit(repo)
+        val owner = setup.account.ownAddress!!.lowercase()
+        assertTrue("cut short", setup.searchIndex.uids(owner, "INBOX").isEmpty())
+
+        now += 1_000
+        visit(repo)
+
+        assertEquals(1, setup.searchIndex.uids(owner, "INBOX").size)
+    }
+
     @Test
     fun `mail gone from the server leaves the index`() = runTest {
         val gone = server.deliver("期中考 A")

@@ -273,6 +273,7 @@ class MailRepository @Inject constructor(
             account.signOuts.collect {
                 indexScheduler.cancel()
                 numberings.clear()
+                indexedAt = 0L
                 withContext(Dispatchers.IO) {
                     holder.closeNow()
                     searchIndex.clear()
@@ -286,6 +287,7 @@ class MailRepository @Inject constructor(
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             account.studentChanges.collect {
                 numberings.clear()
+                indexedAt = 0L
                 withContext(Dispatchers.IO) { searchIndex.clear() }
             }
         }
@@ -640,28 +642,53 @@ class MailRepository @Inject constructor(
     /** Held by the download under way, so the in-app one and the background one never both run. */
     private val indexing = Mutex()
 
+    /** Whether a download runs in the app now, which a test waits out. */
+    @VisibleForTesting
+    internal val downloadingInApp: Boolean get() = indexing.isLocked
+
+    @VisibleForTesting
+    internal var clock: () -> Long = System::currentTimeMillis
+
+    /** When a download last got through every folder; 0 for never, or for one cut short since. */
+    @Volatile private var indexedAt = 0L
+
+    /**
+     * Whether opening the mail screen downloads again: not within [INDEX_RESYNC_MS] of a whole
+     * download, which coming back from another page would otherwise repeat every time, every
+     * folder listed and every downloaded mail's flags asked for. New mail meanwhile reaches the
+     * list by its own poll, and a search catches up on it first.
+     */
+    private fun indexDue(): Boolean = indexedAt == 0L || clock() - indexedAt >= INDEX_RESYNC_MS
+
     override suspend fun updateSearchIndex(stillWanted: () -> Boolean) = indexing.withLock { downloadIndex(stillWanted) }
 
     private suspend fun downloadIndex(stillWanted: () -> Boolean = { true }) {
         if (account.isDemo || indexOwner() == null) return
+        val generation = account.accountGeneration
         val folders = folders(stillWanted)
         val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
         // Every folder's count first, for the progress to have one total from the start.
-        val plans = (first + (folders.special.values + folders.others).filter { it !in first })
-            .mapNotNull { indexer.plan(it, stillWanted = stillWanted) }
+        val names = first + (folders.special.values + folders.others).filter { it !in first }
+        val plans = names.mapNotNull { indexer.plan(it, stillWanted = stillWanted) }
+        var whole = plans.size == names.size
         // Mail read, answered or deleted elsewhere since it was downloaded.
         plans.forEach { indexer.refreshFlags(it, stillWanted) }
         val total = plans.sumOf { it.missing.size }
-        if (total == 0) return
+        if (total == 0) {
+            if (whole) indexed(generation)
+            return
+        }
         var done = 0
         _searchIndexProgress.value = MailIndexProgress(done, total)
         try {
             for (plan in plans) {
-                indexer.fill(plan, stillWanted = stillWanted) { added ->
+                val through = indexer.fill(plan, stillWanted = stillWanted) { added ->
                     done += added
                     _searchIndexProgress.value = MailIndexProgress(done, total)
                 }
+                whole = whole && through
             }
+            if (whole) indexed(generation)
         } finally {
             _searchIndexProgress.value = null
         }
@@ -806,9 +833,15 @@ class MailRepository @Inject constructor(
 
     override fun release() = holder.releaseLater()
 
+    /** A download got through every folder for the account [generation] names, if it still is. */
+    private fun indexed(generation: Int) {
+        if (account.accountGeneration == generation) indexedAt = clock()
+    }
+
     override fun acquire() {
         if (account.isDemo) return
         holder.hold()
+        if (!indexDue()) return
         // The mail screen is in use: whatever mail the phone lacks comes in now, here, rather than
         // when the system next runs the background download, which some phones hold back for
         // minutes. That one still finishes what this leaves, should the app go.
@@ -1000,6 +1033,9 @@ class MailRepository @Inject constructor(
          * index last caught up: the background run fetches the rest.
          */
         const val SEARCH_CATCH_UP = 10
+
+        /** How soon after a whole download coming back to the mail screen downloads again. */
+        const val INDEX_RESYNC_MS = 15 * 60_000L
 
         /** The only roles [ensureFolder] may create; see its doc for why the other two are out. */
         private val CREATED_ON_DEMAND = setOf(SpecialFolder.SENT, SpecialFolder.DRAFTS, SpecialFolder.TRASH)
