@@ -3,7 +3,6 @@ package org.ntust.app.tigerduck.mail
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -49,28 +48,22 @@ class MailAccount @Inject constructor(
      * One event per [signOut], for cleanup that must run on every one of
      * them. [signedIn] can't carry that: a StateFlow hands a collector only
      * the latest value, so a sign-in and a sign-out that both land before it
-     * next runs read as no change at all. Buffered so [signOut] never
-     * suspends; a subscriber that falls behind still gets one, which is all
-     * cleanup needs. Each carries the address of the account that left, null
-     * for a sign-out with none signed in: cleanup that runs late must not take
-     * what the next account has made since.
+     * next runs read as no change at all. Each carries the address of the
+     * account that left, null for a sign-out with none signed in: cleanup that
+     * runs late must not take what the next account has made since, nor keep
+     * what an account that left made. Buffered without limit, so [signOut]
+     * never suspends and a subscriber that falls behind still gets every one.
      */
-    private val _signOuts = MutableSharedFlow<String?>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val _signOuts = MutableSharedFlow<String?>(extraBufferCapacity = Int.MAX_VALUE)
     val signOuts: SharedFlow<String?> = _signOuts.asSharedFlow()
 
     /**
      * One event each time [signIn] puts another student in place of the signed-in one without a
      * [signOut] in between, as the sign-in sheet shown after a rejected password allows. Cleanup
      * that must not carry one student's state over to the next listens to this beside [signOuts].
-     * Each carries the address of the student who left, as [signOuts] does.
+     * Each carries the address of the student who left, and is buffered, as [signOuts] is.
      */
-    private val _studentChanges = MutableSharedFlow<String?>(
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val _studentChanges = MutableSharedFlow<String?>(extraBufferCapacity = Int.MAX_VALUE)
     val studentChanges: SharedFlow<String?> = _studentChanges.asSharedFlow()
 
     private val _authFailed = MutableStateFlow(state.authFailed)

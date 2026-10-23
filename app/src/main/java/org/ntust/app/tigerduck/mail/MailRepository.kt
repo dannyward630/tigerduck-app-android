@@ -695,8 +695,9 @@ class MailRepository @Inject constructor(
         // Asked for once the catch-up is through: after a rejected password, which the list hands
         // the account, nothing may log in again (spec §7.4). And asked for at once: mail come in
         // past what the catch-up fetches sits below the newest it has, where no later catch-up
-        // looks, so a whole download within [INDEX_RESYNC_MS] must not hold that run off.
-        if (!whole) lastWhole = null
+        // looks, so a whole download within [INDEX_RESYNC_MS] must not hold that run off
+        // ([gapsFound]).
+        if (!whole) gapsFound.incrementAndGet()
         indexScheduler.request()
         // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
         val (indexedUnder, matches) = withContext(Dispatchers.IO) {
@@ -730,8 +731,11 @@ class MailRepository @Inject constructor(
     @VisibleForTesting
     internal var clock: () -> Long = System::currentTimeMillis
 
-    /** A download that got through every folder, for [owner], at [at]. */
-    private class WholeDownload(val owner: MailIndexer.Owner, val at: Long)
+    /**
+     * A download that got through every folder, for [owner], at [at], planned once a search had
+     * found the index lacking mail [gaps] times.
+     */
+    private class WholeDownload(val owner: MailIndexer.Owner, val at: Long, val gaps: Int)
 
     /**
      * The last download that got through every folder; null for none since the index last started
@@ -741,6 +745,13 @@ class MailRepository @Inject constructor(
     @Volatile private var lastWhole: WholeDownload? = null
 
     /**
+     * Moved on by a search whose catch-up left mail out ([search]). A download planned before it
+     * moved did not see that mail, so it does not hold the next one off, even one that only says
+     * it got through afterwards.
+     */
+    private val gapsFound = AtomicInteger()
+
+    /**
      * Whether opening the mail screen downloads again: not within [INDEX_RESYNC_MS] of a whole
      * download, which coming back from another page would otherwise repeat every time, every
      * folder listed and every downloaded mail's flags asked for. New mail meanwhile reaches the
@@ -748,7 +759,7 @@ class MailRepository @Inject constructor(
      */
     private fun indexDue(): Boolean {
         val last = lastWhole ?: return true
-        return !stillIndexOwner(last.owner) || clock() - last.at >= INDEX_RESYNC_MS
+        return !stillIndexOwner(last.owner) || last.gaps != gapsFound.get() || clock() - last.at >= INDEX_RESYNC_MS
     }
 
     /**
@@ -785,6 +796,8 @@ class MailRepository @Inject constructor(
     }
 
     private suspend fun downloadEveryFolder(owner: MailIndexer.Owner, stillWanted: () -> Boolean) {
+        // Read before any folder is planned: see [gapsFound].
+        val gaps = gapsFound.get()
         val folders = folders(stillWanted)
         val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
         // Every folder's count first, for the progress to have one total from the start.
@@ -799,7 +812,7 @@ class MailRepository @Inject constructor(
         }
         val total = plans.sumOf { it.missing.size }
         if (total == 0) {
-            if (whole) lastWhole = WholeDownload(owner, clock())
+            if (whole) lastWhole = WholeDownload(owner, clock(), gaps)
             return
         }
         var done = 0
@@ -812,7 +825,7 @@ class MailRepository @Inject constructor(
                 }
                 whole = whole && through
             }
-            if (whole) lastWhole = WholeDownload(owner, clock())
+            if (whole) lastWhole = WholeDownload(owner, clock(), gaps)
         } finally {
             _searchIndexProgress.value = null
         }

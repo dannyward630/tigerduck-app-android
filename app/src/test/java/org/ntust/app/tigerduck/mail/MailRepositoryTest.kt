@@ -95,7 +95,7 @@ class MailRepositoryTest {
             val stopped = CountDownLatch(1)
             repository.holder.onWait = { if (repository.holder.held) stopped.countDown() }
             val aside = Aside()
-            aside.thread = thread {
+            aside.thread = thread(isDaemon = true) {
                 try {
                     runBlocking { action() }
                 } catch (t: Throwable) {
@@ -568,6 +568,33 @@ class MailRepositoryTest {
 
         assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late))
         assertTrue("found complete now", (repo.search("INBOX", "期中") as SearchOutcome.Server).complete)
+    }
+
+    @Test
+    fun `a gap a search finds is not undone by a download that planned before the mail came`() = runTest {
+        server.deliver("期中考 0")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val now = 1_000_000L
+        var late = emptyList<Long>()
+        var searching = true
+        repo.clock = {
+            // Read as a download that planned every folder before the mail came notes that it got
+            // through: the mail comes, and a search catches up on its newest ten, right then.
+            if (searching) {
+                searching = false
+                late = (1..MailRepository.SEARCH_CATCH_UP + 5).map { server.deliver("期中考 $it") }
+                runBlocking { repo.search("INBOX", "期中") }
+            }
+            now
+        }
+        repo.updateSearchIndex()
+        assertFalse(searching)
+
+        // The background run the search asked for.
+        repo.updateSearchIndex()
+
+        assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late))
     }
 
     @Test
@@ -1342,6 +1369,23 @@ class MailRepositoryTest {
         }
 
         assertEquals(1, setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").size)
+    }
+
+    @Test
+    fun `a late cleanup empties the mail of a student who left and came back, every departure counted`() = runTest {
+        server.deliver("期中考")
+        server.passwords["B10000002"] = "pw"
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+        val first = setup.account.ownAddress!!.lowercase()
+
+        holdingTheCleanup(setup) {
+            setup.account.signIn("b10000002", "pw")
+            setup.account.signIn("b10000001", "pw")
+        }
+
+        assertEquals("what the first student had downloaded before leaving", emptySet<Long>(), setup.searchIndex.uids(first, "INBOX"))
     }
 
     @Test

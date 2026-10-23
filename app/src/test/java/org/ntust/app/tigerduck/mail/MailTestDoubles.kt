@@ -167,7 +167,7 @@ class SignInAgain(private val account: MailAccount, private val studentId: Strin
         account.onLockWait = { reached.countDown() }
         // Asked here, on the step's own thread, before the sign-in can take the lock itself.
         val held = account.holdsLock()
-        val started = thread {
+        val started = thread(isDaemon = true) {
             try {
                 runBlocking { account.signIn(studentId, password) }
             } catch (t: Throwable) {
