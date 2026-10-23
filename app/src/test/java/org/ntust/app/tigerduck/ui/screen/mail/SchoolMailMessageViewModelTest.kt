@@ -61,6 +61,9 @@ internal class HeldDispatcher : CoroutineDispatcher() {
     fun drain() {
         while (queued.isNotEmpty()) queued.removeFirst().run()
     }
+
+    /** Runs one block, so what happens between two hops can be seen. */
+    fun runNext() = queued.removeFirst().run()
 }
 
 class SchoolMailMessageViewModelTest {
@@ -499,10 +502,15 @@ class SchoolMailMessageViewModelTest {
     fun `a mail that sets colours of its own opens on white paper in a dark app, built once`() {
         val io = HeldDispatcher()
         val vm = open(coloured, io)
-        io.drain()
+        // Step by step, so a document shown dark and then rebuilt would be seen in between.
+        val shown = mutableListOf<LinkedHtml>()
+        while (io.pending > 0) {
+            io.runNext()
+            (vm.state.value.content as? Content.Ready)?.document?.let { if (shown.lastOrNull() !== it) shown += it }
+        }
         assertTrue(vm.state.value.viewInLight)
-        assertTrue(vm.page(), vm.page().contains("background:#ffffff;color:#000000"))
-        assertEquals("no second build of the page is waiting", 0, io.pending)
+        assertEquals("one document, built once", 1, shown.size)
+        assertTrue(shown.single().html, shown.single().html.contains("background:#ffffff;color:#000000"))
     }
 
     @Test
