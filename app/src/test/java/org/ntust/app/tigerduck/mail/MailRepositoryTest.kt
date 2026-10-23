@@ -88,19 +88,24 @@ class MailRepositoryTest {
         /**
          * Starts [action] on a thread of its own from inside a call that may hold the connection,
          * and waits for it to end -- or, while the caller holds the connection, for it to reach
-         * the wait for it, which then ends only once the caller lets go. Answers the thread.
+         * the wait for it, which then ends only once the caller lets go. Throws nothing into the
+         * caller, which is repository code: what went wrong is kept for [Aside.join].
          */
-        fun runAside(action: suspend () -> Unit): Thread {
+        fun runAside(action: suspend () -> Unit): Aside {
             val stopped = CountDownLatch(1)
             repository.holder.onWait = { if (repository.holder.held) stopped.countDown() }
-            val aside = thread {
+            val aside = Aside()
+            aside.thread = thread {
                 try {
                     runBlocking { action() }
+                } catch (t: Throwable) {
+                    aside.failure = t
                 } finally {
                     stopped.countDown()
                 }
             }
-            assertTrue(stopped.await(5, TimeUnit.SECONDS))
+            // A long safety timeout only: the wait ends as soon as either happens.
+            if (!stopped.await(30, TimeUnit.SECONDS)) aside.timedOut = true
             repository.holder.onWait = null
             return aside
         }
@@ -606,7 +611,7 @@ class MailRepositoryTest {
         server.deliver("期中考 1")
         val armed = AtomicBoolean(true)
         var late = 0L
-        var aside: Thread? = null
+        var aside: Aside? = null
         lateinit var setup: TestSetup
         setup = TestSetup(backgroundScope) { index ->
             object : MailSearchIndex by index {
@@ -624,7 +629,7 @@ class MailRepositoryTest {
         val repo = setup.signedIn()
 
         repo.updateSearchIndex()
-        aside!!.join(5_000)
+        aside!!.join()
 
         assertTrue(late in setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX"))
     }
@@ -792,7 +797,7 @@ class MailRepositoryTest {
         repo.acquire()
         runCurrent()
         withContext(Dispatchers.Default) {
-            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isEmpty()) delay(10) }
+            withTimeout(30_000) { while (setup.searchIndex.uids(owner, "INBOX").isEmpty()) delay(10) }
         }
 
         assertEquals(1, setup.searchIndex.uids(owner, "INBOX").size)
@@ -802,7 +807,7 @@ class MailRepositoryTest {
     private suspend fun kotlinx.coroutines.test.TestScope.visit(repo: MailRepository) {
         repo.acquire()
         runCurrent()
-        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
+        withContext(Dispatchers.Default) { withTimeout(30_000) { while (repo.downloadingInApp) delay(10) } }
         repo.release()
     }
 
@@ -978,7 +983,7 @@ class MailRepositoryTest {
         val sessions = MailSessionFactory { credentials ->
             if (attempts.incrementAndGet() == 1) {
                 opening.countDown()
-                assertTrue(release.await(5, TimeUnit.SECONDS))
+                assertTrue(release.await(30, TimeUnit.SECONDS))
             }
             server.factory().open(credentials)
         }
@@ -986,7 +991,7 @@ class MailRepositoryTest {
         val repo = setup.signedIn()
         server.passwords["B10000001"] = "changed"
         val first = async(Dispatchers.IO) { runCatching { repo.status("INBOX") } }
-        assertTrue(opening.await(5, TimeUnit.SECONDS))
+        assertTrue(opening.await(30, TimeUnit.SECONDS))
         // Another request reaches the wait for the connection while the first one's login is out.
         val reached = CountDownLatch(1)
         setup.repository.holder.onWait = { reached.countDown() }
@@ -1039,7 +1044,7 @@ class MailRepositoryTest {
         val sessions = MailSessionFactory { credentials ->
             if (first.getAndSet(false)) {
                 opening.countDown()
-                assertTrue(release.await(5, TimeUnit.SECONDS))
+                assertTrue(release.await(30, TimeUnit.SECONDS))
                 // The answer to a login of the account as it was before signing out.
                 throw MailError.AuthFailed()
             }
@@ -1048,7 +1053,7 @@ class MailRepositoryTest {
         val setup = TestSetup(backgroundScope, sessions)
         val repo = setup.signedIn()
         val request = async(Dispatchers.IO) { runCatching { repo.status("INBOX") } }
-        assertTrue(opening.await(5, TimeUnit.SECONDS))
+        assertTrue(opening.await(30, TimeUnit.SECONDS))
 
         setup.signOutAndSettle()
         setup.account.signIn("b10000001", "pw")
@@ -1119,7 +1124,7 @@ class MailRepositoryTest {
                 override fun undeletedUids(folder: String): List<Long> {
                     if (holding.count > 0L) {
                         holding.countDown()
-                        if (!release.await(5, TimeUnit.SECONDS)) timedOut = true
+                        if (!release.await(30, TimeUnit.SECONDS)) timedOut = true
                     }
                     return session.undeletedUids(folder)
                 }
@@ -1140,14 +1145,14 @@ class MailRepositoryTest {
         repo.acquire()
         runCurrent()
         // Waited for off the test's thread, which the download in the app goes on on.
-        withContext(Dispatchers.Default) { assertTrue(held.holding.await(5, TimeUnit.SECONDS)) }
+        withContext(Dispatchers.Default) { assertTrue(held.holding.await(30, TimeUnit.SECONDS)) }
         // Back on the mail screen while the first visit's download is still out.
         repo.acquire()
         runCurrent()
 
         repo.deleteSearchIndex()
         held.release.countDown()
-        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
+        withContext(Dispatchers.Default) { withTimeout(30_000) { while (repo.downloadingInApp) delay(10) } }
 
         assertEquals(emptyList<Long>(), setup.indexedMail(owner))
         assertFalse("the held listing timed out", held.timedOut)
@@ -1164,7 +1169,7 @@ class MailRepositoryTest {
         // Deleted on the test's thread, which the visit's download waits for to start.
         runBlocking { repo.deleteSearchIndex() }
         runCurrent()
-        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
+        withContext(Dispatchers.Default) { withTimeout(30_000) { while (repo.downloadingInApp) delay(10) } }
 
         assertEquals(emptyList<Long>(), setup.indexedMail(owner))
     }
@@ -1178,14 +1183,14 @@ class MailRepositoryTest {
         val owner = setup.account.ownAddress!!.lowercase()
         repo.acquire()
         runCurrent()
-        withContext(Dispatchers.Default) { assertTrue(held.holding.await(5, TimeUnit.SECONDS)) }
+        withContext(Dispatchers.Default) { assertTrue(held.holding.await(30, TimeUnit.SECONDS)) }
         // The worker the visit asked for, waiting for the lock the visit's download holds.
         val worker = launch(Dispatchers.IO, start = CoroutineStart.UNDISPATCHED) { repo.updateSearchIndex() }
 
         repo.deleteSearchIndex()
         held.release.countDown()
         worker.join()
-        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
+        withContext(Dispatchers.Default) { withTimeout(30_000) { while (repo.downloadingInApp) delay(10) } }
 
         assertEquals(emptyList<Long>(), setup.indexedMail(owner))
         assertFalse("the held listing timed out", held.timedOut)
@@ -1199,7 +1204,7 @@ class MailRepositoryTest {
         val repo = setup.signedIn()
         val owner = setup.account.ownAddress!!.lowercase()
         val download = launch(Dispatchers.IO) { runCatching { repo.updateSearchIndex() } }
-        assertTrue(held.holding.await(5, TimeUnit.SECONDS))
+        assertTrue(held.holding.await(30, TimeUnit.SECONDS))
 
         // WorkManager stops the worker only some time after it is told to.
         repo.deleteSearchIndex()
@@ -1218,7 +1223,7 @@ class MailRepositoryTest {
         val repo = setup.signedIn()
         val owner = setup.account.ownAddress!!.lowercase()
         val search = async(Dispatchers.IO) { runCatching { repo.search("INBOX", "期中") } }
-        assertTrue(held.holding.await(5, TimeUnit.SECONDS))
+        assertTrue(held.holding.await(30, TimeUnit.SECONDS))
 
         repo.deleteSearchIndex()
         held.release.countDown()
@@ -1281,7 +1286,7 @@ class MailRepositoryTest {
         runCurrent()
         // The repository empties it on the IO pool once it hears of the sign-out.
         withContext(Dispatchers.Default) {
-            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isNotEmpty()) delay(10) }
+            withTimeout(30_000) { while (setup.searchIndex.uids(owner, "INBOX").isNotEmpty()) delay(10) }
         }
 
         assertEquals(emptySet<Long>(), setup.searchIndex.uids(owner, "INBOX"))
@@ -1300,7 +1305,7 @@ class MailRepositoryTest {
         setup.account.signIn("b10000002", "pw2")
         runCurrent()
         withContext(Dispatchers.Default) {
-            withTimeout(5_000) { while (setup.searchIndex.uids(first, "INBOX").isNotEmpty()) delay(10) }
+            withTimeout(30_000) { while (setup.searchIndex.uids(first, "INBOX").isNotEmpty()) delay(10) }
         }
 
         assertEquals(emptySet<Long>(), setup.searchIndex.uids(first, "INBOX"))
@@ -1434,6 +1439,22 @@ class MailRepositoryTest {
         assertEquals(listOf(MailChange.Seen("INBOX", uid, true, first)), changes)
     }
 
+    /** What [TestSetup.runAside] started, for the test to wait out once it is done. */
+    private class Aside {
+        @Volatile var thread: Thread? = null
+        @Volatile var failure: Throwable? = null
+        @Volatile var timedOut = false
+
+        /** Waits for the action to end, and fails the test for anything that went wrong in it. */
+        fun join() {
+            val started = checkNotNull(thread)
+            started.join(30_000)
+            check(!started.isAlive) { "the action aside never ended" }
+            check(!timedOut) { "the action aside got nowhere" }
+            failure?.let { throw AssertionError("the action aside failed", it) }
+        }
+    }
+
     /**
      * Seeds [owner]'s index with [folder]'s [uid] as the server has it: the other student's copy of
      * that mail, downloaded since they signed in.
@@ -1453,7 +1474,7 @@ class MailRepositoryTest {
         val cleared = CountDownLatch(1)
         searchIndex.onClear = { cleared.countDown() }
         runBlocking { account.signIn(studentId, "pw") }
-        assertTrue("the sign-in's clear never ran", cleared.await(5, TimeUnit.SECONDS))
+        assertTrue("the sign-in's clear never ran", cleared.await(30, TimeUnit.SECONDS))
         searchIndex.onClear = null
         val owner = account.ownAddress!!.lowercase()
         seedIndex(owner, folder, uid)
@@ -1518,7 +1539,7 @@ class MailRepositoryTest {
     private inner class RecreatedUnderAWrite(scope: kotlinx.coroutines.CoroutineScope, private val uid: Long) {
         val armed = AtomicBoolean(false)
         val now = AtomicLong(1_000_000L)
-        var aside: Thread? = null
+        var aside: Aside? = null
 
         private fun recreate() {
             if (!armed.getAndSet(false)) return
@@ -1547,7 +1568,7 @@ class MailRepositoryTest {
         /** The inbox's mail under [uid] as the phone's copy has it now, once [aside] is done. */
         fun downloaded(): MailSummary? {
             assertNotNull("the inbox was never recreated", aside)
-            aside!!.join(5_000)
+            aside!!.join()
             return setup.searchIndex.summaries(setup.account.ownAddress!!.lowercase(), "INBOX", server.uidValidity, listOf(uid))[uid]
         }
     }

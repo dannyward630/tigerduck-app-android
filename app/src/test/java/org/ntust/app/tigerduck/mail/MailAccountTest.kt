@@ -2,7 +2,6 @@ package org.ntust.app.tigerduck.mail
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -16,9 +15,6 @@ import org.junit.rules.TemporaryFolder
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.store.MailCache
 import java.io.File
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.concurrent.thread
 
 class MailAccountTest {
     @get:Rule val tmp = TemporaryFolder()
@@ -154,23 +150,15 @@ class MailAccountTest {
     fun `a sign-in during a refusal's cancel keeps the checks it schedules`() = runTest {
         val account = account()
         account.signIn("b10000001", "pw")
-        val signInThread = AtomicReference<Thread?>(null)
-        server.onListFolders = { signInThread.set(Thread.currentThread()) }
-        var signIn: Thread? = null
+        // The student signs in again while the refusal cancels the checks.
+        val again = SignInAgain(account, "b10000001", "pw")
         scheduler.onCancel = {
             scheduler.onCancel = null
-            // The student signs in again while the refusal cancels the checks...
-            signIn = thread { runBlocking { account.signIn("b10000001", "pw") } }
-            // ...and gets as far as it can: its checks scheduled, or held at the account's lock.
-            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
-            while (scheduler.events.count { it == "schedule" } < 2 && signInThread.get()?.state != Thread.State.BLOCKED) {
-                check(System.nanoTime() < deadline) { "the sign-in got nowhere" }
-                Thread.onSpinWait()
-            }
+            again.during()
         }
 
         account.onAuthFailure(account.accountGeneration)
-        signIn!!.join(5_000)
+        again.join()
 
         assertEquals("the new sign-in's checks are the last word", listOf("schedule", "cancel", "schedule"), scheduler.events.toList())
         assertFalse(account.authFailed.value)

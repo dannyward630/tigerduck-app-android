@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.mail
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
@@ -79,6 +80,18 @@ class MailAccount @Inject constructor(
     // Held while a sign-in or sign-out changes the account and its generation, and while
     // [snapshot] reads them, so a reader never pairs one account with the other's generation.
     private val accountLock = Any()
+
+    /**
+     * Runs right before a sign-in or a sign-out waits for the account's lock: a test's way of
+     * knowing one has got there while something else holds it. Null in the app.
+     */
+    @VisibleForTesting
+    @Volatile
+    internal var onLockWait: (() -> Unit)? = null
+
+    /** Whether the calling thread holds the account's lock: a test's way of telling a step made under it. */
+    @VisibleForTesting
+    internal fun holdsLock(): Boolean = Thread.holdsLock(accountLock)
 
     /**
      * Moved by every sign-in and sign-out. Work that reads the account through [snapshot] and then
@@ -175,6 +188,7 @@ class MailAccount @Inject constructor(
     fun signOut() {
         scheduler.cancel()
         // Together, so a snapshot holds the departing account with its own generation or nothing.
+        onLockWait?.invoke()
         synchronized(accountLock) {
             generation.incrementAndGet()
             credentials.clearMailCredentials()
@@ -215,6 +229,7 @@ class MailAccount @Inject constructor(
     }
 
     private fun save(creds: MailCredentials) {
+        onLockWait?.invoke()
         synchronized(accountLock) {
             generation.incrementAndGet()
             credentials.mailStudentId = creds.studentId

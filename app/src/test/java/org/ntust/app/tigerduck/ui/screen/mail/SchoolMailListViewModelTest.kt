@@ -29,7 +29,7 @@ import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.mail.SentCopyNotice
 import org.ntust.app.tigerduck.mail.SentCopyOrigin
 import org.ntust.app.tigerduck.mail.SentCopyNotices
-import org.ntust.app.tigerduck.mail.SignInDuringRefusal
+import org.ntust.app.tigerduck.mail.signInDuringRefusal
 import org.ntust.app.tigerduck.mail.MainDispatcherRule
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
@@ -525,7 +525,7 @@ class SchoolMailListViewModelTest {
     fun `a page refused as the student signs in again leaves the new sign-in on`() {
         repo.add("INBOX", mailSummary(1))
         repo.loadError = MailError.AuthFailed()
-        val signIn = SignInDuringRefusal(account, state, server, "b10000001", "pw")
+        val signIn = signInDuringRefusal(account, state, "b10000001", "pw")
 
         vm.load()
         signIn.join()
@@ -538,7 +538,7 @@ class SchoolMailListViewModelTest {
         repo.add("INBOX", mailSummary(1))
         vm.load()
         repo.seenError = MailError.AuthFailed()
-        val signIn = SignInDuringRefusal(account, state, server, "b10000001", "pw")
+        val signIn = signInDuringRefusal(account, state, "b10000001", "pw")
 
         vm.toggleRead(vm.state.value.displayed.single())
         signIn.join()
@@ -551,7 +551,7 @@ class SchoolMailListViewModelTest {
         repo.add("INBOX", mailSummary(1, subject = "期中考"))
         vm.load()
         repo.searchError = MailError.AuthFailed()
-        val signIn = SignInDuringRefusal(account, state, server, "b10000001", "pw")
+        val signIn = signInDuringRefusal(account, state, "b10000001", "pw")
         vm.setSearchText("期中")
 
         vm.submitSearch()

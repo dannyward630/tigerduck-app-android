@@ -19,7 +19,6 @@ import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 
 /**
@@ -149,48 +148,64 @@ class FakeDemoGate(override var appDemoActive: Boolean = false) : MailDemoGate {
 }
 
 /**
- * Signs [studentId] in again on [account], on threads of its own, from inside the account's mark
- * of a refusal: as [state]'s authFailed is about to turn true. The mark goes on once the sign-in
- * has got as far as it can -- signed in, or held at the account's lock, which a mark made in one
- * step with a sign-in's move of the generation holds. [server] is the one it signs in to.
+ * Signs [studentId] in again on [account], on a thread of its own, from inside a step of the
+ * account's mark of a refusal ([during]), and lets that step go on once the sign-in has got as far
+ * as the mark lets it: to the account's lock while the step holds it, or all the way otherwise.
+ *
+ * Nothing here throws into the step, which can be a view model's coroutine whose failure would
+ * outlive the test: what went wrong is kept for [join], which the test calls once it is done.
  */
-class SignInDuringRefusal(
-    account: MailAccount,
-    state: InMemoryMailStateStore,
-    server: FakeMailServer,
-    studentId: String,
-    password: String,
-) {
+class SignInAgain(private val account: MailAccount, private val studentId: String, private val password: String) {
     @Volatile private var signIn: Thread? = null
+    @Volatile private var failure: Throwable? = null
+    @Volatile private var timedOut = false
 
-    init {
-        val signInThread = AtomicReference<Thread?>(null)
-        state.onAuthFailedSet = { failed ->
-            if (failed) {
-                state.onAuthFailedSet = null
-                server.onListFolders = { signInThread.set(Thread.currentThread()) }
-                val done = CountDownLatch(1)
-                signIn = thread {
-                    try {
-                        runBlocking { account.signIn(studentId, password) }
-                    } finally {
-                        done.countDown()
-                    }
-                }
-                val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5)
-                while (done.count > 0 && signInThread.get()?.state != Thread.State.BLOCKED) {
-                    check(System.nanoTime() < deadline) { "the sign-in got nowhere" }
-                    Thread.onSpinWait()
-                }
+    /** Call from inside the step. */
+    fun during() {
+        if (signIn != null) return
+        val reached = CountDownLatch(1)
+        account.onLockWait = { reached.countDown() }
+        // Asked here, on the step's own thread, before the sign-in can take the lock itself.
+        val held = account.holdsLock()
+        val started = thread {
+            try {
+                runBlocking { account.signIn(studentId, password) }
+            } catch (t: Throwable) {
+                failure = t
+            } finally {
+                reached.countDown()
             }
         }
+        signIn = started
+        // A long safety timeout only: each wait ends as soon as what it waits for happens.
+        val arrived = if (held) reached.await(30, TimeUnit.SECONDS) else started.join30()
+        if (!arrived) timedOut = true
+        account.onLockWait = null
     }
 
-    /** Waits for the sign-in to end, and fails if the refusal never came to be marked. */
+    /** Waits for the sign-in to end, and fails the test for anything that went wrong on the way. */
     fun join() {
-        val started = checkNotNull(signIn) { "no refusal was marked" }
-        started.join(5_000)
+        val started = checkNotNull(signIn) { "the step never ran" }
+        started.join(30_000)
         check(!started.isAlive) { "the sign-in never ended" }
+        check(!timedOut) { "the sign-in never got as far as the step lets it" }
+        failure?.let { throw AssertionError("the sign-in failed", it) }
+    }
+
+    private fun Thread.join30(): Boolean {
+        join(30_000)
+        return !isAlive
     }
 }
 
+/** [SignInAgain] from inside the account's mark of a refusal: as [state]'s authFailed is about to turn true. */
+fun signInDuringRefusal(account: MailAccount, state: InMemoryMailStateStore, studentId: String, password: String): SignInAgain {
+    val again = SignInAgain(account, studentId, password)
+    state.onAuthFailedSet = { failed ->
+        if (failed) {
+            state.onAuthFailedSet = null
+            again.during()
+        }
+    }
+    return again
+}
