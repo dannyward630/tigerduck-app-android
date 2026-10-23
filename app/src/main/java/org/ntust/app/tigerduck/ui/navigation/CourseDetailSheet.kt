@@ -6,16 +6,27 @@
 
 package org.ntust.app.tigerduck.ui.navigation
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore
@@ -25,8 +36,10 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.flow.first
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.CourseDetailSheetPage
 import org.ntust.app.tigerduck.ui.screen.coursemoodle.MoodleRoutes
@@ -58,15 +71,39 @@ internal fun NavController.isOnTop(entry: NavBackStackEntry): Boolean {
 internal class CourseDetailSheetModels : ViewModel(), ViewModelStoreOwner {
     override val viewModelStore = ViewModelStore()
 
-    /** Once the sheet has closed or stepped aside: the next one builds a navigation of its own. */
+    /** Once the sheet has closed: the next one builds a navigation of its own. */
     fun close() = viewModelStore.clear()
 
     override fun onCleared() = viewModelStore.clear()
 }
 
 /**
+ * Where the course sheet was left: its navigation, which holds its page's view models, how far it
+ * was scrolled and whether it was pulled up. Remembered with the page the sheet is on, not with the
+ * sheet, so it is saved with that page while a page opened from the sheet covers it.
+ */
+@Stable
+internal class CourseSheetPlace(
+    val navController: NavHostController,
+    val scroll: ScrollState,
+    expanded: MutableState<Boolean>,
+) {
+    var expanded by expanded
+}
+
+/** The [CourseSheetPlace] of [course]: another course starts afresh. */
+@Composable
+internal fun rememberCourseSheetPlace(course: Any): CourseSheetPlace = key(course) {
+    val navController = rememberNavController()
+    val scroll = rememberScrollState()
+    val expanded = rememberSaveable { mutableStateOf(false) }
+    remember(navController, scroll, expanded) { CourseSheetPlace(navController, scroll, expanded) }
+}
+
+/**
  * The selected course's sheet, while there is one and [pageOnTop]; closing it clears the selection.
- * [onOpenPage] opens a page the sheet links to, over the page the sheet is on.
+ * [onOpenPage] opens a page the sheet links to, over the page the sheet is on, and the sheet comes
+ * back from it as it was left.
  */
 @Composable
 internal fun CourseDetailSheetHost(
@@ -77,10 +114,11 @@ internal fun CourseDetailSheetHost(
 ) {
     val models: CourseDetailSheetModels = viewModel()
     val selected by classTable.selectedCourse.collectAsStateWithLifecycle()
-    val shown = CourseDetailSheetRules.shows(picked = selected != null, pageOnTop = pageOnTop)
-    LaunchedEffect(shown) { if (!shown) models.close() }
-    if (shown) {
-        CourseDetailSheet(classTable, browserPreference, models, onOpenPage, onClosed = classTable::clearSelection)
+    LaunchedEffect(selected == null) { if (selected == null) models.close() }
+    val course = selected ?: return
+    val place = rememberCourseSheetPlace(course.courseNo)
+    if (CourseDetailSheetRules.shows(picked = true, pageOnTop = pageOnTop)) {
+        CourseDetailSheet(classTable, browserPreference, models, place, onOpenPage, onClosed = classTable::clearSelection)
     }
 }
 
@@ -90,20 +128,31 @@ private fun CourseDetailSheet(
     classTable: ClassTableViewModel,
     browserPreference: String,
     models: CourseDetailSheetModels,
+    place: CourseSheetPlace,
     onOpenPage: (String) -> Unit,
     onClosed: () -> Unit,
 ) {
-    val navController = rememberNavController()
+    val sheetState = rememberModalBottomSheetState()
+    // Up as high as it was left, once it has risen to half the screen as a sheet always first does.
+    LaunchedEffect(sheetState) {
+        if (place.expanded) {
+            snapshotFlow { sheetState.currentValue }.first { it != SheetValue.Hidden }
+            sheetState.expand()
+        }
+        snapshotFlow { sheetState.currentValue }.collect {
+            if (it != SheetValue.Hidden) place.expanded = it == SheetValue.Expanded
+        }
+    }
     ModalBottomSheet(
         onDismissRequest = onClosed,
-        sheetState = rememberModalBottomSheetState(),
+        sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.background,
     ) {
         // A navigation of the course detail alone: its entry gives the page's view models a home
-        // in [models], which goes with the sheet.
+        // in [models], which goes with the sheet's course.
         CompositionLocalProvider(LocalViewModelStoreOwner provides models) {
             NavHost(
-                navController = navController,
+                navController = place.navController,
                 startDestination = MoodleRoutes.COURSE_DETAIL,
                 // The full height whatever the page, so the sheet opens at half the screen as iOS's
                 // medium detent does, and a short page does not shrink it.
@@ -114,6 +163,7 @@ private fun CourseDetailSheet(
                         viewModel = classTable,
                         browserPreference = browserPreference,
                         onOpenRoute = onOpenPage,
+                        scrollState = place.scroll,
                     )
                 }
             }

@@ -8,6 +8,7 @@ package org.ntust.app.tigerduck.ui.screen.classtable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -101,6 +102,8 @@ internal fun CourseDetailSheetPage(
     viewModel: ClassTableViewModel,
     browserPreference: String,
     onOpenRoute: (String) -> Unit,
+    /** Kept by the sheet's page, so the sheet comes back from a page it opened as far down as it was. */
+    scrollState: ScrollState = rememberScrollState(),
     moodleViewModel: MoodleCourseViewModel = hiltViewModel(),
 ) {
     val selected by viewModel.selectedCourse.collectAsStateWithLifecycle()
@@ -142,7 +145,7 @@ internal fun CourseDetailSheetPage(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(scrollState),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(

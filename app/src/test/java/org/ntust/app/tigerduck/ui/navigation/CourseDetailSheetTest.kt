@@ -10,9 +10,12 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -121,6 +124,72 @@ class CoursePagesTest {
         composeRule.runOnIdle { navController.popBackStack() }
         composeRule.waitForIdle()
         assertTrue(classTableOnTop)
+    }
+}
+
+/**
+ * Where the course sheet was left, on a real NavHost: kept with its page while a page opened from
+ * the sheet covers it, so the sheet comes back scrolled and pulled up as it was.
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
+class CourseSheetPlaceTest {
+
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    private lateinit var navController: NavHostController
+    private var place: CourseSheetPlace? = null
+    private val course = androidx.compose.runtime.mutableStateOf("CS1001301")
+
+    @Before
+    fun setUp() {
+        composeRule.setContent {
+            navController = rememberNavController()
+            NavHost(navController = navController, startDestination = Screen.ClassTable.route) {
+                composable(Screen.ClassTable.route) { place = rememberCourseSheetPlace(course.value) }
+                composable(MoodleRoutes.ASSIGNMENTS) { place = null }
+            }
+        }
+        composeRule.waitForIdle()
+    }
+
+    private fun leaveAndComeBack() {
+        composeRule.runOnIdle { navController.navigate(MoodleRoutes.assignments(42)) }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { navController.popBackStack() }
+        composeRule.waitForIdle()
+    }
+
+    @Test
+    fun `the sheet comes back scrolled and pulled up as it was left`() {
+        composeRule.runOnIdle {
+            runBlocking { place!!.scroll.scrollTo(300) }
+            place!!.expanded = true
+        }
+
+        leaveAndComeBack()
+
+        composeRule.runOnIdle {
+            assertEquals(300, place!!.scroll.value)
+            assertTrue(place!!.expanded)
+        }
+    }
+
+    @Test
+    fun `another course starts at the top and half height`() {
+        composeRule.runOnIdle {
+            runBlocking { place!!.scroll.scrollTo(300) }
+            place!!.expanded = true
+        }
+
+        course.value = "CS2012701"
+        composeRule.waitForIdle()
+
+        composeRule.runOnIdle {
+            assertEquals(0, place!!.scroll.value)
+            assertFalse(place!!.expanded)
+        }
     }
 }
 
