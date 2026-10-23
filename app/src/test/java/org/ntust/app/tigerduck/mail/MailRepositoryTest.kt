@@ -59,10 +59,12 @@ class MailRepositoryTest {
         scope: kotlinx.coroutines.CoroutineScope,
         /** What the repository opens its sessions with; the account signs in on the server itself. */
         sessions: MailSessionFactory = server.factory(),
+        /** What the account signs in with. */
+        accountSessions: MailSessionFactory = server.factory(),
     ) {
         val cache = MailCache(tmp.root)
         val notifier = RecordingNotifier()
-        val account = MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), RecordingScheduler(), notifier, scope)
+        val account = MailAccount(credentials, state, accountSessions, cache, demo, schoolMailSite(), RecordingScheduler(), notifier, scope)
         val repository = MailRepository(
             account, sessions, cache, state,
             MailSender(MessageBuilder(), transport, pause = {}), MessageBuilder(), demo, scope,
@@ -360,6 +362,63 @@ class MailRepositoryTest {
 
         assertTrue(moved.exceptionOrNull() is MailError.Network)
         assertEquals("the flagged mail went unrecorded", setOf(uid), state.ownedDeleted("INBOX", server.uidValidity))
+    }
+
+    /**
+     * Another student's sign-in resets the state and puts their credentials in place in one hold of
+     * the account. A write that starts while that sign-in is still finishing pairs the first
+     * student's credentials with the first student's state, never with the next one's: what it
+     * records after it fails lands nowhere once the next one is in.
+     */
+    @Test
+    fun `a write that starts as another student's sign-in finishes records nothing in their state`() = runTest {
+        val uid = server.deliver("a")
+        // The next student's sign-in holds as it closes its own session, everything asked.
+        val closing = CountDownLatch(1)
+        val letClose = CountDownLatch(1)
+        val holdingClose = MailSessionFactory { c ->
+            val session = server.factory().open(c)
+            if (c.loginName != "B10000002") {
+                session
+            } else {
+                object : MailSession by session {
+                    override fun close() {
+                        closing.countDown()
+                        letClose.await(5, TimeUnit.SECONDS)
+                        session.close()
+                    }
+                }
+            }
+        }
+        // The write lets that sign-in finish while it is on the connection, then fails, its flag landed.
+        val signedInNext = CountDownLatch(1)
+        val writing = MailSessionFactory { c ->
+            val session = server.factory().open(c)
+            object : MailSession by session {
+                override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long?): Boolean {
+                    letClose.countDown()
+                    assertTrue(signedInNext.await(5, TimeUnit.SECONDS))
+                    server.failAfterFlag = true
+                    try {
+                        return session.move(folder, uid, target, ownedDeleted, uidValidity)
+                    } finally {
+                        server.failAfterFlag = false
+                    }
+                }
+            }
+        }
+        val setup = TestSetup(backgroundScope, writing, accountSessions = holdingClose)
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+        server.passwords["B10000002"] = "pw"
+        val signIn = async(Dispatchers.IO) { setup.account.signIn("b10000002", "pw").also { signedInNext.countDown() } }
+        assertTrue(closing.await(5, TimeUnit.SECONDS))
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") }
+        assertNull(signIn.await())
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertTrue("the first student's flagged mail was recorded as the next one's", state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
     }
 
     /** As above, with another student signing in: their state takes nothing of the first one's. */

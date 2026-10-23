@@ -278,10 +278,15 @@ class MailRepository @Inject constructor(
      * session; the answer being yes says no account came or went since the caller read what it
      * asks about, so they are that account's too.
      */
-    private suspend fun <T> withSession(stillWanted: () -> Boolean = { true }, block: (MailSession) -> T): T = withContext(Dispatchers.IO) {
+    private suspend fun <T> withSession(
+        stillWanted: () -> Boolean = { true },
+        /** The account to hold the session as, read with its state ([MailAccount.snapshot]); the signed-in one when null. */
+        owner: MailAccount.Snapshot? = null,
+        block: (MailSession) -> T,
+    ): T = withContext(Dispatchers.IO) {
         if (account.isDemo) throw MailError.DemoMode()
         refuseWhileAuthFailed()
-        holder.use(credentials(), stillWanted, block)
+        holder.use(owner?.credentials ?: credentials(), stillWanted, block)
     }
 
     // --- demo -------------------------------------------------------------------
@@ -806,7 +811,10 @@ class MailRepository @Inject constructor(
         op: (MailSession, Set<Long>) -> Boolean,
     ) {
         val generation = account.accountGeneration
-        val clears = state.clears
+        // The account the write is made as, read together with its state's clear count: the
+        // session below is held as that account, and its set is the one read and recorded into.
+        val owner = account.snapshot() ?: throw MailError.Protocol("not signed in")
+        val clears = owner.clears
         val cached = cachedPage(folder)
         val cachedValidity = cached?.uidValidity
         val alreadyDeleted = cached?.messages?.firstOrNull { it.uid == uid }?.flags?.deleted == true
@@ -814,7 +822,7 @@ class MailRepository @Inject constructor(
         var attempted = false
         var cacheStale = false
         try {
-            withSession(stillWanted) { session ->
+            withSession(stillWanted, owner) { session ->
                 val serverValidity = session.status(folder).uidValidity
                 validity = serverValidity
                 if (cachedValidity != null && cachedValidity != serverValidity) {
@@ -852,12 +860,15 @@ class MailRepository @Inject constructor(
      * Asked whether it is still wanted on the set's own [MailStateStore.clears], not on the
      * write's `stillWanted`: a list's write asks on the account generation, which the same student
      * signing in again moves while keeping the set, and the flag that landed must still be recorded
-     * there or no later EXPUNGE of the folder takes that mail. Another student's sign-in clears
-     * the set, and then nothing is checked or recorded.
+     * there or no later EXPUNGE of the folder takes that mail. As whoever is signed in now, read
+     * with the count ([MailAccount.snapshot]): while the count stands that is the same student,
+     * perhaps under a new password. Another student's sign-in clears the set, and then nothing is
+     * checked or recorded.
      */
     private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long, clears: Int) {
         try {
-            withSession({ state.clears == clears }) { session ->
+            val now = account.snapshot()?.takeIf { it.clears == clears } ?: return
+            withSession({ state.clears == clears }, now) { session ->
                 if (session.refreshFlags(folder, listOf(uid))[uid]?.deleted == true) {
                     state.setOwnedDeletedIf(folder, validity, state.ownedDeleted(folder, validity) + uid, clears)
                 }
