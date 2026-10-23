@@ -916,7 +916,8 @@ class SchoolMailListViewModel @Inject constructor(
         }
         val generation = account.accountGeneration
         val since = changeSeq
-        _state.update { it.copy(isSearching = true) }
+        // Nothing on screen until its matches come: the mail shown before is no answer to it.
+        _state.update { it.copy(isSearching = true, searchResults = emptyList(), searchLocalOnly = false) }
         try {
             // One search per real folder, in the search index on this phone, merged the same way
             // the list itself is; the server fetches the matches it finds. A folder that could not

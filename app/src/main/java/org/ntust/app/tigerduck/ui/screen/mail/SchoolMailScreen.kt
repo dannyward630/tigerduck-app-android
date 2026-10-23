@@ -297,6 +297,9 @@ fun SchoolMailScreen(
                 val displayed = state.displayed
                 val failed = state.loadState as? SchoolMailListViewModel.LoadState.Failed
                 when {
+                    // A search under way with nothing found yet shows nothing, its field's spinner
+                    // aside: not the mail from before it, nor "no mail" before it has looked.
+                    displayed.isEmpty() && state.isSearching -> Unit
                     displayed.isEmpty() && failed != null -> item(key = "failed") {
                         Box(Modifier.fillParentMaxHeight(0.6f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                             EmptyStateView(

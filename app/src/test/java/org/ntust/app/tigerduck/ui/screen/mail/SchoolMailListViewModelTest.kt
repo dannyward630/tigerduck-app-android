@@ -483,6 +483,24 @@ class SchoolMailListViewModelTest {
     }
 
     @Test
+    fun `a search under way shows no mail until its matches come`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"), mailSummary(2, subject = "other"))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        assertEquals(2, vm.state.value.displayed.size)
+        val gate = CompletableDeferred<Unit>()
+        repo.searchGate = gate
+        vm.setSearchText("期中")
+
+        vm.submitSearch()
+        assertEquals(0, vm.state.value.displayed.size)
+
+        repo.searchGate = null
+        gate.complete(Unit)
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
     fun `the search field spins while a further page of matches is on its way`() {
         repo.pageSize = 2
         repo.add("INBOX", *(1L..120L).map { mailSummary(it, subject = "期中考 $it") }.toTypedArray())
