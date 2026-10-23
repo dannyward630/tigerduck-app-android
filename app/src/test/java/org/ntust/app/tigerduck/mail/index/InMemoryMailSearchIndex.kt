@@ -79,13 +79,13 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     }
 
     @Synchronized
-    override fun remove(owner: String, folder: String, uids: Collection<Long>, stillCurrent: () -> Boolean) {
+    override fun remove(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>, stillCurrent: () -> Boolean) {
         called()
         if (!stillCurrent()) {
             refusedWrites++
             return
         }
-        if (this.owner == owner) mail[folder]?.keys?.removeAll(uids.toSet())
+        if (this.owner == owner && validities[folder] == uidValidity) mail[folder]?.keys?.removeAll(uids.toSet())
     }
 
     @Synchronized

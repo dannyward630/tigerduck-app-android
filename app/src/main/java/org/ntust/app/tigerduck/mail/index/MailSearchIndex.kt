@@ -48,8 +48,11 @@ interface MailSearchIndex {
      */
     fun add(owner: String, folder: String, uidValidity: Long, entries: List<Entry>, stillCurrent: () -> Boolean): Boolean
 
-    /** Drops [uids], gone from the server, from [folder], unless [stillCurrent] says the account left. */
-    fun remove(owner: String, folder: String, uids: Collection<Long>, stillCurrent: () -> Boolean)
+    /**
+     * Drops [uids], gone from the server, from [folder] while it is indexed under [uidValidity],
+     * unless [stillCurrent] says the account left.
+     */
+    fun remove(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>, stillCurrent: () -> Boolean)
 
     /**
      * The UIDs, newest first, of [owner]'s mail in [folder] whose sender, subject or text holds
@@ -180,8 +183,8 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
     }
 
     @Synchronized
-    override fun remove(owner: String, folder: String, uids: Collection<Long>, stillCurrent: () -> Boolean) {
-        if (uids.isEmpty() || !stillCurrent() || ownerLocked() != owner) return
+    override fun remove(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>, stillCurrent: () -> Boolean) {
+        if (uids.isEmpty() || !stillCurrent() || ownerLocked() != owner || validityLocked(folder) != uidValidity) return
         transaction { uids.forEach { db.delete("mail", "folder = ? AND uid = ?", arrayOf(folder, it.toString())) } }
     }
 

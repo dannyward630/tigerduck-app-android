@@ -43,6 +43,13 @@ class SessionHolder(
     internal var onWait: (() -> Unit)? = null
 
     /**
+     * Whether a [use] holds the connection now. A test's way of telling, from [onWait], a caller
+     * that waits on another from one that goes straight on.
+     */
+    @VisibleForTesting
+    internal val held: Boolean get() = mutex.isLocked
+
+    /**
      * @param stillWanted see [SchoolMailRepository.loadPage]: whether the caller still wants the
      *   command sent. Asked under the connection's lock twice -- before the connection is so
      *   much as probed, and again right before [block] -- because a probe or an open logs in with

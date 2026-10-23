@@ -92,11 +92,12 @@ class MailSearchIndexTest {
     }
 
     @Test
-    fun `under another UIDVALIDITY a search finds nothing and flags change nothing`() {
+    fun `under another UIDVALIDITY a search finds nothing, and nothing is flagged or removed`() {
         seed(entries = arrayOf(Entry(1, "a@example.com", "公告", "")))
 
         assertEquals(emptyList<Long>(), index.search(me, "INBOX", 8, "公告"))
         index.updateFlags(me, "INBOX", 8, mapOf(1L to MailFlags.NONE.copy(seen = true)), current)
+        index.remove(me, "INBOX", 8, listOf(1L), current)
 
         assertFalse(index.summaries(me, "INBOX", 7, listOf(1L)).getValue(1L).flags.seen)
     }
@@ -124,7 +125,7 @@ class MailSearchIndexTest {
     fun `nothing is removed or flagged anew for an account that has left`() {
         seed(entries = arrayOf(Entry(1, "a@example.com", "公告", ""), Entry(2, "b@example.com", "公告", "")))
 
-        index.remove(me, "INBOX", listOf(1L)) { false }
+        index.remove(me, "INBOX", 7, listOf(1L)) { false }
         index.updateFlags(me, "INBOX", 7, mapOf(2L to MailFlags.NONE.copy(seen = true))) { false }
 
         val stored = index.summaries(me, "INBOX", 7, listOf(1L, 2L))
@@ -136,7 +137,7 @@ class MailSearchIndexTest {
     fun `mail gone from the server leaves the index`() {
         seed(entries = arrayOf(Entry(1, "a@example.com", "公告", ""), Entry(2, "b@example.com", "公告", "")))
 
-        index.remove(me, "INBOX", listOf(1L), current)
+        index.remove(me, "INBOX", 7, listOf(1L), current)
 
         assertEquals(setOf(2L), index.uids(me, "INBOX"))
     }

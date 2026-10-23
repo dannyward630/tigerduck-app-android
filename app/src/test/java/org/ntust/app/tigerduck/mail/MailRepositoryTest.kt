@@ -44,6 +44,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.concurrent.thread
 
 class MailRepositoryTest {
     @get:Rule val tmp = TemporaryFolder()
@@ -64,6 +65,8 @@ class MailRepositoryTest {
         scope: kotlinx.coroutines.CoroutineScope,
         /** What the repository opens its sessions with; the account signs in on the server itself. */
         sessions: MailSessionFactory = server.factory(),
+        /** The index the repository is handed, around [searchIndex]: a test acts inside its calls. */
+        wrapIndex: (InMemoryMailSearchIndex) -> MailSearchIndex = { it },
     ) {
         val cache = MailCache(tmp.root)
         val searchIndex = InMemoryMailSearchIndex()
@@ -72,8 +75,28 @@ class MailRepositoryTest {
         val account = MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), RecordingScheduler(), notifier, scope)
         val repository = MailRepository(
             account, sessions, cache, state,
-            MailSender(MessageBuilder(), transport, pause = {}), MessageBuilder(), demo, searchIndex, indexScheduler, scope,
+            MailSender(MessageBuilder(), transport, pause = {}), MessageBuilder(), demo, wrapIndex(searchIndex), indexScheduler, scope,
         )
+
+        /**
+         * Starts [action] on a thread of its own from inside a call that may hold the connection,
+         * and waits for it to end -- or, while the caller holds the connection, for it to reach
+         * the wait for it, which then ends only once the caller lets go. Answers the thread.
+         */
+        fun runAside(action: suspend () -> Unit): Thread {
+            val stopped = CountDownLatch(1)
+            repository.holder.onWait = { if (repository.holder.held) stopped.countDown() }
+            val aside = thread {
+                try {
+                    runBlocking { action() }
+                } finally {
+                    stopped.countDown()
+                }
+            }
+            assertTrue(stopped.await(5, TimeUnit.SECONDS))
+            repository.holder.onWait = null
+            return aside
+        }
 
         /** Signs out as Settings does, and waits for the cleanup the sign-out then runs on its own. */
         fun signOutAndSettle() {
@@ -569,6 +592,34 @@ class MailRepositoryTest {
         assertEquals(emptyList<Long>(), outcome.remaining)
         assertEquals(server.uidValidity, outcome.uidValidity)
         assertFalse("none of the new folder's mail was searched", outcome.complete)
+    }
+
+    @Test
+    fun `mail a search downloads while a download lists its folder stays downloaded`() = runTest {
+        server.deliver("期中考 1")
+        val armed = AtomicBoolean(true)
+        var late = 0L
+        var aside: Thread? = null
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope) { index ->
+            object : MailSearchIndex by index {
+                override fun open(owner: String, folder: String, uidValidity: Long, stillCurrent: () -> Boolean): Boolean {
+                    if (folder == "INBOX" && armed.getAndSet(false)) {
+                        // Come in once the download has listed the folder, and downloaded by a
+                        // search before the download looks at what the index has.
+                        late = server.deliver("期中考 2")
+                        aside = setup.runAside { setup.repository.search("INBOX", "期中") }
+                    }
+                    return index.open(owner, folder, uidValidity, stillCurrent)
+                }
+            }
+        }
+        val repo = setup.signedIn()
+
+        repo.updateSearchIndex()
+        aside!!.join(5_000)
+
+        assertTrue(late in setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX"))
     }
 
     @Test

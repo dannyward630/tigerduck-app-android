@@ -93,10 +93,20 @@ class MailIndexerTest {
      * its filing, it would be undone by the batch's older answer: so the two are one hold.
      */
     @Test
-    fun `a batch and the flags it refreshes are filed before the connection is let go`() = runTest {
+    fun `a plan, a batch and the flags it refreshes are filed before the connection is let go`() = runTest {
         server.deliver("期中考")
         val unheld = mutableListOf<String>()
         val watched = object : MailSearchIndex by index {
+            override fun open(owner: String, folder: String, uidValidity: Long, stillCurrent: () -> Boolean): Boolean {
+                if (!holding) unheld += "open"
+                return index.open(owner, folder, uidValidity, stillCurrent)
+            }
+
+            override fun remove(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>, stillCurrent: () -> Boolean) {
+                if (!holding) unheld += "remove"
+                index.remove(owner, folder, uidValidity, uids, stillCurrent)
+            }
+
             override fun add(
                 owner: String,
                 folder: String,

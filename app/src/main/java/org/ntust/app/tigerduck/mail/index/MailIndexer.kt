@@ -57,18 +57,22 @@ internal class MailIndexer(
     suspend fun plan(folder: String, newOnly: Boolean = false, stillWanted: () -> Boolean = { true }): Plan? = withContext(Dispatchers.IO) {
         val owner = owner() ?: return@withContext null
         val current = { stillWanted() && stillOwner(owner) }
-        val (uidValidity, onServer) = sessions.run(current) { s ->
+        // The index brought to the server's list in the same hold of the connection that read it,
+        // as [fill]'s batches are filed: mail a search downloads meanwhile, in a hold of its own,
+        // is never dropped as gone from a list read before it came, nor the folder opened again
+        // at a UIDVALIDITY it has been recreated past.
+        sessions.run(current) { s ->
             // The UIDs first: the session then answers the UIDVALIDITY from the folder they opened.
-            val uids = s.undeletedUids(folder)
-            s.uidValidity(folder) to uids
+            val onServer = s.undeletedUids(folder)
+            val uidValidity = s.uidValidity(folder)
+            if (!index.open(owner.address, folder, uidValidity, current)) return@run null
+            val indexed = index.uids(owner.address, folder)
+            index.remove(owner.address, folder, uidValidity, indexed - onServer.toSet(), current)
+            val newest = if (newOnly) indexed.maxOrNull() ?: 0L else 0L
+            val lacking = onServer.filter { it !in indexed }
+            val missing = lacking.filter { it > newest }.sortedDescending()
+            Plan(folder, owner, uidValidity, missing, leftOut = lacking.size - missing.size)
         }
-        if (!index.open(owner.address, folder, uidValidity, current)) return@withContext null
-        val indexed = index.uids(owner.address, folder)
-        index.remove(owner.address, folder, indexed - onServer.toSet(), current)
-        val newest = if (newOnly) indexed.maxOrNull() ?: 0L else 0L
-        val lacking = onServer.filter { it !in indexed }
-        val missing = lacking.filter { it > newest }.sortedDescending()
-        Plan(folder, owner, uidValidity, missing, leftOut = lacking.size - missing.size)
     }
 
     /**

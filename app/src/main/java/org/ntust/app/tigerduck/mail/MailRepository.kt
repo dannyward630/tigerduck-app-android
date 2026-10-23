@@ -338,7 +338,9 @@ class MailRepository @Inject constructor(
             val owner = indexOwnerNow()?.takeIf { it.generation == change.generation } ?: return@withContext
             when (change) {
                 is MailChange.Seen -> markSeenInIndex(owner, change.folder, change.uid, change.seen)
-                is MailChange.Removed -> searchIndex.remove(owner.address, change.folder, listOf(change.uid)) { stillIndexOwner(owner) }
+                is MailChange.Removed -> searchIndex.uidValidity(owner.address, change.folder)?.let { validity ->
+                    searchIndex.remove(owner.address, change.folder, validity, listOf(change.uid)) { stillIndexOwner(owner) }
+                }
                 is MailChange.Changed -> Unit
             }
         }
