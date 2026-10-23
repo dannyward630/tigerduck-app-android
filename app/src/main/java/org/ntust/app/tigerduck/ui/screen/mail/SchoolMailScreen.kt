@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -83,6 +82,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -542,36 +542,40 @@ fun SpecialFolder.labelRes(): Int = when (this) {
     SpecialFolder.TRASH -> R.string.school_mail_folder_trash
 }
 
-/** Mirrors Announcements' BulletinCard: 12dp surfaceVariant card, 7dp unread dot, SemiBold when unread. */
-@OptIn(ExperimentalFoundationApi::class)
+/**
+ * Mirrors Announcements' BulletinCard: 12dp surfaceVariant card, 7dp unread dot, SemiBold when unread.
+ *
+ * [onLongClickLabel] is what TalkBack says a long press does, offered with [onLongClick].
+ */
 @Composable
 internal fun MailCard(
     message: MailSummary,
     mailDomain: String,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null,
+    onLongClickLabel: String? = null,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
     val unread = !message.flags.seen
-    // [modifier] lands on the same layout node as Surface's own clickable, so semantics set on
-    // it merge into the single card node an accessibility service focuses.
+    val shape = RoundedCornerShape(12.dp)
+    // [modifier] lands on the same layout node as the card's clickable, so semantics set on it
+    // merge into the single card node an accessibility service focuses. Clipped ahead of the
+    // clickable, or its ripple fills the square corners: Surface clips only what it draws, after
+    // every modifier passed to it.
     Surface(
-        shape = RoundedCornerShape(12.dp),
+        shape = shape,
         color = cs.surfaceVariant,
         modifier = modifier
             .fillMaxWidth()
-            .then(
-                if (onLongClick != null) {
-                    Modifier.combinedClickable(
-                        enabled = enabled,
-                        onClick = onClick,
-                        onLongClick = onLongClick,
-                    )
-                } else {
-                    Modifier.combinedClickable(enabled = enabled, onClick = onClick)
-                }
+            .clip(shape)
+            .combinedClickable(
+                enabled = enabled,
+                role = Role.Button,
+                onLongClickLabel = onLongClickLabel,
+                onLongClick = onLongClick,
+                onClick = onClick,
             ),
     ) {
         Column(Modifier.padding(12.dp)) {
@@ -734,6 +738,8 @@ internal fun SwipeableMailCard(
                 mailDomain,
                 onClick = onClick,
                 onLongClick = { menuOpen = true },
+                // The long press opens the same actions as the mail's own ⋮ button.
+                onLongClickLabel = stringResource(R.string.school_mail_message_actions),
                 enabled = !writing,
                 modifier = Modifier.semantics { customActions = accessibilityActions },
             )

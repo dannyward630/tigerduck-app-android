@@ -5,7 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -118,6 +120,15 @@ class SwipeableMailCardTest {
         assertEquals(listOf("move"), pickFromMenu(R.string.school_mail_move_to))
         assertEquals(listOf("delete"), pickFromMenu(R.string.school_mail_delete))
         composeRule.onNodeWithText(text(R.string.school_mail_move_to)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `TalkBack says what the long press opens, on a card it calls a button`() {
+        show()
+
+        val config = card().fetchSemanticsNode().config
+        assertEquals(text(R.string.school_mail_message_actions), config[SemanticsActions.OnLongClick].label)
+        assertEquals(Role.Button, config.getOrElseNullable(SemanticsProperties.Role) { null })
     }
 
     @Test
