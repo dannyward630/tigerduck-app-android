@@ -66,15 +66,16 @@ class SchoolMailListViewModel @Inject constructor(
     /**
      * [row]'s delete, asked before it is made: [permanently] when it destroys the mail rather than
      * moving it to the trash ([SchoolMailRepository.deletesPermanently]), which asks the harder
-     * question. [generation] is the [MailAccount.accountGeneration] it was asked under; see [write].
+     * question. [generation] is the [MailAccount.accountGeneration] it was asked under, and
+     * [uidValidity] the UIDVALIDITY the list had read [row]'s folder under; see [write].
      */
-    data class PendingDelete(val row: MailRow, val permanently: Boolean, val generation: Int)
+    data class PendingDelete(val row: MailRow, val permanently: Boolean, val generation: Int, val uidValidity: Long?)
 
     /** A folder a mail can be moved to; [kind] when it is a special one, which is shown by its own name. */
     data class MoveTarget(val folder: String, val kind: SpecialFolder?)
 
-    /** [row]'s move, waiting on which of [targets] it goes to; [generation] as on [PendingDelete]. */
-    data class PendingMove(val row: MailRow, val targets: List<MoveTarget>, val generation: Int)
+    /** [row]'s move, waiting on which of [targets] it goes to; [generation] and [uidValidity] as on [PendingDelete]. */
+    data class PendingMove(val row: MailRow, val targets: List<MoveTarget>, val generation: Int, val uidValidity: Long?)
 
     data class UiState(
         val chips: List<FolderChip> = emptyList(),
@@ -625,11 +626,12 @@ class SchoolMailListViewModel @Inject constructor(
     fun delete(row: MailRow) {
         if (!mayAsk(row)) return
         val generation = account.accountGeneration
+        val uidValidity = folderValidity[row.folder]
         asking = viewModelScope.launch {
             try {
                 val permanently = repository.deletesPermanently(row.folder)
                 if (account.accountGeneration != generation) return@launch
-                _state.update { it.copy(pendingDelete = PendingDelete(row, permanently, generation)) }
+                _state.update { it.copy(pendingDelete = PendingDelete(row, permanently, generation, uidValidity)) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -643,7 +645,7 @@ class SchoolMailListViewModel @Inject constructor(
     fun confirmDelete(confirm: Boolean) {
         val pending = _state.value.pendingDelete ?: return
         _state.update { it.copy(pendingDelete = null) }
-        if (confirm) write(pending.row, pending.generation) { row, stillWanted -> repository.delete(row.folder, row.uid, stillWanted) }
+        if (confirm) write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted -> repository.delete(row.folder, row.uid, stillWanted) }
     }
 
     /**
@@ -657,13 +659,14 @@ class SchoolMailListViewModel @Inject constructor(
     fun requestMove(row: MailRow) {
         if (!mayAsk(row)) return
         val generation = account.accountGeneration
+        val uidValidity = folderValidity[row.folder]
         asking = viewModelScope.launch {
             try {
                 val folders = repository.folders { account.accountGeneration == generation }
                 if (account.accountGeneration != generation) return@launch
                 val targets = SpecialFolder.entries.mapNotNull { kind -> folders.nameOf(kind)?.let { MoveTarget(it, kind) } } +
                     folders.others.map { MoveTarget(it, null) }
-                _state.update { it.copy(pendingMove = PendingMove(row, targets.filter { t -> t.folder != row.folder }, generation)) }
+                _state.update { it.copy(pendingMove = PendingMove(row, targets.filter { t -> t.folder != row.folder }, generation, uidValidity)) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -681,7 +684,7 @@ class SchoolMailListViewModel @Inject constructor(
     fun moveTo(target: String) {
         val pending = _state.value.pendingMove ?: return
         _state.update { it.copy(pendingMove = null) }
-        write(pending.row, pending.generation) { row, stillWanted -> repository.move(row.folder, row.uid, target, stillWanted) }
+        write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted -> repository.move(row.folder, row.uid, target, stillWanted) }
     }
 
     /**
@@ -701,14 +704,24 @@ class SchoolMailListViewModel @Inject constructor(
      * behind other requests while another student signs in. Nor while another write of [row] is
      * still out ([UiState.writing]), which holds the row from here to its end.
      *
+     * Nor once a page of [row]'s folder has come back under another UIDVALIDITY than [uidValidity],
+     * the one the list had when the question was asked: the folder was recreated on the server
+     * while the question was up -- a poll's page can land meanwhile -- and the UID names another
+     * mail there. The repository's own check compares the server with its cache, which that page
+     * has replaced by then, so it would let the write through.
+     *
      * The row leaves the list through the repository's feed ([apply]), as a swipe's mark-read
      * changes it ([toggleRead]), and not here as well: a write held on the connection can end
      * after another student signed in over this one, whose list the feed knows to leave alone.
      * Nor is such a write's failure theirs to see ([dropped]), and least of all a rejected
      * password, which would mark theirs rejected.
      */
-    private fun write(row: MailRow, generation: Int, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
+    private fun write(row: MailRow, generation: Int, uidValidity: Long?, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
         if (account.accountGeneration != generation || row.key in _state.value.writing) return
+        if (folderValidity[row.folder] != uidValidity) {
+            actionFail(MailError.FolderChanged())
+            return
+        }
         _state.update { it.copy(writing = it.writing + row.key) }
         val forgotten = accountsForgotten
         viewModelScope.launch {

@@ -2476,7 +2476,7 @@ class SchoolMailListViewModelTest {
         vm.load()
         val row = vm.state.value.displayed.first { it.uid == 2L }
         vm.delete(row)
-        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false, account.accountGeneration), vm.state.value.pendingDelete)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false, account.accountGeneration, uidValidity = 1L), vm.state.value.pendingDelete)
 
         vm.confirmDelete(false)
         assertNull(vm.state.value.pendingDelete)
@@ -2498,7 +2498,7 @@ class SchoolMailListViewModelTest {
         vm.selectFolder(FolderSelection.Real(trash))
         val row = vm.state.value.displayed.first { it.uid == 8L }
         vm.delete(row)
-        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true, account.accountGeneration), vm.state.value.pendingDelete)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true, account.accountGeneration, uidValidity = 1L), vm.state.value.pendingDelete)
 
         vm.confirmDelete(false)
         assertNull(vm.state.value.pendingDelete)
@@ -2915,5 +2915,28 @@ class SchoolMailListViewModelTest {
         second.complete(Unit)
         main.dispatcher.scheduler.runCurrent()
         assertTrue(vm.state.value.writing.isEmpty())
+    }
+
+    @Test
+    fun `a delete or move asked before its folder was found recreated is not made`() {
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        vm.delete(row)
+        // While the question is up, the next page -- a poll's -- finds the folder recreated on the
+        // server, where UID 2 is another mail altogether.
+        repo.pageValidity = 2
+        repo.mail["INBOX"] = mutableListOf(mailSummary(2, subject = "another mail"))
+        vm.refresh()
+        vm.confirmDelete(true)
+        assertTrue("the delete went out for another mail under the same UID", repo.deleted.isEmpty())
+        assertTrue(vm.state.value.actionError is MailError.FolderChanged)
+        vm.dismissActionError()
+
+        // A move asked now is of the mail on screen now, and goes out.
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        assertEquals(listOf(Triple("INBOX", 2L, repo.resolved.nameOf(SpecialFolder.JUNK)!!)), repo.moved)
     }
 }
