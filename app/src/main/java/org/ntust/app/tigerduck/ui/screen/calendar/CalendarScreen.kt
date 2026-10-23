@@ -453,11 +453,11 @@ internal fun CalendarGrid(
                                     fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal
                                 )
                                 if (dotSources.isNotEmpty()) {
-                                    // One dot per source in its colour, as on
+                                    // One dot per source in its color, as on
                                     // the iPhone, so a deadline reads apart
                                     // from a holiday. On the selected day they
                                     // take the day number's onPrimary: a source
-                                    // colour can sit too close to the accent
+                                    // color can sit too close to the accent
                                     // fill, and the list below shows that
                                     // day's sources anyway. Not white: the
                                     // wallpaper's primary in dark mode is
