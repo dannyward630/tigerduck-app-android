@@ -2849,4 +2849,52 @@ class SchoolMailListViewModelTest {
         assertTrue("the first student's move went out as the second", repo.moved.isEmpty())
         assertNull(vm.state.value.actionError)
     }
+
+    @Test
+    fun `a mail whose write was out while its student signed in again is given back once the write ends`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        repo.deleteError = MailError.Network()
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        // The same student signs in again with no sign-out between, as the sheet a rejected
+        // password shows allows: the account moves, and nothing resets the list.
+        runBlocking { account.signIn("b10000001", "pw") }
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the card stayed held after its write ended", vm.state.value.writing.isEmpty())
+        repo.deleteError = null
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        assertEquals(row, vm.state.value.pendingDelete?.row)
+    }
+
+    @Test
+    fun `a write that ends after another student signed in leaves their own write of the same mail held`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val first = CompletableDeferred<Unit>()
+        repo.writeGate = first
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        // The second student deletes the mail under the same folder and UID in their own INBOX.
+        val second = CompletableDeferred<Unit>()
+        repo.writeGate = second
+        val row = vm.state.value.displayed.single()
+        vm.delete(row)
+        vm.confirmDelete(true)
+        first.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the first student's write gave back the second's card", setOf(row.key), vm.state.value.writing)
+        repo.writeGate = null
+        second.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue(vm.state.value.writing.isEmpty())
+    }
 }

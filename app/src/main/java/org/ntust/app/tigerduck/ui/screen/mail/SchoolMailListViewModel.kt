@@ -295,6 +295,15 @@ class SchoolMailListViewModel @Inject constructor(
     private var asking: Job? = null
 
     /**
+     * Bumped by [forgetAccount], which empties [UiState.writing] with the rest of the state. A
+     * write that outlives that leaves [UiState.writing] alone at its end: the row of the same key
+     * there now, if any, is held by a write of whoever signed in since. Any other move of the
+     * account, the same student signing in again, resets nothing, and the write gives its row
+     * back as ever.
+     */
+    private var accountsForgotten = 0
+
+    /**
      * When the folders on screen were last looked at, by [clock]: a first page that landed, or a
      * poll that ran to the end. What a return's own look at the inbox is decided against
      * ([pollsOnResume]).
@@ -319,6 +328,7 @@ class SchoolMailListViewModel @Inject constructor(
         loadJob = null
         asking?.cancel()
         asking = null
+        accountsForgotten++
         prefetchJob?.cancel()
         prefetchJob = null
         prefetchDone = false
@@ -700,6 +710,7 @@ class SchoolMailListViewModel @Inject constructor(
     private fun write(row: MailRow, generation: Int, send: suspend (row: MailRow, stillWanted: () -> Boolean) -> Unit) {
         if (account.accountGeneration != generation || row.key in _state.value.writing) return
         _state.update { it.copy(writing = it.writing + row.key) }
+        val forgotten = accountsForgotten
         viewModelScope.launch {
             try {
                 send(row) { account.accountGeneration == generation }
@@ -709,9 +720,7 @@ class SchoolMailListViewModel @Inject constructor(
                 val error = MailErrors.classify(e)
                 if (!dropped(error, generation)) actionFail(error)
             } finally {
-                // A sign-out or another student's sign-in reset the state since, and the row
-                // [writing] names now, if any, is theirs.
-                if (account.accountGeneration == generation) _state.update { it.copy(writing = it.writing - row.key) }
+                if (forgotten == accountsForgotten) _state.update { it.copy(writing = it.writing - row.key) }
             }
         }
     }
