@@ -391,13 +391,30 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
     )
     val accentColorChanged: SharedFlow<Unit> = _accentColorChanged.asSharedFlow()
 
+    /**
+     * The accent swatch last picked in Settings, as its light palette hex. It
+     * keeps its value while [useWallpaperColors] is on. Read through
+     * [AccentPolicy.fixedLightHex], so nothing ever draws a value that is no
+     * color.
+     */
     var accentColorHex: Int
-        get() = prefs.getInt("accentColorHex", 0x007AFF)
+        get() = AccentPolicy.fixedLightHex(prefs.getInt("accentColorHex", AccentPolicy.DEFAULT_LIGHT_HEX))
         set(value) {
             val previous = accentColorHex
             prefs.edit().putInt("accentColorHex", value).apply()
             if (value != previous) _accentColorChanged.tryEmit(Unit)
         }
+
+    /**
+     * Whether the wallpaper's colors are picked in Settings in place of the
+     * swatch. A switch of its own, and not a value of [accentColorHex], so
+     * the swatch survives the pick: [AccentPolicy] says which surfaces still
+     * draw it, and an older build, which knows nothing of this key, goes on
+     * drawing it too.
+     */
+    var useWallpaperColors: Boolean
+        get() = prefs.getBoolean("useWallpaperColors", false)
+        set(value) = prefs.edit().putBoolean("useWallpaperColors", value).apply()
 
     var browserPreference: String
         get() = prefs.getString("browserPreference", "system") ?: "system"

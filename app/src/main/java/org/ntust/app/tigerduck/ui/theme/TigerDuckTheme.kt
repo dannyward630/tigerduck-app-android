@@ -1,18 +1,23 @@
 package org.ntust.app.tigerduck.ui.theme
 
+import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SwitchColors
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import org.ntust.app.tigerduck.shared.Course
@@ -248,7 +253,9 @@ private fun parseHexOrNull(hex: String?): Color? {
 // dark gray on the dark track in dark mode — so we force a white thumb and a
 // neutral track. The dark unchecked track has to be noticeably darker than the
 // card surface (#3A3A3C) so the off-state still reads as a control; using
-// #39393D made it disappear into the card.
+// #39393D made it disappear into the card. The checked thumb is onPrimary,
+// white on every swatch, and the wallpaper's own pair for its colors, whose
+// dark primary is too light for a white thumb to stand out on.
 private val SwitchUncheckedTrackLight = Color(0xFFD1D1D6)
 private val SwitchUncheckedTrackDark = Color(0xFF1C1C1E)
 
@@ -256,7 +263,7 @@ private val SwitchUncheckedTrackDark = Color(0xFF1C1C1E)
 fun tigerDuckSwitchColors(): SwitchColors {
     val isDark = TigerDuckTheme.isDarkMode
     return SwitchDefaults.colors(
-        checkedThumbColor = Color.White,
+        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
         checkedTrackColor = MaterialTheme.colorScheme.primary,
         checkedBorderColor = Color.Transparent,
         uncheckedThumbColor = Color.White,
@@ -387,18 +394,45 @@ private val TigerDuckTypography: Typography = Typography().let { default ->
     )
 }
 
+/**
+ * Whether the [TigerDuckAppTheme] around draws the wallpaper's colors. A theme
+ * nested inside it reads this, so it draws them too, in its own mode.
+ */
+private val LocalUsesDynamicColor = staticCompositionLocalOf { false }
+
 @Composable
 fun TigerDuckAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     accentColor: Color = Color(0xFF007AFF),
+    /**
+     * Whether the accent slots take the wallpaper's colors in place of
+     * [accentColor], from Android 12. A theme nested in another follows the
+     * outer one unless told otherwise, and takes the wallpaper's colors for its
+     * own mode: the class table import page is dark inside a light app, and the
+     * accent it is handed, the light theme's primary, is the wrong tone there.
+     */
+    useDynamicColor: Boolean = LocalUsesDynamicColor.current,
     /** The interface style, provided to the content as [LocalVisualStylePolicy]. */
     visualPreset: VisualPreset = VisualPreset.Default,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) {
-        DarkColorScheme.copy(primary = accentColor, surfaceTint = accentColor)
+    val context = LocalContext.current
+    val baseScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = if (useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val dynamic = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        // TigerDuck keeps explicit surface / background styling (cards, outline, page background)
+        // so that only the accent slots adapt to the dynamic wallpaper palette, consistent with the
+        // fixed accent presets. Each slot comes with its pair: the dark primary is a light tone,
+        // and TigerDuck's white onPrimary on it reads at under 2:1.
+        baseScheme.copy(
+            primary = dynamic.primary,
+            onPrimary = dynamic.onPrimary,
+            primaryContainer = dynamic.primaryContainer,
+            onPrimaryContainer = dynamic.onPrimaryContainer,
+            surfaceTint = dynamic.surfaceTint,
+        )
     } else {
-        LightColorScheme.copy(primary = accentColor, surfaceTint = accentColor)
+        baseScheme.copy(primary = accentColor, surfaceTint = accentColor)
     }
 
     MaterialTheme(
@@ -407,6 +441,7 @@ fun TigerDuckAppTheme(
     ) {
         CompositionLocalProvider(
             LocalVisualStylePolicy provides VisualStylePolicy(visualPreset),
+            LocalUsesDynamicColor provides useDynamicColor,
             content = content,
         )
     }
