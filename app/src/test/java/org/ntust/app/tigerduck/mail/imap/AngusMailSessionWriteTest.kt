@@ -25,6 +25,7 @@ import java.io.InputStream
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
+import java.util.Base64
 import java.util.Properties
 import java.util.concurrent.atomic.AtomicLong
 import javax.net.SocketFactory
@@ -309,6 +310,67 @@ class AngusMailSessionWriteTest {
             val text = s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid)
             assertTrue(text.startsWith("開頭 字"))
             assertFalse(text.endsWith("結尾"))
+        }
+    }
+
+    /** [text] in base64, in lines of 72 characters, as some senders wrap it. */
+    private fun base64Lines(text: String): String =
+        Base64.getEncoder().encodeToString(text.toByteArray(Charsets.UTF_8)).chunked(72).joinToString("\r\n")
+
+    /** A mail of [headers] and [body], as it arrives: the body's bytes are its `BODY[TEXT]`. */
+    private fun deliverRaw(headers: String, body: String) {
+        val raw = "From: prof@example.com\r\nTo: ${server.credentials.address}\r\nMIME-Version: 1.0\r\n$headers\r\n\r\n$body"
+        server.deliver(MimeMessage(Session.getInstance(Properties()), raw.toByteArray(Charsets.UTF_8).inputStream()))
+    }
+
+    /**
+     * Whether the cut at [AngusMailSession.SEARCH_TEXT_BYTES] falls inside one of base64's groups
+     * of four, in the base64 that starts at [from] in [body].
+     */
+    private fun cutsAGroup(body: String, from: Int): Boolean {
+        val fetched = body.toByteArray(Charsets.UTF_8).copyOf(AngusMailSession.SEARCH_TEXT_BYTES).toString(Charsets.UTF_8)
+        return fetched.drop(from).count { it.isLetterOrDigit() || it == '+' || it == '/' } % 4 != 0
+    }
+
+    @Test
+    fun `a base64 mail cut short is searched by the text before the cut`() {
+        val body = base64Lines("開頭 " + "字".repeat(30_000)) + "\r\n"
+        assertTrue("the cut falls inside a group of four", cutsAGroup(body, 0))
+        deliverRaw("Subject: long\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64", body)
+
+        session().use { s ->
+            val uid = s.undeletedUids("INBOX").single()
+            assertTrue(s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid).startsWith("開頭 字字"))
+        }
+    }
+
+    @Test
+    fun `a part cut short keeps the parts before it`() {
+        val second = "--b1\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n"
+        // Padded until the cut falls inside one of the second part's groups of four.
+        val body = (0..3).map { pad ->
+            "--b1\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n" +
+                "第一段" + " ".repeat(pad) + "\r\n" + second + base64Lines("第二段 " + "字".repeat(30_000)) + "\r\n--b1--\r\n"
+        }.first { cutsAGroup(it, it.indexOf(second) + second.length) }
+        deliverRaw("Subject: parts\r\nContent-Type: multipart/mixed; boundary=\"b1\"", body)
+
+        session().use { s ->
+            val uid = s.undeletedUids("INBOX").single()
+            val text = s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid)
+            assertTrue(text, text.startsWith("第一段 第二段 字字"))
+        }
+    }
+
+    @Test
+    fun `a part that will not read keeps the parts before it`() {
+        val body = "--b1\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n第一段\r\n" +
+            // uuencode with no begin line, which its decoder refuses.
+            "--b1\r\nContent-Type: text/plain\r\nContent-Transfer-Encoding: x-uuencode\r\n\r\nnot uuencoded\r\n--b1--\r\n"
+        deliverRaw("Subject: parts\r\nContent-Type: multipart/mixed; boundary=\"b1\"", body)
+
+        session().use { s ->
+            val uid = s.undeletedUids("INBOX").single()
+            assertEquals("第一段", s.fetchSearchTexts("INBOX", listOf(uid)).getValue(uid))
         }
     }
 

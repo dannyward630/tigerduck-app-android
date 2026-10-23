@@ -8,6 +8,7 @@ import jakarta.mail.Part
 import jakarta.mail.Session
 import jakarta.mail.UIDFolder
 import jakarta.mail.internet.ContentType
+import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimePart
 import jakarta.mail.search.FlagTerm
@@ -23,6 +24,7 @@ import org.eclipse.angus.mail.imap.protocol.IMAPResponse
 import org.eclipse.angus.mail.imap.protocol.SearchSequence
 import org.eclipse.angus.mail.imap.protocol.Status
 import org.eclipse.angus.mail.imap.protocol.UID
+import org.eclipse.angus.mail.util.BASE64DecoderStream
 import org.ntust.app.tigerduck.mail.MailCredentials
 import org.ntust.app.tigerduck.mail.MailError
 import org.ntust.app.tigerduck.mail.MailErrors
@@ -493,15 +495,36 @@ class AngusMailSession internal constructor(
         return header.copyOf(end) + "\r\n\r\n".toByteArray(Charsets.US_ASCII)
     }
 
-    /** [m]'s text parts, as [fetchBody] reads them, without its images or attachments. */
+    /**
+     * [m]'s text parts, as [fetchBody] reads them, without its images or attachments. Its body was
+     * fetched cut short, so the last part read can end anywhere: one that will not read at all
+     * leaves the parts before it as they are.
+     */
     private fun searchText(m: Message): String {
         val html = mutableListOf<String>()
         val plain = mutableListOf<String>()
         for (leaf in MimeWalker.leaves(m)) {
             val kind = kindOf(leaf.part) as? PartKind.Text ?: continue
-            if (kind.html) html += readText(leaf.part) else plain += readText(leaf.part)
+            val text = runCatching { readCutText(leaf.part) }.getOrNull() ?: continue
+            if (kind.html) html += text else plain += text
         }
         return MailSearchText.of(plain.joinToString("\n\n").ifEmpty { null }, html.joinToString("\n").ifEmpty { null })
+    }
+
+    /**
+     * [readText] for a part that may be cut short. The cut can fall inside one of base64's groups
+     * of four, and the decoder a part hands out refuses the whole part for that; base64 is decoded
+     * here instead, by one that keeps what comes before the cut.
+     */
+    private fun readCutText(part: Part): String {
+        val raw = when {
+            !runCatching { (part as? MimePart)?.encoding }.getOrNull().equals("base64", ignoreCase = true) -> null
+            part is MimeBodyPart -> part.rawInputStream
+            part is MimeMessage -> part.rawInputStream
+            else -> null
+        } ?: return readText(part)
+        val bytes = BASE64DecoderStream(raw, true).use { readBounded(it, MailLimits.TEXT_PART_BYTES) }
+        return MailCharsets.decode(bytes, charsetOf(part))
     }
 
     override fun append(folder: String, rfc822: ByteArray, flags: Set<AppendFlag>) = io {
@@ -589,11 +612,10 @@ class AngusMailSession internal constructor(
         fun baseType(part: Part): String =
             runCatching { ContentType(part.contentType).baseType.lowercase() }.getOrDefault("application/octet-stream")
 
-        fun readText(part: Part): String {
-            val bytes = readBounded(part, MailLimits.TEXT_PART_BYTES)
-            val charset = runCatching { ContentType(part.contentType).getParameter("charset") }.getOrNull()
-            return MailCharsets.decode(bytes, charset)
-        }
+        fun readText(part: Part): String = MailCharsets.decode(readBounded(part, MailLimits.TEXT_PART_BYTES), charsetOf(part))
+
+        /** The charset [part]'s Content-Type names; null for none, or one that will not parse. */
+        fun charsetOf(part: Part): String? = runCatching { ContentType(part.contentType).getParameter("charset") }.getOrNull()
 
         /**
          * At most [limit] bytes of [part], however much the part claims to hold (or does not claim:
@@ -605,10 +627,13 @@ class AngusMailSession internal constructor(
          * Truncates rather than refuses: a mail that shows its first few megabytes of text, or
          * drops one outsized inline image, still opens. [writeBounded] makes the opposite trade.
          */
-        fun readBounded(part: Part, limit: Int): ByteArray = part.inputStream.use { input ->
+        fun readBounded(part: Part, limit: Int): ByteArray = part.inputStream.use { readBounded(it, limit) }
+
+        /** [readBounded] of a stream rather than a part. */
+        fun readBounded(input: InputStream, limit: Int): ByteArray {
             val out = ByteArrayOutputStream()
             copyBounded(input, out, limit.toLong())
-            out.toByteArray()
+            return out.toByteArray()
         }
 
         /**
