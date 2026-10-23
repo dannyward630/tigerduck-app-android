@@ -115,11 +115,11 @@ fun SchoolMailComposeScreen(
     // marked answered, a sent draft would never be discarded, and a failure would have nowhere to
     // show (spec §8.4).
     val leave = {
-        heldMove.drop()
         when {
+            // Ignored, so a tab or a link the save is for still goes once it is saved.
             state.sending -> Unit
-            state.dirty -> showLeave = true
-            else -> onDone()
+            state.dirty -> { heldMove.drop(); showLeave = true }
+            else -> { heldMove.drop(); onDone() }
         }
     }
     BackHandler(onBack = leave)
