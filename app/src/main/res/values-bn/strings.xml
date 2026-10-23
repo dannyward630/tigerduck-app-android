@@ -272,6 +272,7 @@
     <string name="color_name_pink">গোলাপি</string>
     <string name="color_name_purple">বেগুনি</string>
     <string name="color_name_red">লাল</string>
+    <string name="color_name_wallpaper">ওয়ালপেপারের রং</string>
     <string name="color_picker_apply">প্রয়োগ করুন</string>
     <string name="color_picker_custom">কাস্টম</string>
     <string name="color_picker_presets_note">প্রিসেট রং</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">এই অ্যাটাচমেন্টটি খুলবেন?</string>
     <string name="school_mail_save_draft">খসড়া সংরক্ষণ করুন</string>
     <string name="school_mail_saved">সংরক্ষিত হয়েছে</string>
+    <string name="school_mail_search_index_partial">মেইল এখনও ডাউনলোড হচ্ছে। অনুসন্ধানে কিছু পুরোনো মেইল বাদ পড়তে পারে।</string>
     <string name="school_mail_search_local_only">সার্ভার এই অনুসন্ধান চালাতে পারছে না। শুধু লোড করা মেইল থেকে মিল দেখানো হচ্ছে।</string>
     <string name="school_mail_search_prompt">মেইল অনুসন্ধান করুন</string>
     <string name="school_mail_send">পাঠান</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">আপনার ID এবং পাসওয়ার্ড একাডেমিক সিস্টেমের মতোই হওয়া উচিত। TigerDuck এই পাসওয়ার্ডটি শুধু এই ডিভাইসে এনক্রিপ্ট করে রাখে, কখনো আপলোড করে না।</string>
     <string name="school_mail_sign_in_prompt_title">স্কুল মেইলে সাইন ইন করুন</string>
     <string name="school_mail_source_failed">সোর্স লোড করা যায়নি।</string>
+    <string name="school_mail_storage_delete_message">আপনার মেইল স্কুলের সার্ভারে থেকে যাবে। পরের বার স্কুল মেইল খুললে এটি আবার ডাউনলোড হবে, তার আগ পর্যন্ত অনুসন্ধানে কিছু মেইল বাদ পড়তে পারে।</string>
+    <string name="school_mail_storage_delete_title">ডাউনলোড করা মেইল মুছবেন?</string>
+    <string name="school_mail_storage_footer">ডাউনলোড করা থাকে, যাতে আপনি সব মেইলে অনুসন্ধান করতে এবং অপেক্ষা ছাড়াই স্ক্রল করতে পারেন।</string>
+    <string name="school_mail_storage_title">ডাউনলোড করা মেইল</string>
     <string name="school_mail_subject">বিষয়</string>
     <string name="school_mail_to">প্রতি</string>
     <string name="school_mail_too_large">অ্যাটাচমেন্ট 50 MB সীমার বেশি</string>

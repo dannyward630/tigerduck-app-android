@@ -272,6 +272,7 @@
     <string name="color_name_pink">गुलाबी</string>
     <string name="color_name_purple">बैंगनी</string>
     <string name="color_name_red">लाल</string>
+    <string name="color_name_wallpaper">वॉलपेपर के रंग</string>
     <string name="color_picker_apply">लागू करें</string>
     <string name="color_picker_custom">कस्टम</string>
     <string name="color_picker_presets_note">प्रीसेट रंग</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">यह अटैचमेंट खोलें?</string>
     <string name="school_mail_save_draft">ड्राफ़्ट सेव करें</string>
     <string name="school_mail_saved">सेव हो गया</string>
+    <string name="school_mail_search_index_partial">मेल अभी भी डाउनलोड हो रहे हैं। हो सकता है कि खोज में कुछ पुराने मेल न मिलें।</string>
     <string name="school_mail_search_local_only">सर्वर यह खोज नहीं कर सकता। सिर्फ़ लोड किए गए मेल में मिलान दिखाया जा रहा है।</string>
     <string name="school_mail_search_prompt">मेल खोजें</string>
     <string name="school_mail_send">भेजें</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">आपकी ID और पासवर्ड स्कूल सिस्टम जैसे ही होने चाहिए। TigerDuck इस पासवर्ड को सिर्फ़ इसी डिवाइस पर एन्क्रिप्ट करके रखता है और कभी अपलोड नहीं करता।</string>
     <string name="school_mail_sign_in_prompt_title">स्कूल मेल में साइन इन करें</string>
     <string name="school_mail_source_failed">सोर्स लोड नहीं हो सका।</string>
+    <string name="school_mail_storage_delete_message">आपके मेल स्कूल के सर्वर पर बने रहते हैं। अगली बार स्कूल मेल खोलने पर ये फिर से डाउनलोड होंगे, तब तक हो सकता है कि खोज में कुछ मेल न मिलें।</string>
+    <string name="school_mail_storage_delete_title">डाउनलोड किए गए मेल हटाएं?</string>
+    <string name="school_mail_storage_footer">ये डाउनलोड किए जाते हैं ताकि आप अपने सभी मेल खोज सकें और बिना इंतज़ार किए स्क्रॉल कर सकें।</string>
+    <string name="school_mail_storage_title">डाउनलोड किए गए मेल</string>
     <string name="school_mail_subject">विषय</string>
     <string name="school_mail_to">प्रति</string>
     <string name="school_mail_too_large">अटैचमेंट 50 MB की सीमा से ज़्यादा हैं</string>

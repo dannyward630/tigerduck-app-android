@@ -272,6 +272,7 @@
     <string name="color_name_pink">Hồng</string>
     <string name="color_name_purple">Tím</string>
     <string name="color_name_red">Đỏ</string>
+    <string name="color_name_wallpaper">Màu hình nền</string>
     <string name="color_picker_apply">Áp dụng</string>
     <string name="color_picker_custom">Tùy chỉnh</string>
     <string name="color_picker_presets_note">Màu có sẵn</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">Mở tệp đính kèm này?</string>
     <string name="school_mail_save_draft">Lưu thư nháp</string>
     <string name="school_mail_saved">Đã lưu</string>
+    <string name="school_mail_search_index_partial">Thư vẫn đang được tải xuống. Tìm kiếm có thể không thấy một số thư cũ hơn.</string>
     <string name="school_mail_search_local_only">Máy chủ không thể thực hiện tìm kiếm này. Chỉ hiển thị kết quả từ thư đã tải.</string>
     <string name="school_mail_search_prompt">Tìm kiếm thư</string>
     <string name="school_mail_send">Gửi</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">Mã số và mật khẩu của bạn nên giống với hệ thống của trường. TigerDuck chỉ lưu mật khẩu này ở dạng mã hóa trên thiết bị này và không bao giờ tải lên.</string>
     <string name="school_mail_sign_in_prompt_title">Đăng nhập Email trường</string>
     <string name="school_mail_source_failed">Không thể tải mã nguồn.</string>
+    <string name="school_mail_storage_delete_message">Thư của bạn vẫn còn trên máy chủ của trường. Thư sẽ được tải xuống lại vào lần tới bạn mở Email trường, và trước đó, tìm kiếm có thể không thấy một số thư.</string>
+    <string name="school_mail_storage_delete_title">Xóa thư đã tải xuống?</string>
+    <string name="school_mail_storage_footer">Được tải xuống để bạn có thể tìm kiếm trong toàn bộ thư và cuộn xem mà không phải chờ.</string>
+    <string name="school_mail_storage_title">Thư đã tải xuống</string>
     <string name="school_mail_subject">Chủ đề</string>
     <string name="school_mail_to">Đến</string>
     <string name="school_mail_too_large">Tệp đính kèm vượt quá giới hạn 50 MB</string>

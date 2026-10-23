@@ -272,6 +272,7 @@
     <string name="color_name_pink">Ροζ</string>
     <string name="color_name_purple">Μοβ</string>
     <string name="color_name_red">Κόκκινο</string>
+    <string name="color_name_wallpaper">Χρώματα ταπετσαρίας</string>
     <string name="color_picker_apply">Εφαρμογή</string>
     <string name="color_picker_custom">Προσαρμοσμένο</string>
     <string name="color_picker_presets_note">Προεπιλεγμένα χρώματα</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">Άνοιγμα αυτού του συνημμένου;</string>
     <string name="school_mail_save_draft">Αποθήκευση πρόχειρου</string>
     <string name="school_mail_saved">Αποθηκεύτηκε</string>
+    <string name="school_mail_search_index_partial">Τα email λαμβάνονται ακόμη. Η αναζήτηση ίσως δεν βρει ορισμένα παλαιότερα.</string>
     <string name="school_mail_search_local_only">Ο διακομιστής δεν μπορεί να εκτελέσει αυτήν την αναζήτηση. Εμφανίζονται αποτελέσματα μόνο από τα email που έχουν ήδη φορτωθεί.</string>
     <string name="school_mail_search_prompt">Αναζήτηση email</string>
     <string name="school_mail_send">Αποστολή</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">Ο αριθμός μητρώου και ο κωδικός πρόσβασής σου πρέπει να είναι ίδιοι με αυτούς του συστήματος του πανεπιστημίου. Το TigerDuck αποθηκεύει αυτόν τον κωδικό κρυπτογραφημένο μόνο σε αυτήν τη συσκευή και δεν τον μεταφορτώνει ποτέ.</string>
     <string name="school_mail_sign_in_prompt_title">Σύνδεση στο πανεπιστημιακό email</string>
     <string name="school_mail_source_failed">Δεν ήταν δυνατή η φόρτωση του πηγαίου κώδικα.</string>
+    <string name="school_mail_storage_delete_message">Τα email σου παραμένουν στον διακομιστή του πανεπιστημίου. Θα ληφθούν ξανά την επόμενη φορά που θα ανοίξεις το Πανεπιστημιακό email και μέχρι τότε η αναζήτηση ίσως δεν τα βρει όλα.</string>
+    <string name="school_mail_storage_delete_title">Διαγραφή των ληφθέντων email;</string>
+    <string name="school_mail_storage_footer">Λαμβάνονται για να μπορείς να αναζητάς σε όλα τα email σου και να τα διατρέχεις χωρίς αναμονή.</string>
+    <string name="school_mail_storage_title">Ληφθέντα email</string>
     <string name="school_mail_subject">Θέμα</string>
     <string name="school_mail_to">Προς</string>
     <string name="school_mail_too_large">Τα συνημμένα υπερβαίνουν το όριο των 50 MB</string>
