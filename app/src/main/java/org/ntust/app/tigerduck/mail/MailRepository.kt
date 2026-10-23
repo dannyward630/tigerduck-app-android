@@ -777,6 +777,14 @@ class MailRepository @Inject constructor(
      *   another client's earlier \Deleted flag is never attributed to us),
      *   and never for [MailError.AuthFailed]/[MailError.Certificate] (no
      *   second login attempt just to check).
+     * - Takes [MailStateStore.clears] first, and reads and records the set only
+     *   while it still stands: a student signing in over this one, or a
+     *   sign-out, while the write waits or is on the connection resets the
+     *   state for whoever comes next. Their set must neither decide this
+     *   write's EXPUNGE nor take its UID, or a later EXPUNGE of theirs in a
+     *   folder of the same name and UIDVALIDITY would take a mail another
+     *   client flagged as the app's own. The flag check after a failed [op]
+     *   records under the same rule.
      * - Reads the owned-\Deleted set, acts, and writes it back **without
      *   leaving [withSession]**, so the whole read-modify-write runs under
      *   one hold of [SessionHolder]'s mutex. Two deletes overlapping in the
@@ -797,6 +805,7 @@ class MailRepository @Inject constructor(
         op: (MailSession, Set<Long>) -> Boolean,
     ) {
         val generation = account.accountGeneration
+        val clears = state.clears
         val cached = cachedPage(folder)
         val cachedValidity = cached?.uidValidity
         val alreadyDeleted = cached?.messages?.firstOrNull { it.uid == uid }?.flags?.deleted == true
@@ -811,13 +820,14 @@ class MailRepository @Inject constructor(
                     cacheStale = true
                     throw MailError.FolderChanged()
                 }
+                if (state.clears != clears) throw MailError.Abandoned()
                 val owned = state.ownedDeleted(folder, serverValidity)
                 attempted = true
                 val expunged = op(session, owned)
                 // An EXPUNGE is mailbox-wide and only runs when every \Deleted
                 // mail in the folder was ours, so a successful one empties the
                 // set rather than removing this one UID from it.
-                state.setOwnedDeleted(folder, serverValidity, if (expunged) emptySet() else owned + uid)
+                state.setOwnedDeletedIf(folder, serverValidity, if (expunged) emptySet() else owned + uid, clears)
             }
         } catch (e: MailError) {
             if (e is MailError.FolderChanged) {
@@ -827,7 +837,7 @@ class MailRepository @Inject constructor(
                 // A list of the folder holds rows of the mailbox the server has replaced.
                 _changes.emit(MailChange.Changed(folder, generation))
             } else if (attempted && !alreadyDeleted && e !is MailError.AuthFailed && e !is MailError.Certificate) {
-                recordIfDeletedOnServer(folder, uid, validity, stillWanted)
+                recordIfDeletedOnServer(folder, uid, validity, stillWanted, clears)
             }
             throw e
         }
@@ -838,11 +848,13 @@ class MailRepository @Inject constructor(
      * reason [runExpunging] gives: the set this call's [runExpunging] read before [op] ran may
      * already be stale, and adding to a stale copy would drop whatever landed in between.
      */
-    private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long, stillWanted: () -> Boolean) {
+    private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long, stillWanted: () -> Boolean, clears: Int) {
         try {
             withSession(stillWanted) { session ->
+                // The state is another student's since: nothing to check for it, nor to record.
+                if (state.clears != clears) return@withSession
                 if (session.refreshFlags(folder, listOf(uid))[uid]?.deleted == true) {
-                    state.setOwnedDeleted(folder, validity, state.ownedDeleted(folder, validity) + uid)
+                    state.setOwnedDeletedIf(folder, validity, state.ownedDeleted(folder, validity) + uid, clears)
                 }
             }
         } catch (e: CancellationException) {

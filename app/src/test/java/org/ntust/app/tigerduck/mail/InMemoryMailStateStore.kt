@@ -45,8 +45,19 @@ class InMemoryMailStateStore : MailStateStore {
         owned[folder to uidValidity] = uids
     }
 
+    override var clears: Int = 0
+        private set
+
+    @Synchronized
+    override fun setOwnedDeletedIf(folder: String, uidValidity: Long, uids: Set<Long>, clearsSince: Int): Boolean {
+        if (clears != clearsSince) return false
+        setOwnedDeleted(folder, uidValidity, uids)
+        return true
+    }
+
     @Synchronized
     override fun clear() {
+        clears++
         displayName = null; notificationsEnabled = true; authFailed = false; demoMailbox = false
         inboxUidValidity = 0; inboxSeenUidNext = 0; lastForegroundCheckAt = 0
         diagnostics = emptyList()
@@ -59,7 +70,9 @@ class InMemoryMailStateStore : MailStateStore {
         val name = displayName
         val notify = notificationsEnabled
         val kept = owned.toMap()
+        val count = clears
         clear()
+        clears = count
         displayName = name
         notificationsEnabled = notify
         owned.putAll(kept)

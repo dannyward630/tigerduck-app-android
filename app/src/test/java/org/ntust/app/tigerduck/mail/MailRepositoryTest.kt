@@ -280,6 +280,123 @@ class MailRepositoryTest {
         assertEquals(listOf("another"), repo.cachedPage("INBOX")!!.messages.map { it.subject })
     }
 
+    /**
+     * A session whose [MailSession.move] signs another student in over this one once it has sent
+     * its COPY and STORE, as the sign-in sheet a rejected password shows allows while a write is
+     * on the connection; [fail] has the move fail then, with its flag on the server.
+     */
+    private fun TestSetup.switchingDuringMove(fail: Boolean = false, to: String = "b10000002"): MailSessionFactory = MailSessionFactory { credentials ->
+        val session = server.factory().open(credentials)
+        object : MailSession by session {
+            override fun move(folder: String, uid: Long, target: String, ownedDeleted: Set<Long>, uidValidity: Long?): Boolean {
+                server.failAfterFlag = fail
+                try {
+                    return session.move(folder, uid, target, ownedDeleted, uidValidity)
+                } finally {
+                    server.failAfterFlag = false
+                    server.passwords[to.uppercase()] = "pw"
+                    runBlocking { account.signIn(to, "pw") }
+                }
+            }
+        }
+    }
+
+    /**
+     * A move that leaves its mail flagged rather than expunged records the UID as the app's to
+     * expunge later -- in the state of the student it was made for. One that ends after another
+     * student signed in over them records nothing in that one's state, which a later EXPUNGE in a
+     * folder of the same name and UIDVALIDITY would otherwise take as the app's own.
+     */
+    @Test
+    fun `a move that ends after another student signed in records no mail as theirs to expunge`() = runTest {
+        server.expungeOnMove = false
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove().open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+
+        repo.move("INBOX", uid, "回收筒")
+
+        assertEquals("b10000002", credentials.mailStudentId?.lowercase())
+        assertTrue("the first student's flagged mail was recorded as the second's", state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
+    }
+
+    /**
+     * The same student signing in again keeps the set ([MailStateStore.clearSignIn]), and a move
+     * on the connection meanwhile still adds to it: dropping the UID would leave a mail the app
+     * flagged that no later EXPUNGE would ever take as its own.
+     */
+    @Test
+    fun `a move that ends after the same student signed in again still records its flagged mail`() = runTest {
+        server.expungeOnMove = false
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(to = "b10000001").open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+
+        repo.move("INBOX", uid, "回收筒")
+
+        assertEquals(setOf(uid), state.ownedDeleted("INBOX", server.uidValidity))
+    }
+
+    /**
+     * A write that waited for the session while another student signed in over this one finds
+     * the state reset for them: the set there is theirs, and must not decide what the write
+     * expunges, so the write sends nothing.
+     */
+    @Test
+    fun `a write whose student's state was reset while it waited for the session sends nothing`() = runTest {
+        server.deliver("a")
+        val holding = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val sessions = MailSessionFactory { credentials ->
+            val session = server.factory().open(credentials)
+            object : MailSession by session {
+                override fun fetchBody(folder: String, uid: Long): MailBody {
+                    holding.countDown()
+                    release.await(5, TimeUnit.SECONDS)
+                    return session.fetchBody(folder, uid)
+                }
+            }
+        }
+        val setup = TestSetup(backgroundScope, sessions)
+        val repo = setup.signedIn()
+        val uid = repo.loadPage("INBOX", null).messages.single().uid
+        // One request holds the session.
+        val body = launch(Dispatchers.IO) { runCatching { repo.body("INBOX", uid) } }
+        assertTrue(holding.await(5, TimeUnit.SECONDS))
+        // The move reaches the wait for it, and another student signs in meanwhile.
+        val reached = CountDownLatch(1)
+        setup.repository.holder.onWait = { reached.countDown() }
+        val move = async(Dispatchers.IO) { runCatching { repo.move("INBOX", uid, "回收筒") } }
+        assertTrue(reached.await(5, TimeUnit.SECONDS))
+        setup.repository.holder.onWait = null
+        server.passwords["B10000002"] = "pw"
+        setup.account.signIn("b10000002", "pw")
+        release.countDown()
+
+        assertTrue(move.await().exceptionOrNull() is MailError.Abandoned)
+        assertEquals(listOf("a"), server.subjects("INBOX"))
+        body.join()
+    }
+
+    /** As above, for the flag check a failed move makes to record a flag that landed regardless. */
+    @Test
+    fun `a move that fails after another student signed in records no mail as theirs to expunge`() = runTest {
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(fail = true).open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertTrue("the first student's flagged mail was recorded as the second's", state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
+    }
+
     /** The folder list a first request resolves is a request too, and asked the same question. */
     @Test
     fun `a departed account's inbox status resolves no folders for the next one`() = runTest {
