@@ -36,6 +36,7 @@ import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.model.MailBody
 import org.ntust.app.tigerduck.mail.model.MailPage
+import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.smtp.MailSender
 import org.ntust.app.tigerduck.mail.smtp.MailTransport
 import org.ntust.app.tigerduck.mail.smtp.SentCopy
@@ -44,6 +45,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.concurrent.thread
 
 class MailRepositoryTest {
@@ -1405,6 +1407,78 @@ class MailRepositoryTest {
         runCurrent()
 
         assertEquals(setOf(uid), setup.searchIndex.uids(other!!, "INBOX"))
+    }
+
+    /**
+     * A setup whose index, once [armed], recreates the inbox at the first look at a folder's
+     * UIDVALIDITY or removal from it -- one write of the user's being on the server by then --
+     * with other mail under the UID [uid] had, and downloads it again on [aside].
+     */
+    private inner class RecreatedUnderAWrite(scope: kotlinx.coroutines.CoroutineScope, private val uid: Long) {
+        val armed = AtomicBoolean(false)
+        val now = AtomicLong(1_000_000L)
+        var aside: Thread? = null
+
+        private fun recreate() {
+            if (!armed.getAndSet(false)) return
+            server.folders.getValue("INBOX").clear()
+            server.uidValidity++
+            server.nextUid = uid
+            server.deliver("新信")
+            now.addAndGet(MailRepository.INDEX_RESYNC_MS)
+            aside = setup.runAside { setup.repository.updateSearchIndex() }
+        }
+
+        val setup: TestSetup = TestSetup(scope) { index ->
+            object : MailSearchIndex by index {
+                override fun uidValidity(owner: String, folder: String): Long? {
+                    recreate()
+                    return index.uidValidity(owner, folder)
+                }
+
+                override fun remove(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>, stillCurrent: () -> Boolean) {
+                    recreate()
+                    index.remove(owner, folder, uidValidity, uids, stillCurrent)
+                }
+            }
+        }
+
+        /** The inbox's mail under [uid] as the phone's copy has it now, once [aside] is done. */
+        fun downloaded(): MailSummary? {
+            assertNotNull("the inbox was never recreated", aside)
+            aside!!.join(5_000)
+            return setup.searchIndex.summaries(setup.account.ownAddress!!.lowercase(), "INBOX", server.uidValidity, listOf(uid))[uid]
+        }
+    }
+
+    @Test
+    fun `a mark-read reaches the downloaded mail it was made on, not that of a folder recreated since`() = runTest {
+        val uid = server.deliver("舊信")
+        val recreated = RecreatedUnderAWrite(backgroundScope, uid)
+        val repo = recreated.setup.signedIn()
+        repo.clock = { recreated.now.get() }
+        repo.updateSearchIndex()
+
+        recreated.armed.set(true)
+        repo.setSeen("INBOX", uid, true)
+
+        val theirs = recreated.downloaded()!!
+        assertEquals("新信", theirs.subject)
+        assertFalse(theirs.flags.seen)
+    }
+
+    @Test
+    fun `a move takes the downloaded mail it was made on, not that of a folder recreated since`() = runTest {
+        val uid = server.deliver("舊信")
+        val recreated = RecreatedUnderAWrite(backgroundScope, uid)
+        val repo = recreated.setup.signedIn()
+        repo.clock = { recreated.now.get() }
+        repo.updateSearchIndex()
+
+        recreated.armed.set(true)
+        repo.move("INBOX", uid, "回收筒")
+
+        assertEquals("新信", recreated.downloaded()?.subject)
     }
 
     @Test

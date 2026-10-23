@@ -325,27 +325,27 @@ class MailRepository @Inject constructor(
     }
 
     /**
-     * Tells the list of [change], once the phone's copy of the mail has it too: read or unread as
-     * marked, gone once moved or deleted, whose going also moves the sequence numbers after it.
+     * Tells the list of [change], which the phone's copy of the mail has by then: [setSeen] and
+     * [runExpunging] change it in the hold of the connection their write went out in. A removal
+     * also moves the sequence numbers after it.
      */
     private suspend fun changed(change: MailChange) {
-        withContext(Dispatchers.IO) {
-            if (change is MailChange.Removed) numberings.remove(change.folder)
-            // The copy of the account that made the write, and only while it is still the one
-            // signed in: a write that ended after another student signed in names a mail of
-            // theirs by its UID (see [MailChange.generation]), which it must neither mark nor drop.
-            // Asked again under the index's lock, which the sign-in's clear takes too.
-            val owner = indexOwnerNow()?.takeIf { it.generation == change.generation } ?: return@withContext
-            when (change) {
-                is MailChange.Seen -> markSeenInIndex(owner, change.folder, change.uid, change.seen)
-                is MailChange.Removed -> searchIndex.uidValidity(owner.address, change.folder)?.let { validity ->
-                    searchIndex.remove(owner.address, change.folder, validity, listOf(change.uid)) { stillIndexOwner(owner) }
-                }
-                is MailChange.Changed -> Unit
-            }
-        }
+        if (change is MailChange.Removed) numberings.remove(change.folder)
         _changes.emit(change)
     }
+
+    /**
+     * The copy of the account at [generation], read before a write went out, while it is still
+     * the one signed in: a write that ended after another student signed in names a mail of
+     * theirs by its UID (see [MailChange.generation]), which it must neither mark nor drop. Asked
+     * again under the index's lock, which the sign-in's clear takes too.
+     *
+     * Called in the hold of the connection the write went out in, as a download's batch is filed
+     * in the hold that read it: the download that opens a folder recreated since, in a hold of
+     * its own, comes wholly before or after, so the write never reaches the new folder's mail by
+     * an old UID, nor does an answer read before the write undo it.
+     */
+    private fun writerOfIndex(generation: Int): MailIndexer.Owner? = indexOwnerNow()?.takeIf { it.generation == generation }
 
     private fun markSeenInIndex(owner: MailIndexer.Owner, folder: String, uid: Long, seen: Boolean) {
         val validity = searchIndex.uidValidity(owner.address, folder) ?: return
@@ -608,7 +608,10 @@ class MailRepository @Inject constructor(
         if (account.isDemo) {
             demoUpdate(folder, uid) { it.copy(flags = it.flags.copy(seen = seen)) }
         } else {
-            withSession { it.setSeen(folder, listOf(uid), seen) }
+            withSession { session ->
+                session.setSeen(folder, listOf(uid), seen)
+                writerOfIndex(generation)?.let { markSeenInIndex(it, folder, uid, seen) }
+            }
             updateCached(folder) { s -> if (s.uid == uid) s.copy(flags = s.flags.copy(seen = seen)) else s }
         }
         changed(MailChange.Seen(folder, uid, seen, generation))
@@ -1114,6 +1117,10 @@ class MailRepository @Inject constructor(
                 // mail in the folder was ours, so a successful one empties the
                 // set rather than removing this one UID from it.
                 state.setOwnedDeleted(folder, serverValidity, if (expunged) emptySet() else owned + uid)
+                // Gone from the phone's copy too, under the UIDVALIDITY the write went out under.
+                writerOfIndex(generation)?.let { owner ->
+                    searchIndex.remove(owner.address, folder, serverValidity, listOf(uid)) { stillIndexOwner(owner) }
+                }
             }
         } catch (e: MailError) {
             if (!attempted && e is MailError.FolderChanged) {
