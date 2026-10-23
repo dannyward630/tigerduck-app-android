@@ -109,9 +109,11 @@ internal class MailIndexer(
 
     /**
      * Brings the flags of the mail [plan]'s folder has downloaded to the server's: a mail read,
-     * answered or deleted on another device or the web shows so on the phone's copy too.
+     * answered or deleted on another device or the web shows so on the phone's copy too. Says
+     * whether it got through: not for a folder recreated since the plan, which the next run plans
+     * again.
      */
-    suspend fun refreshFlags(plan: Plan, stillWanted: () -> Boolean = { true }) = withContext(Dispatchers.IO) {
+    suspend fun refreshFlags(plan: Plan, stillWanted: () -> Boolean = { true }): Boolean = withContext(Dispatchers.IO) {
         val current = { stillWanted() && stillOwner(plan.owner) }
         val downloaded = index.uids(plan.owner.address, plan.folder).toList()
         for (chunk in downloaded.chunked(FLAGS_BATCH)) {
@@ -122,8 +124,9 @@ internal class MailIndexer(
                 index.updateFlags(plan.owner.address, plan.folder, plan.uidValidity, s.refreshFlags(plan.folder, chunk), current)
                 true
             }
-            if (!applied) return@withContext
+            if (!applied) return@withContext false
         }
+        true
     }
 
     /**

@@ -83,7 +83,7 @@ class MailIndexerTest {
         recreate()
         server.deliver("新信", seen = true)
 
-        indexer.refreshFlags(plan)
+        assertFalse("cut short, for the next run to plan again", indexer.refreshFlags(plan))
 
         assertFalse(index.summaries(me, "INBOX", validity, listOf(1L)).getValue(1L).flags.seen)
     }

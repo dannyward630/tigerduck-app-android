@@ -869,6 +869,37 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a flag refresh cut short by a recreated folder leaves the next visit to download again`() = runTest {
+        server.deliver("期中考")
+        val armed = AtomicBoolean(false)
+        val sessions = MailSessionFactory { credentials ->
+            val session = server.factory().open(credentials)
+            object : MailSession by session {
+                override fun undeletedUids(folder: String): List<Long> {
+                    // Recreated once Inbox is planned: its flags would be asked of other mail.
+                    if (folder != "INBOX" && armed.getAndSet(false)) server.uidValidity++
+                    return session.undeletedUids(folder)
+                }
+            }
+        }
+        val setup = TestSetup(backgroundScope, sessions)
+        val repo = setup.signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
+        repo.updateSearchIndex()
+        now += MailRepository.INDEX_RESYNC_MS
+        armed.set(true)
+        // Nothing left to fetch anywhere: only the flags, which the recreated Inbox cuts short.
+        repo.updateSearchIndex()
+        val listed = server.undeletedUidsCalls
+
+        now += 1_000
+        visit(repo)
+
+        assertTrue("downloaded again, however soon", server.undeletedUidsCalls > listed)
+    }
+
+    @Test
     fun `a download cut short goes on at the next visit, however soon`() = runTest {
         server.deliver("期中考")
         val setup = TestSetup(backgroundScope)

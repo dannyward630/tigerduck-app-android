@@ -782,8 +782,12 @@ class MailRepository @Inject constructor(
         val names = first + (folders.special.values + folders.others).filter { it !in first }
         val plans = names.mapNotNull { indexer.plan(it, stillWanted = stillWanted) }
         var whole = plans.size == names.size
-        // Mail read, answered or deleted elsewhere since it was downloaded.
-        plans.forEach { indexer.refreshFlags(it, stillWanted) }
+        // Mail read, answered or deleted elsewhere since it was downloaded. A folder recreated
+        // since its plan is cut short, and the download with it.
+        for (plan in plans) {
+            val refreshed = indexer.refreshFlags(plan, stillWanted)
+            whole = whole && refreshed
+        }
         val total = plans.sumOf { it.missing.size }
         if (total == 0) {
             if (whole) lastWhole = WholeDownload(owner, clock())
