@@ -124,9 +124,6 @@ sealed class Screen(val route: String) {
     /** An assignment's page, opened from Home, a reminder or the Live Update; see MoodleAssignmentScreen. */
     object Assignment : Screen("assignment/{assignmentId}") {
         fun route(assignmentId: String) = "assignment/$assignmentId"
-
-        /** Whether [route] is one of these pages. */
-        fun isRoute(route: String?): Boolean = route != null && route.startsWith("assignment/")
     }
     object Library : Screen("library")
     object Score : Screen("score")
@@ -302,6 +299,12 @@ fun MainNavigation(
     // so reordering via TabEditor doesn't pop to a removed route.
     val startDest = remember { configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route }
     val popUpToDest = configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route
+    // A tab the user picks: a course sheet under a page it opened closes, rather than coming back
+    // over its page later.
+    val openTab: (String) -> Unit = { route ->
+        classTableViewModel.clearSelection()
+        navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
+    }
 
     LaunchedEffect(widgetStartRoute) {
         widgetStartRoute ?: return@LaunchedEffect
@@ -320,9 +323,8 @@ fun MainNavigation(
         snapshotFlow { navController.currentBackStackEntry }
             .filterNotNull()
             .first()
-        // A reminder's page would be covered again on the way back by a course detail left open,
-        // so the sheets close first, as on iOS; one holding a mail being written stays.
-        if (CourseDetailSheetRules.closesForLink(target, classTableViewModel.courseSheetRoutes.value)) {
+        // The course sheet closes first, as on iOS, unless the link is to the page on screen.
+        if (CourseDetailSheetRules.closesForLink(target, navController.currentBackStackEntry?.destination?.route)) {
             classTableViewModel.clearSelection()
         }
         // A tab through the bottom bar's own path: launchSingleTop alone looks only at the page on
@@ -413,9 +415,7 @@ fun MainNavigation(
                                             ) { entry ->
                                                 showClassTableSwitcher = false
                                                 // The page shows what the row picks, or hosts the import.
-                                                if (currentRoute != route) {
-                                                    navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
-                                                }
+                                                if (currentRoute != route) openTab(route)
                                                 when (entry) {
                                                     ClassTableSwitcherEntry.ImportClassTable ->
                                                         classTableImportViewModel.start()
@@ -464,7 +464,7 @@ fun MainNavigation(
                                     context,
                                     HapticScenario.TabSwitch,
                                 )
-                                navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
+                                openTab(route)
                             }
                         )
                     }
@@ -496,7 +496,7 @@ fun MainNavigation(
                 appState.pendingNtustSignInHighlight = true
                 navController.navigate(Screen.Settings.route)
             }
-            page(Screen.Home.route) {
+            page(Screen.Home.route) { entry ->
                 HomeScreen(
                     appState = appState,
                     viewModel = homeViewModel,
@@ -513,7 +513,12 @@ fun MainNavigation(
                     },
                 )
                 // The class table's course detail sheet, as iOS opens the same sheet from Home.
-                CourseDetailSheetHost(classTableViewModel, appState.browserPreference)
+                CourseDetailSheetHost(
+                    classTableViewModel,
+                    appState.browserPreference,
+                    pageOnTop = navController.isOnTop(entry),
+                    onOpenPage = { navController.navigate(it) },
+                )
             }
             page(
                 Screen.Assignment.route,
@@ -524,14 +529,20 @@ fun MainNavigation(
                     onBack = { navController.popBackStack() },
                 )
             }
-            page(Screen.ClassTable.route) {
+            page(Screen.ClassTable.route) { entry ->
                 ClassTableScreen(
                     viewModel = classTableViewModel,
                     onOpenSignInSettings = openSignInSettings,
                     onRequestImport = classTableImportViewModel::start,
                 )
-                CourseDetailSheetHost(classTableViewModel, appState.browserPreference)
+                CourseDetailSheetHost(
+                    classTableViewModel,
+                    appState.browserPreference,
+                    pageOnTop = navController.isOnTop(entry),
+                    onOpenPage = { navController.navigate(it) },
+                )
             }
+            coursePages(navController, browserPreference = { appState.browserPreference })
             page(Screen.Calendar.route) {
                 CalendarScreen(
                     viewModel = calendarViewModel,
@@ -797,7 +808,7 @@ fun MainNavigation(
         onImported = {
             // The class table shows the person just imported.
             if (navController.currentBackStackEntry?.destination?.route != Screen.ClassTable.route) {
-                navController.navigateToTab(Screen.ClassTable.route, firstTab = popUpToDest, tabTap)
+                openTab(Screen.ClassTable.route)
             }
         },
     )

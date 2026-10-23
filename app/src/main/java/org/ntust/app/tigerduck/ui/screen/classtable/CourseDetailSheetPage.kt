@@ -1,7 +1,7 @@
-// The course detail a course cell opens, the root page of its sheet (see
-// CourseDetailSheet), so the Moodle screens it leads to push inside the sheet
-// and back returns to it. Its row and card primitives, and the Moodle
-// hand-off, live here too.
+// The course detail a course cell opens, the page of its sheet (see
+// CourseDetailSheet). The Moodle screens it leads to open full screen over the
+// sheet's page, and back returns to the sheet. Its row and card primitives, and
+// the Moodle hand-off, live here too.
 
 package org.ntust.app.tigerduck.ui.screen.classtable
 
@@ -84,12 +84,12 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 /**
- * The class table's selected course, in full, as the root of its sheet:
+ * The class table's selected course, in full, as its sheet's page:
  *   1. Title, rename and "Open in Moodle", with the course colour under the title
  *   2. Two emphasis cards side by side: classroom | time
  *   3. The info rows: instructor, code (tap to copy), dimension, duration, credits, enrollment
- *   4. Incomplete assignments, each opening its page inside the sheet, then the course's Moodle
- *      section, whose rows push the Moodle screens inside the sheet
+ *   4. Incomplete assignments, each opening its page full screen, then the course's Moodle
+ *      section, whose rows open the Moodle screens full screen
  *
  * A course on someone else's class table shows read-only: no rename, and none of the Moodle
  * course or assignments, which are the signed-in student's. One opened from Home is the user's own
@@ -187,7 +187,7 @@ internal fun CourseDetailContent(
     onRename: (() -> Unit)?,
     /** Null for a course with no Moodle course of the user's. */
     onOpenInMoodle: (() -> Unit)?,
-    /** Opens an incomplete assignment's page inside the sheet. */
+    /** Opens an incomplete assignment's page, full screen. */
     onOpenAssignment: (Assignment) -> Unit = {},
 ) {
     val courseColor = LocalVisualStylePolicy.current.courseAccentColor(
