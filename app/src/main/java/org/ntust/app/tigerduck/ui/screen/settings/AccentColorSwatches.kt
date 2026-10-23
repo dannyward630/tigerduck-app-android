@@ -107,10 +107,12 @@ internal fun AccentColorSwatches(
                 contentAlignment = Alignment.Center,
             ) {
                 if (followsWallpaper) {
+                    // Not white, which vanishes on the light primary of the
+                    // wallpaper's dark colors.
                     Icon(
                         imageVector = Icons.Filled.Check,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = dynamicColors.onPrimary,
                         modifier = Modifier.size(16.dp),
                     )
                 }

@@ -252,7 +252,9 @@ private fun parseHexOrNull(hex: String?): Color? {
 // dark gray on the dark track in dark mode — so we force a white thumb and a
 // neutral track. The dark unchecked track has to be noticeably darker than the
 // card surface (#3A3A3C) so the off-state still reads as a control; using
-// #39393D made it disappear into the card.
+// #39393D made it disappear into the card. The checked thumb is onPrimary,
+// white on every swatch, and the wallpaper's own pair for its colors, whose
+// dark primary is too light for a white thumb to stand out on.
 private val SwitchUncheckedTrackLight = Color(0xFFD1D1D6)
 private val SwitchUncheckedTrackDark = Color(0xFF1C1C1E)
 
@@ -260,7 +262,7 @@ private val SwitchUncheckedTrackDark = Color(0xFF1C1C1E)
 fun tigerDuckSwitchColors(): SwitchColors {
     val isDark = TigerDuckTheme.isDarkMode
     return SwitchDefaults.colors(
-        checkedThumbColor = Color.White,
+        checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
         checkedTrackColor = MaterialTheme.colorScheme.primary,
         checkedBorderColor = Color.Transparent,
         uncheckedThumbColor = Color.White,
@@ -406,9 +408,11 @@ fun TigerDuckAppTheme(
         val dynamic = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         // TigerDuck keeps explicit surface / background styling (cards, outline, page background)
         // so that only the accent slots adapt to the dynamic wallpaper palette, consistent with the
-        // fixed accent presets.
+        // fixed accent presets. Each slot comes with its pair: the dark primary is a light tone,
+        // and TigerDuck's white onPrimary on it reads at under 2:1.
         baseScheme.copy(
             primary = dynamic.primary,
+            onPrimary = dynamic.onPrimary,
             primaryContainer = dynamic.primaryContainer,
             onPrimaryContainer = dynamic.onPrimaryContainer,
             surfaceTint = dynamic.surfaceTint,

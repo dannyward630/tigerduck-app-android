@@ -4,17 +4,31 @@ import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SwitchColors
+import androidx.compose.material3.dynamicDarkColorScheme
+import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import kotlin.math.max
+import kotlin.math.min
 
-/** The app's root theme is where every screen gets the interface style from. */
+/**
+ * The app's root theme is where every screen gets the interface style and
+ * the accent from: a swatch's color, or from Android 12 the wallpaper's.
+ */
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
 @Config(application = Application::class)
@@ -22,6 +36,30 @@ class TigerDuckAppThemeTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    private val orange = Color(0xFFE67E22)
+
+    @After
+    fun resetTheme() {
+        TigerDuckTheme.setDarkMode(false)
+    }
+
+    private fun contrast(a: Color, b: Color): Float {
+        val la = a.luminance() + 0.05f
+        val lb = b.luminance() + 0.05f
+        return max(la, lb) / min(la, lb)
+    }
+
+    private fun scheme(darkTheme: Boolean, useDynamicColor: Boolean): ColorScheme {
+        var seen: ColorScheme? = null
+        composeRule.setContent {
+            TigerDuckAppTheme(darkTheme = darkTheme, accentColor = orange, useDynamicColor = useDynamicColor) {
+                seen = MaterialTheme.colorScheme
+            }
+        }
+        composeRule.waitForIdle()
+        return seen!!
+    }
 
     @Test
     fun `the root theme hands the picked style to the screens inside it`() {
@@ -47,34 +85,76 @@ class TigerDuckAppThemeTest {
 
     @Test
     fun `the root theme uses accentColor when useDynamicColor is false`() {
-        var seenScheme: ColorScheme? = null
-        val customAccent = Color(0xFFE67E22)
-        composeRule.setContent {
-            TigerDuckAppTheme(darkTheme = false, accentColor = customAccent, useDynamicColor = false) {
-                seenScheme = MaterialTheme.colorScheme
-            }
-        }
-        composeRule.waitForIdle()
-        assertEquals(customAccent, seenScheme?.primary)
+        assertEquals(orange, scheme(darkTheme = false, useDynamicColor = false).primary)
     }
 
     @Config(sdk = [31])
     @Test
-    fun `the root theme uses dynamic color scheme on S+ when useDynamicColor is true while preserving surface`() {
-        var seenScheme: ColorScheme? = null
-        val customAccent = Color(0xFFE67E22)
+    fun `the wallpaper's light colors take the accent's roles and leave TigerDuck's surfaces`() {
+        val seen = scheme(darkTheme = false, useDynamicColor = true)
+        val wallpaper = dynamicLightColorScheme(composeRule.activity)
+        assertNotEquals("the wallpaper's primary must differ from the swatch", orange, wallpaper.primary)
+
+        assertEquals(wallpaper.primary, seen.primary)
+        assertEquals(wallpaper.onPrimary, seen.onPrimary)
+        assertEquals(wallpaper.primaryContainer, seen.primaryContainer)
+        assertEquals(wallpaper.onPrimaryContainer, seen.onPrimaryContainer)
+        assertEquals(wallpaper.surfaceTint, seen.surfaceTint)
+        // Cards and the page keep TigerDuck's own palette.
+        assertEquals(LightColorScheme.surface, seen.surface)
+        assertEquals(LightColorScheme.background, seen.background)
+    }
+
+    @Config(sdk = [31])
+    @Test
+    fun `in dark mode text on the wallpaper's primary takes its paired color, which reads`() {
+        val seen = scheme(darkTheme = true, useDynamicColor = true)
+        val wallpaper = dynamicDarkColorScheme(composeRule.activity)
+
+        assertEquals(wallpaper.primary, seen.primary)
+        assertEquals(wallpaper.onPrimary, seen.onPrimary)
+        assertEquals(wallpaper.primaryContainer, seen.primaryContainer)
+        assertEquals(wallpaper.onPrimaryContainer, seen.onPrimaryContainer)
+        assertTrue(
+            "onPrimary on primary reads at ${contrast(seen.onPrimary, seen.primary)}:1",
+            contrast(seen.onPrimary, seen.primary) >= 4.5f,
+        )
+        assertEquals(DarkColorScheme.surface, seen.surface)
+        assertEquals(DarkColorScheme.background, seen.background)
+    }
+
+    @Config(sdk = [31])
+    @Test
+    fun `a switch's thumb on the wallpaper's dark primary takes its paired color`() {
+        TigerDuckTheme.setDarkMode(true)
+        var colors: SwitchColors? = null
         composeRule.setContent {
-            TigerDuckAppTheme(darkTheme = false, accentColor = customAccent, useDynamicColor = true) {
-                seenScheme = MaterialTheme.colorScheme
-            }
+            TigerDuckAppTheme(darkTheme = true, useDynamicColor = true) { colors = tigerDuckSwitchColors() }
         }
         composeRule.waitForIdle()
-        // Primary is resolved dynamically rather than fixed customAccent
-        assertNotEquals(customAccent, seenScheme?.primary)
-        // Card surface and background remain TigerDuck's explicit palette
-        assertEquals(LightColorScheme.surface, seenScheme?.surface)
-        assertEquals(LightColorScheme.background, seenScheme?.background)
-        // onPrimary remains TigerDuck's explicit white text on primary button
-        assertEquals(Color.White, seenScheme?.onPrimary)
+        val wallpaper = dynamicDarkColorScheme(composeRule.activity)
+        val switch = colors!!
+
+        assertEquals(wallpaper.primary, switch.checkedTrackColor)
+        assertEquals(wallpaper.onPrimary, switch.checkedThumbColor)
+        assertTrue(
+            "the thumb stands out from its track at ${contrast(switch.checkedThumbColor, switch.checkedTrackColor)}:1",
+            contrast(switch.checkedThumbColor, switch.checkedTrackColor) >= 3f,
+        )
+    }
+
+    @Test
+    fun `a switch keeps its white thumb on a swatch's accent in either theme`() {
+        var dark by mutableStateOf(false)
+        var colors: SwitchColors? = null
+        composeRule.setContent {
+            TigerDuckAppTheme(darkTheme = dark, accentColor = orange) { colors = tigerDuckSwitchColors() }
+        }
+        composeRule.waitForIdle()
+        assertEquals(Color.White, colors?.checkedThumbColor)
+
+        composeRule.runOnIdle { dark = true }
+        composeRule.waitForIdle()
+        assertEquals(Color.White, colors?.checkedThumbColor)
     }
 }
