@@ -53,9 +53,19 @@ class AssignmentStatusWriter internal constructor(
      * out under. A status the cache already has writes and publishes nothing. Whether it wrote.
      */
     suspend fun take(answer: SubmissionStatusAnswer): Boolean {
+        val written = write(answer) ?: return false
+        published(written)
+        return true
+    }
+
+    /**
+     * What [take] writes, told to no one: the list as written, or null when nothing was. For a
+     * caller that tells only some of those [take] tells, itself.
+     */
+    suspend fun write(answer: SubmissionStatusAnswer): List<Assignment>? {
         // Checked before the ledger takes the answer: an answer for the account that left must
         // not stand in the way of the next account's round for the same id.
-        if (answer.generation != dataCache.userDataGeneration) return false
+        if (answer.generation != dataCache.userDataGeneration) return null
         var changed = false
         val written = dataCache.updateAssignments(answer.generation) { assignments ->
             // Offered under the cache's lock, which a round's write holds too, so a round that
@@ -74,8 +84,6 @@ class AssignmentStatusWriter internal constructor(
                 this[index] = current.copy(isCompleted = answer.submitted, submittedAt = submittedAt, extensionDueDate = extension)
             }
         }
-        if (written == null || !changed) return false
-        published(written)
-        return true
+        return written?.takeIf { changed }
     }
 }

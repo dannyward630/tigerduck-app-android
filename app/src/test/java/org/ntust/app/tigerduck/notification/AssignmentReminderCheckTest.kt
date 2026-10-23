@@ -18,6 +18,9 @@ import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.CourseIgnores
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.Assignment
+import org.ntust.app.tigerduck.data.moodle.AssignmentStatusLedger
+import org.ntust.app.tigerduck.data.moodle.AssignmentStatusWriter
+import org.ntust.app.tigerduck.data.moodle.SubmissionStatusAnswer
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.network.SubmissionStatusProbe
@@ -39,7 +42,12 @@ class AssignmentReminderCheckTest {
     private lateinit var dataCache: DataCache
     private lateinit var scheduler: AssignmentNotificationScheduler
     private lateinit var fixtures: DebugFixtureStore
+    private lateinit var ledger: AssignmentStatusLedger
+    private lateinit var writer: AssignmentStatusWriter
     private lateinit var check: AssignmentReminderCheck
+
+    /** The monotonic clock the check reads before its request goes out. */
+    private var monotonicNow = 1_000L
 
     private var storedToken: String? = "stored-token"
 
@@ -68,9 +76,13 @@ class AssignmentReminderCheckTest {
                 .build()
         }.build()
         fixtures = DebugFixtureStore(context)
+        ledger = AssignmentStatusLedger { dataCache.userDataGeneration }
+        // The pages' writer, which tells no one here: what the check itself tells is what is tested.
+        writer = AssignmentStatusWriter(ledger, dataCache) {}
         check = AssignmentReminderCheck(
             dataCache, scheduler, SubmissionStatusProbe({ storedToken }, client), fixtures, AppPreferences(context),
-        )
+            writer,
+        ) { monotonicNow }
     }
 
     private fun dueInThreeDays(id: String) = Assignment(
@@ -110,7 +122,8 @@ class AssignmentReminderCheckTest {
 
     @Test
     fun `a reminder still due shows and leaves the cache and the other reminders alone`() = runBlocking {
-        val assignment = dueInThreeDays("20977")
+        // The draft's time, as the round that asked about it stored it.
+        val assignment = dueInThreeDays("20977").copy(submittedAt = Date(SUBMITTED_AT_SECONDS * 1000))
         armAll(assignment)
 
         moodle = { answer(own = "new") }
@@ -156,7 +169,8 @@ class AssignmentReminderCheckTest {
                 ),
                 dataCache.loadAssignments(),
             )
-            assertEquals(listOf("20978", "20978"), armedIds())
+            // Armed again from the cache, for the offsets the user chose: the other assignment's alone.
+            assertEquals(setOf("20978"), armedIds().toSet())
         }
 
     @Test
@@ -384,5 +398,78 @@ class AssignmentReminderCheckTest {
         assertTrue(verdict is ReminderVerdict.Drop)
         assertEquals(null, dataCache.loadAssignments().single().extensionDueDate)
         assertTrue("armed again for the assignment's own date", armedDueAts().all { it == assignment.dueDate.time })
+    }
+
+    @Test
+    fun `a submission and an extension found together are both kept`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+
+        moodle = {
+            """{"lastattempt":{"submission":{"status":"submitted","timemodified":$SUBMITTED_AT_SECONDS},""" +
+                """"submissionsenabled":true,"locked":false,"extensionduedate":${extension / 1000}},"warnings":[]}"""
+        }
+        val verdict = check.verdict("20977", assignment.dueDate.time)
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.SUBMITTED_ON_MOODLE), verdict)
+        assertEquals(
+            // Handed in within the extension: on time, which the next round, skipping it, never re-asks.
+            assignment.copy(isCompleted = true, submittedAt = Date(SUBMITTED_AT_SECONDS * 1000), extensionDueDate = Date(extension)),
+            dataCache.loadAssignments().single(),
+        )
+        assertEquals(emptyList<String?>(), armedIds())
+    }
+
+    @Test
+    fun `a page's answer asked for after the reminder's call is not overwritten by it`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val fromPage = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+        val fromReminder = (AppClock.nowMillis() + 5 * DAY_MS) / 1000 * 1000
+
+        moodle = {
+            // The assignment's page asks after the reminder's call went out, and answers first.
+            runBlocking {
+                writer.take(
+                    SubmissionStatusAnswer("20977", false, null, monotonicNow + 1, dataCache.userDataGeneration, fromPage),
+                )
+            }
+            extendedTo(fromReminder)
+        }
+        check.verdict("20977", assignment.dueDate.time)
+
+        assertEquals(Date(fromPage), dataCache.loadAssignments().single().extensionDueDate)
+    }
+
+    @Test
+    fun `a round asked for before the reminder's call takes what the call answered`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+        val generation = dataCache.userDataGeneration
+        val roundAskedAt = monotonicNow - 1
+
+        moodle = { extendedTo(extension) }
+        check.verdict("20977", assignment.dueDate.time)
+        // The round writes after the call, with what Moodle told it before: no extension.
+        val written = ledger.reconcile(
+            listOf(assignment),
+            mapOf("20977" to SubmissionStatusAnswer("20977", false, null, roundAskedAt, generation)),
+            generation,
+        )
+
+        assertEquals(Date(extension), written.single().extensionDueDate)
+    }
+
+    @Test
+    fun `a reminder armed without its date does not show once an extension moves it`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+
+        moodle = { extendedTo(extension) }
+
+        assertEquals(ReminderVerdict.Drop(ReminderDropReason.DUE_DATE_CHANGED), check.verdict("20977", null))
     }
 }

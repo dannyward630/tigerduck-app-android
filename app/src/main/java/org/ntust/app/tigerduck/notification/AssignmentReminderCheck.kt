@@ -1,15 +1,18 @@
 package org.ntust.app.tigerduck.notification
 
+import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import org.ntust.app.tigerduck.data.CourseIgnores
 import org.ntust.app.tigerduck.data.cache.DataCache
+import org.ntust.app.tigerduck.data.model.Assignment
+import org.ntust.app.tigerduck.data.moodle.AssignmentStatusWriter
+import org.ntust.app.tigerduck.data.moodle.SubmissionStatusAnswer
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.network.MoodleService
 import org.ntust.app.tigerduck.network.MoodleWebserviceError
 import org.ntust.app.tigerduck.network.SubmissionStatusProbe
 import org.ntust.app.tigerduck.util.logSummary
-import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
@@ -17,44 +20,56 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 /**
  * Whether a reminder that just fired is still due, by
  * [AssignmentReminderPolicy]: the cache first, then one status call to Moodle.
- * A submission Moodle reports goes into the cache and cancels the assignment's
- * other reminders, so they need no call of their own. The demo account's
- * reminders answer from the cache alone, so store reviewers see them.
+ * What Moodle reports goes into the cache, and the reminders are armed again
+ * from it: a submission's others need no call of their own, and an
+ * extension's are moved to its date. The demo account's reminders answer from
+ * the cache alone, so store reviewers see them.
  */
 @Singleton
-class AssignmentReminderCheck @Inject constructor(
+class AssignmentReminderCheck internal constructor(
     private val dataCache: DataCache,
     private val scheduler: AssignmentNotificationScheduler,
     private val statusProbe: SubmissionStatusProbe,
     private val fixtures: DebugFixtureStore,
     private val reminderPrefs: AppPreferences,
+    private val statusWriter: AssignmentStatusWriter,
+    /** The clock the writer orders answers by; see [SubmissionStatusAnswer.askedAtMs]. */
+    private val monotonicNowMs: () -> Long,
 ) {
+    @Inject
+    constructor(
+        dataCache: DataCache,
+        scheduler: AssignmentNotificationScheduler,
+        statusProbe: SubmissionStatusProbe,
+        fixtures: DebugFixtureStore,
+        reminderPrefs: AppPreferences,
+        statusWriter: AssignmentStatusWriter,
+    ) : this(dataCache, scheduler, statusProbe, fixtures, reminderPrefs, statusWriter, SystemClock::elapsedRealtime)
 
     suspend fun verdict(assignmentId: String, armedDueAtMs: Long?): ReminderVerdict {
         // A sign-out while this runs wipes the data; nothing is written back after it.
         val generation = dataCache.userDataGeneration
-        AssignmentReminderPolicy.cacheDrop(cached(assignmentId), armedDueAtMs)
+        val before = cached(assignmentId)
+        AssignmentReminderPolicy.cacheDrop(before, armedDueAtMs)
             ?.let { return ReminderVerdict.Drop(it) }
         // The demo account has no Moodle token to ask with: its submission status is the
         // bundled file's, already in the cache, which has the assignment still due.
         if (fixtures.demoMode) return ReminderVerdict.Show
 
         val moodleId = assignmentId.toIntOrNull()
+        val askedAtMs = monotonicNowMs()
         val answer = moodleId?.let { askMoodle(it) } ?: ReminderStatusAnswer.NoAnswer
         // Read again: a mark, an ignore or a new due date can land while Moodle answers.
         var cached = cached(assignmentId)
         if (moodleId != null && answer is ReminderStatusAnswer.Answered) {
-            val (submitted, submittedAt) =
-                MoodleService.submissionState(moodleId, emptyMap(), answer.lastAttempt)
-            if (submitted) {
-                recordSubmission(assignmentId, submittedAt, generation)
-            } else {
-                val extension = MoodleService.extensionDueDate(moodleId, asked = true, answer.lastAttempt, emptyMap())
-                // Read once more: this reminder, armed for the date before, then reads as moved.
-                if (recordExtension(assignmentId, extension, generation)) cached = cached(assignmentId)
-            }
+            // What Moodle answered can move the student's own date. Work it says is handed in
+            // keeps the date: that is Moodle's to report, as handed in.
+            record(assignmentId, moodleId, answer, askedAtMs, generation)
+                ?.takeUnless { it.isCompleted }
+                ?.let { written -> cached = cached?.copy(dueAtMs = written.studentDueDate.time) }
         }
-        return AssignmentReminderPolicy.decide(cached, armedDueAtMs, answer)
+        // One armed without its date was armed for the date the cache had before the call.
+        return AssignmentReminderPolicy.decide(cached, armedDueAtMs ?: before?.dueAtMs, answer)
     }
 
     private suspend fun cached(assignmentId: String): CachedReminderAssignment? {
@@ -73,36 +88,28 @@ class AssignmentReminderCheck @Inject constructor(
         )
     }
 
-    /** What a sync that asked Moodle would store, and no more reminders for it. */
-    private suspend fun recordSubmission(assignmentId: String, submittedAt: Date?, generation: Int) {
-        dataCache.updateAssignments(generation) { assignments ->
-            // Inside the update's account check: an answer that outlived a sign-out
-            // must not cancel the reminders the next account armed for the same id.
-            scheduler.cancel(assignmentId)
-            assignments.map {
-                if (it.assignmentId != assignmentId) it
-                else it.copy(isCompleted = true, submittedAt = submittedAt ?: it.submittedAt)
-            }
-        }
-    }
-
     /**
-     * What a sync that asked Moodle would store of an extension granted, moved or taken back since
-     * the cache last heard, with the reminders armed again for the date it makes the student's:
-     * the next sync can come after the first of them is due. Whether the cache changed.
+     * What Moodle answered, written as an assignment's page writes its answer: the submission and
+     * the extension together, and never over an answer asked for later, a round's or a page's.
+     * The reminders are armed again from what it wrote, as the next round can come after the
+     * first of them is due. The rest a page's answer tells, the upload among them, waits for the
+     * next round: the receiver has seconds. The assignment as written, or null when nothing was.
      */
-    private suspend fun recordExtension(assignmentId: String, extension: Date?, generation: Int): Boolean {
-        val current = dataCache.loadAssignments().firstOrNull { it.assignmentId == assignmentId } ?: return false
-        if (current.extensionDueDate == extension) return false
-        var changed = false
-        dataCache.updateAssignments(generation) { assignments ->
-            assignments.map {
-                if (it.assignmentId != assignmentId || it.extensionDueDate == extension) it
-                else it.copy(extensionDueDate = extension).also { changed = true }
-            }
-        } ?: return false
-        if (changed) scheduler.rescheduleFromCache(dataCache, reminderPrefs)
-        return changed
+    private suspend fun record(
+        assignmentId: String,
+        moodleId: Int,
+        answer: ReminderStatusAnswer.Answered,
+        askedAtMs: Long,
+        generation: Int,
+    ): Assignment? {
+        val (submitted, submittedAt) = MoodleService.submissionState(moodleId, emptyMap(), answer.lastAttempt)
+        val extension = MoodleService.extensionDueDate(moodleId, asked = true, answer.lastAttempt, emptyMap())
+        val status = SubmissionStatusAnswer(
+            assignmentId, submitted, submittedAt?.time, askedAtMs, generation, extensionDueMs = extension?.time,
+        )
+        val written = statusWriter.write(status) ?: return null
+        scheduler.rescheduleFromCache(dataCache, reminderPrefs, generation)
+        return written.firstOrNull { it.assignmentId == assignmentId }
     }
 
     private suspend fun askMoodle(moodleId: Int): ReminderStatusAnswer = try {

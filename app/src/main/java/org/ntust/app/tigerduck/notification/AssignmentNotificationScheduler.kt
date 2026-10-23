@@ -41,11 +41,16 @@ class AssignmentNotificationScheduler @Inject constructor(
      * before any gets a second) so a few early assignments can't crowd out
      * later ones. Far-future reminders that get dropped will be rescheduled on
      * the next sync once the nearest ones fire.
+     *
+     * [stillCurrent] is asked under the lock, before anything is cancelled:
+     * false leaves every reminder as it is.
      */
     fun scheduleAll(
         assignments: List<Assignment>,
         offsets: Set<AssignmentReminderOffset> = AssignmentReminderOffset.DEFAULTS,
+        stillCurrent: () -> Boolean = { true },
     ): Unit = synchronized(schedulerLock) {
+        if (!stillCurrent()) return
         cancelAllTracked()
         if (offsets.isEmpty()) return
 
@@ -166,10 +171,16 @@ class AssignmentNotificationScheduler @Inject constructor(
      * them. An empty cache cancels them all, since an answer from Moodle with
      * no assignments takes the reminders of the ones it dropped with it, such
      * as those of a course the user TAs (issue #160).
+     *
+     * With [generation], the cache's when the caller's work began, nothing is
+     * armed once the data has been wiped since: what it read may be the
+     * departing account's, and the next account's reminders stay as they are.
      */
-    suspend fun rescheduleFromCache(dataCache: DataCache, prefs: AssignmentReminderPrefs) {
+    suspend fun rescheduleFromCache(dataCache: DataCache, prefs: AssignmentReminderPrefs, generation: Int? = null) {
         if (!prefs.notifyAssignments) return
-        scheduleAll(dataCache.loadOutstandingAssignments(), prefs.notifyAssignmentOffsets)
+        scheduleAll(dataCache.loadOutstandingAssignments(), prefs.notifyAssignmentOffsets) {
+            generation == null || generation == dataCache.userDataGeneration
+        }
     }
 
     fun cancelAllTracked(): Unit = synchronized(schedulerLock) {

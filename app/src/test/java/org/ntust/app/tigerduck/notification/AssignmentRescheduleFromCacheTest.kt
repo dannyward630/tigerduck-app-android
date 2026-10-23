@@ -117,4 +117,19 @@ class AssignmentRescheduleFromCacheTest {
     private companion object {
         const val DAY_MS = 24 * 60 * 60 * 1000L
     }
+
+    @Test
+    fun `reminders armed again for an account that signed out leave the next account's alone`() = runBlocking {
+        dataCache.saveAssignments(listOf(dueInThreeDays("1")))
+        val departing = dataCache.userDataGeneration
+        dataCache.clearAllUserData()
+        dataCache.saveAssignments(listOf(dueInThreeDays("2")))
+        // The next account's, for the one offset it chose, before the departing account's work
+        // arms what it reads, for every default offset.
+        scheduler.scheduleAll(dataCache.loadOutstandingAssignments(), setOf(AssignmentReminderOffset.HR2))
+
+        scheduler.rescheduleFromCache(dataCache, prefs, departing)
+
+        assertEquals(listOf("2"), armedIds())
+    }
 }
