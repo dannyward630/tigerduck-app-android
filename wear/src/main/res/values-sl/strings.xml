@@ -31,6 +31,7 @@
     <string name="action_allow">Dovoli</string>
     <string name="action_back">Nazaj</string>
     <string name="action_cancel">Prekliči</string>
+    <string name="action_change">Zamenjaj</string>
     <string name="action_clear_text">Počisti besedilo</string>
     <string name="action_close">Zapri</string>
     <string name="action_confirm">Potrdi</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Slog vmesnika</string>
     <string name="settings_whats_new">Kaj je novega</string>
     <string name="share_code_needs_update_message">Ta koda za deljenje zahteva novejšo različico aplikacije.</string>
+    <string name="sign_in_change_account_title">Zamenjava računa</string>
     <string name="sign_in_password">Geslo</string>
     <string name="sign_in_student_id">Študentska številka</string>
     <string name="source_code_picker_current_app_badge">Ta aplikacija</string>

@@ -31,6 +31,7 @@
     <string name="action_allow">Permitir</string>
     <string name="action_back">Atrás</string>
     <string name="action_cancel">Cancelar</string>
+    <string name="action_change">Cambiar</string>
     <string name="action_clear_text">Borrar texto</string>
     <string name="action_close">Cerrar</string>
     <string name="action_confirm">Confirmar</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Estilo de interfaz</string>
     <string name="settings_whats_new">Novedades</string>
     <string name="share_code_needs_update_message">Este código para compartir necesita una versión más reciente de la aplicación.</string>
+    <string name="sign_in_change_account_title">Cambiar de cuenta</string>
     <string name="sign_in_password">Contraseña</string>
     <string name="sign_in_student_id">ID de estudiante</string>
     <string name="source_code_picker_current_app_badge">App actual</string>

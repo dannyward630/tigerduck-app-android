@@ -31,6 +31,7 @@
     <string name="action_allow">Luba</string>
     <string name="action_back">Tagasi</string>
     <string name="action_cancel">Tühista</string>
+    <string name="action_change">Vaheta</string>
     <string name="action_clear_text">Kustuta tekst</string>
     <string name="action_close">Sulge</string>
     <string name="action_confirm">Kinnita</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Liidese stiil</string>
     <string name="settings_whats_new">Mis on uut</string>
     <string name="share_code_needs_update_message">See jagamiskood vajab rakenduse uuemat versiooni.</string>
+    <string name="sign_in_change_account_title">Konto vahetamine</string>
     <string name="sign_in_password">Parool</string>
     <string name="sign_in_student_id">Üliõpilase ID</string>
     <string name="source_code_picker_current_app_badge">Praegune rakendus</string>

@@ -31,6 +31,7 @@
     <string name="action_allow">Leisti</string>
     <string name="action_back">Atgal</string>
     <string name="action_cancel">Atšaukti</string>
+    <string name="action_change">Pakeisti</string>
     <string name="action_clear_text">Išvalyti tekstą</string>
     <string name="action_close">Uždaryti</string>
     <string name="action_confirm">Patvirtinti</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Sąsajos stilius</string>
     <string name="settings_whats_new">Kas naujo</string>
     <string name="share_code_needs_update_message">Šiam bendrinimo kodui reikia naujesnės programėlės versijos.</string>
+    <string name="sign_in_change_account_title">Pakeisti paskyrą</string>
     <string name="sign_in_password">Slaptažodis</string>
     <string name="sign_in_student_id">Studento ID</string>
     <string name="source_code_picker_current_app_badge">Ši programa</string>

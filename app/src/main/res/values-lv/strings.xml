@@ -31,6 +31,7 @@
     <string name="action_allow">Atļaut</string>
     <string name="action_back">Atpakaļ</string>
     <string name="action_cancel">Atcelt</string>
+    <string name="action_change">Mainīt</string>
     <string name="action_clear_text">Notīrīt tekstu</string>
     <string name="action_close">Aizvērt</string>
     <string name="action_confirm">Apstiprināt</string>
@@ -1018,6 +1019,7 @@
     <string name="settings_visual_preset_label">Saskarnes stils</string>
     <string name="settings_whats_new">Kas jauns</string>
     <string name="share_code_needs_update_message">Šim kopīgošanas kodam nepieciešama jaunāka lietotnes versija.</string>
+    <string name="sign_in_change_account_title">Mainīt kontu</string>
     <string name="sign_in_password">Parole</string>
     <string name="sign_in_student_id">Studenta ID</string>
     <string name="source_code_picker_current_app_badge">Šī lietotne</string>
