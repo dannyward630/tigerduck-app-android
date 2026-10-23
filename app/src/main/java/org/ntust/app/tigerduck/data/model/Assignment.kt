@@ -23,9 +23,31 @@ data class Assignment(
      * Null in a cache written before it existed: the term in session then.
      */
     val semester: String? = null,
+    /**
+     * The date a teacher extended this assignment to for the student, Moodle's
+     * `lastattempt.extensionduedate` from `mod_assign_get_submission_status`; null with none, and
+     * in a cache written before it existed (Gson leaves it null, as it does every missing field).
+     * Moodle keeps [dueDate] as the assignment's own.
+     */
+    val extensionDueDate: Date? = null,
 ) {
+    /**
+     * The date the student is held to: the later of [dueDate] and [extensionDueDate]. Everything
+     * that judges the assignment late, overdue or near reads this, as iOS does
+     * (tigerduck-app#729).
+     */
+    val studentDueDate: Date
+        get() = extensionDueDate?.takeIf { it.after(dueDate) } ?: dueDate
+
+    /**
+     * The last date the student can still hand in: [cutoffDate], unless an extension runs past it,
+     * as Moodle lets a student with one hand in until the extension's date. Null with no cutoff.
+     */
+    val studentCutoffDate: Date?
+        get() = cutoffDate?.let { cutoff -> extensionDueDate?.takeIf { it.after(cutoff) } ?: cutoff }
+
     val isOverdue: Boolean
-        get() = !isCompleted && dueDate.before(Date(AppClock.nowMillis()))
+        get() = !isCompleted && studentDueDate.before(Date(AppClock.nowMillis()))
 
     /**
      * The Moodle app's link to the assignment's page, or null when Moodle gave

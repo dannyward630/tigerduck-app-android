@@ -357,9 +357,9 @@ internal fun CourseDetailContent(
 /** An outstanding assignment: its title and due time, opening its page. */
 @Composable
 private fun AssignmentRow(assignment: Assignment, onClick: () -> Unit) {
-    val due = remember(assignment.dueDate) {
+    val due = remember(assignment.studentDueDate) {
         SimpleDateFormat("M/d HH:mm", Locale.getDefault()).apply { timeZone = org.ntust.app.tigerduck.AppConstants.TAIPEI_TZ }
-            .format(assignment.dueDate)
+            .format(assignment.studentDueDate)
     }
     ListItem(
         modifier = Modifier.clickable(role = Role.Button, onClick = onClick),

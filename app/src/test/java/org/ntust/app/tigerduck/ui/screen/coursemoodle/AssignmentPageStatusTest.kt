@@ -94,4 +94,12 @@ class AssignmentPageStatusTest {
         assertEquals("1 min", AssignmentPageStatus.durationText(20, Locale.US))
         assertEquals("2 days, 30 min", AssignmentPageStatus.durationText(2 * day + 30 * 60, Locale.US))
     }
+
+    @Test
+    fun `the page counts to the extension the student was granted`() {
+        val extended = listed(false).copy(extensionDueDate = Date((due + day) * 1000))
+
+        assertEquals(due + day, AssignmentPageRules.dueSeconds(MoodleAssignmentEntry(record(), extended)))
+        assertEquals(due, AssignmentPageRules.dueSeconds(MoodleAssignmentEntry(record(), listed(false))))
+    }
 }

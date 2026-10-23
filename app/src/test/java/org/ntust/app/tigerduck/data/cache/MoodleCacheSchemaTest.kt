@@ -51,17 +51,17 @@ class MoodleCacheSchemaTest {
 
     @Test
     fun `the cache schema moves with the shape of what it keeps`() {
-        assertEquals(3, DataCache.MOODLE_CACHE_SCHEMA)
-        assertEquals(SHAPE_AT_SCHEMA_3, shape())
+        assertEquals(4, DataCache.MOODLE_CACHE_SCHEMA)
+        assertEquals(SHAPE_AT_SCHEMA_4, shape())
     }
 
     private companion object {
         val PACKAGE = Regex("""\b(?:[a-z]\w*\.)+""")
 
-        val SHAPE_AT_SCHEMA_3 = """
+        val SHAPE_AT_SCHEMA_4 = """
             MoodleAssignmentGrade(feedback: String, grade: String, gradedAt: Long)
             MoodleAssignmentRecord(allowSubmissionsFrom: long, assignId: int, cmid: int, courseId: int, cutoffDate: long, dueDate: long, intro: String, introAttachments: List<MoodleFile>, name: String, noSubmissions: boolean, teamSubmission: boolean)
-            MoodleAssignmentSubmission(comments: List<MoodleSubmissionComment>, files: List<MoodleFile>, grade: MoodleAssignmentGrade, groupId: Integer, groupName: String, id: Integer, modified: Long, onlineText: String, status: String, takesComments: boolean)
+            MoodleAssignmentSubmission(comments: List<MoodleSubmissionComment>, extensionDue: Long, files: List<MoodleFile>, grade: MoodleAssignmentGrade, groupId: Integer, groupName: String, id: Integer, modified: Long, onlineText: String, status: String, takesComments: boolean)
             MoodleCourseGrades(items: List<MoodleGradeItem>)
             MoodleCourseMaterials(sections: List<MoodleMaterialSection>)
             MoodleCourseSummary(html: String, names: List<String>, text: String)

@@ -99,4 +99,17 @@ class AssignmentNotificationSchedulerTest {
         scheduler.cancelAllTracked()
         assertEquals(emptyList<String?>(), armedIds())
     }
+
+    @Test
+    fun `an extended assignment is reminded ahead of its extension, not its due date`() {
+        // Due tomorrow, so its own 24-hour reminder would already be past; extended by three days.
+        val assignment = dueInDays("1", 1).copy(extensionDueDate = Date(AppClock.nowMillis() + 3 * 86_400_000))
+
+        scheduler.scheduleAll(listOf(assignment), setOf(AssignmentReminderOffset.HR24))
+
+        assertEquals(
+            listOf(assignment.extensionDueDate!!.time),
+            armed().map { it.getLongExtra(AssignmentNotificationReceiver.EXTRA_DUE_AT, 0L) },
+        )
+    }
 }

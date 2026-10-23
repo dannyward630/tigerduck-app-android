@@ -212,4 +212,14 @@ class LiveActivityResolverTest {
         assertEquals(AppLink.ClassTable, inClass?.link)
         assertEquals(AppLink.ClassTable, preparing?.link)
     }
+
+    @Test
+    fun `an extended assignment counts down to its extension`() {
+        val extended = dueInHours("extended", -1).copy(extensionDueDate = Date(now.time + 2 * 3_600_000))
+
+        val snapshot = resolve(listOf(extended))
+
+        assertEquals("assignment-extended", snapshot?.sourceId)
+        assertEquals(extended.extensionDueDate, snapshot?.countdownTarget)
+    }
 }

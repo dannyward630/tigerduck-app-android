@@ -6,6 +6,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.data.model.Assignment
 import java.util.Date
+import org.junit.Assert.assertNull
 
 /**
  * Each assignment keeps the newest answer accepted for it, so an answer asked for before it, a
@@ -147,5 +148,17 @@ class AssignmentStatusLedgerTest {
             "the departing account's page answer is not applied to the next account's row",
             ledger.reconcile(listOf(row("702")), answered(), generation).single().isCompleted,
         )
+    }
+
+    @Test
+    fun `an extension goes by the same order, a newer page answer's winning and a later round taking a revoked one off`() {
+        val extended = 1_790_900_000_000L
+        assertTrue(ledger.offer(answer("701", askedAtMs = 150L, submitted = false, submittedAtMs = null).copy(extensionDueMs = extended)))
+
+        val written = ledger.reconcile(listOf(row("701")), answered(answer("701", 100L, submitted = false, submittedAtMs = null)), generation)
+        assertEquals(Date(extended), written.single().extensionDueDate)
+
+        val later = ledger.reconcile(written, answered(answer("701", 200L, submitted = false, submittedAtMs = null)), generation)
+        assertNull(later.single().extensionDueDate)
     }
 }

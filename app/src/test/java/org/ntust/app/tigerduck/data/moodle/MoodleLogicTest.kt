@@ -426,4 +426,20 @@ class MoodleLogicTest {
         assertEquals(MoodleFileKind.ARCHIVE, MoodleFileKind.of(null, "lab.zip"))
         assertEquals(MoodleFileKind.OTHER, MoodleFileKind.of("", "README"))
     }
+
+    @Test
+    fun `an extended assignment is listed by the student's own date, and is not overdue before it`() {
+        val nowMs = 1_800_000_000_000L
+        val extended = MoodleAssignmentEntry(
+            record(1, due = nowMs / 1000 - 3_600),
+            listed(1, nowMs - 3_600_000).copy(extensionDueDate = Date(nowMs + 7_200_000)),
+        )
+        val soon = MoodleAssignmentEntry(record(2, due = nowMs / 1000 + 3_600), listed(2, nowMs + 3_600_000))
+        val later = MoodleAssignmentEntry(record(3, due = nowMs / 1000 + 10_800), listed(3, nowMs + 10_800_000))
+
+        val rows = MoodleAssignmentLists.rows(listOf(later, extended, soon), nowMs)
+
+        assertEquals(listOf(2, 1, 3), rows.map { it.entry.record.assignId })
+        assertNull("still to come", rows[1].status)
+    }
 }

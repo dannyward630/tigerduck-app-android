@@ -662,7 +662,7 @@ class AppState @Inject constructor(
                     CalendarEvent(
                         eventId = "moodle-${assignment.assignmentId}",
                         title = assignment.title,
-                        date = assignment.dueDate,
+                        date = assignment.studentDueDate,
                         sourceRaw = EventSource.MOODLE.raw
                     )
                 }

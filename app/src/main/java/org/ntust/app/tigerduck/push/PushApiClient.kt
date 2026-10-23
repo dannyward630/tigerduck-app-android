@@ -397,7 +397,9 @@ class PushApiClient @Inject constructor(
                 "course_no" to a.courseNo,
                 "course_name" to a.courseName,
                 "title" to a.title,
-                "due_at" to iso8601.format(a.dueDate),
+                // The date the student's work is due, a teacher's extension included: what iOS
+                // uploads, and what the backend's own Moodle fetch writes (tigerduck-backend#82).
+                "due_at" to iso8601.format(a.studentDueDate),
                 "moodle_url" to a.moodleUrl,
                 "is_submitted" to a.isCompleted,
                 "grade" to null,

@@ -114,7 +114,8 @@ fun MoodleAssignmentsScreen(
 @Composable
 internal fun AssignmentListRow(row: MoodleAssignmentLists.Row, onClick: () -> Unit) {
     val entry: MoodleAssignmentEntry = row.entry
-    val due = entry.record.dueDate.takeIf { it > 0 }?.let(MoodleDates::minute)
+    // The student's own date, an extension included, as the list is ordered by.
+    val due = entry.studentDueSeconds.takeIf { it > 0 }?.let(MoodleDates::minute)
     val status = row.status?.let { statusLabel(it) }
     ListItem(
         modifier = Modifier.clickable(role = Role.Button, onClick = onClick),
