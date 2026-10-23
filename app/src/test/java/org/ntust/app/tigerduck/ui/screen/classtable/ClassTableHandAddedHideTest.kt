@@ -71,13 +71,20 @@ class ClassTableHandAddedHideTest {
 
     /**
      * A full sync whose snapshot, fetched at [fetchedAtMs] (by default after everything so far),
-     * lists [serverNos] for the term, with no tombstone, as HomeBackendSync stores it.
+     * lists [serverNos] for the term, with no tombstone, as HomeBackendSync makes it: the hides read
+     * first ([hides], when the sync read them earlier), then the term's courses, reconciled, pruned
+     * and committed.
      */
-    private suspend fun syncListing(vararg serverNos: String, fetchedAtMs: Long = Long.MAX_VALUE) {
-        val stored = cache.loadDeletedCourseNos()
+    private suspend fun syncListing(
+        vararg serverNos: String,
+        fetchedAtMs: Long = Long.MAX_VALUE,
+        hides: Set<String>? = null,
+    ) {
+        val stored = hides ?: cache.loadDeletedCourseNos()
+        val localCourses = cache.loadCourses(TERM)
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = TERM,
-            localCourses = cache.loadCourses(TERM),
+            localCourses = localCourses,
             serverRows = serverNos.map { ServerCourse(it, it, TERM, moodleId = "$TERM$it") },
             tombstoneNos = emptySet(),
             tombstones = stored,
@@ -87,7 +94,7 @@ class ClassTableHandAddedHideTest {
         cache.restoredCoursesListed(TERM, serverNos.toList(), fetchedAtMs)
         cache.updateDeletedCourseNos(stored, outcome.tombstones)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
-        val kept = CourseSyncReconciler.pruneHidden(TERM, cache.loadCourses(TERM), outcome.tombstones) ?: cache.loadCourses(TERM)
+        val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones) ?: localCourses
         cache.saveCourses(kept + outcome.merged, TERM)
     }
 
@@ -266,6 +273,24 @@ class ClassTableHandAddedHideTest {
         cache.updateDeletedCourseNos(read, CourseTombstoneKeys.hide("ZZ1010008", TERM, read))
 
         assertEquals(setOf("ZZ1010008"), hidden())
+    }
+
+    @Test
+    fun `a sync that read the hides before a course came back keeps it in the term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+
+        // Home's sync reads the hides, and is held there while a fetch brings the course back,
+        // before it reads the term's courses, reconciles and commits.
+        val read = cache.loadDeletedCourseNos()
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+        syncListing(enrolled.courseNo, hides = read)
+
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+        assertEquals(emptySet<String>(), hidden())
     }
 
     @Test
