@@ -680,11 +680,22 @@ class SchoolMailListViewModel @Inject constructor(
         _state.update { it.copy(pendingMove = null) }
     }
 
-    /** Moves [UiState.pendingMove]'s mail to [target], the folder of one of its targets. */
+    /**
+     * Moves [UiState.pendingMove]'s mail to [target], the folder of one of its targets.
+     *
+     * The mail leaves its row's folder through the feed ([apply]), and arrives in [target] under a
+     * UID only the server knows, which the feed can only mark for a fetch. A move from the mail's
+     * own screen is fetched as the list appears again ([loadIfNeeded]); this list is on screen
+     * already, so a [target] it shows -- the other of All mail's two folders -- is fetched now, or
+     * the mail would be gone from a list it still belongs on until the next pull.
+     */
     fun moveTo(target: String) {
         val pending = _state.value.pendingMove ?: return
         _state.update { it.copy(pendingMove = null) }
-        write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted -> repository.move(row.folder, row.uid, target, stillWanted) }
+        write(pending.row, pending.generation, pending.uidValidity) { row, stillWanted ->
+            repository.move(row.folder, row.uid, target, stillWanted)
+            if (stillWanted() && target in _state.value.targets) refetch()
+        }
     }
 
     /**

@@ -125,6 +125,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     var seenError: MailError? = null
     val seenCalls = mutableListOf<Triple<String, Long, Boolean>>()
     val moved = mutableListOf<Triple<String, Long, String>>()
+
+    /** The UID [move] files the next mail under in its target, well above any a test adds. */
+    private var movedUids = 90_000L
     val deleted = mutableListOf<Pair<String, Long>>()
 
     /**
@@ -361,7 +364,11 @@ class FakeSchoolMailRepository : SchoolMailRepository {
         foldersTouched += target
         moveError?.let { throw it }
         moved += Triple(folder, uid, target)
+        val moving = mail[folder]?.firstOrNull { it.uid == uid }
         mail[folder]?.removeAll { it.uid == uid }
+        // Filed in the target under a UID of the target's own, as the server does: what a list of
+        // the target can only fetch ([MailChange.Changed] below).
+        moving?.let { mail.getOrPut(target) { mutableListOf() } += it.copy(uid = movedUids++) }
         _changes.emit(MailChange.Removed(folder, uid, generation))
         _changes.emit(MailChange.Changed(target, generation))
     }

@@ -2939,4 +2939,24 @@ class SchoolMailListViewModelTest {
         vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
         assertEquals(listOf(Triple("INBOX", 2L, repo.resolved.nameOf(SpecialFolder.JUNK)!!)), repo.moved)
     }
+
+    @Test
+    fun `a mail moved between the folders All mail merges stays on its list`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1), mailSummary(2, subject = "moved to sent"))
+        repo.add(sent, mailSummary(3))
+        vm.loadIfNeeded()
+        assertEquals(FolderSelection.AllMail, vm.state.value.selected)
+        val row = vm.state.value.displayed.first { it.folder == "INBOX" && it.uid == 2L }
+        vm.requestMove(row)
+        vm.moveTo(sent)
+        val moved = vm.state.value.displayed.filter { it.summary.subject == "moved to sent" }
+        assertEquals("the moved mail left All mail, which still merges where it went", listOf(sent), moved.map { it.folder })
+
+        // A folder off screen is left to be fetched when it appears.
+        val loads = repo.loadsSent.size
+        vm.requestMove(vm.state.value.displayed.first { it.folder == "INBOX" })
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        assertEquals(loads, repo.loadsSent.size)
+    }
 }
