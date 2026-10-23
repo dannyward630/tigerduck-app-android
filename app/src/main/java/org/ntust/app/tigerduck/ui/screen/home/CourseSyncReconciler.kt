@@ -103,12 +103,12 @@ object CourseSyncReconciler {
      *
      * [restoredNos] are the courses a course selection answer brought back
      * from a deleted hand-added course's hide that no snapshot has listed
-     * since, from `DataCache.restoredCoursesIn`, read after [localCourses]:
-     * the roster upload naming them may not have landed, so the server's
-     * silence is no delete elsewhere. A tombstone still hides them: the
-     * backend leaves the one this device's delete wrote out of its snapshot,
-     * so one there is another device's. Nor does [tombstones], read before
-     * they came back, still hide them.
+     * since, from `DataCache.restoredCoursesIn`: the roster upload naming
+     * them may not have landed, so the server's silence is no delete
+     * elsewhere. A tombstone still hides them: the backend leaves the one
+     * this device's delete wrote out of its snapshot, so one there is
+     * another device's. [tombstones] holds none of their hides: see
+     * [withoutRestored].
      */
     fun reconcileSemester(
         semester: String,
@@ -130,11 +130,7 @@ object CourseSyncReconciler {
         }
         val serverNos = rows.map { it.courseNo }.toSet()
 
-        // A course being brought back is hidden no longer, whatever the read
-        // of the hides the caller made before it came back says: kept, that
-        // read would prune it from the term, and the caller's commit, which
-        // writes only what changed here, would not hide it again on disk.
-        var updated = tombstones - restoredNos.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
+        var updated = tombstones
 
         // A hand-typed course no snapshot has carried is this device's alone
         // to delete: the server has never seen it, so nothing the server
@@ -226,6 +222,19 @@ object CourseSyncReconciler {
             serverKnownNos = serverKnownNos + serverNos,
         )
     }
+
+    /**
+     * [tombstones], a sync's read of the hides, without those of
+     * [restoredNos], [semester]'s courses being brought back
+     * (`DataCache.restoredCoursesIn`), read after the term's courses: a
+     * course selection answer may have lifted them since the read, and the
+     * term's courses may hold them again. What the reconcile is handed, and
+     * what its commit (`DataCache.updateDeletedCourseNos`) is measured
+     * against, so such a course is neither pruned from the term by the older
+     * read nor written back as a removal over a delete of it made since.
+     */
+    fun withoutRestored(semester: String, tombstones: Set<String>, restoredNos: Set<String>): Set<String> =
+        tombstones - restoredNos.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
 
     data class SemesterOutcome(
         val tombstones: Set<String>,

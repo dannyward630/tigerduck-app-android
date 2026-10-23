@@ -297,7 +297,9 @@ class BackgroundSyncWorker @AssistedInject constructor(
         )
         if (semester in stale) return
         val localCourses = dataCache.loadCourses(semester)
-        val stored = dataCache.loadDeletedCourseNos()
+        // After the courses: see CourseSyncReconciler.withoutRestored.
+        val restored = dataCache.restoredCoursesIn(semester)
+        val stored = CourseSyncReconciler.withoutRestored(semester, dataCache.loadDeletedCourseNos(), restored)
         val storedKnown = dataCache.loadServerKnownNos()
         // A course reset made on another device, which this worker leaves to
         // Home's sync (HomeBackendSync.applyCourseReset): it wipes the
@@ -319,7 +321,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
             // Adds the retry above could not land: the snapshot does not list them yet.
             pendingAddNos = if (resetElsewhere) emptySet() else pendingCourseAdds.waitingIn(semester),
             selectionDroppedNos = dataCache.loadSelectionDroppedNos()[semester].orEmpty().toSet(),
-            restoredNos = dataCache.restoredCoursesIn(semester),
+            restoredNos = restored,
         )
         dataCache.restoredCoursesListed(
             semester, result.serverCourses.filter { it.semester == semester }.map { it.courseNo }, result.fetchedAtMs,

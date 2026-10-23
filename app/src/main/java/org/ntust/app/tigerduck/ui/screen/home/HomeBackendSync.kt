@@ -481,12 +481,16 @@ class HomeBackendSync @Inject constructor(
         val serverKnown = dataCache.loadServerKnownNos()
         val updatedKnown = serverKnown.toMutableMap()
         var tombstones = migratedTombstones(semesters)
-        val tombstonesBefore = tombstones
+        var tombstonesBefore = tombstones
         val currentSemester = courseService.currentSemesterCode()
         var touchedCurrent = false
 
         for (semester in semesters) {
             val localCourses = dataCache.loadCourses(semester)
+            // After the courses: see CourseSyncReconciler.withoutRestored.
+            val restored = dataCache.restoredCoursesIn(semester)
+            tombstones = CourseSyncReconciler.withoutRestored(semester, tombstones, restored)
+            tombstonesBefore = CourseSyncReconciler.withoutRestored(semester, tombstonesBefore, restored)
             val tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones)
             val outcome = CourseSyncReconciler.reconcileSemester(
                 semester = semester,
@@ -500,7 +504,7 @@ class HomeBackendSync @Inject constructor(
                 // Adds the retry above could not land: the snapshot does not list them yet.
                 pendingAddNos = pendingCourseAdds.waitingIn(semester),
                 selectionDroppedNos = selectionDropped[semester].orEmpty().toSet(),
-                restoredNos = dataCache.restoredCoursesIn(semester),
+                restoredNos = restored,
             )
             dataCache.restoredCoursesListed(semester, rowsBySemester[semester].orEmpty().map { it.courseNo }, result.fetchedAtMs)
             dataCache.handAddedHidesTombstoned(semester, tombstoneNos)

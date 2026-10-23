@@ -54,15 +54,17 @@ class ClassTableHandAddedHideTest {
 
     /** The sync's reconcile as HomeBackendSync stores it, for a tombstone another device wrote for [course]. */
     private suspend fun tombstonedElsewhere(course: Course) {
-        val stored = cache.loadDeletedCourseNos()
+        val localCourses = cache.loadCourses(TERM)
+        val restored = cache.restoredCoursesIn(TERM)
+        val stored = CourseSyncReconciler.withoutRestored(TERM, cache.loadDeletedCourseNos(), restored)
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = TERM,
-            localCourses = cache.loadCourses(TERM),
+            localCourses = localCourses,
             serverRows = listOf(ServerCourse(enrolled.courseNo, enrolled.courseName, TERM, moodleId = enrolled.moodleIdNumber)),
             tombstoneNos = setOf(course.courseNo),
             tombstones = stored,
             serverKnownNos = setOf(enrolled.courseNo, course.courseNo),
-            restoredNos = cache.restoredCoursesIn(TERM),
+            restoredNos = restored,
         )
         cache.handAddedHidesTombstoned(TERM, setOf(course.courseNo))
         cache.updateDeletedCourseNos(stored, outcome.tombstones)
@@ -79,9 +81,11 @@ class ClassTableHandAddedHideTest {
         vararg serverNos: String,
         fetchedAtMs: Long = Long.MAX_VALUE,
         hides: Set<String>? = null,
+        beforeCommit: suspend () -> Unit = {},
     ) {
-        val stored = hides ?: cache.loadDeletedCourseNos()
         val localCourses = cache.loadCourses(TERM)
+        val restored = cache.restoredCoursesIn(TERM)
+        val stored = CourseSyncReconciler.withoutRestored(TERM, hides ?: cache.loadDeletedCourseNos(), restored)
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = TERM,
             localCourses = localCourses,
@@ -89,8 +93,9 @@ class ClassTableHandAddedHideTest {
             tombstoneNos = emptySet(),
             tombstones = stored,
             serverKnownNos = cache.loadServerKnownNos()[TERM].orEmpty().toSet(),
-            restoredNos = cache.restoredCoursesIn(TERM),
+            restoredNos = restored,
         )
+        beforeCommit()
         cache.restoredCoursesListed(TERM, serverNos.toList(), fetchedAtMs)
         cache.updateDeletedCourseNos(stored, outcome.tombstones)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
@@ -291,6 +296,23 @@ class ClassTableHandAddedHideTest {
 
         assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), cache.loadCourses(TERM).map { it.courseNo }.sorted())
         assertEquals(emptySet<String>(), hidden())
+    }
+
+    @Test
+    fun `a sync that read a course as brought back does not undo its delete made since`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        val read = cache.loadDeletedCourseNos()
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+
+        // The sync has read the course as brought back and is held before its commit, while the
+        // student deletes it again.
+        syncListing(enrolled.courseNo, hides = read, beforeCommit = { delete(handAdded) })
+
+        assertEquals(setOf(handAdded.courseNo), hidden())
     }
 
     @Test
