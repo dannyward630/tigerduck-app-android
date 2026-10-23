@@ -1601,6 +1601,24 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a search that ends after the downloaded mail was deleted asks for no run to download it again`() = runTest {
+        server.deliver("期中考")
+        val held = HeldListing()
+        val setup = TestSetup(backgroundScope, held.factory)
+        val repo = setup.signedIn()
+        val search = async(Dispatchers.IO) { runCatching { repo.search("INBOX", "期中") } }
+        assertTrue(held.holding.await(30, TimeUnit.SECONDS))
+
+        repo.deleteSearchIndex()
+        held.release.countDown()
+        search.await()
+
+        assertEquals(0, setup.indexScheduler.requests)
+        assertEquals(0, setup.indexScheduler.followUps)
+        assertFalse("the held listing timed out", held.timedOut)
+    }
+
+    @Test
     fun `a visit's download not started yet when the mail is deleted downloads nothing`() = runTest {
         server.deliver("期中考")
         val setup = TestSetup(backgroundScope)

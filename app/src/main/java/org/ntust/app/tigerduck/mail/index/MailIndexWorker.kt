@@ -8,6 +8,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import dagger.assisted.Assisted
@@ -24,8 +25,10 @@ interface MailIndexScheduler {
     fun request()
 
     /**
-     * A run of its own after the one queued or going, rather than that one: for mail found missing
-     * that a run under way may have planned without, or be past its last look for.
+     * A run that plans after now: for mail found missing that a run under way may have planned
+     * without, or be past its last look for. One already waiting to start is that run; otherwise
+     * a run of its own after the one going. Blocks on WorkManager's answer, so not for the main
+     * thread.
      */
     fun requestAgain()
 
@@ -41,11 +44,17 @@ class WorkManagerMailIndexScheduler @Inject constructor(
         WorkManager.getInstance(context).enqueueUniqueWork(NAME, ExistingWorkPolicy.KEEP, run())
     }
 
-    // After the run there is, or in its place should it have failed or been cancelled. The one
-    // after it finds the index due ([SchoolMailRepository.updateSearchIndex]) and downloads what is
-    // missing, or ends at once when the one before got it all.
+    // At most one run waiting: it plans once it starts, after whatever was found missing before.
+    // Asked and queued in one step, so two searches at once queue one. A run queued here goes after
+    // the one going, or in its place should that one have failed or been cancelled, and finds the
+    // index due ([SchoolMailRepository.updateSearchIndex]) or ends at once when the one before
+    // got it all.
+    @Synchronized
     override fun requestAgain() {
-        WorkManager.getInstance(context).enqueueUniqueWork(NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, run())
+        val workManager = WorkManager.getInstance(context)
+        val waiting = workManager.getWorkInfosForUniqueWork(NAME).get()
+            .any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.BLOCKED }
+        if (!waiting) workManager.enqueueUniqueWork(NAME, ExistingWorkPolicy.APPEND_OR_REPLACE, run())
     }
 
     private fun run() = OneTimeWorkRequestBuilder<MailIndexWorker>()

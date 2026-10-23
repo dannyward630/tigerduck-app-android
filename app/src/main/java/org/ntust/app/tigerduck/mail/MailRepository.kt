@@ -715,6 +715,7 @@ class MailRepository @Inject constructor(
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
         val q = query.trim()
         if (account.isDemo) return demoPage(folder).let { page -> SearchOutcome.LoadedOnly(page.messages.filter { matchesLoadedMail(it, q) }, page.uidValidity) }
+        val asked = indexEpoch.get()
         val whole = indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
         // The rest of what the index lacks comes in the background, the first run all of it.
         // Asked for once the catch-up is through: after a rejected password, which the list hands
@@ -722,14 +723,7 @@ class MailRepository @Inject constructor(
         // past what the catch-up fetches sits below the newest it has, where no later catch-up
         // looks, so a whole download within [INDEX_RESYNC_MS] must not hold that run off
         // ([gapsFound]).
-        if (whole) {
-            indexScheduler.request()
-        } else {
-            gapsFound.incrementAndGet()
-            // A run of its own after the one under way, if any: that one may be past its last look
-            // at [gapsFound], or done and yet to be filed so, when a request would only join it.
-            indexScheduler.requestAgain()
-        }
+        withContext(Dispatchers.IO) { askForTheRest(asked, whole) }
         // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
         val (indexedUnder, matches) = withContext(Dispatchers.IO) {
             val owner = indexOwner() ?: return@withContext null to emptyList()
@@ -1024,6 +1018,27 @@ class MailRepository @Inject constructor(
 
     override suspend fun searchIndexBytes(): Long = withContext(Dispatchers.IO) { searchIndex.sizeBytes() }
 
+    /** Held while a search asks for a run and while [deleteSearchIndex] moves the epoch and cancels them. */
+    private val scheduling = Any()
+
+    /**
+     * A search's request for the background run, [whole] saying whether its catch-up left nothing
+     * out. None for a search begun before the downloaded mail was deleted, at epoch [asked]: the
+     * run would download it all again, which only the mail screen opened afterwards does. Asked in
+     * one step with the deletion's cancel, so a run asked for just before it is cancelled with it.
+     */
+    private fun askForTheRest(asked: Int, whole: Boolean) = synchronized(scheduling) {
+        if (indexEpoch.get() != asked) return@synchronized
+        if (whole) {
+            indexScheduler.request()
+        } else {
+            gapsFound.incrementAndGet()
+            // A run that plans after now, if the one under way may be past its last look at
+            // [gapsFound], or done and yet to be filed so, when a request would only join it.
+            indexScheduler.requestAgain()
+        }
+    }
+
     /**
      * Not waiting for a download to stop, which could be out on a slow network for as long as its
      * timeout: the [indexEpoch] it moves on first is what keeps whatever is still under way from
@@ -1031,8 +1046,10 @@ class MailRepository @Inject constructor(
      * takes too.
      */
     override suspend fun deleteSearchIndex() {
-        indexEpoch.incrementAndGet()
-        indexScheduler.cancel()
+        synchronized(scheduling) {
+            indexEpoch.incrementAndGet()
+            indexScheduler.cancel()
+        }
         inAppIndexing?.cancel()
         lastWhole = null
         numberings.clear()
