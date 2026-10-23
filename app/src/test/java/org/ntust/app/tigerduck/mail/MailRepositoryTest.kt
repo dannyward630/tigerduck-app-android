@@ -787,7 +787,7 @@ class MailRepositoryTest {
         repo.acquire()
         runCurrent()
         withContext(Dispatchers.Default) {
-            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isEmpty()) Thread.sleep(10) }
+            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isEmpty()) delay(10) }
         }
 
         assertEquals(1, setup.searchIndex.uids(owner, "INBOX").size)
@@ -797,7 +797,7 @@ class MailRepositoryTest {
     private suspend fun kotlinx.coroutines.test.TestScope.visit(repo: MailRepository) {
         repo.acquire()
         runCurrent()
-        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) Thread.sleep(10) } }
+        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
         repo.release()
     }
 
@@ -1047,13 +1047,16 @@ class MailRepositoryTest {
         val holding = CountDownLatch(1)
         val release = CountDownLatch(1)
 
+        /** The listing went on without [release]: the test no longer tests what it says. */
+        @Volatile var timedOut = false
+
         val factory = MailSessionFactory { credentials ->
             val session = server.factory().open(credentials)
             object : MailSession by session {
                 override fun undeletedUids(folder: String): List<Long> {
                     if (holding.count > 0L) {
                         holding.countDown()
-                        release.await(5, TimeUnit.SECONDS)
+                        if (!release.await(5, TimeUnit.SECONDS)) timedOut = true
                     }
                     return session.undeletedUids(folder)
                 }
@@ -1081,9 +1084,10 @@ class MailRepositoryTest {
 
         repo.deleteSearchIndex()
         held.release.countDown()
-        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) Thread.sleep(10) } }
+        withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
 
         assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+        assertFalse("the held listing timed out", held.timedOut)
     }
 
     @Test
@@ -1121,6 +1125,7 @@ class MailRepositoryTest {
         withContext(Dispatchers.Default) { withTimeout(5_000) { while (repo.downloadingInApp) delay(10) } }
 
         assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+        assertFalse("the held listing timed out", held.timedOut)
     }
 
     @Test
@@ -1139,6 +1144,7 @@ class MailRepositoryTest {
         download.join()
 
         assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+        assertFalse("the held listing timed out", held.timedOut)
     }
 
     @Test
@@ -1156,6 +1162,7 @@ class MailRepositoryTest {
         search.await()
 
         assertEquals(emptyList<Long>(), setup.indexedMail(owner))
+        assertFalse("the held listing timed out", held.timedOut)
     }
 
     @Test
@@ -1211,7 +1218,7 @@ class MailRepositoryTest {
         runCurrent()
         // The repository empties it on the IO pool once it hears of the sign-out.
         withContext(Dispatchers.Default) {
-            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isNotEmpty()) Thread.sleep(10) }
+            withTimeout(5_000) { while (setup.searchIndex.uids(owner, "INBOX").isNotEmpty()) delay(10) }
         }
 
         assertEquals(emptySet<Long>(), setup.searchIndex.uids(owner, "INBOX"))
@@ -1230,7 +1237,7 @@ class MailRepositoryTest {
         setup.account.signIn("b10000002", "pw2")
         runCurrent()
         withContext(Dispatchers.Default) {
-            withTimeout(5_000) { while (setup.searchIndex.uids(first, "INBOX").isNotEmpty()) Thread.sleep(10) }
+            withTimeout(5_000) { while (setup.searchIndex.uids(first, "INBOX").isNotEmpty()) delay(10) }
         }
 
         assertEquals(emptySet<Long>(), setup.searchIndex.uids(first, "INBOX"))
