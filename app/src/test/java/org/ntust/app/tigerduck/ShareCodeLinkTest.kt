@@ -105,6 +105,19 @@ class ShareCodeLinkTest {
     }
 
     @Test
+    fun `a share link a chat app tagged with a query or a fragment reads as the same code`() {
+        val expected = ClassTableShareCode.decode(code)
+
+        for (tail in listOf("?fbclid=IwAR0abc", "#top", "?utm_source=line&x=1#top")) {
+            listOf(code, links[1]).forEach { link ->
+                val text = take(link + tail)
+                assertNotNull(link + tail, text)
+                assertEquals(link + tail, expected, ClassTableShareCode.decode(text!!))
+            }
+        }
+    }
+
+    @Test
     fun `a link on the share host that the decoder does not take says the code is damaged`() = runTest {
         val link = links[0].replaceFirst("://share.tigerduck.app/", "://share.tigerduck.app:443/", ignoreCase = true)
         assertNotNull(take(link))

@@ -33,7 +33,9 @@ internal object ShareCodeLink {
 
     /**
      * The text the import reads for [link], an intent's data: a share host URL as it came, in
-     * whatever letter case, as the decoder trims and upper-cases it itself; and
+     * whatever letter case, as the decoder trims and upper-cases it itself, but without its query
+     * and fragment, which a chat app may tag a link it passes on with (`?fbclid=…`), as the share
+     * page and the iPhone app read only the path; and
      * `tigerduck://share/<rest>` as that URL, `https://share.tigerduck.app/<rest>`. Null for any
      * other link, which the rest of the app reads.
      *
@@ -43,10 +45,10 @@ internal object ShareCodeLink {
      */
     fun codeText(link: Uri?): String? {
         link ?: return null
-        val text = link.toString()
         return when {
             link.scheme.equals(SHARE_HOST.scheme, ignoreCase = true) &&
-                link.host.equals(SHARE_HOST.host, ignoreCase = true) -> text
+                link.host.equals(SHARE_HOST.host, ignoreCase = true) ->
+                link.buildUpon().clearQuery().fragment(null).build().toString()
             // Matched exactly, as the manifest's filter and AppLink.parse match a tigerduck:// link.
             link.scheme == AppLink.SCHEME && link.host == HOST ->
                 WEB_ROOT + link.encodedPath.orEmpty().removePrefix("/")
