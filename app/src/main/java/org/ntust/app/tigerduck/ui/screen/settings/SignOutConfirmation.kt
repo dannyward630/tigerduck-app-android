@@ -101,16 +101,15 @@ fun signOutLosses(
  * Whether a name the user gave a course in [courses] stays on this phone alone. A name goes up
  * under its course's Moodle ID (`ClassTableViewModel.syncCourseOverride`), and the course upload
  * carries none, so a course without one, as every course added by hand is, keeps its name here
- * whatever the course_names switch says. A course of that number with a Moodle ID in another
- * term sends it. As iOS's holdsLocalOnlyCourseNames (tigerduck-app/tigerduck-app#744).
+ * whatever the course_names switch says. Each course by its own ID: a rename goes up through the
+ * course renamed alone, so another term's course of that number with a Moodle ID has not sent it.
+ * As iOS's holdsLocalOnlyCourseNames (tigerduck-app/tigerduck-app#744).
  */
-internal fun holdsLocalOnlyCourseNames(names: Map<String, Map<String, String>>, courses: List<Course>): Boolean {
-    val withMoodleId = courses.filter { it.moodleIdNumber != null }.mapTo(HashSet()) { it.courseNo }
-    return courses.any { course ->
-        course.courseNo !in withMoodleId &&
+internal fun holdsLocalOnlyCourseNames(names: Map<String, Map<String, String>>, courses: List<Course>): Boolean =
+    courses.any { course ->
+        course.moodleIdNumber == null &&
             (course.customCourseName != null || names[course.courseNo].orEmpty().values.any { it.isNotEmpty() })
     }
-}
 
 /**
  * Reads what this phone holds for [signOutLosses]. Off the main thread: it reads every term's

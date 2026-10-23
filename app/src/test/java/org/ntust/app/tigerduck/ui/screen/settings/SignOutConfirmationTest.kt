@@ -309,6 +309,22 @@ class SignOutConfirmationTest {
     }
 
     @Test
+    fun `a name on a course added by hand is asked about though another term's course of that number has a Moodle ID`() = runTest {
+        syncOn()
+        // Taken for credit in an earlier term, added by hand again in this one.
+        dataCache.saveCourses(listOf(course("CS1001301").copy(moodleIdNumber = "1132CS1001301")), "1132")
+        dataCache.saveCourses(listOf(course("CS1001301").copy(isManual = true)), "1141")
+        dataCache.saveServerKnownNos(mapOf("1141" to listOf("CS1001301")))
+        assertEquals(emptySet<SignOutLoss>(), check.losses())
+
+        // Renamed on this term's table: the name goes through this term's course alone, which has no Moodle ID.
+        dataCache.saveCourses(listOf(course("CS1001301").copy(isManual = true, customCourseName = "早八")), "1141")
+        dataCache.saveCourseCustomNames(mapOf("CS1001301" to mapOf("zh" to "早八")))
+
+        assertEquals(setOf(UNSYNCED_DATA), check.losses())
+    }
+
+    @Test
     fun `a name on an enrolled course is kept with names synced`() = runTest {
         syncOn()
         dataCache.saveCourses(
