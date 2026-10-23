@@ -69,7 +69,8 @@ class AddCourseTakeBackTest {
         // take it off again; marked after the send, a process killed during it would leave none.
         val mark = delete.indexOfFirst { "dataCache.markDeletedCourse(courseNo, semester, deletedCourse)" in it }
         val kept = delete.indexOfFirst { "pendingCourseDeletes.keep(semester, courseNo, queuedAt)" in it }
-        val sent = delete.indexOfFirst { "pendingCourseDeletes.send(" in it }
+        // Sent as kept, not queued again: a full sync's retry may have sent it meanwhile.
+        val sent = delete.indexOfFirst { "pendingCourseDeletes.sendKept(semester, courseNo)" in it }
         assertTrue("the delete's hide is marked between keeping its DELETE and sending it", kept in 0 until mark && mark < sent)
         assertTrue(
             "the edit a fetch reads is made under `if (tombstone)`",

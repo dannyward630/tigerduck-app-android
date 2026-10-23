@@ -1218,8 +1218,13 @@ class ClassTableViewModel @Inject constructor(
             // keeps the course out of the term meanwhile, and sent after an
             // add of it already under way, which landing later would bring it
             // back: the outbox takes PendingCourseAdds.removing itself, so it
-            // is not taken here. See PendingCourseDeletes.
-            pendingCourseDeletes.send(semester, courseNo, queuedAt)
+            // is not taken here. See PendingCourseDeletes. One kept above
+            // goes as kept: a full sync's retry may have sent it already.
+            if (tombstoneEdit != null) {
+                pendingCourseDeletes.sendKept(semester, courseNo)
+            } else {
+                pendingCourseDeletes.send(semester, courseNo, queuedAt)
+            }
             runCatching { pushApiClient.uploadCourses(updated, semester) }
                 .onFailure { e -> Log.w("ClassTable", "uploadCourses after delete failed: ${e.logSummary()}") }
         }

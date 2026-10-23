@@ -144,6 +144,25 @@ class PendingCourseDeletesTest {
         assertEquals(emptyMap<String, List<String>>(), queued())
     }
 
+    /**
+     * The class table keeps its delete, then sends it once its writes are done. A full sync's retry
+     * can send it in between, and a course selection answer bring the course back with the roster:
+     * sent again then, the DELETE would take the course off the server after its upload.
+     */
+    @Test
+    fun `a kept delete a retry has already sent is not sent again`() = runTest {
+        deletes.keep(term, typed, deletes.stamp())
+        deletes.retry()
+        assertEquals(emptyMap<String, List<String>>(), queued())
+        // The roster brings the course back meanwhile.
+        cache.saveCourses(listOf(course(typed)), term)
+
+        deletes.sendKept(term, typed)
+
+        assertEquals(listOf("client:1151:MA1010002"), keys())
+        assertEquals(emptyMap<String, List<String>>(), queued())
+    }
+
     @Test
     fun `a delete that lands is not kept`() = runTest {
         deletes.send(term, typed)
