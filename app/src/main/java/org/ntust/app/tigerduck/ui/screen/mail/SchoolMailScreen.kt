@@ -471,17 +471,15 @@ fun SchoolMailScreen(
             },
         )
     }
-    state.pendingMove?.row?.let { row ->
-        val folders = state.folders
+    state.pendingMove?.let { pending ->
         TigerDuckDialog(
             onDismissRequest = { viewModel.dismissMove() },
             title = stringResource(R.string.school_mail_move_to),
             dismissText = stringResource(R.string.action_cancel),
         ) {
-            viewModel.moveTargets(row).forEach { name ->
-                val kind = folders?.kindOf(name)
-                TextButton(onClick = { viewModel.moveTo(name) }, modifier = Modifier.fillMaxWidth()) {
-                    Text(if (kind != null) stringResource(kind.labelRes()) else name)
+            pending.targets.forEach { target ->
+                TextButton(onClick = { viewModel.moveTo(target.folder) }, modifier = Modifier.fillMaxWidth()) {
+                    Text(target.kind?.let { stringResource(it.labelRes()) } ?: target.folder)
                 }
             }
         }

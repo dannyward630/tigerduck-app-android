@@ -2512,13 +2512,14 @@ class SchoolMailListViewModelTest {
         repo.add("INBOX", mailSummary(1), mailSummary(2))
         vm.load()
         val row = vm.state.value.displayed.first { it.uid == 2L }
-        val targets = vm.moveTargets(row)
-        assertFalse("target folders cannot include own folder", targets.contains(row.folder))
         val target = repo.resolved.nameOf(SpecialFolder.TRASH)!!
-        assertTrue(targets.contains(target))
 
         vm.requestMove(row)
         assertEquals(row, vm.state.value.pendingMove?.row)
+        val targets = vm.state.value.pendingMove!!.targets
+        assertFalse("target folders cannot include own folder", targets.any { it.folder == row.folder })
+        assertTrue(SchoolMailListViewModel.MoveTarget(target, SpecialFolder.TRASH) in targets)
+        assertTrue("a folder of the student's own is offered by its name", SchoolMailListViewModel.MoveTarget("Moodle 課程討論區", null) in targets)
         vm.dismissMove()
         assertNull(vm.state.value.pendingMove)
         vm.moveTo(target)
@@ -2765,5 +2766,46 @@ class SchoolMailListViewModelTest {
 
         vm.delete(second)
         assertEquals(second, vm.state.value.pendingDelete?.row)
+    }
+
+    @Test
+    fun `a trash the first delete created is offered as a place to move mail to`() {
+        // An account with no trash, as the list found it when it loaded.
+        repo.resolved = ResolvedFolders(SpecialFolder.entries.filter { it != SpecialFolder.TRASH }.associateWith { it.decodedName }, emptyList())
+        repo.add("INBOX", mailSummary(1), mailSummary(2))
+        vm.loadIfNeeded()
+        // The first delete's question created one on the server, and the repository knows it.
+        repo.resolved = ResolvedFolders(SpecialFolder.entries.associateWith { it.decodedName }, emptyList())
+        val row = vm.state.value.displayed.first { it.uid == 2L }
+        vm.requestMove(row)
+        val targets = vm.state.value.pendingMove!!.targets
+        assertTrue("the trash created since is missing", SchoolMailListViewModel.MoveTarget(SpecialFolder.TRASH.decodedName, SpecialFolder.TRASH) in targets)
+    }
+
+    @Test
+    fun `a move asked before another student signed in over this one asks them nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        // The folders a move offers wait on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.foldersGate = gate
+        vm.requestMove(row)
+        signOutAndSignInAnother()
+        repo.foldersGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull("the first student's question was put to the second", vm.state.value.pendingMove)
+        assertNull(vm.state.value.actionError)
+    }
+
+    @Test
+    fun `a move whose folders cannot be read says so and asks nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        repo.foldersError = MailError.Network()
+        vm.requestMove(vm.state.value.displayed.single())
+        assertNull(vm.state.value.pendingMove)
+        assertTrue(vm.state.value.actionError is MailError.Network)
     }
 }

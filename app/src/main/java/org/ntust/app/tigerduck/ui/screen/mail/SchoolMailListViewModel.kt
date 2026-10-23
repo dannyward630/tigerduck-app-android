@@ -28,7 +28,6 @@ import org.ntust.app.tigerduck.mail.SentCopyNotices
 import org.ntust.app.tigerduck.mail.SentCopyOrigin
 import org.ntust.app.tigerduck.mail.matchesLoadedMail
 import org.ntust.app.tigerduck.mail.imap.FolderSelection
-import org.ntust.app.tigerduck.mail.imap.ResolvedFolders
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
 import org.ntust.app.tigerduck.mail.model.MailPage
 import org.ntust.app.tigerduck.mail.model.MailRow
@@ -71,8 +70,11 @@ class SchoolMailListViewModel @Inject constructor(
      */
     data class PendingDelete(val row: MailRow, val permanently: Boolean, val generation: Int)
 
-    /** [row]'s move, waiting on the folder it goes to; [generation] as on [PendingDelete]. */
-    data class PendingMove(val row: MailRow, val generation: Int)
+    /** A folder a mail can be moved to; [kind] when it is a special one, which is shown by its own name. */
+    data class MoveTarget(val folder: String, val kind: SpecialFolder?)
+
+    /** [row]'s move, waiting on which of [targets] it goes to; [generation] as on [PendingDelete]. */
+    data class PendingMove(val row: MailRow, val targets: List<MoveTarget>, val generation: Int)
 
     data class UiState(
         val chips: List<FolderChip> = emptyList(),
@@ -121,7 +123,6 @@ class SchoolMailListViewModel @Inject constructor(
          * see [MailChecker.fetchedAt].
          */
         val fetchedAt: Long = 0L,
-        val folders: ResolvedFolders? = null,
         /** A delete waiting on its confirmation; [confirmDelete] answers it. */
         val pendingDelete: PendingDelete? = null,
         /** A mail waiting on the folder it is moved to; [moveTo] picks it, [dismissMove] drops it. */
@@ -286,9 +287,10 @@ class SchoolMailListViewModel @Inject constructor(
     private var searchGeneration = 0
 
     /**
-     * The delete question [delete] is still finding out which of its two to ask, from the server.
-     * One question at a time ([mayAsk]): a second swipe while this one is out would otherwise
-     * replace its question, and the first delete be dropped without a word.
+     * The question [delete] or [requestMove] is still finding out from the server: which of the
+     * two delete questions to ask, or which folders a mail can go to. One question at a time
+     * ([mayAsk]): a second swipe while this one is out would otherwise replace its question, and
+     * the first delete be dropped without a word.
      */
     private var asking: Job? = null
 
@@ -478,7 +480,7 @@ class SchoolMailListViewModel @Inject constructor(
                     current is FolderSelection.Real && current.name in folders.others -> current
                     else -> inbox
                 }
-                _state.update { it.copy(chips = chips, others = folders.others, selected = keep, mergedFolders = merged, folders = folders) }
+                _state.update { it.copy(chips = chips, others = folders.others, selected = keep, mergedFolders = merged) }
                 // The folders on screen are known now, and so is their date.
                 showFetchedAt()
             } catch (e: MailError) {
@@ -632,21 +634,38 @@ class SchoolMailListViewModel @Inject constructor(
         if (confirm) write(pending.row, pending.generation) { repository.delete(it.folder, it.uid) }
     }
 
-    fun moveTargets(row: MailRow): List<String> {
-        val folders = _state.value.folders ?: return emptyList()
-        return (SpecialFolder.entries.mapNotNull { folders.nameOf(it) } + folders.others).filter { it != row.folder }
-    }
-
+    /**
+     * Asks where [row] goes, offering every folder but its own as the repository knows them now
+     * rather than as [load] found them: a trash the first delete created
+     * ([SchoolMailRepository.deletesPermanently]), or a drafts folder the first draft did, is a
+     * place to move mail to from then on, as on the iPhone's move sheet. The repository keeps what
+     * it created, so this asks the server nothing it has not been asked already. The account is
+     * held as [delete] holds it.
+     */
     fun requestMove(row: MailRow) {
         if (!mayAsk(row)) return
-        _state.update { it.copy(pendingMove = PendingMove(row, account.accountGeneration)) }
+        val generation = account.accountGeneration
+        asking = viewModelScope.launch {
+            try {
+                val folders = repository.folders { account.accountGeneration == generation }
+                if (account.accountGeneration != generation) return@launch
+                val targets = SpecialFolder.entries.mapNotNull { kind -> folders.nameOf(kind)?.let { MoveTarget(it, kind) } } +
+                    folders.others.map { MoveTarget(it, null) }
+                _state.update { it.copy(pendingMove = PendingMove(row, targets.filter { t -> t.folder != row.folder }, generation)) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val error = MailErrors.classify(e)
+                if (!dropped(error, generation)) actionFail(error)
+            }
+        }
     }
 
     fun dismissMove() {
         _state.update { it.copy(pendingMove = null) }
     }
 
-    /** Moves [UiState.pendingMove]'s mail to [target], one of [moveTargets]. */
+    /** Moves [UiState.pendingMove]'s mail to [target], the folder of one of its targets. */
     fun moveTo(target: String) {
         val pending = _state.value.pendingMove ?: return
         _state.update { it.copy(pendingMove = null) }
