@@ -155,12 +155,13 @@ object MailHtmlDocument {
         allowRemoteImages: Boolean,
         theme: MailHtmlTheme,
     ): LinkedHtml {
-        val readableHtml = readable.adjust(
-            pageBackgroundHex = theme.background,
-            pageForegroundHex = theme.foreground,
-            linkForegroundHex = theme.link,
-        )
-        val body = rewriteLinks(inlineCids(readableHtml, images))
+        val readableHtml = readable.on(theme)
+        val linked = rewriteLinks(inlineCids(readableHtml, images))
+        // Every href stripped (see rewriteLinks): the anchors were judged as links, drawn in the
+        // link colour, and are text now, drawn in the colour around them -- which may not read on
+        // a background of their own. So the page is judged again as it now is.
+        val stripped = linked.links.isEmpty() && MailReadableHtml.targets(readableHtml).any { it.trimStart().startsWith("href=") }
+        val body = if (stripped) LinkedHtml(MailReadableHtml(linked.html).on(theme), emptyList()) else linked
         val scheme = if (theme.isDark) "dark" else "light"
         return body.copy(
             html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">" +
@@ -173,6 +174,9 @@ object MailHtmlDocument {
                 "</head><body>${body.html}</body></html>",
         )
     }
+
+    private fun MailReadableHtml.on(theme: MailHtmlTheme): String =
+        adjust(pageBackgroundHex = theme.background, pageForegroundHex = theme.foreground, linkForegroundHex = theme.link)
 
     private fun normalize(id: String) = id.trim().removePrefix("<").removeSuffix(">").lowercase()
 

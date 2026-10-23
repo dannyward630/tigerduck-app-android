@@ -250,6 +250,23 @@ class MailHtmlDocumentTest {
     }
 
     @Test
+    fun `links stripped of their hrefs are judged again as the text they become`() {
+        // As above, each parse drops a newline after <pre>, so the anchors fall out of lockstep.
+        // Judged as a link, the anchor's blue reads on its own white; stripped, it inherits the
+        // div's white, on that same white.
+        val newline = Char(10).toString()
+        val mail = """<div style="background-color: #000000; color: #ffffff"><a href="https://a.example" style="background-color: #ffffff">y<pre>""" +
+            newline.repeat(8) + """x</pre></a></div>"""
+        val sanitized = HtmlSanitizer.sanitize(mail, allowRemoteImages = false)
+        val document = MailHtmlDocument.build(sanitized.html, emptyMap(), allowRemoteImages = false, theme = MailHtmlTheme.LIGHT)
+        assertTrue(document.links.isEmpty())
+        val page = Jsoup.parse(document.html)
+        assertTrue(document.html, page.select("[href]").isEmpty())
+        val anchor = page.selectFirst("a")!!
+        assertEquals("background-color: #ffffff; color: #595959", anchor.attr("style"))
+    }
+
+    @Test
     fun `links are rewritten after cid inlining, so the check covers the body the WebView gets`() {
         // inlineCids is a text substitution: a cid-looking text runs to the next quote and swallows
         // markup. Done after the rewrite, it would merge two checked anchors into one.
