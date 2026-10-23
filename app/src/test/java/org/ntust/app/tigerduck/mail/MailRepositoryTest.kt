@@ -342,6 +342,43 @@ class MailRepositoryTest {
     }
 
     /**
+     * A list's move asks whether it is still wanted on the account generation it was confirmed
+     * under, which the same student signing in again moves. The flag check after the move fails
+     * is the bookkeeping of that student's own set, which [MailStateStore.clearSignIn] keeps: it
+     * must still record the flag that landed, or no later EXPUNGE of the folder takes that mail.
+     */
+    @Test
+    fun `a list move that fails as the same student signs in again still records its flagged mail`() = runTest {
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(fail = true, to = "b10000001").open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+        val before = setup.account.accountGeneration
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") { setup.account.accountGeneration == before } }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertEquals("the flagged mail went unrecorded", setOf(uid), state.ownedDeleted("INBOX", server.uidValidity))
+    }
+
+    /** As above, with another student signing in: their state takes nothing of the first one's. */
+    @Test
+    fun `a list move that fails as another student signs in records nothing`() = runTest {
+        val uid = server.deliver("a")
+        lateinit var setup: TestSetup
+        setup = TestSetup(backgroundScope, MailSessionFactory { setup.switchingDuringMove(fail = true).open(it) })
+        val repo = setup.signedIn()
+        repo.loadPage("INBOX", null)
+        val before = setup.account.accountGeneration
+
+        val moved = runCatching { repo.move("INBOX", uid, "回收筒") { setup.account.accountGeneration == before } }
+
+        assertTrue(moved.exceptionOrNull() is MailError.Network)
+        assertTrue(state.ownedDeleted("INBOX", server.uidValidity).isEmpty())
+    }
+
+    /**
      * A write that waited for the session while another student signed in over this one finds
      * the state reset for them: the set there is theirs, and must not decide what the write
      * expunges, so the write sends nothing.

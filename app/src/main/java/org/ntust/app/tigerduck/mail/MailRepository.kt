@@ -758,8 +758,9 @@ class MailRepository @Inject constructor(
      * - Asks [stillWanted] with the session held, before anything is sent
      *   ([SchoolMailRepository.loadPage]): a write of a student who left while
      *   it waited for the session, another having signed in over them, ends as
-     *   [MailError.Abandoned] instead of acting on that one's mailbox, and so
-     *   does the flag check after a failed [op].
+     *   [MailError.Abandoned] instead of acting on that one's mailbox. The
+     *   flag check after a failed [op] asks on the set's own state instead
+     *   (see the next point and [recordIfDeletedOnServer]).
      * - Reads the folder's live UIDVALIDITY inside the same held connection
      *   before [op] runs. If it doesn't match what the cache believes, the
      *   cache is dropped and [MailError.FolderChanged] is thrown before
@@ -837,7 +838,7 @@ class MailRepository @Inject constructor(
                 // A list of the folder holds rows of the mailbox the server has replaced.
                 _changes.emit(MailChange.Changed(folder, generation))
             } else if (attempted && !alreadyDeleted && e !is MailError.AuthFailed && e !is MailError.Certificate) {
-                recordIfDeletedOnServer(folder, uid, validity, stillWanted, clears)
+                recordIfDeletedOnServer(folder, uid, validity, clears)
             }
             throw e
         }
@@ -847,12 +848,16 @@ class MailRepository @Inject constructor(
      * Re-reads the owned-\Deleted set inside the same [withSession] hold as the write, for the
      * reason [runExpunging] gives: the set this call's [runExpunging] read before [op] ran may
      * already be stale, and adding to a stale copy would drop whatever landed in between.
+     *
+     * Asked whether it is still wanted on the set's own [MailStateStore.clears], not on the
+     * write's `stillWanted`: a list's write asks on the account generation, which the same student
+     * signing in again moves while keeping the set, and the flag that landed must still be recorded
+     * there or no later EXPUNGE of the folder takes that mail. Another student's sign-in clears
+     * the set, and then nothing is checked or recorded.
      */
-    private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long, stillWanted: () -> Boolean, clears: Int) {
+    private suspend fun recordIfDeletedOnServer(folder: String, uid: Long, validity: Long, clears: Int) {
         try {
-            withSession(stillWanted) { session ->
-                // The state is another student's since: nothing to check for it, nor to record.
-                if (state.clears != clears) return@withSession
+            withSession({ state.clears == clears }) { session ->
                 if (session.refreshFlags(folder, listOf(uid))[uid]?.deleted == true) {
                     state.setOwnedDeletedIf(folder, validity, state.ownedDeleted(folder, validity) + uid, clears)
                 }
