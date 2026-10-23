@@ -51,12 +51,19 @@ data class MailHtmlTheme(
         val LIGHT_PAPER = Color.White
 
         /**
-         * White paper: "View in light mode". Leaving the sender's colours alone means a mail that
-         * sets dark text and no background of its own reads as nothing on a dark surface; this is
-         * the page such a mail was written against, and the reader's way back to it.
+         * White paper: "View in light mode". A mail that sets colours of its own
+         * ([MailReadableHtml.setsColors]) opens on it in a dark app, as in the Apple app: it is
+         * the page such a mail was written against, where its colours need the fewest fixes.
          */
         val LIGHT = MailHtmlTheme(background = LIGHT_PAPER.toCssHex(), foreground = Color.Black.toCssHex(), isDark = false)
     }
+
+    /**
+     * The page a mail is drawn on in this app theme: [LIGHT]'s white paper when the reader views
+     * it in light mode while this theme is dark, else this theme's own. A light theme's surface
+     * already is a light page, so there the choice waits until the app turns dark again.
+     */
+    fun page(viewInLight: Boolean): MailHtmlTheme = if (viewInLight && isDark) LIGHT else this
 }
 
 /** Wraps sanitized mail HTML for the locked-down WebView (spec §9.3): CSP, paper styling, inlined cid images. */
@@ -117,17 +124,29 @@ object MailHtmlDocument {
     private fun hrefsAndTexts(anchors: Elements): List<Pair<String, String>> = anchors.map { it.attr("href") to it.text() }
 
     /**
-     * The page the WebView loads, with the links its anchors stand for. Links are rewritten last, after
-     * the cid images are inlined: [inlineCids] is a text substitution, and running it after the lockstep
-     * check in [rewriteLinks] would leave the WebView a body that check never saw.
+     * The page the WebView loads, with the links its anchors stand for. Its text is first made readable
+     * on [theme] ([MailReadableHtml]). Links are rewritten last, after the cid images are inlined:
+     * [inlineCids] is a text substitution, and running it after the lockstep check in [rewriteLinks]
+     * would leave the WebView a body that check never saw.
      */
     fun build(
         sanitizedHtml: String,
         images: Map<String, InlineImage>,
         allowRemoteImages: Boolean,
         theme: MailHtmlTheme,
+    ): LinkedHtml = build(MailReadableHtml(sanitizedHtml), images, allowRemoteImages, theme)
+
+    /**
+     * [build] from a sanitized mail already read for its colours, which the view model reads first
+     * to choose the page it opens on.
+     */
+    fun build(
+        readable: MailReadableHtml,
+        images: Map<String, InlineImage>,
+        allowRemoteImages: Boolean,
+        theme: MailHtmlTheme,
     ): LinkedHtml {
-        val readableHtml = MailReadableHtml(sanitizedHtml).adjust(
+        val readableHtml = readable.adjust(
             pageBackgroundHex = theme.background,
             pageForegroundHex = theme.foreground,
             linkForegroundHex = theme.link,

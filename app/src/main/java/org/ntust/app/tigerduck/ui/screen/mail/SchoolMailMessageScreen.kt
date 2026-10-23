@@ -136,16 +136,9 @@ fun SchoolMailMessageScreen(
     // A link tapped in the plain view, by its index in Content.Ready.plainLinks.
     var pendingPlainLink by rememberSaveable { mutableStateOf<Int?>(null) }
     var pendingSavePart by rememberSaveable { mutableStateOf<String?>(null) }
-    // "View in light mode". Kept by this screen alone, like the view mode is by its view model --
-    // never persisted to preferences (rememberSaveable only carries it across a rotation or a
-    // process restore of this same screen) -- so the next mail opens on the app's own surface again.
-    // If the email defines its own colors, default to light paper in dark mode (iOS #679), unless
-    // overridden by the user.
-    var userViewInLightOverride by rememberSaveable { mutableStateOf<Boolean?>(null) }
-
-    val ready = state.content as? Content.Ready
-    val viewInLight = resolveViewInLight(ready?.html?.hasCustomColors == true, userViewInLightOverride)
-    val canFormat = ready?.html != null
+    // "View in light mode": the view model chooses it before the mail first shows, and the reader
+    // after that (SchoolMailMessageViewModel.UiState.viewInLight).
+    val viewInLight = state.viewInLight
 
     val cs = MaterialTheme.colorScheme
     // Not isSystemInDarkTheme(): that's the OS setting alone, while cs.surface/cs.onSurface
@@ -154,22 +147,19 @@ fun SchoolMailMessageScreen(
     // Compose-observable value MainActivity mirrors that resolved theme into, so this stays
     // in lockstep with the colours right next to it instead of just the OS half of the time.
     val isDark = TigerDuckTheme.isDarkMode
+    val appTheme = MailHtmlTheme(background = cs.surface.toCssHex(), foreground = cs.onSurface.toCssHex(), isDark = isDark)
     // Only a dark app has a darker page to leave: in light theme the surface already is one, and
     // the item is not offered. A choice made in dark theme comes back if the app turns dark again.
-    val onLightPaper = viewInLight && isDark
+    // MailHtmlTheme.page decides it, for this frame and for the document the view model draws.
+    val onLightPaper = appTheme.page(viewInLight) != appTheme
     val pageColor = if (onLightPaper) MailHtmlTheme.LIGHT_PAPER else cs.surface
-    val mailTheme = if (onLightPaper) {
-        MailHtmlTheme.LIGHT
-    } else {
-        MailHtmlTheme(background = cs.surface.toCssHex(), foreground = cs.onSurface.toCssHex(), isDark = isDark)
-    }
-    // Keyed on mailTheme (a data class, so this only relaunches on a genuine colour change, not
+    // Keyed on appTheme (a data class, so this only relaunches on a genuine colour change, not
     // every recomposition): pushing it into the view model directly from the composable body
     // would be an unguarded side effect of composition, which can run speculatively or be
     // abandoned. SchoolMailMessageViewModel.setMailTheme also rebuilds the already-loaded
-    // document when the theme actually changes, so a dark/light flip while a mail is open
-    // recolours it instead of leaving it stale.
-    LaunchedEffect(mailTheme) { viewModel.setMailTheme(mailTheme) }
+    // document when the page it is drawn on actually changes, so a dark/light flip while a mail
+    // is open recolours it instead of leaving it stale.
+    LaunchedEffect(appTheme) { viewModel.setMailTheme(appTheme) }
 
     LaunchedEffect(Unit) { viewModel.load() }
     LaunchedEffect(state.closed) { if (state.closed) onBack() }
@@ -194,6 +184,8 @@ fun SchoolMailMessageScreen(
         viewModel.consumeShareRequest()
     }
 
+    val ready = state.content as? Content.Ready
+    val canFormat = ready?.html != null
     val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val partId = pendingSavePart
         pendingSavePart = null
@@ -258,7 +250,7 @@ fun SchoolMailMessageScreen(
                                 viewInLight = viewInLight,
                                 onDismiss = { menuOpen = false },
                                 onMode = { menuOpen = false; viewModel.selectMode(it) },
-                                onViewInLight = { menuOpen = false; userViewInLightOverride = !viewInLight },
+                                onViewInLight = { menuOpen = false; viewModel.setViewInLight(!viewInLight) },
                                 seen = ready?.summary?.flags?.seen,
                                 onToggleSeen = { menuOpen = false; viewModel.toggleSeen() },
                                 onMove = { menuOpen = false; showMove = true },
@@ -510,14 +502,6 @@ fun SchoolMailMessageScreen(
  */
 internal fun offersLightMode(isDark: Boolean, mode: ViewMode, canFormat: Boolean): Boolean =
     isDark && canFormat && mode == ViewMode.FORMATTED
-
-/**
- * Calculates whether the message should be rendered on light paper by default in dark mode.
- * If the HTML defines explicit colors (text or background), it defaults to light paper (iOS #679),
- * unless overridden by user interaction.
- */
-internal fun resolveViewInLight(hasCustomColors: Boolean, userOverride: Boolean?): Boolean =
-    userOverride ?: hasCustomColors
 
 /**
  * The ⋮ button that opens [MessageMenu]. Named for every action in it, not

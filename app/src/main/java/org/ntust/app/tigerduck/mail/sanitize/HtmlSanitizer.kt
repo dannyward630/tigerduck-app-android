@@ -18,7 +18,6 @@ data class SanitizedHtml(
     val blockedRemoteImages: Int,
     val remoteImageUrls: Set<String>,
     val links: List<MailLink>,
-    val hasCustomColors: Boolean = false,
 )
 
 /**
@@ -87,32 +86,14 @@ object HtmlSanitizer {
         }
 
         val clean = Cleaner(safelist).clean(dirty)
-        var hasCustomColors = false
         for (element in clean.select("[style]")) {
             val filtered = CssFilter.filter(element.attr("style"))
-            if (filtered == null) {
-                element.removeAttr("style")
-            } else {
-                element.attr("style", filtered)
-                if (hasExplicitColor(filtered)) {
-                    hasCustomColors = true
-                }
-            }
-        }
-        if (!hasCustomColors) {
-            hasCustomColors = clean.select("font[color], [bgcolor]").any { el ->
-                (el.normalName() == "font" && el.attr("color").isNotBlank()) ||
-                    el.attr("bgcolor").isNotBlank()
-            }
+            if (filtered == null) element.removeAttr("style") else element.attr("style", filtered)
         }
         val links = clean.select("a[href]").map { MailLink(TextCleaning.clean(it.text()), it.attr("href")) }
         clean.outputSettings().prettyPrint(false)
-        return SanitizedHtml(clean.body().html(), blocked, remote, links, hasCustomColors)
+        return SanitizedHtml(clean.body().html(), blocked, remote, links)
     }
-
-    private val COLOR_PROPERTY = Regex("""(?:^|;)\s*(color|background-color)\s*:""", RegexOption.IGNORE_CASE)
-
-    private fun hasExplicitColor(style: String): Boolean = COLOR_PROPERTY.containsMatchIn(style)
 
     /** Text with line breaks at block boundaries, for the plain-text view when a mail has no text part. */
     fun plainText(sanitizedHtml: String): String {
