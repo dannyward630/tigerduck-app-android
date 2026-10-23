@@ -10,6 +10,7 @@ import okhttp3.Protocol
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -68,7 +69,7 @@ class AssignmentReminderCheckTest {
         }.build()
         fixtures = DebugFixtureStore(context)
         check = AssignmentReminderCheck(
-            dataCache, scheduler, SubmissionStatusProbe({ storedToken }, client), fixtures,
+            dataCache, scheduler, SubmissionStatusProbe({ storedToken }, client), fixtures, AppPreferences(context),
         )
     }
 
@@ -333,7 +334,8 @@ class AssignmentReminderCheckTest {
 
     @Test
     fun `a reminder armed for an extension shows, not dropped as a changed or extended due date`() = runBlocking {
-        val extension = AppClock.nowMillis() + 5 * DAY_MS
+        // Whole seconds, as Moodle gives it.
+        val extension = (AppClock.nowMillis() + 5 * DAY_MS) / 1000 * 1000
         val assignment = dueInThreeDays("20977").copy(extensionDueDate = Date(extension))
         armAll(assignment)
 
@@ -342,5 +344,45 @@ class AssignmentReminderCheckTest {
         }
 
         assertEquals(ReminderVerdict.Show, check.verdict("20977", extension))
+    }
+
+    /** A status answer with nothing handed in and the student's extension, epoch milliseconds. */
+    private fun extendedTo(ms: Long?) =
+        """{"lastattempt":{"submissionsenabled":true,"locked":false,"extensionduedate":${(ms ?: 0L) / 1000}},"warnings":[]}"""
+
+    // Robolectric 4.17 deprecates the operation field but has no getter for it.
+    @Suppress("DEPRECATION")
+    private fun armedDueAts(): List<Long> =
+        shadowOf(context.getSystemService(AlarmManager::class.java)).scheduledAlarms.map {
+            shadowOf(it.operation).savedIntent.getLongExtra(AssignmentNotificationReceiver.EXTRA_DUE_AT, 0L)
+        }
+
+    @Test
+    fun `an extension the reminder learns of is kept, and the reminders armed again for it`() = runBlocking {
+        val assignment = dueInThreeDays("20977")
+        armAll(assignment)
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+
+        moodle = { extendedTo(extension) }
+        val verdict = check.verdict("20977", assignment.dueDate.time)
+
+        assertTrue("armed for the date before", verdict is ReminderVerdict.Drop)
+        assertEquals(Date(extension), dataCache.loadAssignments().single().extensionDueDate)
+        assertTrue(armedDueAts().isNotEmpty())
+        assertTrue("every reminder now for the extension", armedDueAts().all { it == extension })
+    }
+
+    @Test
+    fun `an extension taken back leaves the cache, and the reminder armed for it does not show`() = runBlocking {
+        val extension = (AppClock.nowMillis() + 6 * DAY_MS) / 1000 * 1000
+        val assignment = dueInThreeDays("20977").copy(extensionDueDate = Date(extension))
+        armAll(assignment)
+
+        moodle = { extendedTo(null) }
+        val verdict = check.verdict("20977", extension)
+
+        assertTrue(verdict is ReminderVerdict.Drop)
+        assertEquals(null, dataCache.loadAssignments().single().extensionDueDate)
+        assertTrue("armed again for the assignment's own date", armedDueAts().all { it == assignment.dueDate.time })
     }
 }

@@ -65,10 +65,13 @@ class AssignmentStatusWriter internal constructor(
             if (index < 0) return@updateAssignments assignments
             val current = assignments[index]
             val submittedAt = answer.submittedAtMs?.let(::Date)
-            if (current.isCompleted == answer.submitted && current.submittedAt == submittedAt) return@updateAssignments assignments
+            val extension = answer.extensionDueMs?.let(::Date)
+            if (current.isCompleted == answer.submitted && current.submittedAt == submittedAt &&
+                current.extensionDueDate == extension
+            ) return@updateAssignments assignments
             changed = true
             assignments.toMutableList().apply {
-                this[index] = current.copy(isCompleted = answer.submitted, submittedAt = submittedAt)
+                this[index] = current.copy(isCompleted = answer.submitted, submittedAt = submittedAt, extensionDueDate = extension)
             }
         }
         if (written == null || !changed) return false

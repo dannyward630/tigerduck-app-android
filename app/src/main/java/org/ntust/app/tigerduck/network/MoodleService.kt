@@ -268,7 +268,10 @@ class MoodleService @Inject constructor(
         val statuses = round.statuses.mapNotNull { (id, status) ->
             val askedAt = round.askedAtMs[id] ?: return@mapNotNull null
             val (submitted, submittedAt) = submissionState(id, emptyMap(), status.lastattempt)
-            SubmissionStatusAnswer(id.toString(), submitted, submittedAt?.time, askedAt, round.generation)
+            SubmissionStatusAnswer(
+                id.toString(), submitted, submittedAt?.time, askedAt, round.generation,
+                extensionDueMs = extensionDueDate(id, asked = true, status.lastattempt, emptyMap())?.time,
+            )
         }.associateBy { it.assignmentId }
         AssignmentsAnswer(assignments, statuses, round.generation)
     }

@@ -12,6 +12,7 @@ import org.ntust.app.tigerduck.util.logSummary
 import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
+import org.ntust.app.tigerduck.data.preferences.AppPreferences
 
 /**
  * Whether a reminder that just fired is still due, by
@@ -26,6 +27,7 @@ class AssignmentReminderCheck @Inject constructor(
     private val scheduler: AssignmentNotificationScheduler,
     private val statusProbe: SubmissionStatusProbe,
     private val fixtures: DebugFixtureStore,
+    private val reminderPrefs: AppPreferences,
 ) {
 
     suspend fun verdict(assignmentId: String, armedDueAtMs: Long?): ReminderVerdict {
@@ -40,11 +42,17 @@ class AssignmentReminderCheck @Inject constructor(
         val moodleId = assignmentId.toIntOrNull()
         val answer = moodleId?.let { askMoodle(it) } ?: ReminderStatusAnswer.NoAnswer
         // Read again: a mark, an ignore or a new due date can land while Moodle answers.
-        val cached = cached(assignmentId)
+        var cached = cached(assignmentId)
         if (moodleId != null && answer is ReminderStatusAnswer.Answered) {
             val (submitted, submittedAt) =
                 MoodleService.submissionState(moodleId, emptyMap(), answer.lastAttempt)
-            if (submitted) recordSubmission(assignmentId, submittedAt, generation)
+            if (submitted) {
+                recordSubmission(assignmentId, submittedAt, generation)
+            } else {
+                val extension = MoodleService.extensionDueDate(moodleId, asked = true, answer.lastAttempt, emptyMap())
+                // Read once more: this reminder, armed for the date before, then reads as moved.
+                if (recordExtension(assignmentId, extension, generation)) cached = cached(assignmentId)
+            }
         }
         return AssignmentReminderPolicy.decide(cached, armedDueAtMs, answer)
     }
@@ -76,6 +84,25 @@ class AssignmentReminderCheck @Inject constructor(
                 else it.copy(isCompleted = true, submittedAt = submittedAt ?: it.submittedAt)
             }
         }
+    }
+
+    /**
+     * What a sync that asked Moodle would store of an extension granted, moved or taken back since
+     * the cache last heard, with the reminders armed again for the date it makes the student's:
+     * the next sync can come after the first of them is due. Whether the cache changed.
+     */
+    private suspend fun recordExtension(assignmentId: String, extension: Date?, generation: Int): Boolean {
+        val current = dataCache.loadAssignments().firstOrNull { it.assignmentId == assignmentId } ?: return false
+        if (current.extensionDueDate == extension) return false
+        var changed = false
+        dataCache.updateAssignments(generation) { assignments ->
+            assignments.map {
+                if (it.assignmentId != assignmentId || it.extensionDueDate == extension) it
+                else it.copy(extensionDueDate = extension).also { changed = true }
+            }
+        } ?: return false
+        if (changed) scheduler.rescheduleFromCache(dataCache, reminderPrefs)
+        return changed
     }
 
     private suspend fun askMoodle(moodleId: Int): ReminderStatusAnswer = try {

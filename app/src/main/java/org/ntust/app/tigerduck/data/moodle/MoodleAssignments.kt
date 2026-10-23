@@ -134,6 +134,7 @@ class MoodleAccountAssignments(
                     submittedAtMs = submission.submittedAt?.let { it * 1000 },
                     askedAtMs = askedAt,
                     generation = generation,
+                    extensionDueMs = submission.extensionDue?.let { it * 1000 },
                 ),
             )
             submission

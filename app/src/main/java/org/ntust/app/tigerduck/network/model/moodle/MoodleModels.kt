@@ -222,6 +222,11 @@ data class MoodleAssignmentSubmission(
     val comments: List<MoodleSubmissionComment>?,
     /** Null until Moodle shows the student a grade or feedback. */
     val grade: MoodleAssignmentGrade?,
+    /**
+     * Unix seconds of the extension a teacher granted the student, `lastattempt.extensionduedate`;
+     * null for none, and in a copy cached before it was read.
+     */
+    val extensionDue: Long? = null,
 ) {
     val isSubmitted: Boolean get() = status == "submitted"
 

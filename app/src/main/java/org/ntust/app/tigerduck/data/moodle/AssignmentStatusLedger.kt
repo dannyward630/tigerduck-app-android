@@ -16,6 +16,11 @@ data class SubmissionStatusAnswer(
     val askedAtMs: Long,
     /** The cache's generation when the request went out; see `DataCache.userDataGeneration`. */
     val generation: Int,
+    /**
+     * Epoch milliseconds of the extension a teacher granted the student, `extensionduedate`;
+     * null for none, which takes a revoked one off.
+     */
+    val extensionDueMs: Long? = null,
 )
 
 /**
@@ -38,7 +43,17 @@ class AssignmentStatusLedger(
     /** The cache's generation now, which the wipe at a sign-out moves under the cache's lock. */
     private val currentGeneration: () -> Int,
 ) {
-    private data class Accepted(val askedAtMs: Long, val submitted: Boolean, val submittedAtMs: Long?)
+    private data class Accepted(val askedAtMs: Long, val submitted: Boolean, val submittedAtMs: Long?, val extensionDueMs: Long?) {
+        constructor(answer: SubmissionStatusAnswer) :
+            this(answer.askedAtMs, answer.submitted, answer.submittedAtMs, answer.extensionDueMs)
+
+        /** [assignment] as this answer has it: its submission, and the extension it runs to. */
+        fun applyTo(assignment: Assignment) = assignment.copy(
+            isCompleted = submitted,
+            submittedAt = submittedAtMs?.let(::Date),
+            extensionDueDate = extensionDueMs?.let(::Date),
+        )
+    }
 
     private val accepted = HashMap<String, Accepted>()
 
@@ -68,7 +83,7 @@ class AssignmentStatusLedger(
         val entries = entriesFor(answer.generation) ?: return false
         val current = entries[answer.assignmentId]
         if (current != null && current.askedAtMs >= answer.askedAtMs) return false
-        entries[answer.assignmentId] = Accepted(answer.askedAtMs, answer.submitted, answer.submittedAtMs)
+        entries[answer.assignmentId] = Accepted(answer)
         return true
     }
 
@@ -89,11 +104,11 @@ class AssignmentStatusLedger(
             val answer = answers[id]?.takeIf { it.generation == generation }
             val current = entries?.get(id)
             when {
-                current != null && (answer == null || current.askedAtMs > answer.askedAtMs) ->
-                    assignment.copy(isCompleted = current.submitted, submittedAt = current.submittedAtMs?.let(::Date))
+                current != null && (answer == null || current.askedAtMs > answer.askedAtMs) -> current.applyTo(assignment)
                 answer != null && entries != null -> {
-                    entries[id] = Accepted(answer.askedAtMs, answer.submitted, answer.submittedAtMs)
-                    assignment.copy(isCompleted = answer.submitted, submittedAt = answer.submittedAtMs?.let(::Date))
+                    val taken = Accepted(answer)
+                    entries[id] = taken
+                    taken.applyTo(assignment)
                 }
                 else -> assignment
             }

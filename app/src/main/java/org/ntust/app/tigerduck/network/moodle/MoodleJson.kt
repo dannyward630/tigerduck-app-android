@@ -298,6 +298,7 @@ object MoodleJson {
             id = record?.int("id"),
             takesComments = plugins.any { it.str("type") == "comments" },
             groupId = attempt?.int("submissiongroup")?.takeIf { it > 0 },
+            extensionDue = attempt?.long("extensionduedate")?.takeIf { it > 0 },
             groupName = null,
             comments = null,
             grade = grade(json.objOrNull()?.get("feedback")?.objOrNull()),
