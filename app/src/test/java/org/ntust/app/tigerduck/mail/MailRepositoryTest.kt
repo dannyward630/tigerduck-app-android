@@ -504,6 +504,26 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a search before the download got through says it may have missed mail, and one after does not`() = runTest {
+        (1..MailRepository.SEARCH_CATCH_UP + 5).forEach { server.deliver("期中考 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+
+        assertFalse((repo.search("INBOX", "期中") as SearchOutcome.Server).complete)
+        assertFalse("the older backlog is still out", (repo.search("INBOX", "期中") as SearchOutcome.Server).complete)
+
+        repo.updateSearchIndex()
+        assertTrue((repo.search("INBOX", "期中") as SearchOutcome.Server).complete)
+    }
+
+    @Test
+    fun `a first search of a folder its catch-up downloads whole misses nothing`() = runTest {
+        repeat(3) { server.deliver("期中考 $it") }
+        val repo = TestSetup(backgroundScope).signedIn()
+
+        assertTrue((repo.search("INBOX", "期中") as SearchOutcome.Server).complete)
+    }
+
+    @Test
     fun `a search catches up on new mail alone, leaving the older backlog to the background`() = runTest {
         (1..3 * MailRepository.SEARCH_CATCH_UP).forEach { server.deliver("期中考 $it") }
         val repo = TestSetup(backgroundScope).signedIn()
@@ -548,6 +568,7 @@ class MailRepositoryTest {
         assertEquals(emptyList<String>(), outcome.messages.map { it.subject })
         assertEquals(emptyList<Long>(), outcome.remaining)
         assertEquals(server.uidValidity, outcome.uidValidity)
+        assertFalse("none of the new folder's mail was searched", outcome.complete)
     }
 
     @Test

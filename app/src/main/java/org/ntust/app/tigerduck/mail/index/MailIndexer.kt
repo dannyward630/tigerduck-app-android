@@ -44,6 +44,8 @@ internal class MailIndexer(
         internal val owner: Owner,
         internal val uidValidity: Long,
         val missing: List<Long>,
+        /** How many more mails the index lacks than [missing] holds: the older ones, under newOnly. */
+        internal val leftOut: Int,
     )
 
     /**
@@ -64,8 +66,9 @@ internal class MailIndexer(
         val indexed = index.uids(owner.address, folder)
         index.remove(owner.address, folder, indexed - onServer.toSet(), current)
         val newest = if (newOnly) indexed.maxOrNull() ?: 0L else 0L
-        val missing = onServer.filter { it !in indexed && it > newest }.sortedDescending()
-        Plan(folder, owner, uidValidity, missing)
+        val lacking = onServer.filter { it !in indexed }
+        val missing = lacking.filter { it > newest }.sortedDescending()
+        Plan(folder, owner, uidValidity, missing, leftOut = lacking.size - missing.size)
     }
 
     /**
@@ -119,7 +122,11 @@ internal class MailIndexer(
         }
     }
 
-    /** [plan] and [fill] in one: what a search catches up on before it looks. */
+    /**
+     * [plan] and [fill] in one: what a search catches up on before it looks. Says whether the
+     * folder's index then holds every mail the server had, the older ones [newOnly] leaves out
+     * included.
+     */
     suspend fun update(
         folder: String,
         limit: Int = Int.MAX_VALUE,
@@ -127,7 +134,7 @@ internal class MailIndexer(
         stillWanted: () -> Boolean = { true },
     ): Boolean {
         val plan = plan(folder, newOnly, stillWanted) ?: return false
-        return fill(plan, limit, stillWanted)
+        return fill(plan, limit, stillWanted) && plan.leftOut == 0
     }
 
     companion object {

@@ -483,6 +483,41 @@ class SchoolMailListViewModelTest {
     }
 
     @Test
+    fun `a search run before every mail was downloaded says so until it runs again`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"), mailSummary(2, subject = "other"))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+        repo.searchComplete = false
+        vm.setSearchText("期中")
+
+        vm.submitSearch()
+        assertTrue(vm.state.value.searchIndexPartial)
+        assertFalse(vm.state.value.searchLocalOnly)
+
+        // The download gets through meanwhile: the results on screen are still the partial search's.
+        repo.searchIndexProgress.value = null
+        assertTrue(vm.state.value.searchIndexPartial)
+
+        repo.searchComplete = true
+        vm.submitSearch()
+        assertFalse(vm.state.value.searchIndexPartial)
+    }
+
+    @Test
+    fun `clearing the search clears its note that it may have missed mail`() {
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.load()
+        repo.searchComplete = false
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        assertTrue(vm.state.value.searchIndexPartial)
+
+        vm.setSearchText("")
+
+        assertFalse(vm.state.value.searchIndexPartial)
+    }
+
+    @Test
     fun `a search under way shows no mail until its matches come`() {
         repo.add("INBOX", mailSummary(1, subject = "期中考"), mailSummary(2, subject = "other"))
         vm.load()

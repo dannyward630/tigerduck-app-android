@@ -64,6 +64,11 @@ sealed interface SearchOutcome {
         val remaining: List<Long> = emptyList(),
         /** The folder's UIDVALIDITY the matches were found under, which [remaining] only means anything in; null where unknown. */
         val uidValidity: Long? = null,
+        /**
+         * Whether the index held every mail of the folder when it was searched. False while the
+         * first download is still bringing the older mail in: the search may have missed some.
+         */
+        val complete: Boolean = true,
     ) : SearchOutcome
     /**
      * The demo mailbox, which has no index; these are matches among the folder's newest page, with
@@ -658,7 +663,7 @@ class MailRepository @Inject constructor(
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
         val q = query.trim()
         if (account.isDemo) return demoPage(folder).let { page -> SearchOutcome.LoadedOnly(page.messages.filter { matchesLoadedMail(it, q) }, page.uidValidity) }
-        indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
+        val whole = indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
         // The rest of what the index lacks comes in the background, the first run all of it.
         // Asked for once the catch-up is through: after a rejected password, which the list hands
         // the account, nothing may log in again (spec §7.4).
@@ -673,10 +678,12 @@ class MailRepository @Inject constructor(
         // of the connection, so the page and the UIDVALIDITY are the server's at the same time.
         return withSession(stillWanted) { session ->
             val validity = session.uidValidity(folder)
-            // The folder recreated since the index answered: the matches' UIDs name other mail.
-            val found = if (validity == indexedUnder) matches else emptyList()
+            // The folder recreated since the index answered: the matches' UIDs name other mail,
+            // and nothing of the new folder's was searched.
+            val current = validity == indexedUnder
+            val found = if (current) matches else emptyList()
             val newest = found.take(PAGE_SIZE)
-            SearchOutcome.Server(session.fetchByUids(folder, newest), found.drop(newest.size), validity)
+            SearchOutcome.Server(session.fetchByUids(folder, newest), found.drop(newest.size), validity, complete = whole && current)
         }
     }
 

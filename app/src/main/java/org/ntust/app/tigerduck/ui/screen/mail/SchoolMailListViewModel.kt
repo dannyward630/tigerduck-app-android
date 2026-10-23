@@ -100,6 +100,11 @@ class SchoolMailListViewModel @Inject constructor(
         val searchText: String = "",
         val searchResults: List<MailRow>? = null,
         val searchLocalOnly: Boolean = false,
+        /**
+         * The latest search ran before every mail of a folder it searched was downloaded, and may
+         * have missed older mail ([SearchOutcome.Server.complete]): so until the search runs again.
+         */
+        val searchIndexPartial: Boolean = false,
         /** A search under way: one [runSearch] that has not ended, and is still the latest. */
         val isSearching: Boolean = false,
         /** A further page of the latest search's matches on its way ([loadMoreSearchResults]). */
@@ -495,7 +500,10 @@ class SchoolMailListViewModel @Inject constructor(
         forgetSearch()
         listGeneration++
         _state.update {
-            it.copy(selected = selection, messages = emptyList(), cursors = emptyMap(), searchResults = null, searchText = "", searchLocalOnly = false)
+            it.copy(
+                selected = selection, messages = emptyList(), cursors = emptyMap(), searchResults = null, searchText = "",
+                searchLocalOnly = false, searchIndexPartial = false,
+            )
         }
         // The new selection's own date, kept from its last fetch, until this one's lands.
         showFetchedAt()
@@ -515,7 +523,11 @@ class SchoolMailListViewModel @Inject constructor(
     fun setSearchText(text: String) {
         if (text.isBlank()) forgetSearch()
         _state.update {
-            if (text.isBlank()) it.copy(searchText = text, searchResults = null, searchLocalOnly = false) else it.copy(searchText = text)
+            if (text.isBlank()) {
+                it.copy(searchText = text, searchResults = null, searchLocalOnly = false, searchIndexPartial = false)
+            } else {
+                it.copy(searchText = text)
+            }
         }
     }
 
@@ -911,13 +923,13 @@ class SchoolMailListViewModel @Inject constructor(
         forgetSearch()
         val search = searchGeneration
         if (query.isEmpty()) {
-            _state.update { it.copy(searchResults = null, searchLocalOnly = false) }
+            _state.update { it.copy(searchResults = null, searchLocalOnly = false, searchIndexPartial = false) }
             return
         }
         val generation = account.accountGeneration
         val since = changeSeq
         // Nothing on screen until its matches come: the mail shown before is no answer to it.
-        _state.update { it.copy(isSearching = true, searchResults = emptyList(), searchLocalOnly = false) }
+        _state.update { it.copy(isSearching = true, searchResults = emptyList(), searchLocalOnly = false, searchIndexPartial = false) }
         try {
             // One search per real folder, in the search index on this phone, merged the same way
             // the list itself is; the server fetches the matches it finds. A folder that could not
@@ -991,6 +1003,7 @@ class SchoolMailListViewModel @Inject constructor(
                 it.copy(
                     searchResults = ordered(selection, rows),
                     searchLocalOnly = outcomes.any { (_, outcome) -> outcome is SearchOutcome.LoadedOnly },
+                    searchIndexPartial = outcomes.any { (_, outcome) -> (outcome as? SearchOutcome.Server)?.complete == false },
                 )
             }
             refetchIfChangedSince(outcomes.map { it.first }, since)

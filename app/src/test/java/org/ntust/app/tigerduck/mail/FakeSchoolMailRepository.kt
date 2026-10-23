@@ -376,6 +376,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     var searchCalls = 0
 
     /** While set, [search] suspends on it once the SEARCH went out, before it answers or fails: a search still out while the test acts. */
+    /** Whether [search] says the index held every mail of the folder, as its outcome's [SearchOutcome.Server.complete]. */
+    var searchComplete = true
+
     var searchGate: CompletableDeferred<Unit>? = null
 
     override suspend fun search(folder: String, query: String, stillWanted: () -> Boolean): SearchOutcome {
@@ -393,7 +396,7 @@ class FakeSchoolMailRepository : SchoolMailRepository {
             return cachedPages[folder].let { cached -> SearchOutcome.LoadedOnly(cached?.messages.orEmpty().filter { query in it.subject }, cached?.uidValidity) }
         }
         // Paged like the real repository: the newest [pageSize] matches, the rest left to fetch.
-        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = 1)
+        return SearchOutcome.Server(hits.take(pageSize), hits.drop(pageSize).map { it.uid }, uidValidity = 1, complete = searchComplete)
     }
 
     /** Every `(folder, uids)` handed to [searchPage], in order -- asked for, whether or not it then went out. */

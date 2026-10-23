@@ -423,7 +423,7 @@ fun SchoolMailScreen(
                 searchNote(
                     searched = state.searchResults != null,
                     loadedOnly = state.searchLocalOnly,
-                    downloading = indexProgress != null,
+                    partial = state.searchIndexPartial,
                 )?.let { note ->
                     Text(
                         stringResource(note),
@@ -804,13 +804,14 @@ internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Loc
 
 /**
  * The line under the search field when a search may have missed mail: one that could read only
- * the loaded mail, or one run while the mail is still downloading, before the older mail is in.
+ * the loaded mail, or one [partial], run before every mail was downloaded. The search's own
+ * answer, kept until it runs again: the download getting through since changes nothing on screen.
  */
 @StringRes
-internal fun searchNote(searched: Boolean, loadedOnly: Boolean, downloading: Boolean): Int? = when {
+internal fun searchNote(searched: Boolean, loadedOnly: Boolean, partial: Boolean): Int? = when {
     !searched -> null
     loadedOnly -> R.string.school_mail_search_local_only
-    downloading -> R.string.school_mail_search_index_partial
+    partial -> R.string.school_mail_search_index_partial
     else -> null
 }
 
