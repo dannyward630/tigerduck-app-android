@@ -51,24 +51,27 @@ class MailAccount @Inject constructor(
      * the latest value, so a sign-in and a sign-out that both land before it
      * next runs read as no change at all. Buffered so [signOut] never
      * suspends; a subscriber that falls behind still gets one, which is all
-     * cleanup needs.
+     * cleanup needs. Each carries the address of the account that left, null
+     * for a sign-out with none signed in: cleanup that runs late must not take
+     * what the next account has made since.
      */
-    private val _signOuts = MutableSharedFlow<Unit>(
+    private val _signOuts = MutableSharedFlow<String?>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
-    val signOuts: SharedFlow<Unit> = _signOuts.asSharedFlow()
+    val signOuts: SharedFlow<String?> = _signOuts.asSharedFlow()
 
     /**
      * One event each time [signIn] puts another student in place of the signed-in one without a
      * [signOut] in between, as the sign-in sheet shown after a rejected password allows. Cleanup
      * that must not carry one student's state over to the next listens to this beside [signOuts].
+     * Each carries the address of the student who left, as [signOuts] does.
      */
-    private val _studentChanges = MutableSharedFlow<Unit>(
+    private val _studentChanges = MutableSharedFlow<String?>(
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
-    val studentChanges: SharedFlow<Unit> = _studentChanges.asSharedFlow()
+    val studentChanges: SharedFlow<String?> = _studentChanges.asSharedFlow()
 
     private val _authFailed = MutableStateFlow(state.authFailed)
     val authFailed: StateFlow<Boolean> = _authFailed.asStateFlow()
@@ -171,7 +174,7 @@ class MailAccount @Inject constructor(
      * student's mail with this one's UIDs.
      */
     private fun leaveStudent() {
-        _studentChanges.tryEmit(Unit)
+        _studentChanges.tryEmit(ownAddress)
         notifier.cancelAll()
     }
 
@@ -189,14 +192,16 @@ class MailAccount @Inject constructor(
         scheduler.cancel()
         // Together, so a snapshot holds the departing account with its own generation or nothing.
         onLockWait?.invoke()
-        synchronized(accountLock) {
-            generation.incrementAndGet()
-            credentials.clearMailCredentials()
+        val departing = synchronized(accountLock) {
+            ownAddress.also {
+                generation.incrementAndGet()
+                credentials.clearMailCredentials()
+            }
         }
         state.clear()
         _signedIn.value = false
         _authFailed.value = false
-        _signOuts.tryEmit(Unit)
+        _signOuts.tryEmit(departing)
         scope.launch(Dispatchers.IO) {
             cache.clearAll()
             notifier.cancelAll()

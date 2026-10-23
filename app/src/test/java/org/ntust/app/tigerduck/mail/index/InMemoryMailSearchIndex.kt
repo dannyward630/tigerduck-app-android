@@ -20,6 +20,9 @@ class InMemoryMailSearchIndex : MailSearchIndex {
     /** Fires once [clear] has emptied it: a test waits on the clear a sign-in runs on its own. */
     @Volatile var onClear: (() -> Unit)? = null
 
+    /** Fires once a cleanup of an account that left has run, whether it emptied anything or not. */
+    @Volatile var onCleanup: (() -> Unit)? = null
+
     /** Fires as a search starts: a test changes the server between the index's answer and its use. */
     @Volatile var onSearch: (() -> Unit)? = null
 
@@ -136,6 +139,13 @@ class InMemoryMailSearchIndex : MailSearchIndex {
         validities.clear()
         mail.clear()
         onClear?.invoke()
+        onCleanup?.invoke()
+    }
+
+    @Synchronized
+    override fun clearUnless(keep: (owner: String?) -> Boolean) {
+        called()
+        if (!keep(owner)) clear() else onCleanup?.invoke()
     }
 
     /** What the entries would take: their text, roughly, as a test only compares it to none. */

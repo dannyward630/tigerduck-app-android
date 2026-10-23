@@ -73,6 +73,13 @@ interface MailSearchIndex {
     /** Empties it, for a sign-out or the user deleting it, and gives back the disk it took. */
     fun clear()
 
+    /**
+     * [clear], unless [keep] says the mail of the owner it has now (null for none) stays: asked
+     * under its lock, which every download's first write of a folder takes too, so the answer is
+     * still true when the clear runs.
+     */
+    fun clearUnless(keep: (owner: String?) -> Boolean)
+
     /** The disk it takes, in bytes. */
     fun sizeBytes(): Long
 }
@@ -254,6 +261,11 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
     // A row a later layout cannot read is treated as not downloaded, and fetched again.
     private fun summaryOf(json: String): MailSummary? =
         runCatching { gson.fromJson(json, MailSummaryDto::class.java)?.toModel() }.getOrNull()
+
+    @Synchronized
+    override fun clearUnless(keep: (owner: String?) -> Boolean) {
+        if (!keep(ownerLocked())) clear()
+    }
 
     @Synchronized
     override fun clear() {

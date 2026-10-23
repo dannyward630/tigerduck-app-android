@@ -287,13 +287,13 @@ class MailRepository @Inject constructor(
         // before this constructor returns, so no sign-out can precede the
         // subscriber, and a fresh repository has nothing of its own to clear.
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            account.signOuts.collect {
+            account.signOuts.collect { departing ->
                 indexScheduler.cancel()
                 numberings.clear()
                 lastWhole = null
                 withContext(Dispatchers.IO) {
                     holder.closeNow()
-                    searchIndex.clear()
+                    clearIndexOf(departing)
                 }
                 resolved = null
                 synchronized(demoFolders) { demoFolders.clear(); demoUidSeq = 9_000L }
@@ -302,12 +302,24 @@ class MailRepository @Inject constructor(
         // Another student signing in over this one leaves no mail of this one's to search. The
         // index refuses a write from a run this one started, and starts over for the next.
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            account.studentChanges.collect {
+            account.studentChanges.collect { departing ->
                 numberings.clear()
                 lastWhole = null
-                withContext(Dispatchers.IO) { searchIndex.clear() }
+                withContext(Dispatchers.IO) { clearIndexOf(departing) }
             }
         }
+    }
+
+    /**
+     * Empties the search index after [departing] left, unless it is by now the mail of whoever
+     * signed in since: this runs some time after the account changed, and their download may have
+     * opened the index already, which emptied it of the departing account's mail as it did. The
+     * departing account's own mail goes whatever its address, even with that student signed in
+     * again: a sign-out empties the index.
+     */
+    private fun clearIndexOf(departing: String?) {
+        val left = departing?.lowercase()
+        searchIndex.clearUnless { owner -> owner != null && owner != left && owner == indexOwner() }
     }
 
     /**

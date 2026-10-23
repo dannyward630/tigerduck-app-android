@@ -177,6 +177,18 @@ class MailSearchIndexTest {
     }
 
     @Test
+    fun `a cleanup keeps the mail of the owner it is told to keep, and empties anyone else's`() {
+        seed(entries = arrayOf(Entry(1, "a@example.com", "公告", "")))
+
+        index.clearUnless { it == me }
+        assertEquals(setOf(1L), index.uids(me, "INBOX"))
+
+        index.clearUnless { it == "b10000002@example.com" }
+        assertNull(index.uidValidity(me, "INBOX"))
+        assertEquals(emptySet<Long>(), index.uids(me, "INBOX"))
+    }
+
+    @Test
     fun `a sign-out empties every folder`() {
         seed("INBOX", Entry(1, "a@example.com", "公告", ""))
         seed("寄件備份匣", Entry(1, "me@example.com", "公告", ""))

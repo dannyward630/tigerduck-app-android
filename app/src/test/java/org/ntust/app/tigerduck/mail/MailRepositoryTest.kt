@@ -1313,6 +1313,55 @@ class MailRepositoryTest {
         assertTrue(setup.indexScheduler.cancels > 0)
     }
 
+    /**
+     * Runs [change] -- an account leaving, the next one signing in and downloading -- all before
+     * the repository's cleanup for the one that left gets to run: that cleanup is dispatched on the
+     * test's own thread, which [change] keeps busy. Then lets the cleanup run, and waits for it.
+     */
+    private fun kotlinx.coroutines.test.TestScope.holdingTheCleanup(setup: TestSetup, change: suspend () -> Unit) {
+        runBlocking { change() }
+        val cleaned = CountDownLatch(1)
+        setup.searchIndex.onCleanup = { cleaned.countDown() }
+        runCurrent()
+        assertTrue("the cleanup never ran", cleaned.await(30, TimeUnit.SECONDS))
+        setup.searchIndex.onCleanup = null
+    }
+
+    @Test
+    fun `a late cleanup for the student who left leaves the next one's downloads`() = runTest {
+        server.deliver("期中考")
+        server.passwords["B10000002"] = "pw"
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+
+        holdingTheCleanup(setup) {
+            setup.account.signIn("b10000002", "pw")
+            repo.updateSearchIndex()
+            assertEquals("downloaded before the cleanup", 1, setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").size)
+        }
+
+        assertEquals(1, setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").size)
+    }
+
+    @Test
+    fun `a late cleanup for a sign-out leaves the downloads of whoever signed in next`() = runTest {
+        server.deliver("期中考")
+        server.passwords["B10000002"] = "pw"
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+
+        holdingTheCleanup(setup) {
+            setup.account.signOut()
+            setup.account.signIn("b10000002", "pw")
+            repo.updateSearchIndex()
+            assertEquals("downloaded before the cleanup", 1, setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").size)
+        }
+
+        assertEquals(1, setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").size)
+    }
+
     @Test
     fun `another student signing in finds nothing of the first one's in the index`() = runTest {
         server.deliver("期中考")
