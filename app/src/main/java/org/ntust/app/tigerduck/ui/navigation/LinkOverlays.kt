@@ -14,9 +14,11 @@ import androidx.navigation.NavController
  *   sign-in under way holds it open until it ends
  *   ([org.ntust.app.tigerduck.ui.screen.signin.signInSheetClosesForLink]);
  * - the class table import, as its Close does, unless the link is to the class table: the import
- *   is that page's, and a share link has just opened one over it. As when a share link takes the
- *   place of an import, a lookup under way saves nothing, and a person already being written
- *   still ends saved, without opening the class table over the link's page.
+ *   is that page's, and a share link has just opened one over it. A lookup under way saves
+ *   nothing, as when a share link takes the place of an import. A person already being written,
+ *   which Close cannot stop either, keeps it up until saved, or until it says the write failed,
+ *   and then leaves the link's page on screen rather than show the class table
+ *   ([org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportModel.staysForLink]).
  *
  * The app's own prompts stay, as they are no page's: What's New, an update, a first-use question,
  * an operator's message, a permission warning, a build too old for the server and the reset. A
@@ -26,13 +28,13 @@ internal class LinkOverlays(
     private val closeCourseSheet: () -> Unit,
     private val closeTabMenu: () -> Unit,
     private val closeSignInSheet: () -> Unit,
-    private val endImport: () -> Unit,
+    private val closeImport: () -> Unit,
 ) {
     fun closeFor(target: String) {
         closeCourseSheet()
         closeTabMenu()
         closeSignInSheet()
-        if (target != Screen.ClassTable.route) endImport()
+        if (target != Screen.ClassTable.route) closeImport()
     }
 }
 

@@ -80,6 +80,12 @@ class ClassTableImportModel(
         val fromLink: Boolean = false,
         /** Set once a code was taken, so a link's page is not done before its code is read. */
         val tookCode: Boolean = false,
+        /**
+         * Set when a link opened another page while the person was being written
+         * ([staysForLink]): saved, the import closes and leaves that page on screen, rather than
+         * show the class table over it.
+         */
+        val leftForLink: Boolean = false,
     ) {
         val isIdle: Boolean get() = prompt == null && pending == null && !isLookingUp && !isReadingImage && !isFinished
 
@@ -260,6 +266,18 @@ class ClassTableImportModel(
         lookupJob?.cancel()
         lookupJob = null
         _state.update { it.copy(prompt = null, pending = null, isLookingUp = false, isReadingImage = false) }
+    }
+
+    /**
+     * A link from a reminder, a bulletin or School Mail opens another page: whether the import
+     * stays over it. Only while the person is being written, which nothing stops, as Close does
+     * nothing then: it ends saved, or says the write failed, with a retry ([State.leftForLink]).
+     * At any other step the link calls it off, as Close does.
+     */
+    fun staysForLink(): Boolean {
+        if (!_state.value.isSaving) return false
+        _state.update { it.copy(leftForLink = true) }
+        return true
     }
 
     // --- Decoding ---

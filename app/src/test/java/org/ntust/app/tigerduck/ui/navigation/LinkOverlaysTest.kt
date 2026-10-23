@@ -39,7 +39,7 @@ class LinkOverlaysTest {
         closeCourseSheet = { events += COURSE_SHEET },
         closeTabMenu = { events += TAB_MENU },
         closeSignInSheet = { events += SIGN_IN_SHEET },
-        endImport = { events += IMPORT },
+        closeImport = { events += IMPORT },
     )
 
     /** What the page on screen does when a link asks it to let go; a mail being written asks. */

@@ -81,7 +81,8 @@ fun ClassTableImportHost(viewModel: ClassTableImportViewModel, onImported: () ->
         onClose = viewModel::end,
         onFinished = {
             viewModel.end()
-            latestOnImported()
+            // Not for one a link left while it was being written: the link's page stays on screen.
+            if (!model.state.value.leftForLink) latestOnImported()
         },
         onPickPicture = {
             pickPicture.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))

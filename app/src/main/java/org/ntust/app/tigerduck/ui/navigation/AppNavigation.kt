@@ -321,7 +321,7 @@ fun MainNavigation(
             closeCourseSheet = classTableViewModel::clearSelection,
             closeTabMenu = { showClassTableSwitcher = false },
             closeSignInSheet = ntustSignInViewModel::closeForLink,
-            endImport = classTableImportViewModel::end,
+            closeImport = classTableImportViewModel::closeForLink,
         )
     }
 
@@ -847,16 +847,23 @@ internal fun selectedTabRoute(route: String?): String? = when {
 }
 
 /**
- * Whether this is the page a link to [target] opens: the same route, or the same assignment's
- * page, which a reminder names `assignment/<id>` and a course opens under its Moodle route.
+ * Whether this is the page a link to [target] opens: the same route, or the page its arguments
+ * name, written as the link writes it: the same bulletin, the same mail, or the same assignment,
+ * which a reminder names `assignment/<id>` and a course opens under its Moodle route.
  */
 internal fun NavBackStackEntry?.showsPage(target: String): Boolean {
     if (this == null) return false
     val route = destination.route
     if (route == target) return true
-    val assignmentId = Screen.Assignment.idIn(target) ?: return false
-    return (route == Screen.Assignment.route || route == MoodleRoutes.ASSIGNMENT) &&
-        arguments?.getString(MoodleRoutes.ARG_ASSIGNMENT_ID) == assignmentId
+    val args = arguments ?: return false
+    return when (route) {
+        Screen.AnnouncementDetail.route -> target == Screen.AnnouncementDetail.route(args.getInt("id"))
+        Screen.SchoolMailMessage.route ->
+            target == Screen.SchoolMailMessage.route(args.getString("folder").orEmpty(), args.getLong("uid"))
+        Screen.Assignment.route, MoodleRoutes.ASSIGNMENT ->
+            Screen.Assignment.idIn(target)?.let { it == args.getString(MoodleRoutes.ARG_ASSIGNMENT_ID) } == true
+        else -> false
+    }
 }
 
 /**
