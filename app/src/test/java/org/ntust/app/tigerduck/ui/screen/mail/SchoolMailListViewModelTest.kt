@@ -1109,6 +1109,24 @@ class SchoolMailListViewModelTest {
         assertFalse("the first student's write marked the second's mail read", vm.state.value.displayed.single().summary.flags.seen)
     }
 
+    @Test
+    fun `a mark-read that fails after another student signed in over this one is not theirs to see`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        // The first student's swipe marks a mail read, and the write waits on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.seenGate = gate
+        repo.seenError = MailError.AuthFailed()
+        vm.toggleRead(vm.state.value.displayed.single())
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        repo.seenGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
+    }
+
     /**
      * Holds the answer to [folder]'s next page on its way up, so the fetch that asked for it is
      * still out while the test writes; the page was read before the write and has none of it.

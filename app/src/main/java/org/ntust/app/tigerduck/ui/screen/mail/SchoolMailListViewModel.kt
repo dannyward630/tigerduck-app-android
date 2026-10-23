@@ -591,13 +591,15 @@ class SchoolMailListViewModel @Inject constructor(
     fun toggleRead(row: MailRow) {
         if (row.key in _state.value.writing) return
         val seen = !row.summary.flags.seen
+        val generation = account.accountGeneration
         viewModelScope.launch {
             try {
                 repository.setSeen(row.folder, row.uid, seen)
             } catch (e: MailError) {
                 // One swipe that didn't stick is not the page failing: the list on screen is
-                // exactly as good as it was a moment ago.
-                actionFail(e)
+                // exactly as good as it was a moment ago. Nor is it the next student's to see,
+                // once one has signed in over this one ([dropped]).
+                if (!dropped(e, generation)) actionFail(e)
             }
         }
     }
