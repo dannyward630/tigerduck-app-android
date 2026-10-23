@@ -1199,7 +1199,7 @@ class ClassTableViewModel @Inject constructor(
             val queuedAt = pendingCourseDeletes.stamp()
             if (tombstoneEdit != null) {
                 try {
-                    dataCache.hideDeletedCourse(courseNo, semester, handAdded = deletedCourse?.isManual == true)
+                    dataCache.hideDeletedCourse(courseNo, semester, deletedCourse)
                 } finally {
                     tombstoneEdits.saved(tombstoneEdit)
                 }

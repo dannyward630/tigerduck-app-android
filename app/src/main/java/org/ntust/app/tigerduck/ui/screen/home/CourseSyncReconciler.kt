@@ -100,6 +100,14 @@ object CourseSyncReconciler {
      * and a tombstone or the server's silence would hide it for good, its add
      * then let go unsent. The add forces its key past the tombstone once it
      * lands.
+     *
+     * [restoredNos] are the courses a course selection answer brought back
+     * from a deleted hand-added course's hide that no snapshot has listed
+     * since, from `DataCache.restoredCoursesIn`: the roster upload naming
+     * them may not have landed, so the server's silence is no delete
+     * elsewhere. A tombstone still hides them: the backend leaves the one
+     * this device's delete wrote out of its snapshot, so one there is
+     * another device's.
      */
     fun reconcileSemester(
         semester: String,
@@ -111,6 +119,7 @@ object CourseSyncReconciler {
         graceCourseNos: Set<String> = emptySet(),
         pendingAddNos: Set<String> = emptySet(),
         selectionDroppedNos: Set<String> = emptySet(),
+        restoredNos: Set<String> = emptySet(),
     ): SemesterOutcome {
         // Misfiled rows are neither a roster nor evidence of presence, and
         // neither is a course 選課 has dropped.
@@ -180,7 +189,7 @@ object CourseSyncReconciler {
         // a snapshot has carried the number, absence is a deletion.
         for (course in localCourses) {
             if (course.courseNo in serverNos) continue
-            if (notOnServerYet(course)) continue
+            if (notOnServerYet(course) || course.courseNo in restoredNos) continue
             if (CourseTombstoneKeys.isHidden(course.courseNo, semester, updated)) continue
             updated = CourseTombstoneKeys.hide(course.courseNo, semester, updated)
         }

@@ -318,7 +318,9 @@ class BackgroundSyncWorker @AssistedInject constructor(
             // Adds the retry above could not land: the snapshot does not list them yet.
             pendingAddNos = if (resetElsewhere) emptySet() else pendingCourseAdds.waitingIn(semester),
             selectionDroppedNos = dataCache.loadSelectionDroppedNos()[semester].orEmpty().toSet(),
+            restoredNos = dataCache.restoredCoursesIn(semester),
         )
+        dataCache.restoredCoursesListed(semester, result.serverCourses.filter { it.semester == semester }.map { it.courseNo })
         if (outcome.tombstones != stored) {
             dataCache.saveDeletedCourseNos(outcome.tombstones)
         }

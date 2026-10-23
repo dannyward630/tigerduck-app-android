@@ -17,6 +17,7 @@ import org.ntust.app.tigerduck.ui.screen.home.CourseSyncReconciler
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
 
 /**
  * A hand-added course the student deletes and later really enrolls in (tigerduck-app-android#425,
@@ -46,7 +47,7 @@ class ClassTableHandAddedHideTest {
     /** As the class table's delete leaves the store and the term, reading the course off the term. */
     private suspend fun delete(course: Course) {
         val held = cache.loadCourses(TERM).first { it.courseNo == course.courseNo }
-        cache.hideDeletedCourse(held.courseNo, TERM, handAdded = held.isManual)
+        cache.hideDeletedCourse(held.courseNo, TERM, held)
         cache.saveCourses(cache.loadCourses(TERM).filter { it.courseNo != held.courseNo }, TERM)
     }
 
@@ -59,9 +60,28 @@ class ClassTableHandAddedHideTest {
             tombstoneNos = setOf(course.courseNo),
             tombstones = cache.loadDeletedCourseNos(),
             serverKnownNos = setOf(enrolled.courseNo, course.courseNo),
+            restoredNos = cache.restoredCoursesIn(TERM),
         )
         cache.saveDeletedCourseNos(outcome.tombstones)
         CourseSyncReconciler.pruneHidden(TERM, cache.loadCourses(TERM), outcome.tombstones)?.let { cache.saveCourses(it, TERM) }
+    }
+
+    /** A full sync whose snapshot lists [serverNos] for the term, with no tombstone, as HomeBackendSync stores it. */
+    private suspend fun syncListing(vararg serverNos: String) {
+        val outcome = CourseSyncReconciler.reconcileSemester(
+            semester = TERM,
+            localCourses = cache.loadCourses(TERM),
+            serverRows = serverNos.map { ServerCourse(it, it, TERM, moodleId = "$TERM$it") },
+            tombstoneNos = emptySet(),
+            tombstones = cache.loadDeletedCourseNos(),
+            serverKnownNos = cache.loadServerKnownNos()[TERM].orEmpty().toSet(),
+            restoredNos = cache.restoredCoursesIn(TERM),
+        )
+        cache.restoredCoursesListed(TERM, serverNos.toList())
+        cache.saveDeletedCourseNos(outcome.tombstones)
+        cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
+        val kept = CourseSyncReconciler.pruneHidden(TERM, cache.loadCourses(TERM), outcome.tombstones) ?: cache.loadCourses(TERM)
+        cache.saveCourses(kept + outcome.merged, TERM)
     }
 
     /**
@@ -180,14 +200,73 @@ class ClassTableHandAddedHideTest {
     @Test
     fun `a sign-out takes the course selection answers with it`() = runTest {
         cache.saveCourses(listOf(enrolled, handAdded), TERM)
-        fetchListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
 
         cache.clearAllUserData()
-        // The next student added the same course by hand and deletes it before any answer of theirs.
+        // The next student added the same course by hand and deletes it before any answer of theirs:
+        // the last one's answer says nothing of what theirs lists.
         cache.saveCourses(listOf(enrolled, handAdded), TERM)
         delete(handAdded)
 
-        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+    }
+
+    @Test
+    fun `a hand-added course deleted before any course selection answer stays hidden`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+
+        delete(handAdded)
+
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+    }
+
+    @Test
+    fun `a course merged from another device's row stays hidden once deleted`() = runTest {
+        cache.saveCourses(listOf(enrolled), TERM)
+        // Merged down as CourseSyncReconciler.toCourse makes it: manual, with the Moodle id the
+        // server holds. The server may not have it as a hand-added course's row.
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+
+        delete(handAdded)
+
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+    }
+
+    @Test
+    fun `a mark that lost its hide does not lift a later hide of the course`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        // The hides gone from under the mark, as a damaged file leaves them.
+        File(RuntimeEnvironment.getApplication().filesDir, "TigerDuckData/deleted_courses.json").delete()
+
+        tombstonedElsewhere(handAdded)
+
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+    }
+
+    @Test
+    fun `a course brought back stays through a sync that does not list it before its upload lands`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        // The server has had both: the hand-added course went up when it was added.
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        // Its DELETE landed; the backend leaves the tombstone out of this device's snapshot.
+        syncListing(enrolled.courseNo)
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+
+        // Home's fetch uploads nothing, and the class table's upload can fail: the next snapshot
+        // does not list it yet, which is no delete elsewhere.
+        syncListing(enrolled.courseNo)
+        assertEquals(emptySet<String>(), hidden())
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+
+        // Once a snapshot lists it, the upload has landed, and its absence is a delete elsewhere again.
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        syncListing(enrolled.courseNo)
+        assertEquals(setOf(handAdded.courseNo), hidden())
     }
 
     private companion object {

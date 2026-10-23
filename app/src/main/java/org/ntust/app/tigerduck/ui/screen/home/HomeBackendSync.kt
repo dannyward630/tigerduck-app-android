@@ -499,7 +499,9 @@ class HomeBackendSync @Inject constructor(
                 // Adds the retry above could not land: the snapshot does not list them yet.
                 pendingAddNos = pendingCourseAdds.waitingIn(semester),
                 selectionDroppedNos = selectionDropped[semester].orEmpty().toSet(),
+                restoredNos = dataCache.restoredCoursesIn(semester),
             )
+            dataCache.restoredCoursesListed(semester, rowsBySemester[semester].orEmpty().map { it.courseNo })
             tombstones = outcome.tombstones
             if (outcome.serverKnownNos.isNotEmpty()) {
                 updatedKnown[semester] = outcome.serverKnownNos.sorted()

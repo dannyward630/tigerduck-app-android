@@ -64,7 +64,10 @@ class AddCourseTakeBackTest {
         assertTrue("deleteCourse still tombstones a regular delete", edits.size == 1 && writes.size == 1)
         val edit = edits.single()
         val write = writes.single()
-        assertTrue("the write says whether the course was added by hand", "handAdded = " in delete[write])
+        assertTrue(
+            "the write is handed the course, which says whether it was added by hand here",
+            "hideDeletedCourse(courseNo, semester, deletedCourse)" in delete[write],
+        )
         assertTrue(
             "the edit a fetch reads is made under `if (tombstone)`",
             delete.subList(0, edit + 1).any { "if (tombstone)" in it },

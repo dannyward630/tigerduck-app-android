@@ -539,14 +539,7 @@ class DataCache @Inject constructor(
     // Stored in filesDir so courses hidden via sync or the delete gesture
     // stay gone even when Moodle/NTUST re-fetches re-add them.
 
-    suspend fun saveDeletedCourseNos(nos: Set<String>) {
-        saveToUserData(nos.toList(), "deleted_courses.json")
-        // A mark lives only as long as its hide; see hideDeletedCourse.
-        handAddedHidesMutex.withLock {
-            val marks = loadHandAddedHides()
-            if (marks.any { it !in nos }) saveToUserData(marks.filter { it in nos }, HAND_ADDED_HIDES_FILE)
-        }
-    }
+    suspend fun saveDeletedCourseNos(nos: Set<String>) = courseHidesMutex.withLock { writeDeletedCourseNos(nos) }
 
     suspend fun loadDeletedCourseNos(): Set<String> {
         val type = object : TypeToken<List<String>>() {}.type
@@ -554,49 +547,104 @@ class DataCache @Inject constructor(
             ?: emptySet()
     }
 
+    /**
+     * [nos] written as the hides, under [courseHidesMutex], with the marks and
+     * the courses being brought back kept in step; see [hideDeletedCourse]. A
+     * mark goes once its hide does, and so does one whose hide was gone
+     * before this write, as a damaged file leaves it; a course being brought
+     * back goes once it is hidden again.
+     */
+    private suspend fun writeDeletedCourseNos(nos: Set<String>) {
+        val before = loadDeletedCourseNos()
+        saveToUserData(nos.toList(), "deleted_courses.json")
+        val marks = loadHandAddedHides()
+        val keptMarks = marks.filterTo(mutableSetOf()) { it in nos && it in before }
+        if (keptMarks != marks) saveToUserData(keptMarks.toList(), HAND_ADDED_HIDES_FILE)
+        val restored = loadRestoredCourses()
+        val keptRestored = restored.filterTo(mutableSetOf()) { it !in nos }
+        if (keptRestored != restored) saveToUserData(keptRestored.toList(), RESTORED_COURSES_FILE)
+    }
+
     // --- Hides of deleted hand-added courses (scoped keys) ---
     // A course the student added by hand and deleted again hides like any
-    // other delete. But when course selection did not list it then, its hide
-    // is marked here, and once a course selection answer lists it the
-    // student has really enrolled: the hide is lifted before the fetch's
+    // other delete. But when course selection's latest answer for the term
+    // did not list it, its hide is marked here, and once an answer lists it
+    // the student has really enrolled: the hide is lifted before the fetch's
     // merge, so the class table shows the course and the roster upload names
     // it. That upload is what lifts the backend's tombstone of a removed
     // hand-added course (tigerduck-backend 3.3.6), and the other devices
     // un-hide it through the sync's reconcile once the server lists it
-    // again. Every other hide binds as before: a deleted enrolled course, and
-    // one the reconcile took from another device's tombstone.
+    // again. Every other hide binds as before: a deleted enrolled course, a
+    // course merged from another device's row, a delete made before any
+    // answer was kept, and a hide the reconcile took from another device's
+    // tombstone.
+    //
+    // Until a snapshot lists a course brought back, its absence there is no
+    // delete elsewhere: Home's fetch uploads nothing, and the class table's
+    // upload can fail. restored_courses.json holds it meanwhile, and the
+    // reconcile leaves it be (CourseSyncReconciler.reconcileSemester's
+    // restoredNos). selection_rosters.json keeps each term's latest course
+    // selection answer, which a delete is judged by.
     //
     // A mark only names a hide in deleted_courses.json and lives no longer
-    // than it: every write of the hides drops the marks they no longer hold,
-    // so a hide lifted, by adding the course back for one, and written again
-    // later for another device's tombstone, is not marked. With it,
-    // selection_rosters.json keeps each term's latest course selection
-    // answer, which a delete is judged by. Both are new files: an older
-    // install has neither, and the hides it kept bind as they did.
+    // than it (writeDeletedCourseNos), so a hide lifted, by adding the course
+    // back for one, and written again later for another device's tombstone,
+    // is not marked. Every change to the three goes under [courseHidesMutex],
+    // the hide before its mark. All three are new files: an older install
+    // has none, and the hides it kept bind as they did.
 
-    private val handAddedHidesMutex = Mutex()
+    private val courseHidesMutex = Mutex()
 
     /**
-     * Hides [courseNo] in [semester] for the class table's delete. A
-     * [handAdded] course the term's latest course selection answer did not
-     * list is marked, for [recordSelectionRoster] to lift; see above. The
-     * mark is written first: a write of the hides in between drops it,
-     * which leaves a hide that binds, never a mark without its hide.
+     * Hides [courseNo] in [semester] for the class table's delete of
+     * [course], the row the term held. It is marked, for
+     * [recordSelectionRoster] to lift, when it was added by hand on this
+     * phone and the term's latest course selection answer did not list it.
+     * Added by hand here is manual with no Moodle id: a row merged from
+     * another device's carries the id the server holds, and the server need
+     * not have it as a hand-added course's, and a hand-added course a roster
+     * listed has taken the fetched row's. With no answer kept for the term,
+     * nothing says the course was not enrolled, and the hide binds.
      */
-    suspend fun hideDeletedCourse(courseNo: String, semester: String, handAdded: Boolean) {
-        if (handAdded && courseNo !in loadSelectionRosters()[semester].orEmpty()) {
-            handAddedHidesMutex.withLock {
-                val marks = loadHandAddedHides() + CourseTombstoneKeys.key(semester, courseNo)
-                saveToUserData(marks.toList(), HAND_ADDED_HIDES_FILE)
-            }
+    suspend fun hideDeletedCourse(courseNo: String, semester: String, course: Course?) = courseHidesMutex.withLock {
+        writeDeletedCourseNos(CourseTombstoneKeys.hide(courseNo, semester, loadDeletedCourseNos()))
+        val addedHere = course != null && course.isManual && course.moodleIdNumber.isNullOrEmpty()
+        val answer = loadSelectionRosters()[semester]
+        if (addedHere && answer != null && courseNo !in answer) {
+            val marks = loadHandAddedHides() + CourseTombstoneKeys.key(semester, courseNo)
+            saveToUserData(marks.toList(), HAND_ADDED_HIDES_FILE)
         }
-        saveDeletedCourseNos(CourseTombstoneKeys.hide(courseNo, semester, loadDeletedCourseNos()))
+    }
+
+    /**
+     * [semester]'s courses a course selection answer brought back that no
+     * snapshot has listed since; see [liftHandAddedHides].
+     */
+    suspend fun restoredCoursesIn(semester: String): Set<String> {
+        val prefix = CourseTombstoneKeys.key(semester, "")
+        return loadRestoredCourses().filter { it.startsWith(prefix) }.mapTo(mutableSetOf()) { it.removePrefix(prefix) }
+    }
+
+    /**
+     * Lets go of the courses brought back in [semester] that [listed], a
+     * snapshot's course numbers for the term, holds: the upload that names
+     * them has landed, and their absence is a delete elsewhere again.
+     */
+    suspend fun restoredCoursesListed(semester: String, listed: Collection<String>) = courseHidesMutex.withLock {
+        val restored = loadRestoredCourses()
+        val kept = restored - listed.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
+        if (kept != restored) saveToUserData(kept.toList(), RESTORED_COURSES_FILE)
     }
 
     /** The marked hides, as `<semester>:<courseNo>` keys; see [hideDeletedCourse]. */
-    private suspend fun loadHandAddedHides(): Set<String> {
+    private suspend fun loadHandAddedHides(): Set<String> = loadKeys(HAND_ADDED_HIDES_FILE)
+
+    /** The courses being brought back, as `<semester>:<courseNo>` keys; see [restoredCoursesIn]. */
+    private suspend fun loadRestoredCourses(): Set<String> = loadKeys(RESTORED_COURSES_FILE)
+
+    private suspend fun loadKeys(filename: String): Set<String> {
         val type = object : TypeToken<List<String?>>() {}.type
-        return loadFromUserData<List<String?>>(type, HAND_ADDED_HIDES_FILE).orEmpty().filterNotNullTo(mutableSetOf())
+        return loadFromUserData<List<String?>>(type, filename).orEmpty().filterNotNullTo(mutableSetOf())
     }
 
     /** Each term's latest non-empty course selection answer, by [recordSelectionRoster]. */
@@ -609,19 +657,25 @@ class DataCache @Inject constructor(
 
     /**
      * Lifts the marked hides of the courses [roster], one course selection
-     * answer for [semester], lists: the student has enrolled in them since.
-     * Not one whose DELETE is still queued (PendingCourseDeletes): landing
-     * after the roster upload, it would take the course off the server again.
-     * An answer after it lands lifts that one.
+     * answer for [semester], lists, as the student has enrolled in them
+     * since, and holds the courses as being brought back until a snapshot
+     * lists them. Only a mark whose hide still stands, and not one whose
+     * DELETE is still queued (PendingCourseDeletes): landing after the roster
+     * upload, it would take the course off the server again. An answer after
+     * it lands lifts that one.
      */
-    private suspend fun liftHandAddedHides(semester: String, roster: List<String>) {
+    private suspend fun liftHandAddedHides(semester: String, roster: List<String>) = courseHidesMutex.withLock {
         val marks = loadHandAddedHides()
-        if (marks.isEmpty()) return
+        if (marks.isEmpty()) return@withLock
+        val hides = loadDeletedCourseNos()
         val deleting = loadPendingCourseDeletes()[semester].orEmpty().keys
         val lifted = roster.filter { it !in deleting }
             .map { CourseTombstoneKeys.key(semester, it) }
-            .filterTo(mutableSetOf()) { it in marks }
-        if (lifted.isNotEmpty()) saveDeletedCourseNos(loadDeletedCourseNos() - lifted)
+            .filterTo(mutableSetOf()) { it in marks && it in hides }
+        if (lifted.isEmpty()) return@withLock
+        // Ahead of the hides: one held while its hide still stands is let go by the next write.
+        saveToUserData((loadRestoredCourses() + lifted).toList(), RESTORED_COURSES_FILE)
+        writeDeletedCourseNos(hides - lifted)
     }
 
     /**
@@ -1105,6 +1159,7 @@ class DataCache @Inject constructor(
                     "pending_course_overrides.json",
                     "deleted_courses.json",
                     HAND_ADDED_HIDES_FILE,
+                    RESTORED_COURSES_FILE,
                     "course_custom_names.json",
                     "selection_dropped.json",
                     SELECTION_ROSTERS_FILE,
@@ -1227,6 +1282,7 @@ class DataCache @Inject constructor(
         private const val TAG = "DataCache"
 
         private const val HAND_ADDED_HIDES_FILE = "hand_added_hides.json"
+        private const val RESTORED_COURSES_FILE = "restored_courses.json"
         private const val SELECTION_ROSTERS_FILE = "selection_rosters.json"
 
         private const val MOODLE_DIR = "moodle"
