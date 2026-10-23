@@ -168,7 +168,7 @@ class MailReadableHtml(private val html: String) {
                 }
 
                 if (fix != null) {
-                    now.displayed = fix
+                    now = now.copy(displayed = fix)
                     changed = true
                 }
                 shown.add(now)
@@ -221,9 +221,14 @@ class MailReadableHtml(private val html: String) {
         val range: IntRange,
     )
 
-    private class Shown(
-        var intended: RGBA?,
-        var displayed: RGBA?,
+    /**
+     * The colour a node's text was meant in and the one it is drawn in. Never changed in place: a
+     * node with no colour of its own starts from its parent's, and a fix to it is its own, not the
+     * parent's, or every sibling after it would start from that fix.
+     */
+    private data class Shown(
+        val intended: RGBA?,
+        val displayed: RGBA?,
     )
 
     private sealed interface Layer {

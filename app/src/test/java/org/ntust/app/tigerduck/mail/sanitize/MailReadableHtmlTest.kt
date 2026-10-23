@@ -8,6 +8,35 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MailReadableHtmlTest {
+    private fun readable(raw: String) = MailReadableHtml(HtmlSanitizer.sanitize(raw, allowRemoteImages = false).html)
+
+    // The Apple app's two pages, so the colours its tests expect are the ones expected here.
+    private fun MailReadableHtml.onApp() = adjust(pageBackgroundHex = "#000000", pageForegroundHex = "#ffffff", linkForegroundHex = "#9e9eff")
+    private fun MailReadableHtml.onLight() = adjust(pageBackgroundHex = "#ffffff", pageForegroundHex = "#000000", linkForegroundHex = "#0000ee")
+
+    @Test
+    fun `every cell on a background of its own gets the fix, not only the first`() {
+        val page = readable(
+            """<div style="color: #333333"><table><tr><td bgcolor="#1f497d">a</td><td bgcolor="#1f497d">b</td></tr></table></div>""",
+        )
+        assertEquals(
+            """<div style="color: #333333"><table><tbody><tr><td bgcolor="#1f497d" style="color: #e2e2e2">a</td>""" +
+                """<td bgcolor="#1f497d" style="color: #e2e2e2">b</td></tr></tbody></table></div>""",
+            page.onLight(),
+        )
+    }
+
+    @Test
+    fun `every highlight gets back the colour the sender meant, not only the first`() {
+        val page = readable(
+            """<div style="color: #000000"><span style="background-color: #ffff00">a</span> <span style="background-color: #ffff00">b</span></div>""",
+        )
+        assertEquals(
+            """<div style="color: #959595"><span style="background-color: #ffff00; color: #000000">a</span> """ +
+                """<span style="background-color: #ffff00; color: #000000">b</span></div>""",
+            page.onApp(),
+        )
+    }
 
     @Test
     fun `relative luminance and contrast match WCAG 2 definition`() {
