@@ -247,21 +247,7 @@ class MailRepository @Inject constructor(
     @ApplicationScope private val scope: CoroutineScope,
 ) : SchoolMailRepository {
     @VisibleForTesting
-    internal val holder = SessionHolder(
-        MailSessionFactory { credentials ->
-            try {
-                sessions.open(credentials)
-            } catch (e: MailError.AuthFailed) {
-                // Told to the account before the connection's lock is let go (spec §7.4), so a
-                // request queued behind this login finds the account refused and sends no LOGIN of
-                // its own. Only for the stored password: the refusal of an account that has left
-                // since must not stop the next one.
-                if (account.credentialsOrNull() == credentials) account.onAuthFailure()
-                throw e
-            }
-        },
-        scope,
-    )
+    internal val holder = SessionHolder(sessions, scope)
 
     private val indexer = MailIndexer(
         searchIndex,
@@ -431,9 +417,17 @@ class MailRepository @Inject constructor(
     private suspend fun <T> withSession(stillWanted: () -> Boolean = { true }, block: (MailSession) -> T): T = withContext(Dispatchers.IO) {
         if (account.isDemo) throw MailError.DemoMode()
         refuseWhileAuthFailed()
-        // Asked again under the connection's lock: a request that waited out a login the server
-        // rejected must not send one of its own.
-        holder.use(credentials(), { refuseWhileAuthFailed(); stillWanted() }, block)
+        val signedIn = account.snapshot() ?: throw MailError.Protocol("not signed in")
+        holder.use(
+            signedIn.credentials,
+            // Asked again under the connection's lock: a request that waited out a login the
+            // server rejected must not send one of its own.
+            stillWanted = { refuseWhileAuthFailed(); stillWanted() },
+            // Told to the account before that lock is let go, for the sign-in these credentials
+            // are: the refusal of one that has left since must not stop the next.
+            onRefused = { account.onAuthFailure(signedIn.generation) },
+            block = block,
+        )
     }
 
     // --- demo -------------------------------------------------------------------
@@ -873,6 +867,9 @@ class MailRepository @Inject constructor(
         // -- still sends: filing the copy is a convenience, and [MailSender] reports it as
         // [SentCopy.NotAttempted] rather than failing. Sending is the point.
         val sent = ensureFolderOrNull(SpecialFolder.SENT)
+        // Asked again: the folder's lookup can have met the rejection, or waited out a login that
+        // did, and dropped it with whatever else kept the sent copy from being filed.
+        refuseWhileAuthFailed()
         // The sent copy runs on [holder]'s connection, not one of its own: Mail2000 caps
         // concurrent connections, so a second one is most likely to be refused exactly when the
         // mail screen is open and holding the first.

@@ -996,6 +996,45 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `a send that finds the password rejected sends nothing over SMTP`() = runTest {
+        val repo = TestSetup(backgroundScope).signedIn()
+        server.passwords["B10000001"] = "changed"
+        val mail = OutgoingMail(repo.selfAddress(), listOf(MailAddress(null, "a@x.tw")), emptyList(), emptyList(), "s", "b")
+
+        // The sent folder is looked up first, over IMAP, whose login the server refuses.
+        assertTrue(runCatching { repo.send(mail, null) }.exceptionOrNull() is MailError.AuthFailed)
+
+        assertTrue("spec §7.4: no SMTP login with the rejected password", sent.isEmpty())
+    }
+
+    @Test
+    fun `a rejection of a login sent before signing in again with the same password does not stop the new sign-in`() = runTest {
+        val opening = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val first = AtomicBoolean(true)
+        val sessions = MailSessionFactory { credentials ->
+            if (first.getAndSet(false)) {
+                opening.countDown()
+                assertTrue(release.await(5, TimeUnit.SECONDS))
+                // The answer to a login of the account as it was before signing out.
+                throw MailError.AuthFailed()
+            }
+            server.factory().open(credentials)
+        }
+        val setup = TestSetup(backgroundScope, sessions)
+        val repo = setup.signedIn()
+        val request = async(Dispatchers.IO) { runCatching { repo.status("INBOX") } }
+        assertTrue(opening.await(5, TimeUnit.SECONDS))
+
+        setup.signOutAndSettle()
+        setup.account.signIn("b10000001", "pw")
+        release.countDown()
+
+        assertTrue(request.await().exceptionOrNull() is MailError.AuthFailed)
+        assertFalse(setup.account.authFailed.value)
+    }
+
+    @Test
     fun `a password rejected while downloading in the app reaches the account`() = runTest {
         server.deliver("期中考")
         val setup = TestSetup(backgroundScope)

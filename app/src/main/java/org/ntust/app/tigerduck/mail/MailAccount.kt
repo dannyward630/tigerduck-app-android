@@ -196,6 +196,21 @@ class MailAccount @Inject constructor(
         scheduler.cancel()
     }
 
+    /**
+     * [onAuthFailure] for a login sent under the sign-in at [generation], unless another sign-in or
+     * a sign-out has come since -- even the same student's with the same password, which the
+     * server has just accepted. Read and marked under the lock a sign-in and a sign-out move the
+     * generation under, so neither can come in between.
+     */
+    fun onAuthFailure(generation: Int) {
+        synchronized(accountLock) {
+            if (this.generation.get() != generation) return
+            state.authFailed = true
+            _authFailed.value = true
+        }
+        scheduler.cancel()
+    }
+
     private fun save(creds: MailCredentials) {
         synchronized(accountLock) {
             generation.incrementAndGet()
