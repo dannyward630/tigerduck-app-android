@@ -124,8 +124,7 @@ class CourseService @Inject constructor(
                     fetch = { fetchCourseListPage() },
                     bounced = { throw CourseServiceError.RedirectedToSSO() },
                 )
-                val pattern = Regex("<tr>\\s*<td>\\s*(3?[A-Z]{2}[A-Z0-9]{6,7})\\s*</td>")
-                pattern.findAll(html).map { it.groupValues[1] }.toList()
+                courseNosInListPage(html)
             }
         }
 
@@ -441,6 +440,29 @@ class CourseService @Inject constructor(
             val type = object : TypeToken<List<CourseSearchResult>>() {}.type
             return lookupGson.fromJson<List<CourseSearchResult>?>(body, type) ?: emptyList()
         }
+
+        /**
+         * NTUST's course-number shape, the one rule the course-selection list, Moodle's course
+         * names and the share codes all read by: a head, then six or seven letters or digits. The
+         * head is the first that fits of `3` and two letters, two letters, or `3` and one letter,
+         * the last for a course taken at NTU or NTNU (`3N1004701`, `3T5287701`), which the list
+         * names beside NTUST's own (tigerduck-app/tigerduck-app#766). The groups are the head and
+         * the tail, which the share code's packed layout writes apart.
+         */
+        internal val COURSE_NO = Regex("(3[A-Z]{2}|[A-Z]{2}|3[A-Z])([A-Z0-9]{6,7})")
+
+        /** A row's first cell on the 選課清單 page, where a course lists its number. */
+        private val LIST_ROW_FIRST_CELL = Regex("<tr>\\s*<td>\\s*([A-Z0-9]+)\\s*</td>")
+
+        /** Whether the whole of [text] is a course number of [COURSE_NO]'s shape. */
+        fun isCourseNo(text: String): Boolean = COURSE_NO.matches(text)
+
+        /**
+         * The course numbers on the 選課清單 page, in its order: each row's first cell that holds
+         * one, so a header row or the credit total is left out.
+         */
+        internal fun courseNosInListPage(html: String): List<String> =
+            LIST_ROW_FIRST_CELL.findAll(html).map { it.groupValues[1] }.filter(::isCourseNo).toList()
 
         fun firstNonEmpty(values: List<String?>): String? =
             values.firstOrNull { !it.isNullOrBlank() }?.trim()
