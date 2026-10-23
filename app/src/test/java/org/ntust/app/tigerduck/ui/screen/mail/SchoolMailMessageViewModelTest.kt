@@ -411,7 +411,7 @@ class SchoolMailMessageViewModelTest {
     // --- mail theme: a genuine change rebuilds the already-loaded document -------------------
 
     @Test
-    fun `a theme change while a mail is open rebuilds the document with the new colours, preserving remote-image state`() {
+    fun `a theme change while a mail is open rebuilds the document with the new colors, preserving remote-image state`() {
         repo.add("INBOX", mailSummary(5))
         repo.bodies[5] = MailBody("""<p><img src="https://t.example/p.gif"></p>""", null, emptyList(), emptyMap())
         val vm = vm()
@@ -476,11 +476,11 @@ class SchoolMailMessageViewModelTest {
         assertNull(ready(vm).document)
     }
 
-    // --- the page a mail opens on: white paper for one that sets colours of its own -----------
+    // --- the page a mail opens on: white paper for one that sets colors of its own -----------
 
     private val darkApp = MailHtmlTheme(background = "#121212", foreground = "#e6e6e6", isDark = true)
 
-    private val coloured = """<table bgcolor="#ffffff"><tr><td>Notice</td></tr></table>"""
+    private val colored = """<table bgcolor="#ffffff"><tr><td>Notice</td></tr></table>"""
 
     private fun open(
         html: String,
@@ -499,9 +499,9 @@ class SchoolMailMessageViewModelTest {
     private fun SchoolMailMessageViewModel.page() = ready(this).document!!.html
 
     @Test
-    fun `a mail that sets colours of its own opens on white paper in a dark app, built once`() {
+    fun `a mail that sets colors of its own opens on white paper in a dark app, built once`() {
         val io = HeldDispatcher()
-        val vm = open(coloured, io)
+        val vm = open(colored, io)
         // Step by step, so a document shown dark and then rebuilt would be seen in between.
         val shown = mutableListOf<LinkedHtml>()
         while (io.pending > 0) {
@@ -516,7 +516,7 @@ class SchoolMailMessageViewModelTest {
     @Test
     fun `the reader's choice of page sticks through theme changes and a process restore`() {
         val saved = SavedStateHandle(mapOf("folder" to "INBOX", "uid" to 5L))
-        val vm = open(coloured, saved = saved)
+        val vm = open(colored, saved = saved)
         vm.setViewInLight(false)
         assertFalse(vm.state.value.viewInLight)
         assertTrue(vm.page(), vm.page().contains("background:#121212;color:#e6e6e6"))
@@ -538,7 +538,7 @@ class SchoolMailMessageViewModelTest {
     @Test
     fun `a light app keeps its own page, and white paper comes back when it turns dark`() {
         val lightApp = MailHtmlTheme(background = "#f2f2f7", foreground = "#1c1c1e", isDark = false)
-        val vm = open(coloured, app = lightApp)
+        val vm = open(colored, app = lightApp)
         assertTrue(vm.state.value.viewInLight)
         assertTrue(vm.page(), vm.page().contains("background:#f2f2f7;color:#1c1c1e"))
 
@@ -547,7 +547,7 @@ class SchoolMailMessageViewModelTest {
     }
 
     @Test
-    fun `a mail whose colours show nothing stays on the app's page`() {
+    fun `a mail whose colors show nothing stays on the app's page`() {
         val mails = listOf(
             """<p>Read <a href="https://a.example" style="color: inherit">more</a></p>""",
             """<p><span style="background-color: transparent">Pasted</span></p>""",

@@ -44,10 +44,10 @@ class MailHtmlDocumentTest {
         assertTrue(doc.contains("<body><p>x</p></body>"))
     }
 
-    // --- theme: the page's own surface, and a sender's colours where they read ---------------
+    // --- theme: the page's own surface, and a sender's colors where they read ---------------
 
     @Test
-    fun `dark theme colours reach the document`() {
+    fun `dark theme colors reach the document`() {
         val html = MailHtmlDocument.build("<p>hi</p>", emptyMap(), false, dark).html
         assertTrue(html, html.contains("background:#121212"))
         assertTrue(html, html.contains("color:#e6e6e6"))
@@ -62,14 +62,14 @@ class MailHtmlDocumentTest {
     // The sanitizer keeps background-color and drops the background shorthand, so these use the
     // one a sanitized mail can carry.
     @Test
-    fun `a sender's colour that reads on its own background is left as sent`() {
+    fun `a sender's color that reads on its own background is left as sent`() {
         val body = """<p style="background-color: #ffeeaa; color: #003300">branded</p>"""
         val html = MailHtmlDocument.build(body, emptyMap(), false, dark).html
         assertTrue(html, html.contains("<body>$body</body>"))
     }
 
     @Test
-    fun `a sender's colour that does not read on the page is moved to 7 to 1`() {
+    fun `a sender's color that does not read on the page is moved to 7 to 1`() {
         val body = """<p style="color: #003300">branded</p>"""
         val html = MailHtmlDocument.build(body, emptyMap(), false, dark).html
         assertTrue(html, html.contains("""<body><p style="color: #79ab75">branded</p></body>"""))
@@ -90,16 +90,16 @@ class MailHtmlDocumentTest {
         assertTrue(html, html.contains("background:#ffffff;color:#000000"))
     }
 
-    // --- links: drawn in the colour their contrast is judged in ------------------------------
+    // --- links: drawn in the color their contrast is judged in ------------------------------
 
     @Test
-    fun `the page draws links in its theme's link colour`() {
+    fun `the page draws links in its theme's link color`() {
         val html = MailHtmlDocument.build("<p>hi</p>", emptyMap(), false, dark.copy(link = "#123456")).html
         assertTrue(html, html.contains("a[href]{color:#123456}"))
     }
 
     @Test
-    fun `a page's links default to the colours Chromium draws them in, where those read`() {
+    fun `a page's links default to the colors Chromium draws them in, where those read`() {
         assertEquals("#9e9eff", dark.link)
         assertEquals("#0000ee", light.link)
         assertEquals("#0000ee", MailHtmlTheme.LIGHT.link)
@@ -107,7 +107,7 @@ class MailHtmlDocumentTest {
     }
 
     @Test
-    fun `on the app's dark surface a link is drawn in a colour that reads at 7 to 1 there`() {
+    fun `on the app's dark surface a link is drawn in a color that reads at 7 to 1 there`() {
         // #9e9eff is 4.75:1 on the default dark theme's #3a3a3c.
         val surface = MailHtmlTheme(background = "#3a3a3c", foreground = "#ffffff", isDark = true)
         val (link, page) = listOf(surface.link, "#3a3a3c").map { MailReadableHtml.parse(it, legacy = false)!! }
@@ -118,7 +118,7 @@ class MailHtmlDocumentTest {
     }
 
     @Test
-    fun `a link on the sender's white background is judged in the colour the paper draws it in`() {
+    fun `a link on the sender's white background is judged in the color the paper draws it in`() {
         // #0000ee reads on white at 9.4:1, so both links stay the paper's own blue.
         val body = """<table bgcolor="#ffffff"><tbody><tr><td><a href="https://example.com/a">Sign up</a></td></tr></tbody></table>""" +
             """<p><a href="https://example.com/b">Another</a></p>"""
@@ -127,7 +127,7 @@ class MailHtmlDocumentTest {
     }
 
     @Test
-    fun `a link on a sender's background it does not read on is given a colour that does`() {
+    fun `a link on a sender's background it does not read on is given a color that does`() {
         val body = """<table bgcolor="#333333"><tbody><tr><td><a href="https://example.com/a">Sign up</a></td></tr></tbody></table>"""
         val html = MailHtmlDocument.build(body, emptyMap(), false, dark).html
         val given = Regex("""<a href="https://link.invalid/0" style="color: (#[0-9a-f]{6})">""").find(html)?.groupValues?.get(1)

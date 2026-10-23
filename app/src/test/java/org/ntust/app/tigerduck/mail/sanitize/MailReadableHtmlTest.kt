@@ -20,7 +20,7 @@ import java.util.Locale
 class MailReadableHtmlTest {
     private fun readable(raw: String) = MailReadableHtml(HtmlSanitizer.sanitize(raw, allowRemoteImages = false).html)
 
-    // The Apple app's two pages, so the colours its tests expect are the ones expected here.
+    // The Apple app's two pages, so the colors its tests expect are the ones expected here.
     private fun MailReadableHtml.onApp() = adjust(pageBackgroundHex = "#000000", pageForegroundHex = "#ffffff", linkForegroundHex = "#9e9eff")
     private fun MailReadableHtml.onLight() = adjust(pageBackgroundHex = "#ffffff", pageForegroundHex = "#000000", linkForegroundHex = "#0000ee")
 
@@ -30,10 +30,10 @@ class MailReadableHtmlTest {
         blue = (value and 0xFF) / 255.0,
     )
 
-    // --- whether a mail sets colours of its own, which opens it on white paper -------------
+    // --- whether a mail sets colors of its own, which opens it on white paper -------------
 
     @Test
-    fun `a mail says whether it sets colours of its own`() {
+    fun `a mail says whether it sets colors of its own`() {
         val cases = listOf(
             "<p>Hello</p>" to false,
             """<p style="font-size: 14px; border-left: 1px solid #cccccc">Hello</p>""" to false,
@@ -125,7 +125,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `text over a background image keeps its colour`() {
+    fun `text over a background image keeps its color`() {
         val page = readable(
             """<div style="border-image: linear-gradient(#000000, #000000) fill 1"><font color="#333333">Over an image</font></div>""" +
                 """<table background="paper.png"><tr><td style="background-image: url(paper.png)"><font color="#333333">On the page</font></td></tr></table>""",
@@ -180,7 +180,7 @@ class MailReadableHtmlTest {
 
     /**
      * WebKit paints a table's background over its grid only, so its caption is judged on what the
-     * table sits on, and given back the colour the table was given in its place
+     * table sits on, and given back the color the table was given in its place
      * (https://github.com/tigerduck-app/tigerduck-app/issues/677). Chromium paints it the same way.
      */
     @Test
@@ -213,7 +213,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `text on a background colour this cannot read keeps its colour`() {
+    fun `text on a background color this cannot read keeps its color`() {
         val page = readable(
             """<div style="background-color: hsl(0 0% 0%)"><font color="#333333">a</font></div>""" +
                 """<table><tr><td bgcolor="#000000ff"><font color="#333333">b</font></td></tr></table><p><font color="#333333">c</font></p>""",
@@ -257,7 +257,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `only the text colour changes`() {
+    fun `only the text color changes`() {
         val page = readable("""<p style="color: #333333 !important; background-color: transparent; border: 1px solid #333333">Notice</p>""")
         assertEquals(
             """<p style="color: #959595 !important; background-color: transparent; border: 1px solid #333333">Notice</p>""",
@@ -293,18 +293,18 @@ class MailReadableHtmlTest {
             }
         }
         for (level in 0..255) {
-            val grey = rgb(level * 0x010101)
+            val gray = rgb(level * 0x010101)
             for (page in listOf(rgb(0x000000), rgb(0xFFFFFF))) {
-                val fixed = MailReadableHtml.readable(grey, page) ?: continue
-                assertTrue("${grey.css} became ${fixed.css}", fixed.red == fixed.green && fixed.green == fixed.blue)
+                val fixed = MailReadableHtml.readable(gray, page) ?: continue
+                assertTrue("${gray.css} became ${fixed.css}", fixed.red == fixed.green && fixed.green == fixed.blue)
             }
         }
     }
 
-    // --- text with no colour of its own, and links ---------------------------------------------
+    // --- text with no color of its own, and links ---------------------------------------------
 
     @Test
-    fun `a highlight with no colour of its own is given one`() {
+    fun `a highlight with no color of its own is given one`() {
         val html = """<p>Read <span style="background-color: #ffff00">this</span> first</p>"""
         val page = readable(html)
         assertEquals("""<p>Read <span style="background-color: #ffff00; color: #545454">this</span> first</p>""", page.onApp())
@@ -312,7 +312,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a background gets back the colour the sender meant`() {
+    fun `a background gets back the color the sender meant`() {
         val page = readable("""<div style="color: #000000">Hi <span style="background-color: #ffff00">there</span></div>""")
         assertEquals("""<div style="color: #959595">Hi <span style="background-color: #ffff00; color: #000000">there</span></div>""", page.onApp())
     }
@@ -330,7 +330,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `every highlight gets back the colour the sender meant, not only the first`() {
+    fun `every highlight gets back the color the sender meant, not only the first`() {
         val page = readable(
             """<div style="color: #000000"><span style="background-color: #ffff00">a</span> <span style="background-color: #ffff00">b</span></div>""",
         )
@@ -342,7 +342,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a colour that inherits is the parent's, and fixing goes on below it`() {
+    fun `a color that inherits is the parent's, and fixing goes on below it`() {
         for (keyword in listOf("inherit", "currentColor", "unset")) {
             val page = readable(
                 """<div style="color: #333333"><p style="color: $keyword"><span style="background-color: #ffff00">a</span></p>""" +
@@ -358,7 +358,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a background colour set back to its initial value is none`() {
+    fun `a background color set back to its initial value is none`() {
         for (keyword in listOf("initial", "unset")) {
             val page = readable("""<p style="background-color: $keyword; color: #ffffff">x</p>""")
             assertEquals(keyword, """<p style="background-color: $keyword; color: #595959">x</p>""", page.onLight())
@@ -384,7 +384,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a link on a dark background of the sender's is given a colour that reads there`() {
+    fun `a link on a dark background of the sender's is given a color that reads there`() {
         val input = """<div style="background-color: #000000"><a href="https://example.com">My Link</a></div>"""
         // #002244 has too little contrast on the sender's #000000.
         val adjusted = MailReadableHtml(input).adjust(
@@ -399,7 +399,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a highlight inside a link starts from the link colour`() {
+    fun `a highlight inside a link starts from the link color`() {
         val page = readable("""<p><a href="https://a.example"><span style="background-color: #ffff00">Marked</span> link</a></p>""")
         assertEquals(
             """<p><a href="https://a.example"><span style="background-color: #ffff00; color: #4e48a1">Marked</span> link</a></p>""",
@@ -408,7 +408,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a link inside coloured text keeps the link colour`() {
+    fun `a link inside colored text keeps the link color`() {
         val page = readable("""<div style="background-color: #000000; color: #ffffff">Text <a href="https://a.example">link</a></div>""")
         assertEquals(
             """<div style="background-color: #000000; color: #ffffff">Text <a href="https://a.example" style="color: #6092ff">link</a></div>""",
@@ -416,7 +416,7 @@ class MailReadableHtmlTest {
         )
     }
 
-    // --- colour values -------------------------------------------------------------------------
+    // --- color values -------------------------------------------------------------------------
 
     @Test
     fun `relative luminance and contrast match WCAG 2 definition`() {
@@ -430,7 +430,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `every CSS form of a colour is read`() {
+    fun `every CSS form of a color is read`() {
         val forms = listOf(
             "#333", "#333F", "#333333", "#333333ff", "rgb(51, 51, 51)", "rgba(51, 51, 51, 1)", "RGB(20% 20% 20%)",
             "rgb(51 51 51 / 100%)", "rgba(51 51 51 / 1)",
@@ -441,7 +441,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `named and translucent colours are read`() {
+    fun `named and translucent colors are read`() {
         assertEquals(rgb(0x2F4F4F), MailReadableHtml.parse("DarkSlateGray", legacy = false))
         assertEquals(rgb(0x663399), MailReadableHtml.parse("rebeccapurple", legacy = true))
         assertEquals(0.0, MailReadableHtml.parse("transparent", legacy = false)!!.alpha, 0.0)
@@ -465,8 +465,8 @@ class MailReadableHtmlTest {
     }
 
     /**
-     * `bgcolor` and `<font color>` follow HTML's legacy colour rules, which read `#333333ff` or
-     * `rgb()` as some other colour, so only the forms both rules agree on are read there.
+     * `bgcolor` and `<font color>` follow HTML's legacy color rules, which read `#333333ff` or
+     * `rgb()` as some other color, so only the forms both rules agree on are read there.
      */
     @Test
     fun `a background CSS does not take is no background`() {
@@ -492,7 +492,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `a fixed colour is written as hex`() {
+    fun `a fixed color is written as hex`() {
         val page = readable(
             """<p style="color: rgb(51 51 51 / 100%)">a</p><p style="color: hsl(0 0% 20%)">b</p>""" +
                 """<p><font color="DarkSlateGray">c</font><font color="#333333ff">d</font></p>""",
@@ -504,7 +504,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `font color takes the colour the sender wrote, past its surrounding spaces`() {
+    fun `font color takes the color the sender wrote, past its surrounding spaces`() {
         val page = MailReadableHtml("""<font color=" #333333 ">x</font>""")
         assertEquals("""<font color=" #959595 ">x</font>""", page.onApp())
     }
@@ -512,7 +512,7 @@ class MailReadableHtmlTest {
     // --- bounds ----------------------------------------------------------------------------------
 
     @Test
-    fun `colours deeper than the cap stay as sent`() {
+    fun `colors deeper than the cap stay as sent`() {
         val cap = MailReadableHtml.MAXIMUM_DEPTH
         for ((wrappers, fixed) in listOf(cap - 1 to true, cap to false)) {
             val html = "<div>".repeat(wrappers) + """<font color="#333333">x</font>""" + "</div>".repeat(wrappers)
@@ -522,10 +522,10 @@ class MailReadableHtmlTest {
 
     @Test
     fun `past the search cap a fix is white or black`() {
-        val colours = (0..MailReadableHtml.MAXIMUM_SEARCHES).map {
+        val colors = (0..MailReadableHtml.MAXIMUM_SEARCHES).map {
             String.format(Locale.ROOT, "#%02x%02x%02x", it % 16, it / 16 % 16, it / 256)
         }
-        val page = MailReadableHtml(colours.joinToString("") { """<font color="$it">x</font>""" }).onApp()
+        val page = MailReadableHtml(colors.joinToString("") { """<font color="$it">x</font>""" }).onApp()
         assertTrue(page.startsWith("""<font color="#959595">x</font>"""))
         assertTrue(page.endsWith("""<font color="#ffffff">x</font>"""))
         assertEquals(2, page.split("#ffffff").size)
@@ -554,7 +554,7 @@ class MailReadableHtmlTest {
      * reads, is already quoted so.
      */
     @Test
-    fun `an element left alone keeps its colour`() {
+    fun `an element left alone keeps its color`() {
         assertEquals(
             """<p><font color="#959595">a</font> <font color="#ffffff">b</font></p>""",
             MailReadableHtml("<p><font color=#333333>a</font> <font color='#ffffff'>b</font></p>").onApp(),
@@ -575,7 +575,7 @@ class MailReadableHtmlTest {
             allowRemoteImages = false,
         ).html
         val adjusted = MailReadableHtml(input).onApp()
-        assertNotEquals("the colour is fixed", input, adjusted)
+        assertNotEquals("the color is fixed", input, adjusted)
         assertEquals(MailReadableHtml.targets(input), MailReadableHtml.targets(adjusted))
         assertEquals(2, MailReadableHtml.targets(adjusted).size)
     }
@@ -591,7 +591,7 @@ class MailReadableHtmlTest {
     }
 
     @Test
-    fun `either page of the corpus changes only colours`() {
+    fun `either page of the corpus changes only colors`() {
         val carriers = """<p style="font-family: &quot;A&amp;B&quot;, serif; color: #808080 !important">x</p>""" +
             """<div style="font-family: 'Noto Sans'; background-color: #ffffff">y</div>""" +
             """<div style="background-color: #000000 !important"><a href="https://a.example">z</a></div><font color="#808080">w</font>"""
@@ -606,7 +606,7 @@ class MailReadableHtmlTest {
         )
         val given = Regex("""; color: #[0-9a-f]{6}(?=")| style="color: #[0-9a-f]{6}"""")
         val hex = Regex("#[0-9a-f]{6}")
-        fun colourless(html: String) = hex.replace(given.replace(html, ""), "#")
+        fun colorless(html: String) = hex.replace(given.replace(html, ""), "#")
         for (vector in HtmlSanitizerTest.corpus) {
             val sanitized = HtmlSanitizer.sanitize(vector + carriers, allowRemoteImages = false).html
             val page = MailReadableHtml(sanitized)
@@ -619,12 +619,12 @@ class MailReadableHtmlTest {
                     assertFalse("'$token' in: $vector", html.lowercase().contains(token))
                 }
                 assertEquals(vector, MailHtmlDocument.rewriteLinks(sanitized).links, MailHtmlDocument.rewriteLinks(html).links)
-                assertEquals(vector, colourless(sanitized), colourless(html))
+                assertEquals(vector, colorless(sanitized), colorless(html))
             }
         }
     }
 
-    // --- one colour at a time --------------------------------------------------------------------
+    // --- one color at a time --------------------------------------------------------------------
 
     @Test
     fun `readable returns null when text already passes 7 to 1 contrast`() {

@@ -145,7 +145,7 @@ fun SchoolMailMessageScreen(
     // below follow the app's own resolved theme (MainActivity's themeMode override -- "dark"
     // or "light" -- can disagree with the OS). TigerDuckTheme.isDarkMode is the same
     // Compose-observable value MainActivity mirrors that resolved theme into, so this stays
-    // in lockstep with the colours right next to it instead of just the OS half of the time.
+    // in lockstep with the colors right next to it instead of just the OS half of the time.
     val isDark = TigerDuckTheme.isDarkMode
     val appTheme = MailHtmlTheme(background = cs.surface.toCssHex(), foreground = cs.onSurface.toCssHex(), isDark = isDark)
     // Only a dark app has a darker page to leave: in light theme the surface already is one, and
@@ -153,12 +153,12 @@ fun SchoolMailMessageScreen(
     // MailHtmlTheme.page decides it, for this frame and for the document the view model draws.
     val onLightPaper = appTheme.page(viewInLight) != appTheme
     val pageColor = if (onLightPaper) MailHtmlTheme.LIGHT_PAPER else cs.surface
-    // Keyed on appTheme (a data class, so this only relaunches on a genuine colour change, not
+    // Keyed on appTheme (a data class, so this only relaunches on a genuine color change, not
     // every recomposition): pushing it into the view model directly from the composable body
     // would be an unguarded side effect of composition, which can run speculatively or be
     // abandoned. SchoolMailMessageViewModel.setMailTheme also rebuilds the already-loaded
     // document when the page it is drawn on actually changes, so a dark/light flip while a mail
-    // is open recolours it instead of leaving it stale.
+    // is open recolors it instead of leaving it stale.
     LaunchedEffect(appTheme) { viewModel.setMailTheme(appTheme) }
 
     LaunchedEffect(Unit) { viewModel.load() }
@@ -333,7 +333,7 @@ fun SchoolMailMessageScreen(
                                     emptySet()
                                 }
                             }
-                            // Spec §9.3: the HTML sits on the app's own surface colour, not
+                            // Spec §9.3: the HTML sits on the app's own surface color, not
                             // hardcoded white paper, so it reads as part of the app in dark theme
                             // -- unless the reader asked for white paper ("View in light mode").
                             Surface(

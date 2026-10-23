@@ -16,16 +16,16 @@ import kotlin.math.roundToInt
  *
  * A sanitized mail document, ready to draw on either page with its unreadable text fixed.
  *
- * On a page, a text colour under 7:1 (WCAG 2) against the backgrounds behind it moves to the
- * nearest OKLCH lightness that reaches it, or as close as any colour gets, keeping its hue and
- * as much chroma as sRGB holds. That covers colours the sender set, and the colour an element
- * with a background, or a table caption, but no colour of its own inherits, which it is then
- * given. Text on a background this cannot read keeps its colour. Only `color` values change,
+ * On a page, a text color under 7:1 (WCAG 2) against the backgrounds behind it moves to the
+ * nearest OKLCH lightness that reaches it, or as close as any color gets, keeping its hue and
+ * as much chroma as sRGB holds. That covers colors the sender set, and the color an element
+ * with a background, or a table caption, but no color of its own inherits, which it is then
+ * given. Text on a background this cannot read keeps its color. Only `color` values change,
  * as `#rrggbb`.
  */
 class MailReadableHtml(private val html: String) {
 
-    /** Whether the mail sets a text or background colour of its own anywhere. */
+    /** Whether the mail sets a text or background color of its own anywhere. */
     val setsColors: Boolean
     private val document: Document?
     private val nodes: List<InternalNode>
@@ -110,7 +110,7 @@ class MailReadableHtml(private val html: String) {
      * links are [linkForegroundHex]. With nothing to fix, or with a link or image target unlike
      * [html]'s, it is [html].
      *
-     * Each call rewrites the one parsed document, setting every colour it judges either to its
+     * Each call rewrites the one parsed document, setting every color it judges either to its
      * fix or back to what was sent, so pages come out the same in any order, but never two at once.
      */
     fun adjust(
@@ -187,8 +187,8 @@ class MailReadableHtml(private val html: String) {
     }
 
     /**
-     * What text in an inherited colour needs on [behind]: nothing while the colour shown reads
-     * there, else the colour the sender meant, made readable.
+     * What text in an inherited color needs on [behind]: nothing while the color shown reads
+     * there, else the color the sender meant, made readable.
      */
     private fun fix(inherited: Shown, behind: RGBA?, fixes: Fixes): RGBA? {
         val displayed = inherited.displayed
@@ -235,7 +235,7 @@ class MailReadableHtml(private val html: String) {
 
     private class Sent(
         val color: RGBA?,
-        /** `inherit`, `currentcolor` or `unset`: the text is in the colour its parent shows. */
+        /** `inherit`, `currentcolor` or `unset`: the text is in the color its parent shows. */
         val inherits: Boolean = false,
         val attribute: String,
         val value: String,
@@ -243,8 +243,8 @@ class MailReadableHtml(private val html: String) {
     )
 
     /**
-     * The colour a node's text was meant in and the one it is drawn in. Never changed in place: a
-     * node with no colour of its own starts from its parent's, and a fix to it is its own, not the
+     * The color a node's text was meant in and the one it is drawn in. Never changed in place: a
+     * node with no color of its own starts from its parent's, and a fix to it is its own, not the
      * parent's, or every sibling after it would start from that fix.
      */
     private data class Shown(
@@ -451,7 +451,7 @@ class MailReadableHtml(private val html: String) {
 
         private val COLORLESS_KEYWORDS = setOf("currentcolor", "inherit", "unset", "revert", "revert-layer")
 
-        /** On `color`, keywords that draw the text in its parent's colour. */
+        /** On `color`, keywords that draw the text in its parent's color. */
         private val INHERITING_KEYWORDS = setOf("inherit", "currentcolor", "unset")
 
         /** On `background-color`, keywords that leave no background: its initial value is transparent. */
@@ -463,7 +463,7 @@ class MailReadableHtml(private val html: String) {
          * The link and image targets the HTML parser reads off [html], in document order, as
          * `href=`/`src=` and the value. Read off the parsed tree rather than the markup, so text
          * that reads like an attribute is no target, and a page whose output the parser reads
-         * back with every target as it was keeps its colour fixes.
+         * back with every target as it was keeps its color fixes.
          */
         fun targets(html: String): List<String> = targets(Jsoup.parseBodyFragment(html))
 
@@ -625,7 +625,7 @@ class MailReadableHtml(private val html: String) {
         private fun function(value: String): RGBA? {
             val open = value.indexOf('(')
             if (open == -1 || !value.endsWith(')')) return null
-            // Not trimmed: `rgb (51, 51, 51)` is no colour to CSS.
+            // Not trimmed: `rgb (51, 51, 51)` is no color to CSS.
             val name = value.substring(0, open)
             if (name != "rgb" && name != "rgba") return null
             val args = value.substring(open + 1, value.length - 1).trim()
@@ -662,7 +662,7 @@ class MailReadableHtml(private val html: String) {
             val isPercent = text.endsWith('%')
             val digits = if (isPercent) text.substring(0, text.length - 1) else text
             // CSS's own number syntax, not toDouble's, which also takes `0.` and `1.`: a value
-            // a browser drops would be read here as a colour the page never shows.
+            // a browser drops would be read here as a color the page never shows.
             if (!CSS_NUMBER.matches(digits)) return null
             val num = digits.toDoubleOrNull() ?: return null
             val normalized = num / (if (isPercent) 100.0 else scale)

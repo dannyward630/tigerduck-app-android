@@ -20,10 +20,10 @@ data class LinkedHtml(val html: String, val links: List<MailLink>)
 
 /**
  * The page's own surface, so a mail reads as part of the app rather than as white paper in a
- * dark room -- or [LIGHT]'s white paper, when the reader asks for it. A sender's colours are kept
- * wherever they read: only a text colour under 7:1 against what it is drawn on moves, to the
+ * dark room -- or [LIGHT]'s white paper, when the reader asks for it. A sender's colors are kept
+ * wherever they read: only a text color under 7:1 against what it is drawn on moves, to the
  * nearest lightness that reads, keeping its hue (see [MailReadableHtml]). Backgrounds, images
- * and every other colour are left as sent, so logos, screenshots and branded mail are not
+ * and every other color are left as sent, so logos, screenshots and branded mail are not
  * distorted.
  * [isDark] drives `color-scheme`, which is what makes mail that opts into `prefers-color-scheme`
  * follow along, and makes UA-default form controls legible.
@@ -33,8 +33,8 @@ data class MailHtmlTheme(
     val foreground: String,
     val isDark: Boolean,
     /**
-     * The colour the page draws a link in. The page's own CSS sets it, so a link on a sender's
-     * background has its contrast judged in the colour it is drawn in. By default it is the one
+     * The color the page draws a link in. The page's own CSS sets it, so a link on a sender's
+     * background has its contrast judged in the color it is drawn in. By default it is the one
      * Chromium draws a link in under [isDark]'s `color-scheme`, as the page did before setting
      * one, and as the Apple app's WebKit does -- moved, as the readability pass moves text, where
      * that does not read at 7:1 on [background]. The Apple app's dark page is black, where it
@@ -43,10 +43,10 @@ data class MailHtmlTheme(
     val link: String = linkOn(background, isDark),
 ) {
     companion object {
-        /** Chromium's link colour under `color-scheme: light`. */
+        /** Chromium's link color under `color-scheme: light`. */
         const val LIGHT_LINK = "#0000ee"
 
-        /** Chromium's link colour under `color-scheme: dark`. */
+        /** Chromium's link color under `color-scheme: dark`. */
         const val DARK_LINK = "#9e9eff"
 
         private fun linkOn(background: String, isDark: Boolean): String {
@@ -60,9 +60,9 @@ data class MailHtmlTheme(
         val LIGHT_PAPER = Color.White
 
         /**
-         * White paper: "View in light mode". A mail that sets colours of its own
+         * White paper: "View in light mode". A mail that sets colors of its own
          * ([MailReadableHtml.setsColors]) opens on it in a dark app, as in the Apple app: it is
-         * the page such a mail was written against, where its colours need the fewest fixes.
+         * the page such a mail was written against, where its colors need the fewest fixes.
          */
         val LIGHT = MailHtmlTheme(background = LIGHT_PAPER.toCssHex(), foreground = Color.Black.toCssHex(), isDark = false)
     }
@@ -151,7 +151,7 @@ object MailHtmlDocument {
     ): LinkedHtml = build(MailReadableHtml(sanitizedHtml), images, allowRemoteImages, theme)
 
     /**
-     * [build] from a sanitized mail already read for its colours, which the view model reads first
+     * [build] from a sanitized mail already read for its colors, which the view model reads first
      * to choose the page it opens on.
      */
     fun build(
@@ -162,7 +162,7 @@ object MailHtmlDocument {
     ): LinkedHtml {
         val rewritten = rewritten(inlineCids(readable.on(theme), images))
         // Every href stripped (see rewriteLinks): the anchors were judged as links, drawn in the
-        // link colour, and are text now, drawn in the colour around them -- which may not read on
+        // link color, and are text now, drawn in the color around them -- which may not read on
         // a background of their own. So the page is judged again as it now is.
         val body = if (rewritten.stripped) {
             LinkedHtml(MailReadableHtml(rewritten.linked.html).on(theme), emptyList())

@@ -136,7 +136,7 @@ class SchoolMailMessageViewModel @Inject constructor(
         val selfAddress: String? = null,
         /**
          * "View in light mode": the mail on [MailHtmlTheme.LIGHT]'s white paper while the app is
-         * drawn dark (see [MailHtmlTheme.page]). On for a mail that sets colours of its own, and
+         * drawn dark (see [MailHtmlTheme.page]). On for a mail that sets colors of its own, and
          * from then on the reader's to change; see [setViewInLight].
          */
         val viewInLight: Boolean = false,
@@ -147,7 +147,7 @@ class SchoolMailMessageViewModel @Inject constructor(
     /**
      * Whether this mail is viewed in light mode, null until its HTML has chosen. As the Apple app's
      * `hasPickedPage`, it is chosen once, before the mail first shows -- white paper for a mail
-     * that sets colours of its own ([MailReadableHtml.setsColors]) -- so the mail is never drawn
+     * that sets colors of its own ([MailReadableHtml.setsColors]) -- so the mail is never drawn
      * on one page and redrawn on the other, and a page the reader picks afterwards stays picked.
      *
      * Kept in [savedStateHandle], so a process restore of this screen opens the mail on the page
@@ -183,19 +183,19 @@ class SchoolMailMessageViewModel @Inject constructor(
     }
 
     /**
-     * The app's own colours for the mail HTML page (spec §9.3 no longer means white paper). There
+     * The app's own colors for the mail HTML page (spec §9.3 no longer means white paper). There
      * is no Compose theme access from a view model, so [SchoolMailMessageScreen] pushes its current
      * `MaterialTheme.colorScheme` in through [setMailTheme] from a `LaunchedEffect` keyed on it;
      * [page] is drawn in it, or on white paper instead (see [viewInLight]).
      *
-     * A genuine change of [page] -- not merely a recomposition that recomputes the same colours,
+     * A genuine change of [page] -- not merely a recomposition that recomputes the same colors,
      * nor a change of a dark theme the mail is on white paper over -- also rebuilds the document
      * already on screen, whenever content is already [Content.Ready], from the sanitized HTML and
      * inline images already in hand: no re-fetch, no re-sanitize, just [MailHtmlDocument.build]
      * run again. Without this, the WebView's *native* background (set independently, straight from
-     * the current colour scheme) repaints immediately on a dark/light flip while a mail is open,
-     * but the document itself would keep the colours it was built with -- a stale,
-     * wrongly-coloured page inside a freshly-coloured frame, which is exactly what this theming
+     * the current color scheme) repaints immediately on a dark/light flip while a mail is open,
+     * but the document itself would keep the colors it was built with -- a stale,
+     * wrongly-colored page inside a freshly-colored frame, which is exactly what this theming
      * exists to prevent.
      */
     private var appTheme = MailHtmlTheme.LIGHT
@@ -310,11 +310,11 @@ class SchoolMailMessageViewModel @Inject constructor(
 
     /**
      * Turns a fetched body into the [Content.Ready] the screen renders, entirely on [io], on the
-     * page this mail is shown on: the one already chosen, or else the one its colours choose, so
+     * page this mail is shown on: the one already chosen, or else the one its colors choose, so
      * the first document is already the right one.
      *
      * Every step here is a jsoup parse or worse over a string the *sender* chose: the sanitizer's
-     * parse plus `Cleaner` plus its per-element CSS filter, [MailReadableHtml]'s parse and colour
+     * parse plus `Cleaner` plus its per-element CSS filter, [MailReadableHtml]'s parse and color
      * search, [MailHtmlDocument.build]'s link parses and its Base64-encoding of every inline image
      * into the document string, another parse for the plain-text fallback, and the link/warning
      * scan on top. `viewModelScope.launch`
@@ -391,7 +391,7 @@ class SchoolMailMessageViewModel @Inject constructor(
                     st.copy(remoteImagesAllowed = true, content = current.copy(html = html, document = document))
                 }
                 // This swap wins over any theme rebuild that was in flight -- their guard sees the
-                // new html and stands down -- so if the page moved while this ran, the colours it
+                // new html and stands down -- so if the page moved while this ran, the colors it
                 // has just installed are stale and only this knows it.
                 if (page != builtWith) rebuildDocument(page)
             } finally {
