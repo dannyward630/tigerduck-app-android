@@ -93,7 +93,8 @@ class SchoolMailListViewModel @Inject constructor(
          * Only ever describes a *load*: [load], [fetchFirstPage], [paginate]. A failed search, like a
          * failed one-off action, reports through [actionError] instead, so it can neither paint
          * the header dot red for the rest of the session nor replace a list that loaded perfectly
-         * well with the "couldn't load" empty state.
+         * well with the "couldn't load" empty state. A folder a search finds recreated is read
+         * again, though ([reloadRecreated]): that is a load of the list, and its failure is one.
          */
         val loadState: LoadState = LoadState.Idle,
         /**
@@ -921,8 +922,11 @@ class SchoolMailListViewModel @Inject constructor(
      * while the server keeps failing. Only a page of that same old generation, though: a refresh
      * that failed on another folder may already have cached this one under the new generation, and
      * that page is the only offline copy of the new mailbox. A reload that lands writes its own.
+     *
+     * [fetch] false when the server was just found out of reach: the old mailbox's rows and page
+     * go as they would after a failed reload, without asking the server again at once.
      */
-    private suspend fun reloadRecreated(folders: Map<String, Long>): Boolean {
+    private suspend fun reloadRecreated(folders: Map<String, Long>, fetch: Boolean = true): Boolean {
         val selection = _state.value.selected
         val list = listGeneration
         val generation = account.accountGeneration
@@ -932,7 +936,7 @@ class SchoolMailListViewModel @Inject constructor(
         // the folder recreated -- starts none for it: [fetchFirstPage] would otherwise take the new
         // selection and account for its own and send, cache and date a load on their behalf.
         if (!stillCurrent(selection, generation) || list != listGeneration) return false
-        if (fetchFirstPage()) return true
+        if (fetch && fetchFirstPage()) return true
         // Only while this is still the list that was found stale: a newer one owns its rows.
         if (stillCurrent(selection, generation) && list == listGeneration) {
             _state.update { st -> st.copy(messages = st.messages.filterNot { it.folder in folders }, cursors = st.cursors - folders.keys) }
@@ -1141,7 +1145,10 @@ class SchoolMailListViewModel @Inject constructor(
             // back on, and the loaded mail it would search is not this account's.
             var failure: MailError? = null
             var serverUnreachable = false
+            // The version the list had of each folder as its outcome was asked for: see `recreated` below.
+            val listedBefore = mutableMapOf<String, Long?>()
             val outcomes = _state.value.targets.map { folder ->
+                listedBefore[folder] = folderValidity[folder]
                 // Under the version the list read the folder's rows under, which they then keep.
                 val loadedMatches = {
                     SearchOutcome.LoadedOnly(
@@ -1199,15 +1206,24 @@ class SchoolMailListViewModel @Inject constructor(
             // A folder the search read under another UIDVALIDITY than the list's rows of it: it was
             // recreated, and those rows name other mail now. The list reads it again, as it does for
             // a page of results that comes back recreated ([loadMoreSearchResults]); the results
-            // just found are of the folder as it is, and stay.
+            // just found are of the folder as it is, and stay. Only while the list still holds the
+            // version it had as the outcome was asked for: a page that landed meanwhile is newer
+            // than an outcome read before it, whichever version each has, and is not to be dropped.
+            // Not fetched at once from a server the search just found out of reach, either.
             val recreated = outcomes.mapNotNull { (folder, outcome) ->
-                val listed = folderValidity[folder] ?: return@mapNotNull null
+                val listed = listedBefore[folder] ?: return@mapNotNull null
                 val searched = outcome.version ?: return@mapNotNull null
-                if (searched != listed) folder to listed else null
+                if (searched != listed && folderValidity[folder] == listed) folder to listed else null
             }.toMap()
             if (recreated.isNotEmpty()) {
-                reloadRecreated(recreated)
-                if (!stillCurrent(selection, generation) || search != searchGeneration) return
+                reloadRecreated(recreated, fetch = !serverUnreachable)
+                if (!stillCurrent(selection, generation) || search != searchGeneration) {
+                    // As above: a failure that must stick is still this account's, and is shown.
+                    if (account.accountGeneration == generation) {
+                        failure?.takeIf { it is MailError.Certificate || it is MailError.AuthFailed }?.let(::searchFail)
+                    }
+                    return
+                }
             }
             refetchIfChangedSince(outcomes.map { it.first }, since)
             failure?.let(::searchFail)

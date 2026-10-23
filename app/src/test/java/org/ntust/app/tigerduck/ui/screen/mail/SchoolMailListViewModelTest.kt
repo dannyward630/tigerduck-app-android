@@ -3075,4 +3075,60 @@ class SchoolMailListViewModelTest {
         assertTrue(repo.deleted.isEmpty())
         assertTrue(vm.state.value.actionError is MailError.FolderChanged)
     }
+
+    @Test
+    fun `a search's older look at a folder reloaded meanwhile does not drop the newer one`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        repo.add(sent, mailSummary(2))
+        vm.loadIfNeeded()
+        // The server cannot search, so the inbox answers from the mail loaded under version 1,
+        // and the sent folder's search is held while the list reads both folders again, recreated.
+        repo.searchUnsupported = true
+        val gate = CompletableDeferred<Unit>()
+        repo.onSearched = { folder -> if (folder == "INBOX") repo.searchGate = gate }
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        repo.onSearched = null
+        repo.searchGate = null
+        repo.pageValidity = 2
+        vm.refresh()
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the newer page was dropped as the old mailbox's", repo.droppedCaches.isEmpty())
+    }
+
+    @Test
+    fun `a certificate failure stays on screen when its search is cleared while a recreated folder reloads`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1, subject = "期中考"))
+        vm.loadIfNeeded()
+        // The inbox's search finds it recreated; the sent folder's cannot trust the certificate.
+        repo.searchValidity = 2
+        repo.searchErrorFolder = sent
+        repo.searchError = MailError.Certificate()
+        // The search is cleared while the recreated inbox is set right.
+        repo.onDropCachedPage = { vm.setSearchText("") }
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue("the certificate failure went unshown", vm.state.value.loadState.let { it is SchoolMailListViewModel.LoadState.Failed && it.error is MailError.Certificate })
+    }
+
+    @Test
+    fun `a recreated folder a search finds as the server goes out of reach is not fetched at once`() {
+        val sent = repo.resolved.nameOf(SpecialFolder.SENT)!!
+        repo.add("INBOX", mailSummary(1, subject = "期中考 old"))
+        vm.loadIfNeeded()
+        val loads = repo.loadsSent.size
+        // The inbox's search finds it recreated, and then the connection is gone for the sent folder's.
+        repo.searchValidity = 2
+        repo.searchErrorFolder = sent
+        repo.searchError = MailError.Network()
+        vm.setSearchText("期中")
+        vm.submitSearch()
+        assertEquals("the list asked an unreachable server again at once", loads, repo.loadsSent.size)
+        assertTrue("the old mailbox's rows stayed", vm.state.value.messages.none { it.folder == "INBOX" })
+        assertEquals(listOf("INBOX" to 1L), repo.droppedCaches)
+    }
 }
