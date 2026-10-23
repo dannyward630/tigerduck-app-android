@@ -39,6 +39,30 @@ class MailReadableHtmlTest {
     }
 
     @Test
+    fun `a colour that inherits is the parent's, and fixing goes on below it`() {
+        for (keyword in listOf("inherit", "currentColor", "unset")) {
+            val page = readable(
+                """<div style="color: #333333"><p style="color: $keyword"><span style="background-color: #ffff00">a</span></p>""" +
+                    """<span style="color: $keyword; background-color: #ffff00">b</span></div>""",
+            )
+            assertEquals(
+                keyword,
+                """<div style="color: #959595"><p style="color: $keyword"><span style="background-color: #ffff00; color: #333333">a</span></p>""" +
+                    """<span style="color: #333333; background-color: #ffff00">b</span></div>""",
+                page.onApp(),
+            )
+        }
+    }
+
+    @Test
+    fun `a background colour set back to its initial value is none`() {
+        for (keyword in listOf("initial", "unset")) {
+            val page = readable("""<p style="background-color: $keyword; color: #ffffff">x</p>""")
+            assertEquals(keyword, """<p style="background-color: $keyword; color: #595959">x</p>""", page.onLight())
+        }
+    }
+
+    @Test
     fun `relative luminance and contrast match WCAG 2 definition`() {
         val white = MailReadableHtml.RGBA(1.0, 1.0, 1.0)
         val black = MailReadableHtml.RGBA(0.0, 0.0, 0.0)

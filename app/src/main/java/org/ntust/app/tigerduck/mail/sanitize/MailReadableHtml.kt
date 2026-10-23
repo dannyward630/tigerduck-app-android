@@ -133,10 +133,14 @@ class MailReadableHtml(private val html: String) {
 
                 when (val kind = node.kind) {
                     is NodeKind.Own -> {
-                        now = Shown(intended = kind.sent.color, displayed = kind.sent.color)
-                        val text = kind.sent.color
-                        if (text != null && text.alpha > 0.0 && behind != null) {
-                            fix = fixes.readable(text.over(behind), behind)
+                        if (kind.sent.inherits) {
+                            fix = fix(inherited, behind, fixes)
+                        } else {
+                            now = Shown(intended = kind.sent.color, displayed = kind.sent.color)
+                            val text = kind.sent.color
+                            if (text != null && text.alpha > 0.0 && behind != null) {
+                                fix = fixes.readable(text.over(behind), behind)
+                            }
                         }
                         val finalValue = if (fix != null) {
                             val range = kind.sent.range
@@ -156,13 +160,7 @@ class MailReadableHtml(private val html: String) {
                         node.give(fix)
                     }
                     NodeKind.Background -> {
-                        val displayed = inherited.displayed
-                        val intended = inherited.intended
-                        if (behind != null && displayed != null && displayed.alpha > 0.0 &&
-                            !reads(displayed.over(behind), behind) && intended != null && intended.alpha > 0.0
-                        ) {
-                            fix = fixes.readable(intended.over(behind), behind) ?: intended.over(behind)
-                        }
+                        fix = fix(inherited, behind, fixes)
                         node.give(fix)
                     }
                 }
@@ -180,6 +178,21 @@ class MailReadableHtml(private val html: String) {
         } catch (_: Exception) {
             return html
         }
+    }
+
+    /**
+     * What text in an inherited colour needs on [behind]: nothing while the colour shown reads
+     * there, else the colour the sender meant, made readable.
+     */
+    private fun fix(inherited: Shown, behind: RGBA?, fixes: Fixes): RGBA? {
+        val displayed = inherited.displayed
+        val intended = inherited.intended
+        if (behind == null || displayed == null || displayed.alpha <= 0.0 || reads(displayed.over(behind), behind) ||
+            intended == null || intended.alpha <= 0.0
+        ) {
+            return null
+        }
+        return fixes.readable(intended.over(behind), behind) ?: intended.over(behind)
     }
 
     // --- Internal Document Data Types ----------------------------------------
@@ -216,6 +229,8 @@ class MailReadableHtml(private val html: String) {
 
     private class Sent(
         val color: RGBA?,
+        /** `inherit`, `currentcolor` or `unset`: the text is in the colour its parent shows. */
+        val inherits: Boolean = false,
         val attribute: String,
         val value: String,
         val range: IntRange,
@@ -429,6 +444,12 @@ class MailReadableHtml(private val html: String) {
         const val MAXIMUM_SEARCHES = 2_000
 
         private val COLORLESS_KEYWORDS = setOf("currentcolor", "inherit", "unset", "revert", "revert-layer")
+
+        /** On `color`, keywords that draw the text in its parent's colour. */
+        private val INHERITING_KEYWORDS = setOf("inherit", "currentcolor", "unset")
+
+        /** On `background-color`, keywords that leave no background: its initial value is transparent. */
+        private val INITIAL_KEYWORDS = setOf("initial", "unset")
         private val TARGET_REGEX = Regex("""\s(?:href|src)="[^"]*"""")
 
         fun targets(html: String): List<String> =
@@ -475,6 +496,7 @@ class MailReadableHtml(private val html: String) {
             if (element.normalName() == "table" && paintsColumns(element)) return Layer.Unknown
             val decl = style.effective("background-color")
             if (decl != null) {
+                if (decl.value.lowercase(Locale.ROOT) in INITIAL_KEYWORDS) return Layer.None
                 return parse(decl.value, legacy = false)?.let { Layer.ColorLayer(it) } ?: Layer.Unknown
             }
             val bgAttr = legacyValue("bgcolor", element) ?: return Layer.None
@@ -527,6 +549,7 @@ class MailReadableHtml(private val html: String) {
             if (decl != null) {
                 return Sent(
                     color = parse(decl.value, legacy = false),
+                    inherits = decl.value.lowercase(Locale.ROOT) in INHERITING_KEYWORDS,
                     attribute = "style",
                     value = style.text,
                     range = decl.valueRange,
