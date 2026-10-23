@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.data.sharing
 
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Term
+import org.ntust.app.tigerduck.network.CourseService
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.Locale
@@ -41,10 +42,11 @@ internal object PackedClassTableCode {
         ).split(' ')
 
     /**
-     * A course code's head and tail: the head is the first that fits of `3` and two letters, two
-     * letters, or `3` and one letter (the NTU and NTNU courses, such as `3N1004701`).
+     * A course code's head and tail, by the app's one course-number rule: the head is the first
+     * that fits of `3` and two letters, two letters, or `3` and one letter (the NTU and NTNU
+     * courses, such as `3N1004701`).
      */
-    private val COURSE = Regex("(3[A-Z]{2}|[A-Z]{2}|3[A-Z])([A-Z0-9]{6,7})")
+    private val COURSE = CourseService.COURSE_NO
 
     /** Every head's value: two letters, then `3` and two letters, then `3` and one letter. */
     private const val HEAD_VALUES = 676 * 2 + 26

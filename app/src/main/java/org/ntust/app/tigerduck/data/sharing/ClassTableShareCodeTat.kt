@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.data.sharing
 
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Format
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Term
+import org.ntust.app.tigerduck.network.CourseService
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.shared.Periods
 
@@ -67,7 +68,7 @@ fun ClassTableShareCode.Companion.encodeTat(studentId: String, semester: String,
     val written = mutableSetOf<String>()
     val chunks = courses.mapNotNull { course ->
         val courseNo = course.courseNo.uppercase()
-        if (courseNo.length != TAT_COURSE_NO_LENGTH || !isCourseNo(courseNo) || !written.add(courseNo)) {
+        if (courseNo.length != TAT_COURSE_NO_LENGTH || !CourseService.isCourseNo(courseNo) || !written.add(courseNo)) {
             return@mapNotNull null
         }
         val schedule = course.schedule

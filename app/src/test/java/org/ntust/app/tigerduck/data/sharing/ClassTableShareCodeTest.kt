@@ -9,6 +9,7 @@ import org.junit.Assert.fail
 import org.junit.Test
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Format
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Term
+import org.ntust.app.tigerduck.network.CourseService
 import org.ntust.app.tigerduck.shared.Course
 import java.time.Instant
 import kotlin.random.Random
@@ -157,11 +158,15 @@ class ClassTableShareCodeTest {
 
     @Test
     fun `an NTU or NTNU course code is a course, and keeps the head the rule gives it`() {
-        assertTrue(ClassTableShareCode.isCourseNo("3N1004701"))
-        assertTrue(ClassTableShareCode.isCourseNo("3T5287701"))
+        assertTrue(CourseService.isCourseNo("3N1004701"))
+        assertTrue(CourseService.isCourseNo("3T5287701"))
         // 3NG first: the same characters as head 3N with tail G115701.
         val table = code("B00015999", OCTOBER, "1151" to "3N1004701 3NG115701")
         assertEquals(table, ClassTableShareCode.decode(encode(table)!!))
+        assertEquals(
+            listOf(Term("1151", listOf("3N1010003", "CS1010001"))),
+            ClassTableShareCode.decode("HTTPS://NTUST-TAT.WEB.APP/S/TAT11151B000159993N1010003-CS1010001").terms,
+        )
     }
 
     // --- One code for each table ---

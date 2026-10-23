@@ -11,6 +11,7 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode
 import org.ntust.app.tigerduck.data.sharing.ImportedClassTableStore
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
+import org.ntust.app.tigerduck.network.CourseService
 import org.ntust.app.tigerduck.network.MoodleCourseIds
 import org.ntust.app.tigerduck.network.moodle.MoodleCourseApi
 import org.ntust.app.tigerduck.shared.clock.AppClock
@@ -207,7 +208,7 @@ internal suspend fun importDemoClassmates(
     sharedAt: Instant,
 ) {
     for (classmate in classmates) {
-        val courses = classmate.courses.filter { ClassTableShareCode.isCourseNo(it.courseNo) }
+        val courses = classmate.courses.filter { CourseService.isCourseNo(it.courseNo) }
         val code = ClassTableShareCode(
             ClassTableShareCode.Format.TIGER_DUCK,
             classmate.studentId,
