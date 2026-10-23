@@ -67,9 +67,12 @@ class SchoolMailListViewModel @Inject constructor(
     /**
      * [row]'s delete, asked before it is made: [permanently] when it destroys the mail rather than
      * moving it to the trash ([SchoolMailRepository.deletesPermanently]), which asks the harder
-     * question.
+     * question. [generation] is the [MailAccount.accountGeneration] it was asked under; see [write].
      */
-    data class PendingDelete(val row: MailRow, val permanently: Boolean)
+    data class PendingDelete(val row: MailRow, val permanently: Boolean, val generation: Int)
+
+    /** [row]'s move, waiting on the folder it goes to; [generation] as on [PendingDelete]. */
+    data class PendingMove(val row: MailRow, val generation: Int)
 
     data class UiState(
         val chips: List<FolderChip> = emptyList(),
@@ -122,7 +125,7 @@ class SchoolMailListViewModel @Inject constructor(
         /** A delete waiting on its confirmation; [confirmDelete] answers it. */
         val pendingDelete: PendingDelete? = null,
         /** A mail waiting on the folder it is moved to; [moveTo] picks it, [dismissMove] drops it. */
-        val pendingMoveRow: MailRow? = null,
+        val pendingMove: PendingMove? = null,
     ) {
         /** A search under way, or a further page of its matches on its way: the search field spins. */
         val searchBusy: Boolean get() = isSearching || isPagingSearch
@@ -580,16 +583,22 @@ class SchoolMailListViewModel @Inject constructor(
      * Asks before [row] is deleted, as the mail's own screen does: which question depends on
      * whether the delete moves it to the trash or destroys it, and only the server can say (a
      * missing trash is created on the way; see [SchoolMailRepository.deletesPermanently]).
+     *
+     * That answer can take a CREATE and a LIST, and another student can sign in meanwhile. The
+     * question is then nobody's: put to them, its Delete would act on a mail of theirs.
      */
     fun delete(row: MailRow) {
+        val generation = account.accountGeneration
         viewModelScope.launch {
             try {
                 val permanently = repository.deletesPermanently(row.folder)
-                _state.update { it.copy(pendingDelete = PendingDelete(row, permanently)) }
+                if (account.accountGeneration != generation) return@launch
+                _state.update { it.copy(pendingDelete = PendingDelete(row, permanently, generation)) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                actionFail(MailErrors.classify(e))
+                val error = MailErrors.classify(e)
+                if (!dropped(error, generation)) actionFail(error)
             }
         }
     }
@@ -598,18 +607,7 @@ class SchoolMailListViewModel @Inject constructor(
     fun confirmDelete(confirm: Boolean) {
         val pending = _state.value.pendingDelete ?: return
         _state.update { it.copy(pendingDelete = null) }
-        if (!confirm) return
-        val row = pending.row
-        viewModelScope.launch {
-            try {
-                repository.delete(row.folder, row.uid)
-                removeMessage(row.key)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                actionFail(MailErrors.classify(e))
-            }
-        }
+        if (confirm) write(pending.row, pending.generation) { repository.delete(it.folder, it.uid) }
     }
 
     fun moveTargets(row: MailRow): List<String> {
@@ -618,25 +616,40 @@ class SchoolMailListViewModel @Inject constructor(
     }
 
     fun requestMove(row: MailRow) {
-        _state.update { it.copy(pendingMoveRow = row) }
+        _state.update { it.copy(pendingMove = PendingMove(row, account.accountGeneration)) }
     }
 
     fun dismissMove() {
-        _state.update { it.copy(pendingMoveRow = null) }
+        _state.update { it.copy(pendingMove = null) }
     }
 
-    /** Moves [UiState.pendingMoveRow] to [target], one of [moveTargets]. */
+    /** Moves [UiState.pendingMove]'s mail to [target], one of [moveTargets]. */
     fun moveTo(target: String) {
-        val row = _state.value.pendingMoveRow ?: return
-        _state.update { it.copy(pendingMoveRow = null) }
+        val pending = _state.value.pendingMove ?: return
+        _state.update { it.copy(pendingMove = null) }
+        write(pending.row, pending.generation) { repository.move(it.folder, it.uid, target) }
+    }
+
+    /**
+     * Sends a delete or move of [row] asked under [generation], unless the account has moved
+     * since: its folder and UID would then name another student's mail.
+     *
+     * The row leaves the list through the repository's feed ([apply]), as a swipe's mark-read
+     * changes it ([toggleRead]), and not here as well: a write held on the connection can end
+     * after another student signed in over this one, whose list the feed knows to leave alone.
+     * Nor is such a write's failure theirs to see ([dropped]), and least of all a rejected
+     * password, which would mark theirs rejected.
+     */
+    private fun write(row: MailRow, generation: Int, send: suspend (MailRow) -> Unit) {
+        if (account.accountGeneration != generation) return
         viewModelScope.launch {
             try {
-                repository.move(row.folder, row.uid, target)
-                removeMessage(row.key)
+                send(row)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                actionFail(MailErrors.classify(e))
+                val error = MailErrors.classify(e)
+                if (!dropped(error, generation)) actionFail(error)
             }
         }
     }

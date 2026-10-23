@@ -470,7 +470,7 @@ fun SchoolMailScreen(
             },
         )
     }
-    state.pendingMoveRow?.let { row ->
+    state.pendingMove?.row?.let { row ->
         val folders = state.folders
         TigerDuckDialog(
             onDismissRequest = { viewModel.dismissMove() },

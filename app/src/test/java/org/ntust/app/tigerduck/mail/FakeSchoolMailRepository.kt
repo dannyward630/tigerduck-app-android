@@ -27,6 +27,12 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     /** Set, [setSeen] waits on it after reading the account: the write held on the connection while the test acts. */
     var seenGate: CompletableDeferred<Unit>? = null
 
+    /** Set, [move] and [delete] wait on it after reading the account, as [seenGate] holds [setSeen]. */
+    var writeGate: CompletableDeferred<Unit>? = null
+
+    /** Set, [deletesPermanently] waits on it first: the CREATE and LIST a missing trash costs, held out while the test acts. */
+    var trashGate: CompletableDeferred<Unit>? = null
+
     /**
      * Set, [loadPage] waits on it once its page is built, after [onLoaded]: the answer held on its
      * way up, as the real one is while its cache write runs, while the test acts -- and what it
@@ -339,6 +345,7 @@ class FakeSchoolMailRepository : SchoolMailRepository {
 
     override suspend fun move(folder: String, uid: Long, target: String) {
         val generation = generation()
+        writeGate?.await()
         foldersTouched += folder
         foldersTouched += target
         moveError?.let { throw it }
@@ -349,11 +356,14 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     }
 
     /** Mirrors the real repository: permanent inside the trash, and permanent everywhere when the account has no trash folder and none could be created. */
-    override suspend fun deletesPermanently(folder: String) =
-        touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
+    override suspend fun deletesPermanently(folder: String): Boolean {
+        trashGate?.await()
+        return touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
+    }
 
     override suspend fun delete(folder: String, uid: Long) {
         val generation = generation()
+        writeGate?.await()
         foldersTouched += folder
         deleteError?.let { throw it }
         deleted += folder to uid

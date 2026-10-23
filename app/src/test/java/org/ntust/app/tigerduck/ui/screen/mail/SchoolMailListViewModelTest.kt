@@ -2458,7 +2458,7 @@ class SchoolMailListViewModelTest {
         vm.load()
         val row = vm.state.value.displayed.first { it.uid == 2L }
         vm.delete(row)
-        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false), vm.state.value.pendingDelete)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = false, account.accountGeneration), vm.state.value.pendingDelete)
 
         vm.confirmDelete(false)
         assertNull(vm.state.value.pendingDelete)
@@ -2480,7 +2480,7 @@ class SchoolMailListViewModelTest {
         vm.selectFolder(FolderSelection.Real(trash))
         val row = vm.state.value.displayed.first { it.uid == 8L }
         vm.delete(row)
-        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true), vm.state.value.pendingDelete)
+        assertEquals(SchoolMailListViewModel.PendingDelete(row, permanently = true, account.accountGeneration), vm.state.value.pendingDelete)
 
         vm.confirmDelete(false)
         assertNull(vm.state.value.pendingDelete)
@@ -2518,15 +2518,15 @@ class SchoolMailListViewModelTest {
         assertTrue(targets.contains(target))
 
         vm.requestMove(row)
-        assertEquals(row, vm.state.value.pendingMoveRow)
+        assertEquals(row, vm.state.value.pendingMove?.row)
         vm.dismissMove()
-        assertNull(vm.state.value.pendingMoveRow)
+        assertNull(vm.state.value.pendingMove)
         vm.moveTo(target)
         assertTrue("a move dismissed is not made", repo.moved.isEmpty())
 
         vm.requestMove(row)
         vm.moveTo(target)
-        assertNull(vm.state.value.pendingMoveRow)
+        assertNull(vm.state.value.pendingMove)
         assertEquals(listOf(Triple("INBOX", 2L, target)), repo.moved)
         assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
     }
@@ -2543,5 +2543,113 @@ class SchoolMailListViewModelTest {
 
         assertTrue(vm.state.value.actionError is MailError.ServerBusy)
         assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a delete asked before another student signed in over this one asks them nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val row = vm.state.value.displayed.single()
+        // The first student's swipe waits on the server to say whether the delete is permanent:
+        // with no trash yet, that answer costs a CREATE and a LIST.
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(row)
+        signOutAndSignInAnother()
+        vm.loadIfNeeded()
+        repo.trashGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull("the first student's question was put to the second", vm.state.value.pendingDelete)
+        vm.confirmDelete(true)
+        assertTrue(repo.deleted.isEmpty())
+    }
+
+    @Test
+    fun `a question whose answer fails after another student signed in over this one is not theirs to see`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(vm.state.value.displayed.single())
+        signOutAndSignInAnother()
+        vm.loadIfNeeded()
+        repo.trashGate = null
+        // The first student's password is rejected on the way.
+        gate.completeExceptionally(MailError.AuthFailed())
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
+    }
+
+    @Test
+    fun `a delete that ends after another student signed in over this one leaves their list alone`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        // The first student confirms a delete, and the write waits on the connection.
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        // Another student signs in over the first, whose INBOX holds a mail under the same UID.
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        assertEquals(listOf(1L), vm.state.value.displayed.map { it.uid })
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the first student's delete took the second's mail off the list", listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a delete that fails after another student signed in over this one is not theirs to see`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        repo.deleteError = MailError.AuthFailed()
+        vm.delete(vm.state.value.displayed.single())
+        vm.confirmDelete(true)
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
+    }
+
+    @Test
+    fun `a move that ends after another student signed in over this one leaves their list alone`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        signInAnotherOverThisOne()
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the first student's move took the second's mail off the list", listOf(1L), vm.state.value.displayed.map { it.uid })
+    }
+
+    @Test
+    fun `a move that fails after another student signed in over this one is not theirs to see`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.writeGate = gate
+        repo.moveError = MailError.AuthFailed()
+        vm.requestMove(vm.state.value.displayed.single())
+        vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
+        signOutAndSignInAnother()
+        vm.loadIfNeeded()
+        repo.writeGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertNull(vm.state.value.actionError)
+        assertFalse("the first student's rejected password locked the second out", account.authFailed.value)
     }
 }
