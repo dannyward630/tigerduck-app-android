@@ -1637,13 +1637,14 @@ class MailRepositoryTest {
         repo.updateSearchIndex()
         (1..MailRepository.SEARCH_CATCH_UP + 5).forEach { server.deliver("期中考 $it") }
         val reached = CountDownLatch(1)
+        var timedOut = false
         setup.indexScheduler.onRequestAgain = {
             setup.indexScheduler.onRequestAgain = null
             // The student signs out while WorkManager is being asked, and the sign-out's cleanup
             // gets as far as it can: its cancel made, or held until the search has asked.
             setup.repository.onSchedulingWait = { reached.countDown() }
             setup.account.signOut()
-            if (!reached.await(30, TimeUnit.SECONDS)) error("the sign-out's cleanup got nowhere")
+            if (!reached.await(30, TimeUnit.SECONDS)) timedOut = true
         }
         val search = async(Dispatchers.IO) { runCatching { repo.search("INBOX", "期中") } }
         search.await()
@@ -1652,7 +1653,8 @@ class MailRepositoryTest {
             withTimeout(30_000) { while ("cancel" !in setup.indexScheduler.events) delay(10) }
         }
 
-        assertEquals("the sign-out's cancel is the last word", "cancel", setup.indexScheduler.events.last())
+        assertFalse("the sign-out's cleanup got nowhere", timedOut)
+        assertEquals("the sign-out's cancel is the last word", listOf("followUp", "cancel"), setup.indexScheduler.events.toList())
     }
 
     @Test
