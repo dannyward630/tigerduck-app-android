@@ -552,10 +552,10 @@ internal fun MailCard(
     message: MailSummary,
     mailDomain: String,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     onLongClickLabel: String? = null,
     enabled: Boolean = true,
-    modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
     val unread = !message.flags.seen
