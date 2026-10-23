@@ -621,7 +621,9 @@ class SchoolMailListViewModel @Inject constructor(
      * missing trash is created on the way; see [SchoolMailRepository.deletesPermanently]).
      *
      * That answer can take a CREATE and a LIST, and another student can sign in meanwhile. The
-     * question is then nobody's: put to them, its Delete would act on a mail of theirs.
+     * question is then nobody's: put to them, its Delete would act on a mail of theirs; and the
+     * LIST and CREATE are not sent at all once the account has moved, which would make a trash in
+     * the next student's mailbox.
      */
     fun delete(row: MailRow) {
         if (!mayAsk(row)) return
@@ -629,7 +631,7 @@ class SchoolMailListViewModel @Inject constructor(
         val uidValidity = folderValidity[row.folder]
         asking = viewModelScope.launch {
             try {
-                val permanently = repository.deletesPermanently(row.folder)
+                val permanently = repository.deletesPermanently(row.folder) { account.accountGeneration == generation }
                 if (account.accountGeneration != generation) return@launch
                 _state.update { it.copy(pendingDelete = PendingDelete(row, permanently, generation, uidValidity)) }
             } catch (e: CancellationException) {

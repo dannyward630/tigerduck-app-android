@@ -216,6 +216,31 @@ class MailRepositoryTest {
         assertTrue(server.subjects(trash).isEmpty())
     }
 
+    /**
+     * So is readying a delete, which creates the trash it moves mail to when the account has none:
+     * a delete of a student who left while it waited lists and creates nothing in the next one's
+     * mailbox.
+     */
+    @Test
+    fun `a departed account's delete creates no trash in the next one's mailbox`() = runTest {
+        server.folders.remove("回收筒")
+        server.deliver("a")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        val uid = repo.loadPage("INBOX", null).messages.single().uid
+        val before = setup.account.accountGeneration
+        server.passwords["B10000002"] = "pw"
+        setup.account.signIn("b10000002", "pw")
+
+        val asked = runCatching { repo.deletesPermanently("INBOX") { setup.account.accountGeneration == before } }
+        val deleted = runCatching { repo.delete("INBOX", uid) { setup.account.accountGeneration == before } }
+
+        assertTrue(asked.exceptionOrNull() is MailError.Abandoned)
+        assertTrue(deleted.exceptionOrNull() is MailError.Abandoned)
+        assertTrue("a trash was created in the next student's mailbox", server.createAttempts.isEmpty())
+        assertEquals(listOf("a"), server.subjects("INBOX"))
+    }
+
     /** The folder list a first request resolves is a request too, and asked the same question. */
     @Test
     fun `a departed account's inbox status resolves no folders for the next one`() = runTest {

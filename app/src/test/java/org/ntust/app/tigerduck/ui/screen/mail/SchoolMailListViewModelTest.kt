@@ -2959,4 +2959,21 @@ class SchoolMailListViewModelTest {
         vm.moveTo(repo.resolved.nameOf(SpecialFolder.JUNK)!!)
         assertEquals(loads, repo.loadsSent.size)
     }
+
+    @Test
+    fun `a delete question still waiting for the connection when the account moves asks the server nothing`() {
+        repo.add("INBOX", mailSummary(1))
+        vm.loadIfNeeded()
+        val gate = CompletableDeferred<Unit>()
+        repo.trashGate = gate
+        vm.delete(vm.state.value.displayed.single())
+        // The same student signs in again, which leaves the question out rather than cancelling it.
+        runBlocking { account.signIn("b10000001", "pw") }
+        repo.trashGate = null
+        gate.complete(Unit)
+        main.dispatcher.scheduler.runCurrent()
+        assertEquals("the question went to the server under the new sign-in", 0, repo.trashQuestionsSent)
+        assertNull(vm.state.value.pendingDelete)
+        assertNull(vm.state.value.actionError)
+    }
 }

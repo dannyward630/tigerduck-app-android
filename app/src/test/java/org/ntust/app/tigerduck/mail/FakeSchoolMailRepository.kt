@@ -42,6 +42,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     /** Set, [deletesPermanently] waits on it first: the CREATE and LIST a missing trash costs, held out while the test acts. */
     var trashGate: CompletableDeferred<Unit>? = null
 
+    /** How many times [deletesPermanently] went to the server; one refused by its `stillWanted` is not counted. */
+    var trashQuestionsSent = 0
+
     /**
      * Set, [loadPage] waits on it once its page is built, after [onLoaded]: the answer held on its
      * way up, as the real one is while its cache write runs, while the test acts -- and what it
@@ -374,8 +377,10 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     }
 
     /** Mirrors the real repository: permanent inside the trash, and permanent everywhere when the account has no trash folder and none could be created. */
-    override suspend fun deletesPermanently(folder: String): Boolean {
+    override suspend fun deletesPermanently(folder: String, stillWanted: () -> Boolean): Boolean {
         trashGate?.await()
+        unlessAbandoned(stillWanted)
+        trashQuestionsSent++
         return touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
     }
 

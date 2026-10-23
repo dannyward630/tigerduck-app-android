@@ -158,7 +158,9 @@ interface SchoolMailRepository {
      * move a mail of theirs with the same UID.
      */
     suspend fun move(folder: String, uid: Long, target: String, stillWanted: () -> Boolean = { true })
-    suspend fun deletesPermanently(folder: String): Boolean
+
+    /** [stillWanted] as on [move], for the LIST and CREATE a missing trash costs. */
+    suspend fun deletesPermanently(folder: String, stillWanted: () -> Boolean = { true }): Boolean
 
     /** [stillWanted] as on [move]. */
     suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean = { true })
@@ -478,7 +480,7 @@ class MailRepository @Inject constructor(
      * caller reports an error rather than putting the destructive question in front of a
      * user whose mail could have gone to trash perfectly well a second later.
      */
-    override suspend fun deletesPermanently(folder: String): Boolean = trashFor(folder) == null
+    override suspend fun deletesPermanently(folder: String, stillWanted: () -> Boolean): Boolean = trashFor(folder, stillWanted) == null
 
     /**
      * Where a delete from [folder] moves the mail, or null when deleting there is
@@ -489,15 +491,18 @@ class MailRepository @Inject constructor(
      * so the [delete] that follows costs no second CREATE. When the first attempt was
      * refused this does try again, which can only turn a permanent delete into a move to
      * trash — the safer of the two, and never the other way round.
+     *
+     * [stillWanted] as on [move], for the LIST and CREATE: a delete readied for a student who
+     * left meanwhile must not create a folder in the next one's mailbox.
      */
-    private suspend fun trashFor(folder: String): String? {
-        if (folders().nameOf(SpecialFolder.TRASH) == folder) return null
-        return ensureFolder(SpecialFolder.TRASH)
+    private suspend fun trashFor(folder: String, stillWanted: () -> Boolean = { true }): String? {
+        if (folders(stillWanted).nameOf(SpecialFolder.TRASH) == folder) return null
+        return ensureFolder(SpecialFolder.TRASH, stillWanted)
     }
 
     override suspend fun delete(folder: String, uid: Long, stillWanted: () -> Boolean) {
         val generation = account.accountGeneration
-        trashFor(folder)?.let { return move(folder, uid, it, stillWanted) }
+        trashFor(folder, stillWanted)?.let { return move(folder, uid, it, stillWanted) }
         if (account.isDemo) {
             demoMutate(folder) { it.removeAll { m -> m.summary.uid == uid } }
         } else {
@@ -709,12 +714,12 @@ class MailRepository @Inject constructor(
      * client's own sent folder, and a test mailbox keeps these folders after the override
      * is turned off again.
      */
-    private suspend fun ensureFolder(role: SpecialFolder): String? {
+    private suspend fun ensureFolder(role: SpecialFolder, stillWanted: () -> Boolean = { true }): String? {
         require(role in CREATED_ON_DEMAND) { "$role is never created on demand" }
-        folders().nameOf(role)?.let { return it }
+        folders(stillWanted).nameOf(role)?.let { return it }
         if (account.isDemo) return null
         val generation = account.accountGeneration
-        return withSession { session ->
+        return withSession(stillWanted) { session ->
             // The CREATE's own answer is deliberately ignored -- a refusal because the folder
             // already exists is a success -- so it is the LIST below, and only the LIST, that
             // decides. A LIST that never completes is not an answer and is not swallowed here.
