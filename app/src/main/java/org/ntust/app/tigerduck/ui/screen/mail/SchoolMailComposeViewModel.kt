@@ -218,6 +218,9 @@ class SchoolMailComposeViewModel @Inject constructor(
         }
         if (mode == ComposeMode.NEW || sourceUid < 0) return
         viewModelScope.launch {
+            // The sign-in a rejection is for: one that comes back once it has left is not the next
+            // one's (spec §7.4), as the repository's own record of it already holds.
+            val generation = account.accountGeneration
             _state.update { it.copy(loading = true, loadError = null) }
             try {
                 val original = repository.summary(sourceFolder, sourceUid) ?: throw MailError.Protocol("message is gone")
@@ -273,7 +276,7 @@ class SchoolMailComposeViewModel @Inject constructor(
                     )
                 }
             } catch (e: MailError) {
-                if (e is MailError.AuthFailed) account.onAuthFailure()
+                if (e is MailError.AuthFailed) account.onAuthFailure(generation)
                 _state.update { it.copy(loading = false, loadError = e) }
             }
         }
@@ -394,6 +397,7 @@ class SchoolMailComposeViewModel @Inject constructor(
         // Read before the mail goes out: an account that changes while it does must not leave
         // its notice to the next one.
         val accountGeneration = sentCopyNotices.accountGeneration
+        val generation = account.accountGeneration
         withStaged(onError = { ComposeError.SendFailed(it) }) { attachments ->
             val mail = OutgoingMail(repository.selfAddress(), to.addresses, cc.addresses, bcc.addresses,
                 s.subject.trim(), s.body, attachments, inReplyTo, references)
@@ -402,7 +406,7 @@ class SchoolMailComposeViewModel @Inject constructor(
             // The sent copy's APPEND logs in with the same stored password the send just used, so
             // a rejection there is the §7.4 rejected password and has to reach the account -- even
             // though the send itself succeeded and nothing was thrown for [withStaged] to classify.
-            if (copy is SentCopy.Failed && copy.error is MailError.AuthFailed) account.onAuthFailure()
+            if (copy is SentCopy.Failed && copy.error is MailError.AuthFailed) account.onAuthFailure(generation)
             if (sourceLoaded && mode == ComposeMode.DRAFT) discardSentDraft()
             // The mail went out, but its copy did not reach the sent folder. A notice, never an
             // [UiState.error]: the send succeeded, so failing the screen over it would tell the
@@ -468,6 +472,8 @@ class SchoolMailComposeViewModel @Inject constructor(
     /** Downloads carried-over attachments to temp files for the duration of [block], then deletes them. */
     private fun withStaged(onError: (MailError) -> ComposeError, block: suspend (List<OutgoingAttachment>) -> Unit) {
         viewModelScope.launch {
+            // As in [runPrefill]: the sign-in a rejection is for.
+            val generation = account.accountGeneration
             _state.update { it.copy(sending = true, error = null, errorAcknowledged = false) }
             val staging = File(cache.attachmentsDir, "outgoing-${UUID.randomUUID()}")
             try {
@@ -491,7 +497,7 @@ class SchoolMailComposeViewModel @Inject constructor(
                 throw e
             } catch (e: Exception) {
                 val error = MailErrors.classify(e)
-                if (error is MailError.AuthFailed) account.onAuthFailure()
+                if (error is MailError.AuthFailed) account.onAuthFailure(generation)
                 _state.update { it.copy(error = onError(error), errorAcknowledged = false) }
             } finally {
                 // Back is refused while sending (the screen's BackHandler), but this still runs

@@ -228,6 +228,9 @@ class SchoolMailMessageViewModel @Inject constructor(
     fun load() {
         if (_state.value.content is Content.Ready) return
         viewModelScope.launch {
+            // The sign-in a rejection is for: one that comes back once it has left is not the next
+            // one's (spec §7.4), as the repository's own record of it already holds.
+            val generation = account.accountGeneration
             update { it.copy(content = Content.Loading) }
             try {
                 val folders = repository.folders()
@@ -258,7 +261,7 @@ class SchoolMailMessageViewModel @Inject constructor(
                 markSeen(summary)
                 resolvePendingSave()
             } catch (e: MailError) {
-                if (e is MailError.AuthFailed) account.onAuthFailure()
+                if (e is MailError.AuthFailed) account.onAuthFailure(generation)
                 update { it.copy(content = Content.Failed(e)) }
                 resolvePendingSave()
             }
@@ -368,12 +371,14 @@ class SchoolMailMessageViewModel @Inject constructor(
     }
 
     private suspend fun loadSource() {
+        // As in [load]: the sign-in a rejection is for.
+        val generation = account.accountGeneration
         update { it.copy(sourceLoading = true, sourceError = null) }
         try {
             val raw = repository.rawSource(folder, uid)
             update { it.copy(source = TextCleaning.stripBidi(raw), sourceLoading = false) }
         } catch (e: MailError) {
-            if (e is MailError.AuthFailed) account.onAuthFailure()
+            if (e is MailError.AuthFailed) account.onAuthFailure(generation)
             // In place of the source, not as a toast: a toast left a blank view behind it, and
             // the way back was to switch views and back again.
             update { it.copy(sourceLoading = false, sourceError = e) }
@@ -642,13 +647,15 @@ class SchoolMailMessageViewModel @Inject constructor(
 
     private fun act(block: suspend () -> Unit) {
         viewModelScope.launch {
+            // As in [load]: the sign-in a rejection is for.
+            val generation = account.accountGeneration
             try {
                 block()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 val error = MailErrors.classify(e)
-                if (error is MailError.AuthFailed) account.onAuthFailure()
+                if (error is MailError.AuthFailed) account.onAuthFailure(generation)
                 update { it.copy(actionError = error) }
             }
         }

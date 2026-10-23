@@ -302,6 +302,44 @@ class SchoolMailComposeViewModelTest {
         assertNull(notices.posted)
     }
 
+    // As on the message screen: a rejection that comes back once its account has left is not
+    // the next sign-in's (spec §7.4).
+
+    @Test
+    fun `an original refused after its account left leaves the next sign-in alone`() {
+        repo.add("INBOX", mailSummary(5, subject = "期中考"))
+        repo.onBody = { account.signOut() }
+        repo.bodyError = MailError.AuthFailed()
+
+        vm(ComposeMode.REPLY, "INBOX", 5)
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a send refused after its account left leaves the next sign-in alone`() {
+        repo.onSend = { account.signOut() }
+        repo.sendError = MailError.AuthFailed()
+        val vm = vm(ComposeMode.NEW)
+        vm.setTo("a@x.tw")
+
+        vm.send()
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a sent copy refused after its account left leaves the next sign-in alone`() {
+        repo.onSend = { account.signOut() }
+        repo.sentCopy = SentCopy.Failed(MailError.AuthFailed())
+        val vm = vm(ComposeMode.NEW)
+        vm.setTo("a@x.tw")
+
+        vm.send()
+
+        assertFalse(account.authFailed.value)
+    }
+
     @Test
     fun `a rejected password on the sent copy still reaches the account`() {
         // The APPEND logs in with the same stored password; nothing throws, because the mail

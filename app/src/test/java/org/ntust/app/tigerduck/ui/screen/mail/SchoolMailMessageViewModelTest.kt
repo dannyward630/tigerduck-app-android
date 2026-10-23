@@ -219,6 +219,49 @@ class SchoolMailMessageViewModelTest {
         assertNull(vm.state.value.sourceError)
     }
 
+    // A rejection that comes back after a sign-out, or another sign-in, is the account's that
+    // left: the repository records the refusal for the sign-in that sent the login, and the screen
+    // must not then mark the one signed in now as refused (spec §7.4).
+
+    @Test
+    fun `a mail refused after its account left leaves the next sign-in alone`() {
+        repo.add("INBOX", mailSummary(5))
+        repo.onBody = { account.signOut() }
+        repo.bodyError = MailError.AuthFailed()
+
+        vm().load()
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a source refused after its account left leaves the next sign-in alone`() {
+        repo.add("INBOX", mailSummary(5))
+        repo.bodies[5] = MailBody(null, "hello", emptyList(), emptyMap())
+        repo.onRawSource = { account.signOut() }
+        repo.rawSourceError = MailError.AuthFailed()
+        val vm = vm()
+        vm.load()
+
+        vm.selectMode(ViewMode.SOURCE)
+
+        assertFalse(account.authFailed.value)
+    }
+
+    @Test
+    fun `a delete refused after its account left leaves the next sign-in alone`() {
+        repo.add("INBOX", mailSummary(5))
+        repo.bodies[5] = MailBody(null, "hello", emptyList(), emptyMap())
+        repo.onDelete = { account.signOut() }
+        repo.deleteError = MailError.AuthFailed()
+        val vm = vm()
+        vm.load()
+
+        vm.confirmDelete(true)
+
+        assertFalse(account.authFailed.value)
+    }
+
     @Test
     fun `a source refused for a rejected password still reaches the account`() {
         repo.add("INBOX", mailSummary(5))

@@ -354,9 +354,13 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     override suspend fun deletesPermanently(folder: String) =
         touching(folder) { resolved.nameOf(SpecialFolder.TRASH).let { it == null || it == folder } }
 
+    /** Fires inside [delete], before [deleteError]: a test acts while the delete is out. */
+    var onDelete: (() -> Unit)? = null
+
     override suspend fun delete(folder: String, uid: Long) {
         val generation = generation()
         foldersTouched += folder
+        onDelete?.invoke()
         deleteError?.let { throw it }
         deleted += folder to uid
         mail[folder]?.removeAll { it.uid == uid }
@@ -447,9 +451,13 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     var rawSourceError: MailError? = null
     var rawSourceCalls = 0
 
+    /** Fires inside [rawSource], before [rawSourceError]: a test acts while the fetch is out. */
+    var onRawSource: (() -> Unit)? = null
+
     override suspend fun rawSource(folder: String, uid: Long): String {
         foldersTouched += folder
         rawSourceCalls++
+        onRawSource?.invoke()
         rawSourceError?.let { throw it }
         return raw
     }
