@@ -36,15 +36,20 @@ internal class AccentSetting(
     val appFollowsWallpaper: Boolean
         get() = AccentPolicy.appFollowsWallpaper(followsWallpaperState)
 
-    /** Picks the swatch of light palette hex [lightHex], in place of the wallpaper too. */
+    /**
+     * Picks the swatch of light palette hex [lightHex], in place of the
+     * wallpaper too. Stored even when the copy already holds it: a stored
+     * value that is no color reads as Blue, and picking Blue then writes Blue
+     * over it, which an older build reads as it is.
+     */
     fun pick(lightHex: Int) {
         if (followsWallpaperState) {
             followsWallpaperState = false
             prefs.useWallpaperColors = false
         }
+        prefs.accentColorHex = lightHex
         if (lightHexState == lightHex) return
         lightHexState = lightHex
-        prefs.accentColorHex = lightHex
         onFixedChange()
     }
 

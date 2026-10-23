@@ -10,11 +10,12 @@ import androidx.compose.ui.graphics.Color
  * picked in its place.
  *
  * Only the app's own screens follow the wallpaper, and only from Android 12,
- * the first with wallpaper colors to give. Everything else draws the fixed
- * accent: the widgets, the watch, the Live Update, and the app's screens on
- * Android 11 and earlier. Picking the wallpaper leaves the fixed accent as it
- * was, so those keep the color they had, and so does an older build, which
- * reads only `accentColorHex`.
+ * the first with wallpaper colors to give. Everything else is handed the
+ * fixed accent: the widgets and the watch draw it, as do the app's screens on
+ * Android 11 and earlier, and the Live Update carries it, though its
+ * notification draws the brand color instead. Picking the wallpaper leaves the
+ * fixed accent as it was, so those keep the color they had, and so does an
+ * older build, which reads only `accentColorHex`.
  */
 object AccentPolicy {
 

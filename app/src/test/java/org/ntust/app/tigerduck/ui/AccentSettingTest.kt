@@ -101,6 +101,16 @@ class AccentSettingTest {
         assertEquals(2, changes)
     }
 
+    @Test
+    fun `picking Blue over a stored -1 stores Blue, which an older build reads as it is`() {
+        val raw = RuntimeEnvironment.getApplication().getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE)
+        raw.edit().putInt("accentColorHex", -1).commit()
+
+        AccentSetting(prefs).pick(blue)
+
+        assertEquals(blue, raw.getInt("accentColorHex", 0))
+    }
+
     @Config(sdk = [31])
     @Test
     fun `the app's screens follow a wallpaper pick from Android 12`() {
