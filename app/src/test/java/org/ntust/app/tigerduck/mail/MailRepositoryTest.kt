@@ -1619,6 +1619,43 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `deleting the downloaded mail stops its runs off the thread that asked`() = runTest {
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+
+        repo.deleteSearchIndex()
+
+        assertTrue(setup.indexScheduler.cancelThreads.isNotEmpty())
+        assertFalse("waiting there on a search's question to WorkManager", Thread.currentThread() in setup.indexScheduler.cancelThreads)
+    }
+
+    @Test
+    fun `a run a search asks for as the student signs out is cancelled with the sign-out`() = runTest {
+        server.deliver("期中考 0")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+        (1..MailRepository.SEARCH_CATCH_UP + 5).forEach { server.deliver("期中考 $it") }
+        val reached = CountDownLatch(1)
+        setup.indexScheduler.onRequestAgain = {
+            setup.indexScheduler.onRequestAgain = null
+            // The student signs out while WorkManager is being asked, and the sign-out's cleanup
+            // gets as far as it can: its cancel made, or held until the search has asked.
+            setup.repository.onSchedulingWait = { reached.countDown() }
+            setup.account.signOut()
+            if (!reached.await(30, TimeUnit.SECONDS)) error("the sign-out's cleanup got nowhere")
+        }
+        val search = async(Dispatchers.IO) { runCatching { repo.search("INBOX", "期中") } }
+        search.await()
+        // The cleanup's cancel, whenever it comes.
+        withContext(Dispatchers.Default) {
+            withTimeout(30_000) { while ("cancel" !in setup.indexScheduler.events) delay(10) }
+        }
+
+        assertEquals("the sign-out's cancel is the last word", "cancel", setup.indexScheduler.events.last())
+    }
+
+    @Test
     fun `a visit's download not started yet when the mail is deleted downloads nothing`() = runTest {
         server.deliver("期中考")
         val setup = TestSetup(backgroundScope)

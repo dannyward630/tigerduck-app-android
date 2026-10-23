@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.mail.index
 
 import org.ntust.app.tigerduck.mail.model.MailFlags
 import org.ntust.app.tigerduck.mail.model.MailSummary
+import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
@@ -164,18 +165,32 @@ class RecordingIndexScheduler : MailIndexScheduler {
     /** Runs asked for after whatever run is under way ([MailIndexScheduler.requestAgain]). */
     var followUps = 0
         private set
+
+    /** Every request, follow-up and cancel, in order, from whatever thread. */
+    val events: MutableList<String> = Collections.synchronizedList(mutableListOf())
+
+    /** The thread of every cancel: the real one is WorkManager's, called off the main thread. */
+    val cancelThreads = ConcurrentLinkedQueue<Thread>()
+
+    /** Fires inside [requestAgain], before it is counted: a test acts while WorkManager is asked. */
+    @Volatile var onRequestAgain: (() -> Unit)? = null
     var cancels = 0
         private set
 
     override fun request() {
         requests++
+        events += "request"
     }
 
     override fun requestAgain() {
+        onRequestAgain?.invoke()
         followUps++
+        events += "followUp"
     }
 
     override fun cancel() {
+        cancelThreads += Thread.currentThread()
+        events += "cancel"
         cancels++
     }
 }

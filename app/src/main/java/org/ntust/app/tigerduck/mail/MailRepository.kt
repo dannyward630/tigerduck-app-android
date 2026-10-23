@@ -304,10 +304,11 @@ class MailRepository @Inject constructor(
         // subscriber, and a fresh repository has nothing of its own to clear.
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             account.signOuts.collect { departing ->
-                indexScheduler.cancel()
                 numberings.clear()
                 lastWhole = null
                 withContext(Dispatchers.IO) {
+                    // With a search's request, which may be waiting for WorkManager's answer.
+                    scheduled { indexScheduler.cancel() }
                     holder.closeNow()
                     clearIndexOf(departing)
                 }
@@ -716,6 +717,7 @@ class MailRepository @Inject constructor(
         val q = query.trim()
         if (account.isDemo) return demoPage(folder).let { page -> SearchOutcome.LoadedOnly(page.messages.filter { matchesLoadedMail(it, q) }, page.uidValidity) }
         val asked = indexEpoch.get()
+        val generation = account.accountGeneration
         val whole = indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
         // The rest of what the index lacks comes in the background, the first run all of it.
         // Asked for once the catch-up is through: after a rejected password, which the list hands
@@ -723,7 +725,7 @@ class MailRepository @Inject constructor(
         // past what the catch-up fetches sits below the newest it has, where no later catch-up
         // looks, so a whole download within [INDEX_RESYNC_MS] must not hold that run off
         // ([gapsFound]).
-        withContext(Dispatchers.IO) { askForTheRest(asked, whole) }
+        withContext(Dispatchers.IO) { askForTheRest(asked, generation, whole) }
         // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
         val (indexedUnder, matches) = withContext(Dispatchers.IO) {
             val owner = indexOwner() ?: return@withContext null to emptyList()
@@ -1018,17 +1020,32 @@ class MailRepository @Inject constructor(
 
     override suspend fun searchIndexBytes(): Long = withContext(Dispatchers.IO) { searchIndex.sizeBytes() }
 
-    /** Held while a search asks for a run and while [deleteSearchIndex] moves the epoch and cancels them. */
+    /**
+     * Held while a search asks for a run, and while [deleteSearchIndex] or a sign-out cancels them:
+     * a run asked for just before the one is cancelled with it, and none after it. Only off the
+     * main thread, since a search holds it while WorkManager answers.
+     */
     private val scheduling = Any()
+
+    /** Runs right before a step waits for [scheduling]: a test's way of knowing it has got there. Null in the app. */
+    @VisibleForTesting
+    @Volatile
+    internal var onSchedulingWait: (() -> Unit)? = null
+
+    private inline fun <T> scheduled(block: () -> T): T {
+        onSchedulingWait?.invoke()
+        return synchronized(scheduling, block)
+    }
 
     /**
      * A search's request for the background run, [whole] saying whether its catch-up left nothing
      * out. None for a search begun before the downloaded mail was deleted, at epoch [asked]: the
-     * run would download it all again, which only the mail screen opened afterwards does. Asked in
-     * one step with the deletion's cancel, so a run asked for just before it is cancelled with it.
+     * run would download it all again, which only the mail screen opened afterwards does. Nor for
+     * one of a sign-in that has left since [generation]. Asked in one step with the deletion's or
+     * the sign-out's cancel, so a run asked for just before either is cancelled with it.
      */
-    private fun askForTheRest(asked: Int, whole: Boolean) = synchronized(scheduling) {
-        if (indexEpoch.get() != asked) return@synchronized
+    private fun askForTheRest(asked: Int, generation: Int, whole: Boolean) = scheduled {
+        if (indexEpoch.get() != asked || account.accountGeneration != generation) return@scheduled
         if (whole) {
             indexScheduler.request()
         } else {
@@ -1046,9 +1063,11 @@ class MailRepository @Inject constructor(
      * takes too.
      */
     override suspend fun deleteSearchIndex() {
-        synchronized(scheduling) {
-            indexEpoch.incrementAndGet()
-            indexScheduler.cancel()
+        withContext(Dispatchers.IO) {
+            scheduled {
+                indexEpoch.incrementAndGet()
+                indexScheduler.cancel()
+            }
         }
         inAppIndexing?.cancel()
         lastWhole = null
