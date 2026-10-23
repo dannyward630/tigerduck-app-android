@@ -272,6 +272,7 @@
     <string name="color_name_pink">Rozā</string>
     <string name="color_name_purple">Violets</string>
     <string name="color_name_red">Sarkans</string>
+    <string name="color_name_wallpaper">Fona tapetes krāsas</string>
     <string name="color_picker_apply">Lietot</string>
     <string name="color_picker_custom">Pielāgota</string>
     <string name="color_picker_presets_note">Iepriekš iestatītās krāsas</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">Vai atvērt šo pielikumu?</string>
     <string name="school_mail_save_draft">Saglabāt melnrakstu</string>
     <string name="school_mail_saved">Saglabāts</string>
+    <string name="school_mail_search_index_partial">Vēstules vēl tiek lejupielādētas. Meklēšana var neatrast dažas vecākas vēstules.</string>
     <string name="school_mail_search_local_only">Serveris nevar veikt šo meklēšanu. Tiek rādīti rezultāti tikai no jau ielādētajām vēstulēm.</string>
     <string name="school_mail_search_prompt">Meklēt vēstules</string>
     <string name="school_mail_send">Sūtīt</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">Jūsu studenta ID un parolei jāsakrīt ar skolas sistēmā izmantoto. TigerDuck šo paroli glabā tikai šifrētu šajā ierīcē un nekad neaugšupielādē.</string>
     <string name="school_mail_sign_in_prompt_title">Piesakieties skolas pastā</string>
     <string name="school_mail_source_failed">Neizdevās ielādēt pirmkodu.</string>
+    <string name="school_mail_storage_delete_message">Jūsu vēstules paliek skolas serverī. Tās tiks lejupielādētas atkārtoti, kad nākamreiz atvērsiet Skolas pastu, un līdz tam meklēšana var neatrast visu.</string>
+    <string name="school_mail_storage_delete_title">Vai dzēst lejupielādētās vēstules?</string>
+    <string name="school_mail_storage_footer">Tiek lejupielādētas, lai jūs varētu meklēt visās vēstulēs un ritināt tās bez gaidīšanas.</string>
+    <string name="school_mail_storage_title">Lejupielādētās vēstules</string>
     <string name="school_mail_subject">Tēma</string>
     <string name="school_mail_to">Kam</string>
     <string name="school_mail_too_large">Pielikumi pārsniedz 50 MB limitu</string>

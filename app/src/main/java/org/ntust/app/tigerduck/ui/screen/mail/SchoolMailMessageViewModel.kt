@@ -33,6 +33,7 @@ import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.notify.MailNotifier
 import org.ntust.app.tigerduck.mail.sanitize.HtmlSanitizer
 import org.ntust.app.tigerduck.mail.sanitize.MailLink
+import org.ntust.app.tigerduck.mail.sanitize.MailReadableHtml
 import org.ntust.app.tigerduck.mail.sanitize.PlainTextLink
 import org.ntust.app.tigerduck.mail.sanitize.PlainTextLinks
 import org.ntust.app.tigerduck.mail.sanitize.SanitizedHtml
@@ -50,7 +51,7 @@ import javax.inject.Inject
 /** One mail (spec §6.3, §9): three views, warnings, attachments, and the actions that close it. */
 @HiltViewModel
 class SchoolMailMessageViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: SchoolMailRepository,
     private val account: MailAccount,
     private val notifier: MailNotifier,
@@ -133,11 +134,32 @@ class SchoolMailMessageViewModel @Inject constructor(
          * off the main thread when the screen opens: it comes out of the encrypted credential store.
          */
         val selfAddress: String? = null,
+        /**
+         * "View in light mode": the mail on [MailHtmlTheme.LIGHT]'s white paper while the app is
+         * drawn dark (see [MailHtmlTheme.page]). On for a mail that sets colors of its own, and
+         * from then on the reader's to change; see [setViewInLight].
+         */
+        val viewInLight: Boolean = false,
     ) {
         val folderKind: SpecialFolder? get() = folders?.kindOf(folder)
     }
 
-    private val _state = MutableStateFlow(UiState(folder = folder))
+    /**
+     * Whether this mail is viewed in light mode, null until its HTML has chosen. As the Apple app's
+     * `hasPickedPage`, it is chosen once, before the mail first shows -- white paper for a mail
+     * that sets colors of its own ([MailReadableHtml.setsColors]) -- so the mail is never drawn
+     * on one page and redrawn on the other, and a page the reader picks afterwards stays picked.
+     *
+     * Kept in [savedStateHandle], so a process restore of this screen opens the mail on the page
+     * it was left on, and never in preferences, so the next mail chooses its own.
+     */
+    private var viewInLight: Boolean?
+        get() = savedStateHandle[VIEW_IN_LIGHT]
+        set(value) {
+            savedStateHandle[VIEW_IN_LIGHT] = value
+        }
+
+    private val _state = MutableStateFlow(UiState(folder = folder, viewInLight = viewInLight == true))
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     /** Whether a confirmed `mailto:` link can open this app's own compose, which sends as the school account. */
@@ -161,26 +183,39 @@ class SchoolMailMessageViewModel @Inject constructor(
     }
 
     /**
-     * The app's own colours for the mail HTML page (spec §9.3 no longer means white paper). There
+     * The app's own colors for the mail HTML page (spec §9.3 no longer means white paper). There
      * is no Compose theme access from a view model, so [SchoolMailMessageScreen] pushes its current
      * `MaterialTheme.colorScheme` in through [setMailTheme] from a `LaunchedEffect` keyed on it;
-     * [render] and [loadRemoteImages] read it whenever they (re)build the document.
+     * [page] is drawn in it, or on white paper instead (see [viewInLight]).
      *
-     * A genuine change -- not merely a recomposition that recomputes the same colours -- also
-     * rebuilds the document already on screen, whenever content is already [Content.Ready], from
-     * the sanitized HTML and inline images already in hand: no re-fetch, no re-sanitize, just
-     * [MailHtmlDocument.build] run again. Without this, the WebView's *native* background (set
-     * independently, straight from the current colour scheme) repaints immediately on a
-     * dark/light flip while a mail is open, but the document itself would keep the colours it was
-     * built with -- a stale, wrongly-coloured page inside a freshly-coloured frame, which is
-     * exactly what this theming exists to prevent.
+     * A genuine change of [page] -- not merely a recomposition that recomputes the same colors,
+     * nor a change of a dark theme the mail is on white paper over -- also rebuilds the document
+     * already on screen, whenever content is already [Content.Ready], from the sanitized HTML and
+     * inline images already in hand: no re-fetch, no re-sanitize, just [MailHtmlDocument.build]
+     * run again. Without this, the WebView's *native* background (set independently, straight from
+     * the current color scheme) repaints immediately on a dark/light flip while a mail is open,
+     * but the document itself would keep the colors it was built with -- a stale,
+     * wrongly-colored page inside a freshly-colored frame, which is exactly what this theming
+     * exists to prevent.
      */
-    private var mailTheme = MailHtmlTheme.LIGHT
+    private var appTheme = MailHtmlTheme.LIGHT
+
+    /** The page the mail is drawn on: [render], [loadRemoteImages] and every rebuild draw it. */
+    private val page: MailHtmlTheme get() = appTheme.page(viewInLight == true)
 
     fun setMailTheme(theme: MailHtmlTheme) {
-        if (theme == mailTheme) return
-        mailTheme = theme
-        rebuildDocument(theme)
+        if (theme == appTheme) return
+        val shown = page
+        appTheme = theme
+        if (page != shown) rebuildDocument(page)
+    }
+
+    /** The reader's "View in light mode", which this mail keeps from then on. */
+    fun setViewInLight(on: Boolean) {
+        val shown = page
+        viewInLight = on
+        update { it.copy(viewInLight = on) }
+        if (page != shown) rebuildDocument(page)
     }
 
     private var themeJob: Job? = null
@@ -248,13 +283,18 @@ class SchoolMailMessageViewModel @Inject constructor(
                 // remote images rather than hard-coding false, so a load that runs while that
                 // flag is already true (in principle reachable from a future retry path) never
                 // silently re-blocks images the user already opted into.
-                val ready = render(summary, body, allowRemote = _state.value.remoteImagesAllowed)
+                val rendered = render(summary, body, allowRemote = _state.value.remoteImagesAllowed)
+                val ready = rendered.content
+                if (viewInLight == null) rendered.viewInLight?.let { viewInLight = it }
                 update {
                     it.copy(
                         content = ready,
                         mode = if (ready.html != null) ViewMode.FORMATTED else ViewMode.PLAIN,
+                        viewInLight = viewInLight == true,
                     )
                 }
+                // The app's theme, or the reader's page, moved while this was built.
+                if (ready.document != null && page != rendered.page) rebuildDocument(page)
                 markSeen(summary)
                 resolvePendingSave()
             } catch (e: MailError) {
@@ -265,27 +305,40 @@ class SchoolMailMessageViewModel @Inject constructor(
         }
     }
 
+    /** What [render] made, the page it chose for the mail if the mail had none yet, and the page it drew. */
+    private class Rendered(val content: Content.Ready, val viewInLight: Boolean?, val page: MailHtmlTheme)
+
     /**
-     * Turns a fetched body into the [Content.Ready] the screen renders, entirely on [io].
+     * Turns a fetched body into the [Content.Ready] the screen renders, entirely on [io], on the
+     * page this mail is shown on: the one already chosen, or else the one its colors choose, so
+     * the first document is already the right one.
      *
      * Every step here is a jsoup parse or worse over a string the *sender* chose: the sanitizer's
-     * parse plus `Cleaner` plus its per-element CSS filter, [MailHtmlDocument.build]'s second
-     * parse and its Base64-encoding of every inline image into the document string, a third parse
-     * for the plain-text fallback, and the link/warning scan on top. `viewModelScope.launch`
+     * parse plus `Cleaner` plus its per-element CSS filter, [MailReadableHtml]'s parse and color
+     * search, [MailHtmlDocument.build]'s link parses and its Base64-encoding of every inline image
+     * into the document string, another parse for the plain-text fallback, and the link/warning
+     * scan on top. `viewModelScope.launch`
      * resumes on `Main.immediate`, so with none of this hopped off it, a mail with a large HTML
      * part and a few MB of inline images janked and could ANR -- on attacker-chosen input.
      */
-    private suspend fun render(summary: MailSummary, body: MailBody, allowRemote: Boolean): Content.Ready =
-        withContext(io) {
+    private suspend fun render(summary: MailSummary, body: MailBody, allowRemote: Boolean): Rendered {
+        // Read here, on Main, which is where they are written.
+        val app = appTheme
+        val chosen = viewInLight
+        return withContext(io) {
             val html = body.html?.let { HtmlSanitizer.sanitize(it, allowRemoteImages = allowRemote) }
-            val document = html?.let { MailHtmlDocument.build(it.html, body.inlineImages, allowRemote, mailTheme) }
+            val readable = html?.let { MailReadableHtml(it.html) }
+            val inLight = chosen ?: readable?.setsColors
+            val page = app.page(inLight == true)
+            val document = readable?.let { MailHtmlDocument.build(it, body.inlineImages, allowRemote, page) }
             val plain = body.plain ?: html?.let { HtmlSanitizer.plainText(it.html) }.orEmpty()
             val warnings = MailWarnings.evaluate(
                 summary.from, summary.subject, plain, html?.links.orEmpty(), body.attachments, summary.returnPath,
                 domain = mailDomain,
             )
-            Content.Ready(summary, body, html, document, plain, warnings, PlainTextLinks.find(plain))
+            Rendered(Content.Ready(summary, body, html, document, plain, warnings, PlainTextLinks.find(plain)), inLight, page)
         }
+    }
 
     private suspend fun markSeen(summary: MailSummary) {
         // Notification ids are derived from the UID alone, and only the inbox ever posts one.
@@ -323,9 +376,9 @@ class SchoolMailMessageViewModel @Inject constructor(
         viewModelScope.launch {
             update { it.copy(loadingRemoteImages = true) }
             try {
-                // Captured, not read again at the end: the theme can change while this is in
+                // Captured, not read again at the end: the page can change while this is in
                 // flight, and the comparison below is what notices.
-                val builtWith = mailTheme
+                val builtWith = page
                 val (html, document) = withContext(io) {
                     val sanitized = HtmlSanitizer.sanitize(source, allowRemoteImages = true)
                     sanitized to MailHtmlDocument.build(sanitized.html, ready.body.inlineImages, allowRemoteImages = true, theme = builtWith)
@@ -338,9 +391,9 @@ class SchoolMailMessageViewModel @Inject constructor(
                     st.copy(remoteImagesAllowed = true, content = current.copy(html = html, document = document))
                 }
                 // This swap wins over any theme rebuild that was in flight -- their guard sees the
-                // new html and stands down -- so if the theme moved while this ran, the colours it
+                // new html and stands down -- so if the page moved while this ran, the colors it
                 // has just installed are stale and only this knows it.
-                if (mailTheme != builtWith) rebuildDocument(mailTheme)
+                if (page != builtWith) rebuildDocument(page)
             } finally {
                 update { it.copy(loadingRemoteImages = false) }
             }
@@ -665,6 +718,9 @@ class SchoolMailMessageViewModel @Inject constructor(
         private const val DAY_MS = 24L * 60 * 60 * 1000
         private const val MAX_NAME_LENGTH = 120
         private val EMPTY_BODY = MailBody(null, null, emptyList(), emptyMap())
+
+        /** [viewInLight]'s key in the saved state. */
+        private const val VIEW_IN_LIGHT = "viewInLight"
         private val UNPARSEABLE_VERDICT = LinkVerdict(host = "", shownHost = null, mismatch = false, punycode = false, insecure = false)
         private val UNSAFE_NAME = Regex("[\\\\/:*?\"<>|\\u0000-\\u001f]")
 

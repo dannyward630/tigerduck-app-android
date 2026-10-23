@@ -272,6 +272,7 @@
     <string name="color_name_pink">粉</string>
     <string name="color_name_purple">紫</string>
     <string name="color_name_red">红</string>
+    <string name="color_name_wallpaper">壁纸颜色</string>
     <string name="color_picker_apply">套用</string>
     <string name="color_picker_custom">自订</string>
     <string name="color_picker_presets_note">缺省颜色</string>
@@ -810,6 +811,7 @@
     <string name="school_mail_risky_title">要打开这个附件吗？</string>
     <string name="school_mail_save_draft">保存草稿</string>
     <string name="school_mail_saved">已保存</string>
+    <string name="school_mail_search_index_partial">仍在下载邮件，搜索可能找不到部分较旧的邮件。</string>
     <string name="school_mail_search_local_only">服务器不支持这个搜索，只搜索已加载的邮件。</string>
     <string name="school_mail_search_prompt">搜索邮件</string>
     <string name="school_mail_send">发送</string>
@@ -830,6 +832,10 @@
     <string name="school_mail_sign_in_note">账号密码应与校务系统相同。此密码 TigerDuck 只会加密保存在这台设备上，不会上传。</string>
     <string name="school_mail_sign_in_prompt_title">登录校园邮箱</string>
     <string name="school_mail_source_failed">无法加载源代码。</string>
+    <string name="school_mail_storage_delete_message">邮件仍保留在学校的服务器上。下次打开校园邮箱时会重新下载，在那之前，搜索可能找不到部分邮件。</string>
+    <string name="school_mail_storage_delete_title">要删除已下载的邮件吗？</string>
+    <string name="school_mail_storage_footer">下载后就能搜索所有邮件，滚动列表也不必等待加载。</string>
+    <string name="school_mail_storage_title">已下载的邮件</string>
     <string name="school_mail_subject">主题</string>
     <string name="school_mail_to">收件人</string>
     <string name="school_mail_too_large">附件超过 50 MB 上限</string>
