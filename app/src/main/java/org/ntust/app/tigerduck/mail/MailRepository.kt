@@ -176,8 +176,9 @@ interface SchoolMailRepository {
     suspend fun search(folder: String, query: String, stillWanted: () -> Boolean = { true }): SearchOutcome
 
     /**
-     * Downloads into the search index every mail it lacks, in every folder, Inbox and Sent first.
-     * Long: the first run fetches the text of the whole mailbox. [stillWanted] as on [loadPage].
+     * Downloads into the search index every mail it lacks, in every folder, Inbox and Sent first;
+     * nothing within [MailRepository.INDEX_RESYNC_MS] of a download that got through. Long: the
+     * first run fetches the text of the whole mailbox. [stillWanted] as on [loadPage].
      */
     suspend fun updateSearchIndex(stillWanted: () -> Boolean = { true })
 
@@ -712,7 +713,14 @@ class MailRepository @Inject constructor(
         return !stillIndexOwner(last.owner) || clock() - last.at >= INDEX_RESYNC_MS
     }
 
-    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) = indexing.withLock { downloadIndex(stillWanted) }
+    /**
+     * Asked once it has the lock, as the download in the app asks: the worker a visit asked for
+     * waits out the download that visit runs in the app, and would otherwise run every folder
+     * again the moment that one got through.
+     */
+    override suspend fun updateSearchIndex(stillWanted: () -> Boolean) = indexing.withLock {
+        if (indexDue()) downloadIndex(stillWanted)
+    }
 
     /**
      * A password the server rejects stops it, and every login after it, as the list's own
@@ -936,7 +944,8 @@ class MailRepository @Inject constructor(
             // mail stops the download that holds the lock.
             inAppIndexing = coroutineContext[Job]
             try {
-                downloadIndex()
+                // Asked again: another download can have got through while this one waited.
+                if (indexDue()) downloadIndex()
             } catch (e: CancellationException) {
                 throw e
             } catch (_: MailError) {

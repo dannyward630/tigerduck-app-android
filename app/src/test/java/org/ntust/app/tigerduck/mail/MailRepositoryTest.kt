@@ -648,10 +648,13 @@ class MailRepositoryTest {
     fun `a mail read on another device reads as read once the download runs again`() = runTest {
         val uids = (1..60).map { server.deliver("信 $it") }
         val repo = TestSetup(backgroundScope).signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
         repo.updateSearchIndex()
         val stored = server.folders.getValue("INBOX").single { it.summary.uid == uids.first() }
         stored.summary = stored.summary.copy(flags = stored.summary.flags.copy(seen = true))
 
+        now += MailRepository.INDEX_RESYNC_MS
         repo.updateSearchIndex()
         val newest = repo.loadPage("INBOX", null)
         val fetched = server.pageFetches.size
@@ -716,6 +719,40 @@ class MailRepositoryTest {
 
         assertTrue(server.undeletedUidsCalls > listed)
         assertTrue(setup.indexScheduler.requests > requested)
+    }
+
+    @Test
+    fun `the background download soon after a whole one does not download again`() = runTest {
+        server.deliver("期中考")
+        val repo = TestSetup(backgroundScope).signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
+        visit(repo)
+        val listed = server.undeletedUidsCalls
+
+        // The worker the visit asked for, which waited out the download in the app.
+        now += MailRepository.INDEX_RESYNC_MS - 1
+        repo.updateSearchIndex()
+
+        assertEquals(listed, server.undeletedUidsCalls)
+    }
+
+    @Test
+    fun `a visit whose download waited out a whole one does not download again`() = runTest {
+        server.deliver("期中考")
+        val repo = TestSetup(backgroundScope).signedIn()
+        val now = 1_000_000L
+        repo.clock = { now }
+        visit(repo)
+        val listed = server.undeletedUidsCalls
+
+        // Due as the visit asks; once its download has the lock, another has just got through.
+        var asked = false
+        repo.clock = { if (asked) now else now + MailRepository.INDEX_RESYNC_MS.also { asked = true } }
+        visit(repo)
+
+        assertTrue(asked)
+        assertEquals(listed, server.undeletedUidsCalls)
     }
 
     @Test
@@ -940,9 +977,12 @@ class MailRepositoryTest {
         val kept = server.deliver("期中考 B")
         val setup = TestSetup(backgroundScope)
         val repo = setup.signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
         repo.updateSearchIndex()
         server.folders.getValue("INBOX").removeAll { it.summary.uid == gone }
 
+        now += MailRepository.INDEX_RESYNC_MS
         repo.updateSearchIndex()
 
         assertEquals(setOf(kept), setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX"))
