@@ -681,7 +681,10 @@ class MailRepository @Inject constructor(
         val whole = indexer.update(folder, limit = SEARCH_CATCH_UP, newOnly = true, stillWanted = stillWanted)
         // The rest of what the index lacks comes in the background, the first run all of it.
         // Asked for once the catch-up is through: after a rejected password, which the list hands
-        // the account, nothing may log in again (spec §7.4).
+        // the account, nothing may log in again (spec §7.4). And asked for at once: mail come in
+        // past what the catch-up fetches sits below the newest it has, where no later catch-up
+        // looks, so a whole download within [INDEX_RESYNC_MS] must not hold that run off.
+        if (!whole) lastWhole = null
         indexScheduler.request()
         // With the UIDVALIDITY they were indexed under, which their UIDs only name mail in.
         val (indexedUnder, matches) = withContext(Dispatchers.IO) {

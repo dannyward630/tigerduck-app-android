@@ -551,6 +551,26 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `mail come in past what a search catches up on is downloaded by the background run it asks for`() = runTest {
+        server.deliver("期中考 0")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        var now = 1_000_000L
+        repo.clock = { now }
+        repo.updateSearchIndex()
+        val late = (1..MailRepository.SEARCH_CATCH_UP + 5).map { server.deliver("期中考 $it") }
+        now += 1_000
+
+        repo.search("INBOX", "期中")
+        // The background run the search asked for, well within fifteen minutes of the whole one.
+        assertTrue(setup.indexScheduler.requests > 0)
+        repo.updateSearchIndex()
+
+        assertTrue(setup.searchIndex.uids(setup.account.ownAddress!!.lowercase(), "INBOX").containsAll(late))
+        assertTrue("found complete now", (repo.search("INBOX", "期中") as SearchOutcome.Server).complete)
+    }
+
+    @Test
     fun `a first search of a folder its catch-up downloads whole misses nothing`() = runTest {
         repeat(3) { server.deliver("期中考 $it") }
         val repo = TestSetup(backgroundScope).signedIn()
