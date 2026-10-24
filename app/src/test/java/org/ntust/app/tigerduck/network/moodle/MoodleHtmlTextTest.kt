@@ -1,6 +1,12 @@
 package org.ntust.app.tigerduck.network.moodle
 
+import org.intellij.markdown.MarkdownElementTypes
+import org.intellij.markdown.ast.ASTNode
+import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
+import org.intellij.markdown.parser.CancellationToken
+import org.intellij.markdown.parser.MarkdownParser
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MoodleHtmlTextTest {
@@ -99,5 +105,64 @@ class MoodleHtmlTextTest {
 
         assertEquals("<img src=\"${chart.url}\" alt=\"chart\">", resolved)
         assertEquals("[chart](${chart.url})", MoodleHtmlText.markdown(resolved))
+    }
+
+    // The renderer draws each list and quote level inside the last, so past five they are plain blocks.
+
+    @Test
+    fun `lists nest five deep, and a list deeper than that is written as its items`() {
+        val html = (1..6).joinToString("") { "<ul><li>$it" } + "</li></ul>".repeat(6)
+
+        assertEquals(
+            "- 1\n  - 2\n    - 3\n      - 4\n        - 5\n          6",
+            MoodleHtmlText.markdown(html),
+        )
+    }
+
+    @Test
+    fun `quotes nest five deep, and a quote deeper than that is written as what it holds`() {
+        val html = (1..6).joinToString("") { "<blockquote>$it" } + "</blockquote>".repeat(6)
+
+        assertEquals(
+            "> 1\n>\n> > 2\n> >\n> > > 3\n> > >\n> > > > 4\n> > > >\n> > > > > 5\n> > > > >\n> > > > > 6",
+            MoodleHtmlText.markdown(html),
+        )
+    }
+
+    @Test
+    fun `lists and quotes count against one cap`() {
+        val html = "<blockquote><ul><li>x".repeat(3) + "</li></ul></blockquote>".repeat(3)
+
+        assertEquals("> - x\n>   > - x\n>   >   > x", MoodleHtmlText.markdown(html))
+    }
+
+    @Test
+    fun `past the cap, a list keeps its items apart, and a list or text it holds outside them`() {
+        val html = (1..5).joinToString("") { "<ul><li>$it" } + "<ul><li>a</li><ul><li>b</li></ul>c</ul>" +
+            "</li></ul>".repeat(5)
+
+        assertEquals(
+            "- 1\n  - 2\n    - 3\n      - 4\n        - 5\n          a\n          b\n          c",
+            MoodleHtmlText.markdown(html),
+        )
+    }
+
+    @Test
+    fun `a document nested thousands deep converts, keeps its text in order and nests no deeper than the cap`() {
+        val depth = 5_000
+        val html = (1..depth).joinToString("") { "<blockquote><ul><li>$it" } + "</li></ul></blockquote>".repeat(depth)
+
+        val markdown = MoodleHtmlText.markdown(html)
+
+        assertEquals((1..depth).toList(), Regex("\\d+").findAll(markdown).map { it.value.toInt() }.toList())
+        val nesting = nestingOf(markdown)
+        assertTrue("nested $nesting deep", nesting <= 5)
+    }
+
+    /** How deep the renderer's parser, which reads this Markdown on screen, finds lists and quotes nested. */
+    private fun nestingOf(markdown: String): Int {
+        val nests = setOf(MarkdownElementTypes.BLOCK_QUOTE, MarkdownElementTypes.UNORDERED_LIST, MarkdownElementTypes.ORDERED_LIST)
+        fun depth(node: ASTNode): Int = (if (node.type in nests) 1 else 0) + (node.children.maxOfOrNull { depth(it) } ?: 0)
+        return depth(MarkdownParser(GFMFlavourDescriptor(), true, CancellationToken.NonCancellable).buildMarkdownTreeFromString(markdown))
     }
 }
