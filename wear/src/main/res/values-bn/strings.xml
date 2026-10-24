@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- ফরওয়ার্ড করা বার্তা ----------</string>
     <string name="school_mail_guide_load_failed">নির্দেশিকা লোড করা যায়নি</string>
     <string name="school_mail_guide_open_in_browser">ব্রাউজারে খুলুন</string>
+    <string name="school_mail_held_attachments_missing">এই অ্যাটাচমেন্টগুলো রাখা যায়নি এবং মেইলে আর নেই: %1$@। পাঠানোর আগে এগুলো আবার যুক্ত করুন।</string>
     <string name="school_mail_invalid_recipients">এই ঠিকানাগুলো যাচাই করুন: %1$@</string>
     <string name="school_mail_keep_editing">সম্পাদনা চালিয়ে যান</string>
     <string name="school_mail_leave_title">এই মেইলটি খসড়া হিসেবে সংরক্ষণ করবেন?</string>

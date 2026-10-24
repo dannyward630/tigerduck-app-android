@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Message transféré ----------</string>
     <string name="school_mail_guide_load_failed">Impossible de charger le guide</string>
     <string name="school_mail_guide_open_in_browser">Ouvrir dans le navigateur</string>
+    <string name="school_mail_held_attachments_missing">Ces pièces jointes n\'ont pas pu être conservées et ne figurent plus dans le message : %1$@. Joignez-les à nouveau avant l\'envoi.</string>
     <string name="school_mail_invalid_recipients">Vérifiez ces adresses : %1$@</string>
     <string name="school_mail_keep_editing">Continuer la modification</string>
     <string name="school_mail_leave_title">Enregistrer ce message comme brouillon ?</string>
@@ -837,7 +838,7 @@
     <string name="school_mail_send">Envoyer</string>
     <string name="school_mail_send_confirm_title">Envoyer ce message ?</string>
     <string name="school_mail_send_failed">Impossible d\'envoyer le message</string>
-    <string name="school_mail_send_unconfirmed">Impossible de confirmer l\'envoi du message ; réessayer pourrait l\'envoyer deux fois</string>
+    <string name="school_mail_send_unconfirmed">Impossible de confirmer l\'envoi du message ; réessayer pourrait l\'envoyer deux fois</string>
     <string name="school_mail_send_undone">Envoi annulé. Le message est de retour dans l\'éditeur.</string>
     <string name="school_mail_sending_hold">Envoi en cours…</string>
     <string name="school_mail_sent_copy_failed">Le message a été envoyé, mais la copie n\'a pas pu être enregistrée dans Envoyés.</string>

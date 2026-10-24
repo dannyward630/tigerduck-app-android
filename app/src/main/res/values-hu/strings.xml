@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Továbbított levél ----------</string>
     <string name="school_mail_guide_load_failed">Nem sikerült betölteni az útmutatót</string>
     <string name="school_mail_guide_open_in_browser">Megnyitás böngészőben</string>
+    <string name="school_mail_held_attachments_missing">Ezeket a mellékleteket nem sikerült megtartani, és már nincsenek az üzenetben: %1$@. Küldés előtt csatolja őket újra.</string>
     <string name="school_mail_invalid_recipients">Ellenőrizze ezeket a címeket: %1$@</string>
     <string name="school_mail_keep_editing">Szerkesztés folytatása</string>
     <string name="school_mail_leave_title">Menti ezt az üzenetet piszkozatként?</string>

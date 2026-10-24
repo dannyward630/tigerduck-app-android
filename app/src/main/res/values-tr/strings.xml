@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- İletilen ileti ----------</string>
     <string name="school_mail_guide_load_failed">Kılavuz yüklenemedi</string>
     <string name="school_mail_guide_open_in_browser">Tarayıcıda aç</string>
+    <string name="school_mail_held_attachments_missing">Şu ekler korunamadı ve artık postada değil: %1$@. Göndermeden önce bunları yeniden ekleyin.</string>
     <string name="school_mail_invalid_recipients">Şu adresleri kontrol edin: %1$@</string>
     <string name="school_mail_keep_editing">Düzenlemeye devam et</string>
     <string name="school_mail_leave_title">Bu posta taslak olarak kaydedilsin mi?</string>

@@ -216,6 +216,9 @@ class MoodleCourseRepositoryTest {
         authState.value = false
 
         assertEquals(MoodleAttachment.Dropped, opening.await())
+        // The download ends before the sign-out's wipe does: store() waits for the lock the
+        // sign-out holds until its wipe is done, and hands out nothing once it is.
+        assertNull(repository.store(5))
         assertTrue(downloads.snapshot.value.progress.isEmpty())
         assertTrue(tmp.root.walkTopDown().none { it.isFile })
     }
@@ -260,6 +263,8 @@ class MoodleCourseRepositoryTest {
         authState.value = false
 
         assertEquals(MoodleAttachment.Dropped, opening.await())
+        // As above: done once the sign-out's lock is free, not when the stopped download is.
+        assertNull(repository.store(5))
         assertFalse("the copy downloaded before the sign-out stayed", kept.exists())
         assertTrue(tmp.root.walkTopDown().none { it.isFile })
     }

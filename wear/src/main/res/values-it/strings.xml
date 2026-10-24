@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Messaggio inoltrato ----------</string>
     <string name="school_mail_guide_load_failed">Impossibile caricare la guida</string>
     <string name="school_mail_guide_open_in_browser">Apri nel browser</string>
+    <string name="school_mail_held_attachments_missing">Non è stato possibile conservare questi allegati, che non sono più nel messaggio: %1$@. Allegali di nuovo prima dell\'invio.</string>
     <string name="school_mail_invalid_recipients">Controlla questi indirizzi: %1$@</string>
     <string name="school_mail_keep_editing">Continua a modificare</string>
     <string name="school_mail_leave_title">Salvare questo messaggio come bozza?</string>
