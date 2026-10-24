@@ -167,9 +167,6 @@ class InAppBrowserActivity : AppCompatActivity() {
     private var toldDark: Boolean? = null
     private var schemePokePending = false
 
-    /** Whether the WebView adds [BrowserPageScripts] to each page as it starts. */
-    private var pagesGetScriptsAtStart = false
-
     private lateinit var loads: BrowserLoads
     private lateinit var signInFlow: BrowserSignInFlow
     private var appliedHost: String? = null
@@ -375,9 +372,11 @@ class InAppBrowserActivity : AppCompatActivity() {
             state.find = state.find?.copy(ordinal = if (count == 0) 0 else ordinal + 1, count = count, done = done)
         }
         setOnLongClickListener { onLongPress() }
-        // Before the page's own scripts, in every page; else as each page finishes, in onPageDone.
-        pagesGetScriptsAtStart = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) &&
-            runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.TOUCH_PAN, setOf("*")) }.isSuccess
+        // Before the page's own scripts, in each of its frames. Every WebView the browser opens in has
+        // this: deleting all browsing data (InAppBrowser.canClearEverything) came long after it.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.TOUCH_PAN, BrowserPageScripts.TOUCH_PAN_ORIGINS) }
+        }
     }
 
     /** Opens [target]: signed in first where its site signs the browser in and no session is kept. */
@@ -456,7 +455,6 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     private fun onPageDone(url: String) {
-        if (!pagesGetScriptsAtStart) webView.evaluateJavascript(BrowserPageScripts.TOUCH_PAN, null)
         loads.finished(url)
         state.loading = false
         state.url = loads.address(url)
