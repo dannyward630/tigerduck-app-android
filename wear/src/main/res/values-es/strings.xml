@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Iniciar sesión en la página web</string>
     <string name="browser_sign_in_working">Iniciando sesión…</string>
     <string name="browser_signed_in">Sesión iniciada</string>
-    <string name="browser_signed_in_detail">Sesión iniciada automáticamente con el enlace de un solo uso del sitio. Tu contraseña nunca se entrega a la página.</string>
     <string name="browser_stop">Detener la carga</string>
     <string name="browser_upload_camera">Tomar una foto</string>
     <string name="browser_upload_camera_denied">TigerDuck no puede usar la cámara sin permiso.</string>

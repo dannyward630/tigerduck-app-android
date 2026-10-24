@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Mag-sign in sa web page</string>
     <string name="browser_sign_in_working">Nagsa-sign in…</string>
     <string name="browser_signed_in">Naka-sign in</string>
-    <string name="browser_signed_in_detail">Awtomatikong naka-sign in gamit ang one-time link ng site. Hindi kailanman ibinibigay sa page ang password mo.</string>
     <string name="browser_stop">Itigil ang pag-load</string>
     <string name="browser_upload_camera">Kumuha ng litrato</string>
     <string name="browser_upload_camera_denied">Hindi magagamit ng TigerDuck ang camera nang walang pahintulot.</string>

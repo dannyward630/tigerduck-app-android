@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Log masuk di halaman web</string>
     <string name="browser_sign_in_working">Sedang log masuk…</string>
     <string name="browser_signed_in">Sudah log masuk</string>
-    <string name="browser_signed_in_detail">Log masuk secara automatik melalui pautan sekali guna laman. Kata laluan anda tidak pernah diberikan kepada halaman.</string>
     <string name="browser_stop">Hentikan pemuatan</string>
     <string name="browser_upload_camera">Ambil foto</string>
     <string name="browser_upload_camera_denied">TigerDuck tidak boleh menggunakan kamera tanpa kebenaran.</string>

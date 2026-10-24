@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Σύνδεση στην ιστοσελίδα</string>
     <string name="browser_sign_in_working">Σύνδεση…</string>
     <string name="browser_signed_in">Συνδεδεμένοι</string>
-    <string name="browser_signed_in_detail">Συνδεθήκατε αυτόματα μέσω του συνδέσμου μίας χρήσης του ιστότοπου. Ο κωδικός σας δεν δίνεται ποτέ στη σελίδα.</string>
     <string name="browser_stop">Διακοπή φόρτωσης</string>
     <string name="browser_upload_camera">Λήψη φωτογραφίας</string>
     <string name="browser_upload_camera_denied">Χωρίς άδεια, το TigerDuck δεν μπορεί να χρησιμοποιήσει την κάμερα.</string>

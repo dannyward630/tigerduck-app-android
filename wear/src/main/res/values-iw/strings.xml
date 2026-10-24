@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">התחברות בדף האינטרנט</string>
     <string name="browser_sign_in_working">מתחבר…</string>
     <string name="browser_signed_in">מחובר</string>
-    <string name="browser_signed_in_detail">התחברת אוטומטית דרך הקישור החד־פעמי של האתר. הסיסמה שלך אף פעם לא נמסרת לדף.</string>
     <string name="browser_stop">הפסקת הטעינה</string>
     <string name="browser_upload_camera">צילום תמונה</string>
     <string name="browser_upload_camera_denied">בלי הרשאה TigerDuck לא יכול להשתמש במצלמה.</string>

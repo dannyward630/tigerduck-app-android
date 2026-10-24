@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">ورود در صفحهٔ وب</string>
     <string name="browser_sign_in_working">در حال ورود…</string>
     <string name="browser_signed_in">وارد شده‌اید</string>
-    <string name="browser_signed_in_detail">با پیوند یک‌بارمصرف سایت به‌طور خودکار وارد شدید. گذرواژهٔ شما هرگز به صفحه داده نمی‌شود.</string>
     <string name="browser_stop">توقف بارگیری</string>
     <string name="browser_upload_camera">گرفتن عکس</string>
     <string name="browser_upload_camera_denied">TigerDuck بدون اجازه نمی‌تواند از دوربین استفاده کند.</string>

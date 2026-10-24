@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Веб-бетте кіру</string>
     <string name="browser_sign_in_working">Кіріп жатыр…</string>
     <string name="browser_signed_in">Кірдіңіз</string>
-    <string name="browser_signed_in_detail">Сайттың бір реттік сілтемесі арқылы автоматты түрде кірдіңіз. Құпия сөзіңіз бетке ешқашан берілмейді.</string>
     <string name="browser_stop">Жүктеуді тоқтату</string>
     <string name="browser_upload_camera">Суретке түсіру</string>
     <string name="browser_upload_camera_denied">Рұқсатсыз TigerDuck камераны пайдалана алмайды.</string>

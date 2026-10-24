@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Skrá inn á vefsíðunni</string>
     <string name="browser_sign_in_working">Skrái inn…</string>
     <string name="browser_signed_in">Innskráð(ur)</string>
-    <string name="browser_signed_in_detail">Skráð(ur) inn sjálfvirkt með einnota tengli vefsins. Lykilorðið þitt er aldrei afhent síðunni.</string>
     <string name="browser_stop">Hætta að hlaða</string>
     <string name="browser_upload_camera">Taka mynd</string>
     <string name="browser_upload_camera_denied">TigerDuck getur ekki notað myndavélina án heimildar.</string>

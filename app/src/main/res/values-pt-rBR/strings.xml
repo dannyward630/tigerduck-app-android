@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Fazer login na página da web</string>
     <string name="browser_sign_in_working">Fazendo login…</string>
     <string name="browser_signed_in">Login feito</string>
-    <string name="browser_signed_in_detail">Login feito automaticamente pelo link de uso único do site. Sua senha nunca é passada para a página.</string>
     <string name="browser_stop">Parar de carregar</string>
     <string name="browser_upload_camera">Tirar foto</string>
     <string name="browser_upload_camera_denied">O TigerDuck não pode usar a câmera sem permissão.</string>

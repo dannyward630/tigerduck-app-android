@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Logga in på webbsidan</string>
     <string name="browser_sign_in_working">Loggar in…</string>
     <string name="browser_signed_in">Inloggad</string>
-    <string name="browser_signed_in_detail">Inloggad automatiskt via webbplatsens engångslänk. Ditt lösenord lämnas aldrig till sidan.</string>
     <string name="browser_stop">Sluta läsa in</string>
     <string name="browser_upload_camera">Ta ett foto</string>
     <string name="browser_upload_camera_denied">TigerDuck kan inte använda kameran utan behörighet.</string>

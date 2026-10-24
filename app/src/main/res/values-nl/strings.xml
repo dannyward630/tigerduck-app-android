@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Aanmelden op de webpagina</string>
     <string name="browser_sign_in_working">Aanmelden…</string>
     <string name="browser_signed_in">Aangemeld</string>
-    <string name="browser_signed_in_detail">Automatisch aangemeld via de eenmalige link van de site. Je wachtwoord wordt nooit aan de pagina gegeven.</string>
     <string name="browser_stop">Laden stoppen</string>
     <string name="browser_upload_camera">Foto maken</string>
     <string name="browser_upload_camera_denied">TigerDuck kan de camera niet gebruiken zonder toestemming.</string>

@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Bejelentkezés a weboldalon</string>
     <string name="browser_sign_in_working">Bejelentkezés…</string>
     <string name="browser_signed_in">Bejelentkezve</string>
-    <string name="browser_signed_in_detail">Automatikusan bejelentkezve a webhely egyszer használatos linkjével. A jelszavadat az oldal soha nem kapja meg.</string>
     <string name="browser_stop">Betöltés leállítása</string>
     <string name="browser_upload_camera">Fénykép készítése</string>
     <string name="browser_upload_camera_denied">Engedély nélkül a TigerDuck nem tudja használni a kamerát.</string>

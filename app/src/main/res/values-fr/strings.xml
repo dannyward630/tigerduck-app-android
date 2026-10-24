@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Se connecter sur la page web</string>
     <string name="browser_sign_in_working">Connexion…</string>
     <string name="browser_signed_in">Connecté</string>
-    <string name="browser_signed_in_detail">Connecté automatiquement grâce au lien à usage unique du site. Votre mot de passe n\'est jamais transmis à la page.</string>
     <string name="browser_stop">Arrêter le chargement</string>
     <string name="browser_upload_camera">Prendre une photo</string>
     <string name="browser_upload_camera_denied">TigerDuck ne peut pas utiliser l\'appareil photo sans autorisation.</string>

@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">เข้าสู่ระบบในหน้าเว็บ</string>
     <string name="browser_sign_in_working">กำลังเข้าสู่ระบบ…</string>
     <string name="browser_signed_in">เข้าสู่ระบบแล้ว</string>
-    <string name="browser_signed_in_detail">เข้าสู่ระบบอัตโนมัติผ่านลิงก์แบบใช้ครั้งเดียวของเว็บไซต์ รหัสผ่านของคุณจะไม่ถูกส่งให้หน้าเว็บ</string>
     <string name="browser_stop">หยุดโหลด</string>
     <string name="browser_upload_camera">ถ่ายรูป</string>
     <string name="browser_upload_camera_denied">TigerDuck ใช้กล้องไม่ได้หากไม่ได้รับอนุญาต</string>

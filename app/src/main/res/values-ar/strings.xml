@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">تسجيل الدخول في صفحة الويب</string>
     <string name="browser_sign_in_working">جارٍ تسجيل الدخول…</string>
     <string name="browser_signed_in">تم تسجيل الدخول</string>
-    <string name="browser_signed_in_detail">تم تسجيل الدخول تلقائيًا عبر رابط الموقع لمرة واحدة. لا تُعطى كلمة مرورك للصفحة أبدًا.</string>
     <string name="browser_stop">إيقاف التحميل</string>
     <string name="browser_upload_camera">التقاط صورة</string>
     <string name="browser_upload_camera_denied">لا يمكن لـ TigerDuck استخدام الكاميرا دون إذن.</string>

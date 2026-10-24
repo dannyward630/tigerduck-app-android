@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Přihlásit se na webové stránce</string>
     <string name="browser_sign_in_working">Přihlašování…</string>
     <string name="browser_signed_in">Přihlášeno</string>
-    <string name="browser_signed_in_detail">Přihlášeno automaticky jednorázovým odkazem webu. Vaše heslo se stránce nikdy nepředává.</string>
     <string name="browser_stop">Zastavit načítání</string>
     <string name="browser_upload_camera">Vyfotit</string>
     <string name="browser_upload_camera_denied">Bez oprávnění nemůže TigerDuck použít fotoaparát.</string>

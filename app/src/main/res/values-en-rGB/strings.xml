@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Sign in on the web page</string>
     <string name="browser_sign_in_working">Signing in…</string>
     <string name="browser_signed_in">Signed in</string>
-    <string name="browser_signed_in_detail">Signed in automatically through the site\'s one-time link. Your password is never given to the page.</string>
     <string name="browser_stop">Stop loading</string>
     <string name="browser_upload_camera">Take a photo</string>
     <string name="browser_upload_camera_denied">TigerDuck can\'t use the camera without permission.</string>

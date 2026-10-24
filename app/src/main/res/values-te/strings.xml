@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">వెబ్ పేజీలో సైన్ ఇన్ చేయండి</string>
     <string name="browser_sign_in_working">సైన్ ఇన్ అవుతోంది…</string>
     <string name="browser_signed_in">సైన్ ఇన్ అయ్యారు</string>
-    <string name="browser_signed_in_detail">సైట్ ఒకసారి-వాడే లింక్ ద్వారా ఆటోమేటిక్‌గా సైన్ ఇన్ అయ్యారు. మీ పాస్‌వర్డ్‌ను ఎప్పుడూ పేజీకి ఇవ్వరు.</string>
     <string name="browser_stop">లోడ్ అవడం ఆపండి</string>
     <string name="browser_upload_camera">ఫోటో తీయండి</string>
     <string name="browser_upload_camera_denied">అనుమతి లేకుండా TigerDuck కెమెరాను ఉపయోగించలేదు.</string>

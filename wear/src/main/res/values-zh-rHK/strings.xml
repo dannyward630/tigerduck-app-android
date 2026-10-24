@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">喺網頁度登入</string>
     <string name="browser_sign_in_working">登入緊…</string>
     <string name="browser_signed_in">已登入</string>
-    <string name="browser_signed_in_detail">透過網站嘅一次性登入連結自動登入，密碼唔會交俾網頁。</string>
     <string name="browser_stop">停止載入</string>
     <string name="browser_upload_camera">影相</string>
     <string name="browser_upload_camera_denied">冇相機權限，TigerDuck 用唔到相機。</string>

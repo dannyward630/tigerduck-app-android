@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Conectați-vă pe pagina web</string>
     <string name="browser_sign_in_working">Se conectează…</string>
     <string name="browser_signed_in">Conectat</string>
-    <string name="browser_signed_in_detail">Conectat automat prin linkul de unică folosință al site-ului. Parola nu este niciodată transmisă paginii.</string>
     <string name="browser_stop">Opriți încărcarea</string>
     <string name="browser_upload_camera">Faceți o fotografie</string>
     <string name="browser_upload_camera_denied">TigerDuck nu poate folosi camera fără permisiune.</string>

@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Auf der Webseite anmelden</string>
     <string name="browser_sign_in_working">Wird angemeldet …</string>
     <string name="browser_signed_in">Angemeldet</string>
-    <string name="browser_signed_in_detail">Automatisch über den Einmal-Link der Website angemeldet. Dein Passwort wird der Seite nie übergeben.</string>
     <string name="browser_stop">Laden stoppen</string>
     <string name="browser_upload_camera">Foto aufnehmen</string>
     <string name="browser_upload_camera_denied">Ohne Berechtigung kann TigerDuck die Kamera nicht verwenden.</string>

@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Prijava na web-stranici</string>
     <string name="browser_sign_in_working">Prijava…</string>
     <string name="browser_signed_in">Prijavljeni ste</string>
-    <string name="browser_signed_in_detail">Automatski prijavljeni jednokratnom poveznicom web-mjesta. Vaša se zaporka nikad ne predaje stranici.</string>
     <string name="browser_stop">Zaustavi učitavanje</string>
     <string name="browser_upload_camera">Snimi fotografiju</string>
     <string name="browser_upload_camera_denied">Bez dopuštenja TigerDuck ne može upotrebljavati kameru.</string>

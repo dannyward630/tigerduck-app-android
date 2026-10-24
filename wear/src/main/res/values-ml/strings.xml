@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">വെബ് പേജിൽ സൈൻ ഇൻ ചെയ്യുക</string>
     <string name="browser_sign_in_working">സൈൻ ഇൻ ചെയ്യുന്നു…</string>
     <string name="browser_signed_in">സൈൻ ഇൻ ചെയ്‌തു</string>
-    <string name="browser_signed_in_detail">സൈറ്റിന്റെ ഒറ്റത്തവണ ലിങ്ക് വഴി സ്വയമേവ സൈൻ ഇൻ ചെയ്തു. നിങ്ങളുടെ പാസ്‌വേഡ് ഒരിക്കലും പേജിന് നൽകില്ല.</string>
     <string name="browser_stop">ലോഡിംഗ് നിർത്തുക</string>
     <string name="browser_upload_camera">ഫോട്ടോ എടുക്കുക</string>
     <string name="browser_upload_camera_denied">അനുമതിയില്ലാതെ TigerDuck-ന് ക്യാമറ ഉപയോഗിക്കാനാകില്ല.</string>

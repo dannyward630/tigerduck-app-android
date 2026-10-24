@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Войти на веб-странице</string>
     <string name="browser_sign_in_working">Выполняется вход…</string>
     <string name="browser_signed_in">Вход выполнен</string>
-    <string name="browser_signed_in_detail">Вход выполнен автоматически по одноразовой ссылке сайта. Ваш пароль никогда не передаётся странице.</string>
     <string name="browser_stop">Остановить загрузку</string>
     <string name="browser_upload_camera">Сделать фото</string>
     <string name="browser_upload_camera_denied">Без разрешения TigerDuck не может использовать камеру.</string>

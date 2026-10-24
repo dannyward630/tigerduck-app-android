@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Web sayfasında oturum aç</string>
     <string name="browser_sign_in_working">Oturum açılıyor…</string>
     <string name="browser_signed_in">Oturum açık</string>
-    <string name="browser_signed_in_detail">Sitenin tek kullanımlık bağlantısıyla otomatik olarak oturum açıldı. Şifren sayfaya asla verilmez.</string>
     <string name="browser_stop">Yüklemeyi durdur</string>
     <string name="browser_upload_camera">Fotoğraf çek</string>
     <string name="browser_upload_camera_denied">TigerDuck izin olmadan kamerayı kullanamaz.</string>

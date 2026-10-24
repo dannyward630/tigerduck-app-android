@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Zaloguj się na stronie</string>
     <string name="browser_sign_in_working">Logowanie…</string>
     <string name="browser_signed_in">Zalogowano</string>
-    <string name="browser_signed_in_detail">Zalogowano automatycznie przez jednorazowy link witryny. Twoje hasło nigdy nie trafia do strony.</string>
     <string name="browser_stop">Zatrzymaj wczytywanie</string>
     <string name="browser_upload_camera">Zrób zdjęcie</string>
     <string name="browser_upload_camera_denied">Bez uprawnienia TigerDuck nie może używać aparatu.</string>

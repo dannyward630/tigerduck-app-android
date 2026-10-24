@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Pieteikties tīmekļa lapā</string>
     <string name="browser_sign_in_working">Notiek pieteikšanās…</string>
     <string name="browser_signed_in">Pieteicies</string>
-    <string name="browser_signed_in_detail">Pieteikšanās automātiski, izmantojot vietnes vienreizējo saiti. Jūsu parole nekad netiek nodota lapai.</string>
     <string name="browser_stop">Apturēt ielādi</string>
     <string name="browser_upload_camera">Uzņemt fotoattēlu</string>
     <string name="browser_upload_camera_denied">Bez atļaujas TigerDuck nevar izmantot kameru.</string>

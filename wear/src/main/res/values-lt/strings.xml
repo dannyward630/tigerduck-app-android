@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Prisijungti tinklalapyje</string>
     <string name="browser_sign_in_working">Jungiamasi…</string>
     <string name="browser_signed_in">Prisijungta</string>
-    <string name="browser_signed_in_detail">Prisijungta automatiškai naudojant vienkartinę svetainės nuorodą. Jūsų slaptažodis puslapiui niekada neperduodamas.</string>
     <string name="browser_stop">Sustabdyti įkėlimą</string>
     <string name="browser_upload_camera">Fotografuoti</string>
     <string name="browser_upload_camera_denied">Be leidimo TigerDuck negali naudoti fotoaparato.</string>

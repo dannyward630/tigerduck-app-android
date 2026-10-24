@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Accedi dalla pagina web</string>
     <string name="browser_sign_in_working">Accesso in corso…</string>
     <string name="browser_signed_in">Accesso effettuato</string>
-    <string name="browser_signed_in_detail">Accesso effettuato automaticamente con il link monouso del sito. La tua password non viene mai consegnata alla pagina.</string>
     <string name="browser_stop">Interrompi caricamento</string>
     <string name="browser_upload_camera">Scatta una foto</string>
     <string name="browser_upload_camera_denied">TigerDuck non può usare la fotocamera senza autorizzazione.</string>

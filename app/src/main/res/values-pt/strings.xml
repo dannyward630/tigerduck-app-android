@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Iniciar sessão na página web</string>
     <string name="browser_sign_in_working">A iniciar sessão…</string>
     <string name="browser_signed_in">Sessão iniciada</string>
-    <string name="browser_signed_in_detail">Sessão iniciada automaticamente com a ligação de utilização única do site. A sua palavra-passe nunca é entregue à página.</string>
     <string name="browser_stop">Parar de carregar</string>
     <string name="browser_upload_camera">Tirar fotografia</string>
     <string name="browser_upload_camera_denied">O TigerDuck não pode usar a câmara sem autorização.</string>

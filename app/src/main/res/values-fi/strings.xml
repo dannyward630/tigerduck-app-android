@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Kirjaudu verkkosivulla</string>
     <string name="browser_sign_in_working">Kirjaudutaan…</string>
     <string name="browser_signed_in">Kirjautunut</string>
-    <string name="browser_signed_in_detail">Kirjauduttu automaattisesti sivuston kertakäyttöisellä linkillä. Salasanaasi ei koskaan anneta sivulle.</string>
     <string name="browser_stop">Lopeta lataus</string>
     <string name="browser_upload_camera">Ota kuva</string>
     <string name="browser_upload_camera_denied">TigerDuck ei voi käyttää kameraa ilman lupaa.</string>

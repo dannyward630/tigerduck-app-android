@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Logi veebilehel sisse</string>
     <string name="browser_sign_in_working">Sisselogimine…</string>
     <string name="browser_signed_in">Sisse logitud</string>
-    <string name="browser_signed_in_detail">Sisse logitud automaatselt saidi ühekordse lingiga. Sinu parooli lehele kunagi ei anta.</string>
     <string name="browser_stop">Peata laadimine</string>
     <string name="browser_upload_camera">Tee foto</string>
     <string name="browser_upload_camera_denied">TigerDuck ei saa ilma loata kaamerat kasutada.</string>

@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Web ページでログイン</string>
     <string name="browser_sign_in_working">ログインしています…</string>
     <string name="browser_signed_in">ログイン済み</string>
-    <string name="browser_signed_in_detail">サイトのワンタイムリンクで自動的にログインしました。パスワードがページに渡されることはありません。</string>
     <string name="browser_stop">読み込みを停止</string>
     <string name="browser_upload_camera">写真を撮る</string>
     <string name="browser_upload_camera_denied">権限がないため、TigerDuck はカメラを使えません。</string>

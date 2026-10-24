@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">இணையப் பக்கத்தில் உள்நுழை</string>
     <string name="browser_sign_in_working">உள்நுழைகிறது…</string>
     <string name="browser_signed_in">உள்நுழைந்துள்ளீர்கள்</string>
-    <string name="browser_signed_in_detail">தளத்தின் ஒருமுறை இணைப்பின் மூலம் தானாக உள்நுழைந்தீர்கள். உங்கள் கடவுச்சொல் ஒருபோதும் பக்கத்துக்குக் கொடுக்கப்படாது.</string>
     <string name="browser_stop">ஏற்றுவதை நிறுத்து</string>
     <string name="browser_upload_camera">படம் எடு</string>
     <string name="browser_upload_camera_denied">அனுமதி இல்லாமல் TigerDuck கேமராவைப் பயன்படுத்த முடியாது.</string>

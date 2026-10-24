@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">웹페이지에서 로그인</string>
     <string name="browser_sign_in_working">로그인하는 중…</string>
     <string name="browser_signed_in">로그인됨</string>
-    <string name="browser_signed_in_detail">사이트의 일회용 링크로 자동 로그인했습니다. 비밀번호는 페이지에 전달되지 않습니다.</string>
     <string name="browser_stop">로딩 중지</string>
     <string name="browser_upload_camera">사진 찍기</string>
     <string name="browser_upload_camera_denied">권한이 없어 TigerDuck이 카메라를 사용할 수 없습니다.</string>

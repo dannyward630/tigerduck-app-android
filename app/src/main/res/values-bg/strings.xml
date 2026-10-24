@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">Влизане от уебстраницата</string>
     <string name="browser_sign_in_working">Влизане…</string>
     <string name="browser_signed_in">Влезли сте</string>
-    <string name="browser_signed_in_detail">Влезли сте автоматично чрез еднократната връзка на сайта. Паролата ви никога не се дава на страницата.</string>
     <string name="browser_stop">Спиране на зареждането</string>
     <string name="browser_upload_camera">Снимане</string>
     <string name="browser_upload_camera_denied">Без разрешение TigerDuck не може да използва камерата.</string>

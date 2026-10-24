@@ -181,7 +181,6 @@
     <string name="browser_sign_in_web">वेब पेजवर साइन इन करा</string>
     <string name="browser_sign_in_working">साइन इन होत आहे…</string>
     <string name="browser_signed_in">साइन इन आहात</string>
-    <string name="browser_signed_in_detail">साइटच्या एक-वेळच्या लिंकने आपोआप साइन इन झाले. तुमचा पासवर्ड पेजला कधीही दिला जात नाही.</string>
     <string name="browser_stop">लोड होणे थांबवा</string>
     <string name="browser_upload_camera">फोटो काढा</string>
     <string name="browser_upload_camera_denied">परवानगीशिवाय TigerDuck कॅमेरा वापरू शकत नाही.</string>
