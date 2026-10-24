@@ -488,4 +488,29 @@ class MoodleAutologinTest {
         assertNull(MoodleAutologin.requestKey(MoodleWebservice({ client }, tokens)) { null })
         assertNull(sentBody)
     }
+
+    @Test
+    fun `the wait for the next key counts down from a key handed out and is none before any`() = runTest {
+        val autologin = autologin()
+        assertEquals(0L, autologin.msUntilKeyDue())
+
+        autologin.url(page)
+        assertEquals(MoodleAutologin.KEY_INTERVAL_MS, autologin.msUntilKeyDue())
+
+        nowMs += 60_000L
+        assertEquals(MoodleAutologin.KEY_INTERVAL_MS - 60_000L, autologin.msUntilKeyDue())
+
+        nowMs += MoodleAutologin.KEY_INTERVAL_MS
+        assertEquals(0L, autologin.msUntilKeyDue())
+    }
+
+    @Test
+    fun `a request that brought no key leaves nothing to wait for`() = runTest {
+        answer = { null }
+        val autologin = autologin()
+
+        autologin.url(page)
+
+        assertEquals(0L, autologin.msUntilKeyDue())
+    }
 }

@@ -92,6 +92,7 @@ class AppState @Inject constructor(
     private val mailAccount: org.ntust.app.tigerduck.mail.MailAccount,
     val librarySession: LibrarySession,
     private val wearBridge: org.ntust.app.tigerduck.wear.WearScheduleBridge,
+    private val browserData: org.ntust.app.tigerduck.browser.BrowserDataCleaner,
 ) {
     /**
      * Whether the demo account was signed in when this process started.
@@ -612,6 +613,7 @@ class AppState @Inject constructor(
         credentials = credentials,
         prefs = prefs,
         publishLibraryCredentialsToWatch = wearBridge::publishLibraryCredentials,
+        clearBrowser = browserData::clear,
     )
 
     /**

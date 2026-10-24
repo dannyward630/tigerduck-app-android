@@ -176,6 +176,7 @@ sealed class Screen(val route: String) {
     object TriggersDebug : Screen("triggersDebug")
     object ServerFailureDebug : Screen("serverFailureDebug")
     object MailDevServerDebug : Screen("mailDevServerDebug")
+    object BrowserAllowlistDebug : Screen("browserAllowlistDebug")
 }
 
 @Composable
@@ -701,6 +702,9 @@ fun MainNavigation(
                     onNavigateToMailDevServerDebug = {
                         if (BuildConfig.DEBUG) navController.navigate(Screen.MailDevServerDebug.route)
                     },
+                    onNavigateToBrowserAllowlistDebug = {
+                        if (BuildConfig.DEBUG) navController.navigate(Screen.BrowserAllowlistDebug.route)
+                    },
                 )
             }
             if (BuildConfig.DEBUG) {
@@ -727,6 +731,11 @@ fun MainNavigation(
                 }
                 page(Screen.MailDevServerDebug.route) {
                     org.ntust.app.tigerduck.ui.screen.debug.MailDevServerDebugScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                page(Screen.BrowserAllowlistDebug.route) {
+                    org.ntust.app.tigerduck.ui.screen.debug.BrowserAllowlistDebugScreen(
                         onBack = { navController.popBackStack() },
                     )
                 }

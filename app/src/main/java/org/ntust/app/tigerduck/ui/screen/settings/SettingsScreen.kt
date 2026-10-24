@@ -92,6 +92,7 @@ fun SettingsScreen(
     onNavigateToTriggersDebug: () -> Unit = {},
     onNavigateToServerFailureDebug: () -> Unit = {},
     onNavigateToMailDevServerDebug: () -> Unit = {},
+    onNavigateToBrowserAllowlistDebug: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val isNtustLoggingIn by viewModel.isNtustLoggingIn.collectAsStateWithLifecycle()
@@ -605,6 +606,9 @@ fun SettingsScreen(
                             SettingsLinkRow("Notification") { onNavigateToNotificationDebug() }
                             HorizontalDivider()
                             SettingsLinkRow("Server failure simulation") { onNavigateToServerFailureDebug() }
+                            HorizontalDivider()
+                            // Which sites the TigerDuck browser loads inside.
+                            SettingsLinkRow("Browser allowlist") { onNavigateToBrowserAllowlistDebug() }
                             HorizontalDivider()
                             // Points School Mail at a non-school mail server, so the
                             // feature can be exercised without a real school mailbox.
