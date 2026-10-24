@@ -17,7 +17,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.ui.screen.calendar.CalendarGrid
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config

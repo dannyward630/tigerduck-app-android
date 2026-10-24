@@ -23,6 +23,7 @@ import org.ntust.app.tigerduck.data.model.HomeSection
 import org.ntust.app.tigerduck.data.preferences.AppPreferences.Companion.themeColorsDark
 import org.ntust.app.tigerduck.notification.AssignmentReminderOffset
 import org.ntust.app.tigerduck.notification.ClassReminders
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.ui.haptics.HapticScenario
 import org.ntust.app.tigerduck.ui.theme.VisualPreset
 import javax.inject.Inject
@@ -389,6 +390,12 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
+
+    /**
+     * Fires when the accent the watch is sent changes: the swatch, or the
+     * gradient's start, end or direction. A gradient from the swatch already
+     * picked leaves [accentColorHex] as it was.
+     */
     val accentColorChanged: SharedFlow<Unit> = _accentColorChanged.asSharedFlow()
 
     /**
@@ -424,7 +431,11 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
      */
     var accentGradientEndHex: Int
         get() = prefs.getInt("accentGradientEndHex", AccentPolicy.NO_GRADIENT)
-        set(value) = prefs.edit().putInt("accentGradientEndHex", value).apply()
+        set(value) {
+            val previous = accentGradientEndHex
+            prefs.edit().putInt("accentGradientEndHex", value).apply()
+            if (value != previous) _accentColorChanged.tryEmit(Unit)
+        }
 
     /**
      * The start color the gradient was picked with. An older build knows only
@@ -433,14 +444,22 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
      */
     var accentGradientStartHex: Int
         get() = prefs.getInt("accentGradientStartHex", AccentPolicy.NO_GRADIENT)
-        set(value) = prefs.edit().putInt("accentGradientStartHex", value).apply()
+        set(value) {
+            val previous = accentGradientStartHex
+            prefs.edit().putInt("accentGradientStartHex", value).apply()
+            if (value != previous) _accentColorChanged.tryEmit(Unit)
+        }
 
     /** The way the accent gradient runs, stored as its [AccentGradientDirection.code]. */
     var accentGradientDirection: AccentGradientDirection
         get() = AccentGradientDirection.fromCode(
             prefs.getInt("accentGradientDirection", AccentGradientDirection.DEFAULT.code),
         )
-        set(value) = prefs.edit().putInt("accentGradientDirection", value.code).apply()
+        set(value) {
+            val previous = accentGradientDirection
+            prefs.edit().putInt("accentGradientDirection", value.code).apply()
+            if (value != previous) _accentColorChanged.tryEmit(Unit)
+        }
 
     var browserPreference: String
         get() = prefs.getString("browserPreference", "system") ?: "system"

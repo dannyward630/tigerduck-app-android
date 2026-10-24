@@ -37,9 +37,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -69,7 +72,10 @@ import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
 import org.ntust.app.tigerduck.wear.data.WatchLibraryCredentialStore
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
+import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentGradient
 import org.ntust.app.tigerduck.wear.ui.theme.LocalScreenPadding
+import org.ntust.app.tigerduck.wear.ui.theme.WearAccentGradient
+import org.ntust.app.tigerduck.wear.ui.theme.accentBrush
 import kotlin.math.abs
 
 @Composable
@@ -373,20 +379,13 @@ private fun CountdownRow(countdown: Int) {
         label = "library_qr_countdown_progress",
     )
     val accent = LocalAccentColor.current
+    val gradient = LocalAccentGradient.current
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         Canvas(modifier = Modifier.size(16.dp)) {
-            val stroke = 2.dp.toPx()
-            drawCircle(color = accent.copy(alpha = 0.18f), style = Stroke(width = stroke))
-            drawArc(
-                color = accent,
-                startAngle = -90f,
-                sweepAngle = 360f * progress,
-                useCenter = false,
-                style = Stroke(width = stroke),
-            )
+            drawCountdownRing(progress, accent, gradient, strokePx = 2.dp.toPx())
         }
         Spacer(Modifier.width(6.dp))
         Text(
@@ -394,6 +393,27 @@ private fun CountdownRow(countdown: Int) {
             color = Color.Gray,
         )
     }
+}
+
+/**
+ * The countdown's ring: [progress] of it in the accent, from the top and
+ * clockwise, over a faint track of the accent all the way round.
+ */
+internal fun DrawScope.drawCountdownRing(
+    progress: Float,
+    accent: Color,
+    gradient: WearAccentGradient?,
+    strokePx: Float,
+) {
+    val brush = accentBrush(accent, gradient, Rect(Offset.Zero, size))
+    drawCircle(brush = brush, alpha = 0.18f, style = Stroke(width = strokePx))
+    drawArc(
+        brush = brush,
+        startAngle = -90f,
+        sweepAngle = 360f * progress,
+        useCenter = false,
+        style = Stroke(width = strokePx),
+    )
 }
 
 @Composable
