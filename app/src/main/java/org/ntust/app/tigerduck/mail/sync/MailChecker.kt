@@ -14,6 +14,7 @@ import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.notify.MailNotifier
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.store.MailStateStore
+import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -149,7 +150,15 @@ class MailChecker @Inject constructor(
                 // Max fetched UID + 1, not STATUS's UIDNEXT: mail that arrived between
                 // the two commands is then neither skipped nor notified twice.
                 val advanced = fresh.maxOfOrNull { it.uid + 1 } ?: status.uidNext
-                val toNotify = fresh.filter { !it.flags.seen && !it.flags.deleted }
+                // Muted mail (quiet hours, mute rules) is passed over like a notified one: the
+                // marker below moves past it, so it never notifies later, and the summary
+                // notification leaves it out of its count. Judged by when it arrived, or by now
+                // where the server gave no INTERNALDATE.
+                val mute = state.muteSettings
+                val checkedAt = Instant.ofEpochMilli(clock.now())
+                val toNotify = fresh.filter {
+                    !it.flags.seen && !it.flags.deleted && !mute.mutes(it, it.receivedAt ?: checkedAt)
+                }
                 // Posted after the sign-out, the departing student's sender and subject would
                 // stay on the lock screen.
                 if (!stillSignedIn()) return@withContext CheckOutcome.NotSignedIn

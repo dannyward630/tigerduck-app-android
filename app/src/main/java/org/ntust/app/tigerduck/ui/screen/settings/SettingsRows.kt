@@ -432,22 +432,29 @@ internal fun SettingsLinkRow(label: String, enabled: Boolean = true, onClick: ()
         )
     }
 }
+/** [enabled] greys the row out in place and stops it opening, as [SettingsLinkRow] does. */
 @Composable
-internal fun SettingsLinkRowWithValue(label: String, value: String, onClick: () -> Unit) {
+internal fun SettingsLinkRowWithValue(label: String, value: String, enabled: Boolean = true, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = SettingRowHeight)
             .semantics(mergeDescendants = true) { role = Role.Button }
-            .clickable { onClick() }
+            .clickable(enabled = enabled) { onClick() }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        LabelAndValue(label = label, labelColor = Color.Unspecified, modifier = Modifier.weight(1f)) {
+        LabelAndValue(
+            label = label,
+            labelColor = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.DISABLED),
+            modifier = Modifier.weight(1f),
+        ) {
             Text(
                 value,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
+                color = MaterialTheme.colorScheme.onSurface.copy(
+                    alpha = if (enabled) ContentAlpha.SECONDARY else ContentAlpha.DISABLED,
+                ),
             )
         }
         Spacer(Modifier.width(8.dp))

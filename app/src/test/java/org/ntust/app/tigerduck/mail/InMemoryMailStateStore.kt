@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.mail
 
+import org.ntust.app.tigerduck.mail.notify.MailMuteSettings
 import org.ntust.app.tigerduck.mail.store.MailStateStore
 
 class InMemoryMailStateStore : MailStateStore {
@@ -19,6 +20,7 @@ class InMemoryMailStateStore : MailStateStore {
         get() = field.also { onUidValidityRead?.invoke() }
     override var inboxSeenUidNext: Long = 0
     override var lastForegroundCheckAt: Long = 0
+    override var muteSettings: MailMuteSettings = MailMuteSettings()
     override var diagnostics: List<String> = emptyList()
         set(value) { field = value.take(10) }
     private val fetchedAt = mutableMapOf<String, Long>()
@@ -72,6 +74,7 @@ class InMemoryMailStateStore : MailStateStore {
     private fun reset() {
         displayName = null; notificationsEnabled = true; authFailed = false; demoMailbox = false
         inboxUidValidity = 0; inboxSeenUidNext = 0; lastForegroundCheckAt = 0
+        muteSettings = MailMuteSettings()
         diagnostics = emptyList()
         fetchedAt.clear()
         owned.clear()
@@ -81,10 +84,12 @@ class InMemoryMailStateStore : MailStateStore {
     override fun clearSignIn() {
         val name = displayName
         val notify = notificationsEnabled
+        val mute = muteSettings
         val kept = owned.toMap()
         reset()
         displayName = name
         notificationsEnabled = notify
+        muteSettings = mute
         owned.putAll(kept)
     }
 }

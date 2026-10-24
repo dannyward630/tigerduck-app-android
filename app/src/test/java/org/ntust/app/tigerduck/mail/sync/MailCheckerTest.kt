@@ -27,9 +27,17 @@ import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.model.FolderStatus
 import org.ntust.app.tigerduck.mail.model.MailBody
+import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.model.MailSummary
+import org.ntust.app.tigerduck.mail.notify.MailMutePreset
+import org.ntust.app.tigerduck.mail.notify.MailMuteRule
+import org.ntust.app.tigerduck.mail.notify.MailMuteSettings
+import org.ntust.app.tigerduck.mail.notify.MailQuietHours
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.testApplicationScope
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -112,6 +120,61 @@ class MailCheckerTest {
         assertEquals(CheckOutcome.NoChange, checker().check(CheckSource.WORKER))
         assertEquals(1, notifier.posted.size)
         assertEquals(0, server.openSessions)
+    }
+
+    /** [text], a Taipei wall-clock time such as `2026-10-21T23:30`. */
+    private fun taipei(text: String): Instant = LocalDateTime.parse(text).atZone(ZoneId.of("Asia/Taipei")).toInstant()
+
+    private suspend fun signInStudent() {
+        server.passwords["B00015999"] = "pw"
+        assertNull(account.signIn("b00015999", "pw"))
+    }
+
+    @Test
+    fun `muted mail is neither posted nor counted, and never notifies later`() = runTest {
+        signInStudent()
+        state.muteSettings = MailMuteSettings(
+            presets = setOf(MailMutePreset.BULLETIN),
+            rules = listOf(MailMuteRule("r", MailMuteRule.Field.SUBJECT, MailMuteRule.Operator.CONTAINS, "weekly digest")),
+        )
+        checker().check(CheckSource.ALARM)
+        server.deliver("Lecture notice", from = MailAddress("NTUST", "bulletin@mail.ntust.edu.tw"))
+        val last = server.deliver("Club weekly digest")
+        server.deliver("Exam room")
+
+        assertEquals(CheckOutcome.NewMail(1), checker().check(CheckSource.ALARM))
+        assertEquals(listOf("Exam room"), notifier.posted.single().map { it.subject })
+        assertTrue(state.inboxSeenUidNext > last)
+
+        // Switched off again, the mail already passed over stays passed over.
+        state.muteSettings = MailMuteSettings()
+        assertEquals(CheckOutcome.NoChange, checker().check(CheckSource.WORKER))
+        assertEquals(1, notifier.posted.size)
+    }
+
+    @Test
+    fun `mail that arrived in quiet hours does not notify when a check runs after them`() = runTest {
+        signInStudent()
+        state.muteSettings = MailMuteSettings(quietHours = MailQuietHours(enabled = true))
+        checker().check(CheckSource.ALARM)
+        server.deliver("Arrived at night", receivedAt = taipei("2026-10-22T01:00"))
+        server.deliver("Arrived in the morning", receivedAt = taipei("2026-10-22T07:30"))
+        now = taipei("2026-10-22T08:00").toEpochMilli()
+
+        assertEquals(CheckOutcome.NewMail(1), checker().check(CheckSource.ALARM))
+        assertEquals(listOf("Arrived in the morning"), notifier.posted.single().map { it.subject })
+    }
+
+    @Test
+    fun `mail with no arrival time is judged by the time of the check`() = runTest {
+        signInStudent()
+        state.muteSettings = MailMuteSettings(quietHours = MailQuietHours(enabled = true))
+        checker().check(CheckSource.ALARM)
+        server.deliver("No date")
+        now = taipei("2026-10-22T02:00").toEpochMilli()
+
+        assertEquals(CheckOutcome.NewMail(0), checker().check(CheckSource.ALARM))
+        assertTrue(notifier.posted.isEmpty())
     }
 
     /**

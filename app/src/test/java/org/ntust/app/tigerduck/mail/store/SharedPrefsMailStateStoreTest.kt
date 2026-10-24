@@ -7,6 +7,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.mail.notify.MailMutePreset
+import org.ntust.app.tigerduck.mail.notify.MailMuteRule
+import org.ntust.app.tigerduck.mail.notify.MailMuteSettings
+import org.ntust.app.tigerduck.mail.notify.MailQuietHours
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
@@ -19,6 +23,24 @@ import kotlin.concurrent.thread
 class SharedPrefsMailStateStoreTest {
 
     private val context = RuntimeEnvironment.getApplication()
+
+    /** Mute settings are the student's: a sign-in again keeps them, a sign-out takes them. */
+    @Test
+    fun `the mute settings outlive the process, stay for the same student and go at sign-out`() {
+        val settings = MailMuteSettings(
+            quietHours = MailQuietHours(enabled = true),
+            presets = setOf(MailMutePreset.BULLETIN),
+            rules = listOf(MailMuteRule("a", MailMuteRule.Field.SUBJECT, MailMuteRule.Operator.CONTAINS, "digest")),
+        )
+        SharedPrefsMailStateStore(context).muteSettings = settings
+        assertEquals(settings, SharedPrefsMailStateStore(context).muteSettings)
+
+        SharedPrefsMailStateStore(context).clearSignIn()
+        assertEquals(settings, SharedPrefsMailStateStore(context).muteSettings)
+
+        SharedPrefsMailStateStore(context).clear()
+        assertEquals(MailMuteSettings(), SharedPrefsMailStateStore(context).muteSettings)
+    }
 
     @Test
     fun `each folder's date outlives the process and goes with the rest at sign-out`() {
