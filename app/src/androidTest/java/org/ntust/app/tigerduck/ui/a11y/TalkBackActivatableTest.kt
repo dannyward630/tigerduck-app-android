@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.ui.a11y
 
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -17,6 +18,8 @@ import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.ntust.app.tigerduck.shared.Course
+import org.ntust.app.tigerduck.ui.component.HueSlider
+import org.ntust.app.tigerduck.ui.component.SatValSquare
 import org.ntust.app.tigerduck.ui.screen.calendar.CalendarGrid
 import org.ntust.app.tigerduck.ui.screen.calendar.dayCellDescription
 import org.ntust.app.tigerduck.ui.screen.classtable.SoloCourseCell
@@ -139,5 +142,34 @@ class TalkBackActivatableTest {
         assertTrue("the chosen swatch is not focusable to TalkBack", info.isFocusable)
         @Suppress("DEPRECATION")
         assertTrue("the chosen swatch does not read as checked", info.isChecked)
+    }
+
+    @Test
+    fun theColorPickersSquareAndHueBarCanBeAdjusted() {
+        rule.setContent {
+            Column {
+                SatValSquare(hue = 120f, sat = 0.5f, value = 0.5f, onSatValChange = { _, _ -> })
+                HueSlider(hue = 120f, onHueChange = {})
+            }
+        }
+
+        for (id in listOf(
+            R.string.a11y_color_picker_saturation,
+            R.string.a11y_color_picker_brightness,
+            R.string.a11y_color_picker_hue,
+        )) {
+            val label = context.getString(id)
+            val info = node(label)
+            assertTrue("\"$label\" is not focusable to TalkBack", info.isFocusable)
+            assertNotNull("\"$label\" has no range for TalkBack to read", info.rangeInfo)
+            assertTrue(
+                "\"$label\" cannot be swiped up to adjust",
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SCROLL_FORWARD in info.actionList,
+            )
+            assertTrue(
+                "\"$label\" cannot be set by TalkBack",
+                AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS in info.actionList,
+            )
+        }
     }
 }
