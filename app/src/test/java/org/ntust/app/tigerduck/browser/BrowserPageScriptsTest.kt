@@ -55,7 +55,20 @@ class BrowserPageScriptsTest {
         assertFalse(BrowserPageScripts.LOGOUT_SELECTOR, BrowserPageScripts.LOGOUT_SELECTOR.contains(":has("))
         assertTrue(script, script.contains("CSS.supports('selector(:has(*))')"))
         assertTrue("the divider right above", script.contains("previousElementSibling") && script.contains("dropdown-divider"))
-        assertTrue("the boxes around", script.contains("closest('.logininfo, .singlebutton')"))
+        assertTrue("a link's logged-in line", script.contains("found.closest('.logininfo')"))
+        assertTrue("a form's own button wrapper, not one further up", script.contains("found.parentElement"))
         assertTrue("as the page changes", script.contains("MutationObserver"))
+    }
+
+    @Test
+    fun `a focus ring shows only for focus the keyboard moved, on Moodle's pages`() {
+        val script = BrowserPageScripts.TOUCH_FOCUS
+
+        listOf("button", "a", "input", "select", "textarea", "[tabindex]").forEach {
+            assertTrue(it, script.contains("$it:focus:not(:focus-visible)"))
+        }
+        assertTrue(script, script.contains("outline: none !important; box-shadow: none !important;"))
+        assertFalse("the keyboard's ring is left alone", script.replace(":not(:focus-visible)", "").contains(":focus-visible"))
+        assertEquals(setOf("https://moodle2.ntust.edu.tw"), BrowserPageScripts.TOUCH_FOCUS_ORIGINS)
     }
 }

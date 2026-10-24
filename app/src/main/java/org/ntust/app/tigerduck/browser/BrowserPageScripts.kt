@@ -62,13 +62,31 @@ object BrowserPageScripts {
     document.querySelectorAll(logout).forEach(function(found) {
       var above = found.previousElementSibling;
       if (above && above.classList.contains('dropdown-divider')) hide(above);
-      var box = found.closest('.logininfo, .singlebutton');
-      if (box) hide(box);
+      var box = found.tagName === 'FORM' ? found.parentElement : found.closest('.logininfo');
+      if (box && box.matches(found.tagName === 'FORM' ? '.singlebutton' : '.logininfo')) hide(box);
     });
   };
   document.addEventListener('DOMContentLoaded', tidy);
   new MutationObserver(tidy).observe(document.documentElement, { childList: true, subtree: true });
 })();"""
+
+    /**
+     * No focus ring where a touch moved the focus. Moodle's scripts move the focus when a tap opens
+     * something, its drawer to its close button among them, and Boost rings whatever has focus; a
+     * finger needs no ring to see where it is. Where the keyboard, a D-pad or Switch Access moved
+     * the focus, `:focus-visible` holds and the ring stays as Boost draws it. A WebView without
+     * `:focus-visible` drops the rule and keeps every ring.
+     */
+    const val TOUCH_FOCUS = """(function() {
+  var style = document.createElement('style');
+  style.textContent = 'button:focus:not(:focus-visible), a:focus:not(:focus-visible), input:focus:not(:focus-visible), ' +
+    'select:focus:not(:focus-visible), textarea:focus:not(:focus-visible), [tabindex]:focus:not(:focus-visible) ' +
+    '{ outline: none !important; box-shadow: none !important; }';
+  (document.head || document.documentElement).appendChild(style);
+})();"""
+
+    /** Where [TOUCH_FOCUS] goes, as WebViewCompat.addDocumentStartJavaScript's origin rules. */
+    val TOUCH_FOCUS_ORIGINS: Set<String> = setOf(MoodleWebservice.SITE)
 
     /** Where [HIDE_LOGOUT] goes, as WebViewCompat.addDocumentStartJavaScript's origin rules. */
     val HIDE_LOGOUT_ORIGINS: Set<String> = setOf(MoodleWebservice.SITE)
