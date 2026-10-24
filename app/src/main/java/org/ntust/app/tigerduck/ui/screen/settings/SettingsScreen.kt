@@ -76,6 +76,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
     onNavigateToTabEditor: () -> Unit = {},
     onNavigateToLanguagePicker: () -> Unit = {},
+    onNavigateToAccentColor: () -> Unit = {},
     onNavigateToLiveActivity: () -> Unit = {},
     onNavigateToSchoolMailNotificationSettings: () -> Unit = {},
     onNavigateToNotificationPermissionSettings: () -> Unit = {},
@@ -287,27 +288,23 @@ fun SettingsScreen(
                     Column {
                         SettingsLinkRow(stringResource(R.string.tab_editor_title)) { onNavigateToTabEditor() }
                         HorizontalDivider()
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Text(
-                                stringResource(R.string.settings_accent_color),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            // Show the mode-appropriate display color but always
-                            // persist the canonical (light) hex so the pair swaps
-                            // when the user toggles the color theme.
-                            AccentColorSwatches(
-                                selectedHex = accentColorHex,
-                                followsWallpaper = viewModel.appState.usesWallpaperColors,
-                                isDark = TigerDuckTheme.isDarkMode,
-                                onSelect = { viewModel.appState.pickAccentColor(it) },
-                                onSelectWallpaper = { viewModel.appState.pickWallpaperColors() },
-                            )
-                        }
+                        // The accent as the app draws it: the wallpaper's swatch
+                        // while it follows them, else the color or gradient picked.
+                        val followsWallpaper = viewModel.appState.usesWallpaperColors
+                        val wallpaper = wallpaperColors(TigerDuckTheme.isDarkMode)
+                        AccentColorRow(
+                            preview = if (followsWallpaper && wallpaper != null) {
+                                wallpaper.wallpaperSwatch()
+                            } else {
+                                TigerDuckTheme.accentBrush
+                            },
+                            pickName = accentPickName(
+                                fixedHex = accentColorHex,
+                                gradientEnd = viewModel.appState.accentGradientEndHex,
+                                followsWallpaper = followsWallpaper,
+                            ),
+                            onClick = onNavigateToAccentColor,
+                        )
                     }
                 }
             }

@@ -24,6 +24,7 @@ import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.AppFeature
 import org.ntust.app.tigerduck.data.model.CalendarEvent
 import org.ntust.app.tigerduck.data.model.EventSource
+import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.ntust.app.tigerduck.data.preferences.AccentPolicy
 import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
@@ -40,6 +41,7 @@ import org.ntust.app.tigerduck.network.NtustSessionManager
 import org.ntust.app.tigerduck.notification.AssignmentReminderOffset
 import org.ntust.app.tigerduck.notification.SystemPermissions
 import org.ntust.app.tigerduck.ui.haptics.HapticScenario
+import org.ntust.app.tigerduck.ui.theme.AccentGradient
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import org.ntust.app.tigerduck.ui.theme.VisualPreset
 import org.ntust.app.tigerduck.util.logSummary
@@ -233,6 +235,31 @@ class AppState @Inject constructor(
      */
     fun accentColor(isDark: Boolean = TigerDuckTheme.isDarkMode): Color =
         AccentPolicy.fixedColor(accentColorHex, isDark)
+
+    /**
+     * The end of the gradient picked, as its canonical (light) hex, or null for
+     * a single color. [accentColorHex] is its start.
+     */
+    val accentGradientEndHex: Int?
+        get() = accentSetting.gradientEnd
+
+    /** The way the accent gradient runs. */
+    val accentGradientDirection: AccentGradientDirection
+        get() = accentSetting.gradientDirection
+
+    /** Picks the gradient from [startHex] to [endHex], canonical (light) hexes, in place of the wallpaper too. */
+    fun pickAccentGradient(startHex: Int, endHex: Int) = accentSetting.pickGradient(startHex, endHex)
+
+    /** Picks the way the accent gradient runs. */
+    fun pickAccentGradientDirection(direction: AccentGradientDirection) = accentSetting.pickDirection(direction)
+
+    /** The gradient picked as the current theme mode draws it, or null for a single color. */
+    fun accentGradient(isDark: Boolean = TigerDuckTheme.isDarkMode): AccentGradient? =
+        accentGradientEndHex?.let { AccentGradient(AccentPolicy.fixedColor(it, isDark), accentGradientDirection) }
+
+    /** What text on the accent draws in, for a color of the user's own; null for the theme's own. */
+    fun accentOnColor(isDark: Boolean = TigerDuckTheme.isDarkMode): Color? =
+        AccentPolicy.onAccent(accentColorHex, isDark)
 
     private val visualPresetSetting =
         VisualPresetSetting(prefs, onChange = { widgetUpdater.requestUpdate() })

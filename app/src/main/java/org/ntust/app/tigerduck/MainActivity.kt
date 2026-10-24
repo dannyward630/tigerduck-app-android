@@ -254,6 +254,8 @@ class MainActivity : AppCompatActivity() {
             TigerDuckAppTheme(
                 darkTheme = dark,
                 accentColor = appState.accentColor(dark),
+                onAccentColor = appState.accentOnColor(dark),
+                accentGradient = appState.accentGradient(dark),
                 useDynamicColor = appState.usesWallpaperColors,
                 visualPreset = appState.visualPreset,
             ) {

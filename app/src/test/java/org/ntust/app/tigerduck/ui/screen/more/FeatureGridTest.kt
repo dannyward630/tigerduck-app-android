@@ -6,6 +6,7 @@
 package org.ntust.app.tigerduck.ui.screen.more
 
 import android.app.Application
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.requiredWidth
@@ -23,6 +24,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -30,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +63,10 @@ class FeatureGridTest {
         val cards = cards()
         val cellWidth = cards.first().width
         cards.forEach { assertEquals(cellWidth / 1.6f, it.height, 1f) }
-        labels().forEach { (name, label) -> assertEquals("$name wrapped", 1, label.layout.lineCount) }
+        labels().forEach { (name, label) ->
+            assertEquals("$name wrapped", 1, label.layout.lineCount)
+            assertNotEquals("$name is hyphenated", Hyphens.Auto, label.layout.layoutInput.style.hyphens)
+        }
     }
 
     @Test
@@ -74,26 +80,68 @@ class FeatureGridTest {
         }
         cards.forEach { assertEquals(cards.first().height, it.height, 0.5f) }
         assertTrue("the cards did not grow", cards.first().height > cards.first().width / 1.6f + 1f)
+        assertSameSize(labels())
     }
 
     @Test
-    fun `a word too long for its line is set smaller rather than broken`() {
-        // At 24sp "Announcements" is wider than a 360dp phone's card, and
-        // Android would break it as "Announcemen" / "ts".
+    fun `a word too long for its line is hyphenated at the size every card uses`() {
+        // At 24sp "Announcements" is wider than a 360dp phone's card.
         show(width = 360.dp, fontScale = 1f)
 
-        val layout = labels().getValue("Announcements").layout
+        val labels = labels()
+        val layout = labels.getValue("Announcements").layout
         val input = layout.layoutInput
-        val at24sp = TextMeasurer(input.fontFamilyResolver, input.density, input.layoutDirection)
+        val oneLine = TextMeasurer(input.fontFamilyResolver, input.density, input.layoutDirection)
             .measure(input.text, input.style.copy(fontSize = 24.sp))
-        assertTrue("fits at 24sp anyway", at24sp.size.width > input.constraints.maxWidth)
-        assertTrue("not set smaller", input.style.fontSize < 24.sp)
-        assertEquals(1, layout.lineCount)
+        assertTrue("fits its line anyway", oneLine.size.width > input.constraints.maxWidth)
+        assertSameSize(labels)
+        assertEquals(24.sp, input.style.fontSize)
+        assertEquals(Hyphens.Auto, input.style.hyphens)
+        assertEquals("en", input.style.localeList?.first()?.language)
+        assertEquals(2, layout.lineCount)
+        // At its hyphenation point, "Announce-" / "ments", not where the line ran out.
+        assertEquals("Announce", input.text.text.substring(0, layout.getLineEnd(0)))
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S_V2], qualifiers = "+en")
+    fun `an English app on a Chinese phone hyphenates in English below API 33`() {
+        // Below API 33 the app's own language changes its resources, not the default locale, which
+        // stays the phone's: hyphenation must follow the language the names are in.
+        val phone = java.util.Locale.getDefault()
+        java.util.Locale.setDefault(java.util.Locale.TAIWAN)
+        try {
+            show(width = 360.dp, fontScale = 1f)
+
+            val layout = labels().getValue("Announcements").layout
+            val input = layout.layoutInput
+            assertEquals("en", input.style.localeList?.first()?.language)
+            assertEquals(Hyphens.Auto, input.style.hyphens)
+            assertEquals(2, layout.lineCount)
+            assertEquals("Announce", input.text.text.substring(0, layout.getLineEnd(0)))
+        } finally {
+            java.util.Locale.setDefault(phone)
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "+zh-rTW")
+    fun `names in Chinese keep one size and break as before`() {
+        show(width = 360.dp, fontScale = 1.3f)
+
+        val cards = cards()
+        val labels = labels()
+        labels.forEach { (name, label) ->
+            assertFitsItsCard(name, label, cards)
+            assertFalse("$name is cut short", label.layout.isLineEllipsized(label.layout.lineCount - 1))
+            assertEquals("zh", label.layout.layoutInput.style.localeList?.first()?.language)
+        }
+        assertSameSize(labels)
     }
 
     @Test
     @Config(qualifiers = "+ru")
-    fun `a name that cannot fit even at the smallest size stays inside its card`() {
+    fun `a name too long even for its three lines stays inside its card`() {
         // "Университетская почта": the first word alone outgrows the card at 2x.
         show(width = 360.dp, fontScale = 2f)
 
@@ -162,6 +210,12 @@ class FeatureGridTest {
             layout.getLineBottom(layout.lineCount - 1) <= layout.size.height + 0.5f,
         )
         assertTrue("$name runs out of its card", cards.any { card -> card.contains(label.bounds) })
+    }
+
+    /** Every name is set at the one size, none smaller to fit its card. */
+    private fun assertSameSize(labels: Map<String, Label>) {
+        val sizes = labels.mapValues { (_, label) -> label.layout.layoutInput.style.fontSize }
+        assertEquals("names set apart: $sizes", 1, sizes.values.distinct().size)
     }
 
     private fun Rect.contains(other: Rect): Boolean =

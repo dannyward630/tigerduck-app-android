@@ -201,13 +201,10 @@ internal fun FeatureGrid(
                                 modifier = Modifier.size(FeatureIconSize)
                             )
                             val label = stringResource(feature.displayNameRes)
-                            val labelStyle = featureLabelStyle()
                             Text(
                                 text = label,
                                 modifier = Modifier.width(cardSize.labelWidth),
-                                style = labelStyle.copy(
-                                    fontSize = cardSize.labelFontSizes[label] ?: labelStyle.fontSize
-                                ),
+                                style = cardSize.labelStyle(label, featureLabelStyle()),
                                 maxLines = FeatureLabelMaxLines,
                                 overflow = TextOverflow.Ellipsis
                             )

@@ -12,6 +12,7 @@ import org.ntust.app.tigerduck.academic.AcademicCalendar
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.data.cache.DataCache
+import org.ntust.app.tigerduck.data.preferences.AccentPolicy
 import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
@@ -199,10 +200,16 @@ class WearScheduleBridge @Inject constructor(
 /**
  * The accent the watch is sent, as `#RRGGBB`: the swatch last picked, also
  * while the phone follows the wallpaper, as the watch has no wallpaper colors
- * of its own to follow (see [org.ntust.app.tigerduck.data.preferences.AccentPolicy]).
+ * of its own to follow (see [AccentPolicy]). A preset goes as it always has;
+ * a color of the user's own goes as dark mode draws it, as the watch draws on
+ * black, where a dark one would leave its rings and guides invisible. Only the
+ * start of a gradient goes: the watch draws no gradient.
  */
-internal fun wearAccentHex(prefs: AppPreferences): String =
-    "#%06X".format(0xFFFFFF and prefs.accentColorHex)
+internal fun wearAccentHex(prefs: AppPreferences): String {
+    val hex = prefs.accentColorHex
+    val sent = if (AccentPolicy.isPreset(hex)) hex else AccentPolicy.darkHex(hex)
+    return "#%06X".format(0xFFFFFF and sent)
+}
 
 /**
  * How far ahead the watch is told about quiet days. Bounded because every day

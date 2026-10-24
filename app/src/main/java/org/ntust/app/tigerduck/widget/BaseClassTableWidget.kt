@@ -68,7 +68,7 @@ abstract class BaseClassTableWidget(
             val isDark = resolveWidgetIsDark(prefs, context)
             val accent = resolveWidgetAccentColor(prefs, isDark)
             val colors = (if (isDark) WidgetTheme.Dark else WidgetTheme.Light)
-                .copy(highlight = accent)
+                .copy(highlight = accent, onHighlight = resolveWidgetOnAccentColor(prefs, isDark))
             // The interface style, for the Week grid, which draws as the class table
             // does, and the Today list's course colors.
             val style = VisualStylePolicy(prefs.visualPreset)

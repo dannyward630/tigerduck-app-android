@@ -63,4 +63,44 @@ class AppPreferencesAccentTest {
         assertFalse(prefs.useWallpaperColors)
         assertEquals(0x007AFF, prefs.accentColorHex)
     }
+
+    @Test
+    fun `an install that never picked a gradient has none, and runs one top left to bottom right`() {
+        val prefs = AppPreferences(context)
+        assertEquals(AccentPolicy.NO_GRADIENT, prefs.accentGradientEndHex)
+        assertEquals(AccentGradientDirection.TopLeftToBottomRight, prefs.accentGradientDirection)
+    }
+
+    @Test
+    fun `a gradient is stored beside the accent, which holds its start for an older build`() {
+        val prefs = AppPreferences(context)
+        prefs.accentColorHex = 0x007AFF
+        prefs.accentGradientStartHex = 0x007AFF
+        prefs.accentGradientEndHex = 0xAF52DE
+        prefs.accentGradientDirection = AccentGradientDirection.BottomToTop
+
+        val restarted = AppPreferences(context)
+        assertEquals(0x007AFF, restarted.accentGradientStartHex)
+        assertEquals(0xAF52DE, restarted.accentGradientEndHex)
+        assertEquals(AccentGradientDirection.BottomToTop, restarted.accentGradientDirection)
+        assertEquals(0x007AFF, raw.getInt("accentColorHex", 0))
+    }
+
+    @Test
+    fun `a stored direction this build does not know reads as top left to bottom right`() {
+        raw.edit().putInt("accentGradientDirection", 99).commit()
+        assertEquals(AccentGradientDirection.TopLeftToBottomRight, AppPreferences(context).accentGradientDirection)
+    }
+
+    @Test
+    fun `a full reset drops the gradient`() {
+        val prefs = AppPreferences(context)
+        prefs.accentGradientStartHex = 0x007AFF
+        prefs.accentGradientEndHex = 0xAF52DE
+        prefs.accentGradientDirection = AccentGradientDirection.RightToLeft
+        prefs.clearAllPrefs()
+
+        assertEquals(AccentPolicy.NO_GRADIENT, prefs.accentGradientEndHex)
+        assertEquals(AccentGradientDirection.TopLeftToBottomRight, prefs.accentGradientDirection)
+    }
 }
