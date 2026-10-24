@@ -21,6 +21,8 @@ class AccentGradientDirectionTest {
                 AccentGradientDirection.RightToLeft to 3,
                 AccentGradientDirection.TopRightToBottomLeft to 4,
                 AccentGradientDirection.TopLeftToBottomRight to 5,
+                AccentGradientDirection.BottomLeftToTopRight to 6,
+                AccentGradientDirection.BottomRightToTopLeft to 7,
             ),
             AccentGradientDirection.entries.associateWith { it.code },
         )

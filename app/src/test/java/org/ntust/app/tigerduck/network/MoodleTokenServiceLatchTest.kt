@@ -15,6 +15,7 @@ import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -58,6 +59,9 @@ class MoodleTokenServiceLatchTest {
 
     /** Runs as the launch arrives, before its answer. */
     private var onLaunch: () -> Unit = {}
+
+    /** The private token Moodle hands over with the wstoken, or null for a pair without one. */
+    private var handedPrivateToken: String? = "private"
 
     /** Each call's deadline for the whole call, in nanoseconds; 0 for none. */
     private val deadlines = CopyOnWriteArrayList<Long>()
@@ -252,6 +256,86 @@ class MoodleTokenServiceLatchTest {
         assertNull(tokens.token)
     }
 
+    // --- a wstoken stored without its private token, as builds before 2.4.0 left it ---
+
+    @Test
+    fun `a wstoken stored without its private token gets one from a sign-in`() = runTest(UnconfinedTestDispatcher()) {
+        val (service, _) = service()
+        tokens.token = WSTOKEN
+
+        assertTrue(service.fetchPrivateToken())
+
+        assertEquals("private", tokens.privateToken)
+        assertEquals(WSTOKEN, tokens.token)
+        assertEquals(1, posts.size)
+    }
+
+    @Test
+    fun `a private token already stored is not fetched again`() = runTest(UnconfinedTestDispatcher()) {
+        val (service, _) = service()
+        tokens.token = WSTOKEN
+        tokens.privateToken = "kept"
+
+        assertTrue(service.fetchPrivateToken())
+
+        assertEquals("kept", tokens.privateToken)
+        assertEquals(emptyList<String>(), posts)
+    }
+
+    @Test
+    fun `with no wstoken stored nothing is fetched`() = runTest(UnconfinedTestDispatcher()) {
+        val (service, _) = service()
+
+        assertFalse(service.fetchPrivateToken())
+
+        assertEquals(emptyList<String>(), posts)
+        assertNull(tokens.token)
+    }
+
+    @Test
+    fun `a pair Moodle hands over without a private token says so`() = runTest(UnconfinedTestDispatcher()) {
+        handedPrivateToken = null
+        val (service, _) = service()
+        tokens.token = WSTOKEN
+
+        assertFalse(service.fetchPrivateToken())
+
+        assertEquals(WSTOKEN, tokens.token)
+        assertNull(tokens.privateToken)
+    }
+
+    @Test
+    fun `a refused stored password is not posted for a private token`() = runTest(UnconfinedTestDispatcher()) {
+        val (service, latch) = service()
+        tokens.token = WSTOKEN
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+
+        val failure = runCatching { service.fetchPrivateToken() }.exceptionOrNull()
+
+        assertTrue("got $failure", failure is MoodleWebserviceError.SsoLoginRejected)
+        assertEquals(emptyList<String>(), posts)
+        assertEquals("the stored wstoken stays", WSTOKEN, tokens.token)
+    }
+
+    @Test
+    fun `a refusal while fetching a private token keeps the wstoken and signs nobody out`() = runTest(UnconfinedTestDispatcher()) {
+        accepts = false
+        val (service, latch) = service()
+        tokens.token = WSTOKEN
+
+        val failure = runCatching { service.fetchPrivateToken() }.exceptionOrNull()
+
+        assertTrue("got $failure", failure is MoodleWebserviceError.SsoLoginRejected)
+        assertEquals(REASON, latch.rejection.value?.reason)
+        assertEquals(WSTOKEN, tokens.token)
+        assertEquals(STUDENT, tokens.studentId)
+        assertEquals(PASSWORD, tokens.password)
+
+        // The next open's fetch posts nothing until the password changes.
+        runCatching { service.fetchPrivateToken() }
+        assertEquals(1, posts.size)
+    }
+
     private fun answer(request: Request): Response {
         val (url, html) = when {
             request.method == "POST" -> {
@@ -276,7 +360,8 @@ class MoodleTokenServiceLatchTest {
     }
 
     private fun tokenPage(): String {
-        val payload = Base64.encodeToString("signature:::$WSTOKEN:::private".toByteArray(), Base64.NO_WRAP)
+        val pair = listOfNotNull("signature", WSTOKEN, handedPrivateToken).joinToString(":::")
+        val payload = Base64.encodeToString(pair.toByteArray(), Base64.NO_WRAP)
         return """<html><body><a href="moodlemobile://token=$payload">Open</a></body></html>"""
     }
 

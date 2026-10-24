@@ -35,6 +35,8 @@ class WearAccentBrushTest {
             AccentGradientDirection.RightToLeft to (Offset(110f, 20f) to Offset(10f, 20f)),
             AccentGradientDirection.TopRightToBottomLeft to (Offset(110f, 20f) to Offset(10f, 220f)),
             AccentGradientDirection.TopLeftToBottomRight to (Offset(10f, 20f) to Offset(110f, 220f)),
+            AccentGradientDirection.BottomLeftToTopRight to (Offset(10f, 220f) to Offset(110f, 20f)),
+            AccentGradientDirection.BottomRightToTopLeft to (Offset(110f, 220f) to Offset(10f, 20f)),
         )
         assertEquals(AccentGradientDirection.entries.toSet(), expected.keys)
         expected.forEach { (direction, ends) ->

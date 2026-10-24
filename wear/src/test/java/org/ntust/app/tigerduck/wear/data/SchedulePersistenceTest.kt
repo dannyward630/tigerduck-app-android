@@ -90,6 +90,18 @@ class SchedulePersistenceTest {
     }
 
     @Test
+    fun `the directions from a bottom corner are read back from their codes`() {
+        assertEquals(
+            AccentGradientDirection.BottomLeftToTopRight,
+            SchedulePersistence.readSnapshot(write(null, "#AF52DE", 6)).accentDirection,
+        )
+        assertEquals(
+            AccentGradientDirection.BottomRightToTopLeft,
+            SchedulePersistence.readSnapshot(write(null, "#AF52DE", 7)).accentDirection,
+        )
+    }
+
+    @Test
     fun `a single color the phone sends next clears the gradient`() {
         val prefs = write(null, "#AF52DE", 2)
         SchedulePersistence.writeSnapshot(

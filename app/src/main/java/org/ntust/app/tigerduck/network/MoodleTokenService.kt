@@ -124,6 +124,21 @@ class MoodleTokenService internal constructor(
     /** The stored private token, which only asks Moodle for an autologin key. Never logged. */
     fun currentPrivateToken(): String? = tokens.privateToken
 
+    /**
+     * Signs in again for the private token the stored wstoken came without, as 2.3.1 and earlier
+     * kept no private token. It is a renewal of the stored token, so it shares a sign-in already
+     * under way and holds back as every renewal does: after one that failed for a reason other
+     * than the network, and while the stored password is refused, posting nothing. A failure
+     * leaves the stored token as it was. True once a private token is stored; false with no
+     * wstoken stored, or when Moodle hands the pair over without a private token.
+     */
+    suspend fun fetchPrivateToken(): Boolean {
+        if (currentPrivateToken() != null) return true
+        val token = currentToken() ?: return false
+        renewToken(token)
+        return currentPrivateToken() != null
+    }
+
     private val coordinator = MoodleTokenCoordinator(
         tokens = tokens,
         login = { studentId, password, posting ->

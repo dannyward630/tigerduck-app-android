@@ -2,7 +2,8 @@ package org.ntust.app.tigerduck.shared
 
 /**
  * The way an accent gradient runs, from its start color to its end color, as
- * picked on the phone's accent color page, in the order the page offers them.
+ * picked on the phone's accent color page, in the order the page offers them:
+ * row by row in its two rows of four, each direction above its reverse.
  * Here in `:shared` because the watch draws the same gradient.
  *
  * [code] is what the phone's preference stores and what it sends the watch
@@ -23,11 +24,13 @@ enum class AccentGradientDirection(
     val endY: Float,
 ) {
     TopToBottom(0, 0f, 0f, 0f, 1f),
-    BottomToTop(1, 0f, 1f, 0f, 0f),
     LeftToRight(2, 0f, 0f, 1f, 0f),
+    BottomLeftToTopRight(6, 0f, 1f, 1f, 0f),
+    TopLeftToBottomRight(5, 0f, 0f, 1f, 1f),
+    BottomToTop(1, 0f, 1f, 0f, 0f),
     RightToLeft(3, 1f, 0f, 0f, 0f),
     TopRightToBottomLeft(4, 1f, 0f, 0f, 1f),
-    TopLeftToBottomRight(5, 0f, 0f, 1f, 1f);
+    BottomRightToTopLeft(7, 1f, 1f, 0f, 0f);
 
     companion object {
         /** A gradient picked before any direction was: the wallpaper swatch's own, top left to bottom right. */

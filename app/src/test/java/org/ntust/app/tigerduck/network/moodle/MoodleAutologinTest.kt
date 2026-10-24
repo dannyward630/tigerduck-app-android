@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.network.moodle
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -33,6 +34,14 @@ class MoodleAutologinTest {
     private var privateToken: String? = "private"
     private var nowMs = 1_000_000_000L
 
+    /** Whether a Moodle token is stored, which a private token can be fetched for. */
+    private var moodleToken = true
+    private var fetches = 0
+    private var fetch: suspend () -> Boolean = {
+        privateToken = "private"
+        true
+    }
+
     private fun TestScope.autologin() = MoodleAutologin(
         keySource = {
             requests++
@@ -42,6 +51,11 @@ class MoodleAutologinTest {
         now = { nowMs },
         signInGeneration = { generation },
         hasPrivateToken = { privateToken != null },
+        canFetchPrivateToken = { moodleToken },
+        fetchPrivateToken = {
+            fetches++
+            fetch()
+        },
     )
 
     @Test
@@ -150,6 +164,157 @@ class MoodleAutologinTest {
         answer = { key.copy(autologinUrl = "https://evil.example/autologin.php") }
 
         assertEquals(page, autologin().url(page))
+    }
+
+    // --- a Moodle token stored without its private token, as builds before 2.4.0 left it ---
+
+    @Test
+    fun `an open fetches the missing private token, then opens behind a key`() = runTest {
+        privateToken = null
+
+        assertTrue(autologin().url(page).contains("key=onetime"))
+        assertEquals(1, fetches)
+        assertEquals(1, requests)
+    }
+
+    @Test
+    fun `opens with the private token stored fetch nothing`() = runTest {
+        autologin().url(page)
+
+        assertEquals(0, fetches)
+    }
+
+    @Test
+    fun `without a Moodle token nothing is fetched and the page opens as it is`() = runTest {
+        privateToken = null
+        moodleToken = false
+
+        assertEquals(page, autologin().url(page))
+        assertEquals(0, fetches)
+        assertEquals(0, requests)
+    }
+
+    @Test
+    fun `two opens at once share one fetch`() = runTest {
+        privateToken = null
+        val gate = CompletableDeferred<Unit>()
+        fetch = {
+            gate.await()
+            privateToken = "private"
+            true
+        }
+        val autologin = autologin()
+        val first = backgroundScope.async { autologin.url(page) }
+        val second = backgroundScope.async { autologin.url(page) }
+        runCurrent()
+        gate.complete(Unit)
+
+        // One key between them: the other open goes as it is, as for any two opens at once.
+        assertEquals(1, listOf(first.await(), second.await()).count { it.contains("key=onetime") })
+        assertEquals(1, fetches)
+    }
+
+    @Test
+    fun `an open waits past the key's wait while the fetch is under way`() = runTest {
+        privateToken = null
+        fetch = {
+            delay(MoodleAutologin.KEY_WAIT_MS + 2_000L)
+            privateToken = "private"
+            true
+        }
+
+        assertTrue(autologin().url(page).contains("key=onetime"))
+    }
+
+    @Test
+    fun `a fetch too slow opens the page as it is and asks for no key, and the next open gets one at once`() = runTest {
+        privateToken = null
+        fetch = {
+            delay(MoodleAutologin.PRIVATE_TOKEN_WAIT_MS + 5_000L)
+            privateToken = "private"
+            true
+        }
+        val autologin = autologin()
+
+        assertEquals(page, autologin.url(page))
+        // Moodle would count a key nobody waits on against the next six minutes.
+        assertEquals(0, requests)
+        advanceTimeBy(5_001L)
+        runCurrent()
+
+        assertTrue(autologin.url(page).contains("key=onetime"))
+        assertEquals(1, fetches)
+    }
+
+    @Test
+    fun `a failed fetch opens the page as it is, and the next open fetches again`() = runTest {
+        privateToken = null
+        fetch = { throw java.io.IOException("offline") }
+        val autologin = autologin()
+
+        assertEquals(page, autologin.url(page))
+        assertEquals(0, requests)
+        fetch = {
+            privateToken = "private"
+            true
+        }
+
+        assertTrue(autologin.url(page).contains("key=onetime"))
+        assertEquals(2, fetches)
+    }
+
+    @Test
+    fun `a pair that comes without a private token is not fetched again for the same sign-in`() = runTest {
+        privateToken = null
+        fetch = { false }
+        val autologin = autologin()
+
+        assertEquals(page, autologin.url(page))
+        assertEquals(page, autologin.url(page))
+        assertEquals(1, fetches)
+        assertEquals(0, requests)
+
+        // A new sign-in harvests a pair of its own; should it come without one too, it is tried once.
+        generation++
+        autologin.url(page)
+        assertEquals(2, fetches)
+    }
+
+    @Test
+    fun `a sign-out during the fetch opens the page as it is`() = runTest {
+        privateToken = null
+        fetch = {
+            privateToken = "private"
+            generation++
+            true
+        }
+
+        assertEquals(page, autologin().url(page))
+        assertEquals(0, requests)
+    }
+
+    @Test
+    fun `a fetch started before a sign-out is not shared with an open after it`() = runTest {
+        privateToken = null
+        val gate = CompletableDeferred<Unit>()
+        fetch = {
+            gate.await()
+            false
+        }
+        val autologin = autologin()
+        val departing = backgroundScope.async { autologin.url(page) }
+        runCurrent()
+        // The student signs out and in again while the departing account's fetch is out.
+        generation++
+        fetch = {
+            privateToken = "private"
+            true
+        }
+
+        assertTrue(autologin.url(page).contains("key=onetime"))
+        assertEquals(2, fetches)
+        gate.complete(Unit)
+        assertEquals(page, departing.await())
     }
 
     // --- the request ---
