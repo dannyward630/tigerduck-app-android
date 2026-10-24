@@ -16,8 +16,8 @@ import org.ntust.app.tigerduck.auth.AuthTokenManager.SignInAttempt
  *
  * The account then shows as signed in ([markSignedIn]). The library and the school mail are signed
  * in to by themselves: a school sign-in signs neither in (decided for Android on 2026-10-22). The
- * demo account ([demoSignIn]) signs in on the device, stored the same way, with nothing sent
- * anywhere.
+ * demo account ([isDemoAccount]) signs in on the device ([enterDemo]), stored the same way, with
+ * nothing sent anywhere.
  *
  * A sign-out takes no sign-in lock, so it can land at any point, the moment the school answers
  * included. The store and the account showing as signed in each happen only while
@@ -38,8 +38,15 @@ internal class TypedAccountSignIn(
     private val storedStudentId: () -> String?,
     private val writeAccount: (studentId: String, password: String) -> Unit,
     private val latch: StoredPasswordLatch,
-    /** Signs in on the device when these are the demo account's, and says whether they were. */
-    private val demoSignIn: suspend (studentId: String, password: String) -> Boolean,
+    /** Whether these are the demo account's credentials. Reads the bundled file and nothing else. */
+    private val isDemoAccount: (studentId: String, password: String) -> Boolean,
+    /** Signs the demo account in on the device. */
+    private val enterDemo: suspend () -> Unit,
+    /**
+     * Writes, before anything of the new account reaches disk, what a process death right after
+     * must not lose: the in-app browser's clearing, which the account change then owes.
+     */
+    private val accountChanging: () -> Unit,
     /** Shows the account as signed in. */
     private val markSignedIn: () -> Unit,
 ) {
@@ -67,7 +74,10 @@ internal class TypedAccountSignIn(
     ): Outcome {
         val generation = signInGeneration()
         // Checked before anything goes out, so these credentials never reach NTUST.
-        if (demoSignIn(studentId, password)) {
+        if (isDemoAccount(studentId, password)) {
+            // Demo mode is on disk once it goes on.
+            accountChanging()
+            enterDemo()
             if (!unlessSignedOutSince(generation) { storeAccount(studentId, password) }) {
                 return Outcome.NOT_SIGNED_IN
             }
@@ -81,7 +91,11 @@ internal class TypedAccountSignIn(
             // Read before it is overwritten: a stored Moodle token is this student's only if
             // the account stored was.
             val sameStudent = storedStudentId() == studentId
-            if (!unlessSignedOutSince(generation) { storeAccount(studentId, password) }) {
+            val stored = unlessSignedOutSince(generation) {
+                accountChanging()
+                storeAccount(studentId, password)
+            }
+            if (!stored) {
                 return@signInInteractively SignInAttempt.NOTHING_TO_SEND
             }
             // Cancelled from here on, the sign-in still leaves the password the school took,

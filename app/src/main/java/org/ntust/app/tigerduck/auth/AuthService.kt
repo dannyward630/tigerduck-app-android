@@ -179,9 +179,9 @@ class AuthService @Inject constructor(
         },
         latch = storedPasswordLatch,
         // The store-review account signs in without a server — see DemoAccount.
-        demoSignIn = { studentId, password ->
-            demoAccount.matches(studentId, password).also { matches -> if (matches) demoAccount.enter() }
-        },
+        isDemoAccount = demoAccount::matches,
+        enterDemo = demoAccount::enter,
+        accountChanging = { BrowserCleanup.of(context).markPending() },
         markSignedIn = { _authState.value = true },
     )
 
@@ -225,9 +225,6 @@ class AuthService @Inject constructor(
                 // last one imported, whether imported while signed out or left by a wipe that
                 // never ran.
                 prepareSignedIn = {
-                    // As the account is taken, before anything that can be cancelled: on disk first,
-                    // so a process death before the clearing still leaves it owed.
-                    BrowserCleanup.of(context).markPending()
                     _signIns.tryEmit(Unit)
                     importedClassTables.accountDidSignIn(normalizedId)
                     // After the store knows who signed in, which empties another account's leftovers.

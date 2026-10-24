@@ -58,10 +58,11 @@ object BrowserModule {
     @Singleton
     fun provideBrowserDataCleaner(
         @ApplicationContext context: Context,
+        @ApplicationScope scope: CoroutineScope,
         settings: BrowserSettings,
         downloads: BrowserDownloads,
         cleanup: BrowserCleanup,
-    ): BrowserDataCleaner = BrowserDataCleaner(AndroidWebViewStorage(context), settings, downloads, cleanup)
+    ): BrowserDataCleaner = BrowserDataCleaner(AndroidWebViewStorage(context), settings, downloads, cleanup, scope)
 
     /**
      * Who signs the browser in where: Moodle, through its autologin. A school

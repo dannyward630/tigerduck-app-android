@@ -9,11 +9,14 @@ import android.webkit.WebViewDatabase
 import androidx.webkit.WebStorageCompat
 import androidx.webkit.WebViewFeature
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -52,24 +55,32 @@ object BrowserSession {
 }
 
 /**
- * Starts [delete], which calls back once its deletion is done, and waits up
- * to [timeoutMs] for it. A deletion that has not reported by then keeps the
- * browser closed ([BrowserSession.usable]) until it does, however late; the
- * clearing goes on meanwhile. False when it timed out.
+ * Starts [delete], which calls back once its deletion is done. Until it has,
+ * however late, the browser does not open ([BrowserSession.usable]).
  */
-suspend fun awaitDeletion(timeoutMs: Long, delete: (onDone: () -> Unit) -> Unit): Boolean {
+fun startDeletion(delete: (onDone: () -> Unit) -> Unit): Deferred<Unit> {
     val done = CompletableDeferred<Unit>()
     BrowserSession.deletionStarted()
     done.invokeOnCompletion { BrowserSession.deletionDone() }
     delete { done.complete(Unit) }
-    return withTimeoutOrNull(timeoutMs) { done.await() } != null
+    return done
 }
+
+/** Waits up to [timeoutMs] for [deletion]: false when it has not reported by then, and it goes on. */
+suspend fun reportsInTime(deletion: Deferred<Unit>, timeoutMs: Long): Boolean =
+    withTimeoutOrNull(timeoutMs) { deletion.await() } != null
 
 /** The WebView's own stores: cookies, web storage, saved HTTP auth and the HTTP cache. */
 fun interface WebViewStorage {
-    /** Clears them; true once every deletion has reported done. */
-    suspend fun clear(): Boolean
+    suspend fun clear(): StorageClearing
 }
+
+/**
+ * What [WebViewStorage.clear] did: whether every deletion reported done in
+ * time, and [settled], which waits however long for those still under way and
+ * says whether everything was deleted in the end.
+ */
+class StorageClearing(val inTime: Boolean, val settled: suspend () -> Boolean = { inTime })
 
 /**
  * Whether the browser still has to be cleared, kept on disk so a clearing a
@@ -83,18 +94,28 @@ class BrowserCleanup(context: Context) {
 
     fun isPending(): Boolean = prefs.getBoolean(KEY_PENDING, false)
 
-    /** Written to disk before it returns: the account change it precedes may be the last thing the process does. */
-    fun markPending() {
-        prefs.edit().putBoolean(KEY_PENDING, true).commit()
+    /**
+     * Written to disk before it returns: the account change it precedes may be
+     * the last thing the process does. Returns this request, for [markDone].
+     */
+    fun markPending(): Long = synchronized(LOCK) {
+        val request = prefs.getLong(KEY_REQUEST, 0) + 1
+        prefs.edit().putBoolean(KEY_PENDING, true).putLong(KEY_REQUEST, request).commit()
+        request
     }
 
-    fun markDone() {
-        prefs.edit().remove(KEY_PENDING).commit()
+    /** Takes the mark off, unless an account change since [request] asked for another clearing. */
+    fun markDone(request: Long): Unit = synchronized(LOCK) {
+        if (prefs.getLong(KEY_REQUEST, 0) == request) prefs.edit().remove(KEY_PENDING).commit()
     }
 
     companion object {
         const val PREFS_FILE = "tigerduck_browser_cleanup"
         private const val KEY_PENDING = "pending"
+        private const val KEY_REQUEST = "request"
+
+        // Every instance's: they share the file.
+        private val LOCK = Any()
 
         fun of(context: Context) = BrowserCleanup(context)
     }
@@ -112,6 +133,8 @@ class BrowserDataCleaner(
     private val settings: BrowserSettings,
     private val downloads: BrowserDownloads,
     private val cleanup: BrowserCleanup,
+    /** Where a clearing waits for deletions that report after it gave up on them. */
+    private val scope: CoroutineScope,
 ) {
     /**
      * One clearing at a time. The session moves on as it starts, closing the
@@ -119,17 +142,22 @@ class BrowserDataCleaner(
      * may have shown the departing student's pages before the cookies went.
      */
     suspend fun clear() = lock.withLock {
-        cleanup.markPending()
+        val request = cleanup.markPending()
         BrowserSession.setClearing(true)
         try {
             BrowserSession.end()
             downloads.clear()
             settings.clearSites()
-            val complete = runCatching { storage.clear() }
+            val cleared = runCatching { storage.clear() }
                 .onFailure { Log.w(TAG, "browser storage not cleared: ${it.javaClass.simpleName}") }
-                .getOrDefault(false)
-            // Short of that, the next start clears it again, and the browser stays closed till then.
-            if (complete) cleanup.markDone()
+                .getOrNull()
+            when {
+                cleared?.inTime == true -> cleanup.markDone(request)
+                // The browser stays closed till the late deletions report, and opens again then.
+                cleared != null -> scope.launch { if (cleared.settled()) cleanup.markDone(request) }
+                // The next start clears it again, and the browser stays closed till then.
+                else -> Unit
+            }
         } finally {
             BrowserSession.end()
             BrowserSession.setClearing(false)
@@ -150,24 +178,27 @@ class BrowserDataCleaner(
  * the main thread, as the WebView wants. The mail WebViews keep none of these.
  */
 class AndroidWebViewStorage(private val context: Context) : WebViewStorage {
-    override suspend fun clear(): Boolean = withContext(Dispatchers.Main) {
+    override suspend fun clear(): StorageClearing = withContext(Dispatchers.Main) {
         val cookies = CookieManager.getInstance()
-        var complete = true
-        if (!awaitDeletion(CLEAR_TIMEOUT_MS) { done -> cookies.removeAllCookies { done() } }) {
+        var inTime = true
+        val cookieRemoval = startDeletion { done -> cookies.removeAllCookies { done() } }
+        if (!reportsInTime(cookieRemoval, CLEAR_TIMEOUT_MS)) {
             Log.w(TAG, "cookie removal did not report back yet")
-            complete = false
+            inTime = false
         }
         cookies.flush()
         // Everything a site can keep, service workers and Cache Storage too, where the WebView
         // can; deleteAllData below leaves those. The browser opens only where it can.
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.DELETE_BROWSING_DATA)) {
-            if (!awaitDeletion(CLEAR_TIMEOUT_MS) { done -> WebStorageCompat.deleteBrowsingData(WebStorage.getInstance()) { done() } }) {
-                Log.w(TAG, "browsing data deletion did not report back yet")
-                complete = false
-            }
+        val browsingData = if (WebViewFeature.isFeatureSupported(WebViewFeature.DELETE_BROWSING_DATA)) {
+            startDeletion { done -> WebStorageCompat.deleteBrowsingData(WebStorage.getInstance()) { done() } }
         } else {
             Log.w(TAG, "this WebView cannot delete service workers and Cache Storage")
-            complete = false
+            inTime = false
+            null
+        }
+        if (browsingData != null && !reportsInTime(browsingData, CLEAR_TIMEOUT_MS)) {
+            Log.w(TAG, "browsing data deletion did not report back yet")
+            inTime = false
         }
         WebStorage.getInstance().deleteAllData()
         WebViewDatabase.getInstance(context).clearHttpAuthUsernamePassword()
@@ -177,7 +208,16 @@ class AndroidWebViewStorage(private val context: Context) : WebViewStorage {
         }
         // Photos taken for a page's upload field.
         withContext(Dispatchers.IO) { java.io.File(context.cacheDir, UPLOADS_DIR).deleteRecursively() }
-        complete
+        StorageClearing(inTime) {
+            // Without service workers and Cache Storage, never everything.
+            browsingData != null && run {
+                cookieRemoval.await()
+                browsingData.await()
+                // The flush above may have come before a cookie removal that reported late.
+                withContext(Dispatchers.Main) { cookies.flush() }
+                true
+            }
+        }
     }
 
     private companion object {

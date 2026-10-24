@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.browser
 import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -33,7 +34,13 @@ class BrowserDataCleanerTest {
         var storageCleared = 0
         val before = BrowserSession.generation.value
 
-        BrowserDataCleaner(storage = { storageCleared++; true }, settings = settings, downloads = downloads, cleanup = BrowserCleanup(context)).clear()
+        BrowserDataCleaner(
+            storage = { storageCleared++; StorageClearing(inTime = true) },
+            settings = settings,
+            downloads = downloads,
+            cleanup = BrowserCleanup(context),
+            scope = backgroundScope,
+        ).clear()
         advanceUntilIdle()
 
         assertEquals(before + 2, BrowserSession.generation.value)
@@ -49,7 +56,13 @@ class BrowserDataCleanerTest {
         val settings = BrowserSettings(context).apply { setDesktopSite("moodle2.ntust.edu.tw", true) }
         val downloads = BrowserDownloads(this) { _, _ -> error("unused") }
 
-        BrowserDataCleaner(storage = { throw IllegalStateException("no WebView") }, settings = settings, downloads = downloads, cleanup = BrowserCleanup(context)).clear()
+        BrowserDataCleaner(
+            storage = { throw IllegalStateException("no WebView") },
+            settings = settings,
+            downloads = downloads,
+            cleanup = BrowserCleanup(context),
+            scope = backgroundScope,
+        ).clear()
 
         assertEquals(false, settings.desktopSite("moodle2.ntust.edu.tw"))
     }
@@ -76,11 +89,12 @@ class BrowserDataCleanerTest {
         BrowserDataCleaner(
             storage = {
                 seenDuring = BrowserSession.clearing.value to BrowserSession.generation.value
-                true
+                StorageClearing(inTime = true)
             },
             settings = BrowserSettings(context),
             downloads = downloads,
             cleanup = BrowserCleanup(context),
+            scope = backgroundScope,
         ).clear()
 
         assertEquals(true to before + 1, seenDuring)
@@ -93,7 +107,7 @@ class BrowserDataCleanerTest {
         var report: (() -> Unit)? = null
         assertTrue(BrowserSession.usable)
 
-        val inTime = awaitDeletion(timeoutMs = 5_000) { done -> report = done }
+        val inTime = reportsInTime(startDeletion { done -> report = done }, timeoutMs = 5_000)
 
         assertEquals(false, inTime)
         assertEquals(false, BrowserSession.usable)
@@ -103,24 +117,83 @@ class BrowserDataCleanerTest {
 
     @Test
     fun `a deletion that reports in time leaves the browser usable`() = runTest {
-        assertTrue(awaitDeletion(timeoutMs = 5_000) { done -> done() })
+        assertTrue(reportsInTime(startDeletion { done -> done() }, timeoutMs = 5_000))
         assertTrue(BrowserSession.usable)
     }
 
     @Test
     fun `the clearing is owed on disk until every deletion reports, and a full one settles it`() = runTest {
         val context = RuntimeEnvironment.getApplication()
-        val cleanup = BrowserCleanup(context).apply { markDone() }
+        val cleanup = BrowserCleanup(context)
         val downloads = BrowserDownloads(this) { _, _ -> error("unused") }
         var owedDuring = false
 
-        BrowserDataCleaner(storage = { owedDuring = cleanup.isPending(); false }, settings = BrowserSettings(context), downloads = downloads, cleanup = cleanup).clear()
+        cleaner(cleanup, downloads) { owedDuring = cleanup.isPending(); StorageClearing(inTime = false) }.clear()
+        advanceUntilIdle()
 
         assertTrue("owed while it runs", owedDuring)
         assertTrue("still owed when a deletion did not report", cleanup.isPending())
 
-        BrowserDataCleaner(storage = { true }, settings = BrowserSettings(context), downloads = downloads, cleanup = cleanup).clear()
+        cleaner(cleanup, downloads) { StorageClearing(inTime = true) }.clear()
 
         assertEquals(false, cleanup.isPending())
     }
+
+    @Test
+    fun `a deletion that reports after the clearing gave up on it still settles the clearing`() = runTest {
+        val cleanup = BrowserCleanup(RuntimeEnvironment.getApplication())
+        val late = CompletableDeferred<Unit>()
+
+        cleaner(cleanup) { StorageClearing(inTime = false) { late.await(); true } }.clear()
+        advanceUntilIdle()
+        assertTrue("owed while the deletion is under way", cleanup.isPending())
+
+        late.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(false, cleanup.isPending())
+    }
+
+    @Test
+    fun `a late report does not settle a clearing an account change asked for since`() = runTest {
+        val cleanup = BrowserCleanup(RuntimeEnvironment.getApplication())
+        val late = CompletableDeferred<Unit>()
+        cleaner(cleanup) { StorageClearing(inTime = false) { late.await(); true } }.clear()
+
+        // A sign-out, say, which the next clearing is for.
+        cleanup.markPending()
+        late.complete(Unit)
+        advanceUntilIdle()
+
+        assertTrue(cleanup.isPending())
+    }
+
+    @Test
+    fun `an account change while the clearing runs stays owed after it`() = runTest {
+        val cleanup = BrowserCleanup(RuntimeEnvironment.getApplication())
+
+        cleaner(cleanup) {
+            cleanup.markPending()
+            StorageClearing(inTime = true)
+        }.clear()
+
+        assertTrue(cleanup.isPending())
+    }
+
+    @Test
+    fun `a WebView that can never delete everything leaves the clearing owed`() = runTest {
+        val cleanup = BrowserCleanup(RuntimeEnvironment.getApplication())
+
+        cleaner(cleanup) { StorageClearing(inTime = false) { false } }.clear()
+        advanceUntilIdle()
+
+        assertTrue(cleanup.isPending())
+    }
+
+    private fun TestScope.cleaner(
+        cleanup: BrowserCleanup,
+        downloads: BrowserDownloads = BrowserDownloads(this) { _, _ -> error("unused") },
+        storage: WebViewStorage,
+    // In the test's own scope, which advanceUntilIdle runs and which waits for the late wait to end.
+    ) = BrowserDataCleaner(storage, BrowserSettings(RuntimeEnvironment.getApplication()), downloads, cleanup, this)
 }
