@@ -23,6 +23,12 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
     /** The page a sign-in under way goes on to; null once a page of its site shows. */
     var signInTarget: String? = null
 
+    /**
+     * A sign-in on the web page under way: its page was loaded first, so the site keeps where to
+     * come back to, and the site's sign-in page then goes on to the web sign-in.
+     */
+    var signingInOnWeb = false
+
     private var startedUrl: String? = null
 
     /** The main-frame request out last, till a page starts or a navigation supersedes it; written off the main thread. */
@@ -57,7 +63,10 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
         failedBeforeStart = null
         startedUrl = url
         // A page of the site, past its sign-in links: whatever needs a sign-in next asks from the page it is on.
-        if (signIns.forUrl(url)?.isReturnPage(url) == true) signInTarget = null
+        if (signIns.forUrl(url)?.isReturnPage(url) == true) {
+            signInTarget = null
+            signingInOnWeb = false
+        }
     }
 
     /** [url]'s page finished, failed or not. */

@@ -42,6 +42,14 @@ internal class BrowserSignInFlow(
         // A sign-in on its way loads nothing till it is done: this is the same navigation again.
         if (state.signIn?.working == true) return
         val target = loads.signInReturn(url)
+        if (loads.signingInOnWeb) {
+            loads.signingInOnWeb = false
+            // The site has kept the page by now: the web sign-in comes back to it.
+            provider.webSignInUrl(target)?.let {
+                load(it)
+                return
+            }
+        }
         if (provider.msUntilRetry() == 0L) signIn(provider, target) else show(provider, target)
     }
 
@@ -52,13 +60,19 @@ internal class BrowserSignInFlow(
         signIn(provider, target)
     }
 
-    /** "Sign in on the web page": the site's own sign-in, where the student signs in themselves. */
+    /**
+     * "Sign in on the web page": the site's own sign-in, where the student signs in themselves. The
+     * page goes first: signed out, the site keeps it to come back to after the sign-in and sends
+     * the browser to its sign-in page, which then goes on to the web sign-in.
+     */
     fun signInOnWeb() {
         val target = state.signIn?.target ?: return
-        val web = signIns.forUrl(target)?.webSignInUrl(target) ?: return
+        if (signIns.forUrl(target)?.webSignInUrl(target) == null) return
         job?.cancel()
         state.signIn = null
-        load(web)
+        loads.signInTarget = target
+        loads.signingInOnWeb = true
+        load(target)
     }
 
     fun cancel() {

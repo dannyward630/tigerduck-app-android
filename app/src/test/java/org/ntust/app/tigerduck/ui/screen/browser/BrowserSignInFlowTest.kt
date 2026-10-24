@@ -13,7 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.browser.BrowserSignIn
 import org.ntust.app.tigerduck.browser.BrowserSignIns
-import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
+import org.ntust.app.tigerduck.browser.MoodleBrowserSignIn
 
 /** The sign-in screen: when it signs in by itself, and which page a sign-in goes on to. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -40,7 +40,7 @@ class BrowserSignInFlowTest {
         override fun handles(url: String) = url.startsWith("https://moodle2.ntust.edu.tw/")
         override fun hasSession(cookieHeader: String?) = false
         override fun isSignInPage(url: String) = url.startsWith(SIGN_IN_PAGE)
-        override fun isReturnPage(url: String) = MoodleAutologin.isSignInTarget(url)
+        override fun isReturnPage(url: String) = MoodleBrowserSignIn.isMoodleReturnPage(url)
         override fun isSignInLink(url: String) = url.startsWith(SIGNED_IN)
         override suspend fun signedInUrl(target: String): String? {
             asked += target
@@ -165,6 +165,52 @@ class BrowserSignInFlowTest {
 
         assertEquals(listOf(PAGE, OTHER_PAGE), site.asked)
         assertEquals("$SIGNED_IN$OTHER_PAGE", loaded.last())
+    }
+
+    @Test
+    fun `the web sign-in opens the page first, so Moodle keeps it, then goes on from Moodle's sign-in page`() = runTest {
+        // No link to be had: the student signs in on the web page.
+        val site = Site(works = false)
+        val flow = flow(site)
+        flow.signIn(site, PAGE)
+        runCurrent()
+
+        flow.signInOnWeb()
+        runCurrent()
+        assertEquals(listOf(PAGE), loaded)
+        assertNull(state.signIn)
+
+        // Moodle, signed out, keeps the page and sends the browser to its sign-in page.
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        assertEquals(listOf(PAGE, WEB_SIGN_IN), loaded)
+        assertNull(state.signIn)
+        assertEquals("no link asked for on the way", listOf(PAGE), site.asked)
+
+        // The web sign-in's own entry does not end the sign-in.
+        loads.started(WEB_SIGN_IN)
+        assertEquals(PAGE, loads.signInTarget)
+    }
+
+    @Test
+    fun `a web sign-in whose page opens as it is ends there`() = runTest {
+        val site = Site(works = false)
+        val flow = flow(site)
+        flow.signIn(site, PAGE)
+        runCurrent()
+        flow.signInOnWeb()
+        runCurrent()
+        // Signed in after all.
+        loads.started(PAGE)
+        loads.finished(PAGE)
+
+        // Signed out again later: the screen as ever, not the web sign-in.
+        site.works = true
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        assertEquals("$SIGNED_IN$PAGE", loaded.last())
     }
 
     @Test

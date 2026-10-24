@@ -71,7 +71,7 @@ class MoodleBrowserSignIn(private val autologin: MoodleAutologin) : BrowserSignI
 
     override fun isSignInPage(url: String): Boolean = isMoodleSignInPage(url)
 
-    override fun isReturnPage(url: String): Boolean = MoodleAutologin.isSignInTarget(url)
+    override fun isReturnPage(url: String): Boolean = isMoodleReturnPage(url)
 
     override fun isSignInLink(url: String): Boolean = isMoodleSignInLink(url)
 
@@ -87,6 +87,10 @@ class MoodleBrowserSignIn(private val autologin: MoodleAutologin) : BrowserSignI
 
         // Moodle names its session cookie MoodleSession, with the site's suffix if it sets one.
         private val SESSION_COOKIE = Regex("""(?:^|;\s*)MoodleSession\w*=([^;]+)""")
+
+        /** The Moodle pages a sign-in can go on to: not its sign-in entries under `/auth/`, the web sign-in's among them. */
+        fun isMoodleReturnPage(url: String): Boolean =
+            MoodleAutologin.isSignInTarget(url) && url.toHttpUrlOrNull()?.encodedPath?.lowercase()?.startsWith("/auth/") != true
 
         /** Moodle's one-time sign-in links: its app pages, autologin.php among them. */
         fun isMoodleSignInLink(url: String): Boolean =

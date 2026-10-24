@@ -38,6 +38,15 @@ class BrowserSignInTest {
     }
 
     @Test
+    fun `a sign-in goes on to Moodle's pages, never to its sign-in pages, links or entries`() {
+        assertTrue(MoodleBrowserSignIn.isMoodleReturnPage("https://moodle2.ntust.edu.tw/user/edit.php"))
+        assertFalse(MoodleBrowserSignIn.isMoodleReturnPage(MoodleBrowserSignIn.WEB_SIGN_IN_URL))
+        assertFalse(MoodleBrowserSignIn.isMoodleReturnPage("https://moodle2.ntust.edu.tw/login/index.php"))
+        assertFalse(MoodleBrowserSignIn.isMoodleReturnPage("https://moodle2.ntust.edu.tw/admin/tool/mobile/autologin.php?key=k"))
+        assertFalse(MoodleBrowserSignIn.isMoodleReturnPage("https://example.com/user/edit.php"))
+    }
+
+    @Test
     fun `Moodle's sign-in links are its autologin pages, not its other pages`() {
         assertTrue(MoodleBrowserSignIn.isMoodleSignInLink("https://moodle2.ntust.edu.tw/admin/tool/mobile/autologin.php?userid=1&key=k&urltogo=x"))
         assertTrue(MoodleBrowserSignIn.isMoodleSignInLink("https://MOODLE2.ntust.edu.tw/admin/tool/mobile/autologin.php?key=k"))

@@ -8,7 +8,6 @@ import org.junit.Test
 import org.ntust.app.tigerduck.browser.BrowserSignIn
 import org.ntust.app.tigerduck.browser.BrowserSignIns
 import org.ntust.app.tigerduck.browser.MoodleBrowserSignIn
-import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
 
 /**
  * The page Retry and "Open in browser" name, the error over the page and the page a sign-in goes
@@ -25,7 +24,7 @@ class BrowserLoadsTest {
         override fun handles(url: String) = url.startsWith("https://moodle2.ntust.edu.tw/")
         override fun hasSession(cookieHeader: String?) = false
         override fun isSignInPage(url: String) = url.startsWith(SIGN_IN_PAGE)
-        override fun isReturnPage(url: String) = MoodleAutologin.isSignInTarget(url)
+        override fun isReturnPage(url: String) = MoodleBrowserSignIn.isMoodleReturnPage(url)
         override fun isSignInLink(url: String) = MoodleBrowserSignIn.isMoodleSignInLink(url)
         override suspend fun signedInUrl(target: String): String? = null
         override fun msUntilRetry() = 0L
