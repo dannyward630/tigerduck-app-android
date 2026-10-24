@@ -102,6 +102,18 @@ class AuthService @Inject constructor(
     private val _authState = MutableStateFlow(demoMode || credentials.ntustStudentId != null)
     val authState: StateFlow<Boolean> = _authState
 
+    private val _accountState = MutableStateFlow(AccountState(_authState.value, changes = 0))
+
+    /** [authState] with its changes counted, for what must follow every one of them; see [AccountState]. */
+    val accountState: StateFlow<AccountState> = _accountState
+
+    /** The one way [authState] changes, counted in [accountState]. */
+    private fun setSignedIn(signedIn: Boolean) = synchronized(_accountState) {
+        if (_authState.value == signedIn) return@synchronized
+        _accountState.value = AccountState(signedIn, _accountState.value.changes + 1)
+        _authState.value = signedIn
+    }
+
     private val loginMutex = Mutex()
 
     private val _signIns = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -182,7 +194,7 @@ class AuthService @Inject constructor(
         isDemoAccount = demoAccount::matches,
         enterDemo = demoAccount::enter,
         accountChanging = { BrowserCleanup.of(context).markPending() },
-        markSignedIn = { _authState.value = true },
+        markSignedIn = { setSignedIn(true) },
     )
 
     /**
@@ -405,7 +417,7 @@ class AuthService @Inject constructor(
         // latches nothing for the next one.
         storedPasswordLatch.clear()
         _loginError.value = null
-        _authState.value = false
+        setSignedIn(false)
         pushRegistration.unregister(departing)
         // Last, so everything above still sees the demo account and keeps
         // its requests on the device.

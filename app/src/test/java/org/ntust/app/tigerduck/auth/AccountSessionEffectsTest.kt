@@ -50,10 +50,23 @@ class AccountSessionEffectsTest {
     private lateinit var workManager: WorkManager
     private lateinit var assignmentReminders: AssignmentNotificationScheduler
     private val scope = CoroutineScope(UnconfinedTestDispatcher())
-    private val signedIn = MutableStateFlow(false)
+    /** The account's state as AuthService keeps it: each change counted. */
+    private class SignedIn {
+        val flow = MutableStateFlow(AccountState(false, changes = 0))
+        var value: Boolean
+            get() = flow.value.signedIn
+            set(signedIn) {
+                if (signedIn != flow.value.signedIn) flow.value = AccountState(signedIn, flow.value.changes + 1)
+            }
+    }
+
+    private val signedIn = SignedIn()
     private val liveUpdates = mutableListOf<String>()
     private val browserClears = mutableListOf<Boolean>()
     private var clearingOwed = false
+
+    /** Holds each browser clearing until it is completed: a slow one, as a real deletion can be. */
+    private var clearingGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
     private val signIns = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     @Before
@@ -71,15 +84,18 @@ class AccountSessionEffectsTest {
     fun tearDown() = scope.cancel()
 
     private fun effects(startSignedIn: Boolean): AccountSessionEffects {
-        signedIn.value = startSignedIn
+        signedIn.flow.value = AccountState(startSignedIn, changes = 0)
         return AccountSessionEffects(
             context = context,
-            authState = signedIn,
+            accountState = signedIn.flow,
             signIns = signIns,
             assignmentReminders = assignmentReminders,
             refreshLiveUpdates = { liveUpdates += "refresh" },
             stopLiveUpdates = { liveUpdates += "stop" },
-            clearBrowser = { browserClears += signedIn.value },
+            clearBrowser = {
+                browserClears += signedIn.value
+                clearingGate?.await()
+            },
             browserClearingOwed = { clearingOwed },
         ).also { it.start(scope) }
     }
@@ -143,6 +159,60 @@ class AccountSessionEffectsTest {
         effects(startSignedIn = true)
 
         assertEquals(listOf(true), browserClears)
+    }
+
+    @Test
+    fun `a sign-out and sign-in while the browser is still being cleared each do what they do`() {
+        // A fresh install; the browser's clearing for the first sign-in takes its time.
+        effects(startSignedIn = false)
+        clearingGate = kotlinx.coroutines.CompletableDeferred()
+        signedIn.value = true
+
+        // The student signs out, and another signs in, before that clearing ends.
+        signedIn.value = false
+        signedIn.value = true
+        clearingGate?.complete(Unit)
+
+        assertEquals("the sign-out stopped the Live Update and the sign-in brought it back", listOf("refresh", "stop", "refresh"), liveUpdates)
+        assertEquals("cleared at the sign-in, the sign-out and the next sign-in", listOf(true, false, true), browserClears)
+        assertEquals(listOf(WorkInfo.State.ENQUEUED), backgroundSync().filter { it != WorkInfo.State.CANCELLED })
+    }
+
+    @Test
+    fun `a sign-out and sign-in the watcher sees only once, as the same value, still count as both`() {
+        val scheduler = kotlinx.coroutines.test.TestCoroutineScheduler()
+        val late = CoroutineScope(kotlinx.coroutines.test.StandardTestDispatcher(scheduler))
+        signedIn.flow.value = AccountState(true, changes = 0)
+        AccountSessionEffects(
+            context = context,
+            accountState = signedIn.flow,
+            signIns = signIns,
+            assignmentReminders = assignmentReminders,
+            refreshLiveUpdates = { liveUpdates += "refresh" },
+            stopLiveUpdates = { liveUpdates += "stop" },
+            clearBrowser = { browserClears += signedIn.value },
+            browserClearingOwed = { false },
+        ).start(late)
+        scheduler.runCurrent()
+
+        // Out and back in before the watcher next runs.
+        signedIn.value = false
+        signedIn.value = true
+        scheduler.runCurrent()
+
+        assertEquals(listOf("stop", "refresh"), liveUpdates)
+
+        // And the other way: in and back out, which leaves the account that came and went to clear.
+        liveUpdates.clear()
+        signedIn.value = false
+        scheduler.runCurrent()
+        liveUpdates.clear()
+        signedIn.value = true
+        signedIn.value = false
+        scheduler.runCurrent()
+
+        assertEquals(listOf("stop"), liveUpdates)
+        late.cancel()
     }
 
     @Test

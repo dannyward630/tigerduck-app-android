@@ -21,14 +21,15 @@ import javax.inject.Singleton
  * none, so a student who signed in there got no background sync until the app was next created
  * from scratch, and the full reset left the reminders and the Live Update running.
  *
- * Follows [AuthService.authState] rather than the pages, and only its changes: the state the
+ * Follows [AuthService.accountState] rather than the pages, and only its changes: the state the
  * process starts in is not one. MainActivity schedules the background sync for an account
- * already signed in at launch.
+ * already signed in at launch. Never waits on anything slow, the browser's clearing least of
+ * all, and counts the changes rather than reading the value, so no sign-out goes unseen.
  */
 @Singleton
 class AccountSessionEffects internal constructor(
     private val context: Context,
-    private val authState: StateFlow<Boolean>,
+    private val accountState: StateFlow<AccountState>,
     /** Each sign-in by hand, a student signing in over another included; see [AuthService.signIns]. */
     private val signIns: Flow<Unit>,
     private val assignmentReminders: AssignmentNotificationScheduler,
@@ -49,7 +50,7 @@ class AccountSessionEffects internal constructor(
         browserCleanup: BrowserCleanup,
     ) : this(
         context = context,
-        authState = authService.authState,
+        accountState = authService.accountState,
         signIns = authService.signIns,
         assignmentReminders = assignmentReminders,
         refreshLiveUpdates = { liveActivityManager.refresh() },
@@ -61,35 +62,47 @@ class AccountSessionEffects internal constructor(
     /** Follows the sign-in state on [scope] for the life of the process. */
     fun start(scope: CoroutineScope) {
         scope.launch {
-            var wasSignedIn: Boolean? = null
-            authState.collect { signedIn ->
-                val before = wasSignedIn
-                wasSignedIn = signedIn
-                if (before == null || before == signedIn) return@collect
-                if (signedIn) onSignedIn() else onSignedOut()
+            var seen: AccountState? = null
+            accountState.collect { now ->
+                val before = seen
+                seen = now
+                if (before == null || now.changes == before.changes) return@collect
+                // Seen late, a sign-out and a sign-in in between are two changes to the same value.
+                if (before.signedIn || now.changes - before.changes > 1) onSignedOut(scope)
+                if (now.signedIn) onSignedIn(scope)
             }
         }
         // A student signing in over another never turns authState off and on.
-        scope.launch { signIns.collect { clearBrowser() } }
+        scope.launch { signIns.collect { clearBrowserSoon(scope) } }
         // One a process death cut short, or one whose deletions did not all report, goes again.
-        if (browserClearingOwed()) scope.launch { clearBrowser() }
+        if (browserClearingOwed()) clearBrowserSoon(scope)
     }
 
-    private suspend fun onSignedIn() {
+    private fun onSignedIn(scope: CoroutineScope) {
         BackgroundSyncWorker.schedule(context)
         refreshLiveUpdates()
         // A student switch goes through a sign-out, which cleared it already; the demo account's
         // sign-in may not, and a page left from before either must not show signed in to it.
-        clearBrowser()
+        clearBrowserSoon(scope)
     }
 
-    private suspend fun onSignedOut() {
+    private fun onSignedOut(scope: CoroutineScope) {
         BackgroundSyncWorker.cancel(context)
         stopLiveUpdates()
         assignmentReminders.cancelAllTracked()
         // What the departing student was shown stays in the shade otherwise.
         AccountNotifications.cancelAll(context)
         // Moodle's session cookie, the pages and downloads list are the departing student's.
-        clearBrowser()
+        clearBrowserSoon(scope)
+    }
+
+    /**
+     * Clears the browser apart from the watching, which a deletion taking seconds would otherwise
+     * hold up. Clearings run one after another, in the order asked. Till the one for the latest
+     * change is done, the browser does not open: the change marked it owed before it was made
+     * ([BrowserCleanup]).
+     */
+    private fun clearBrowserSoon(scope: CoroutineScope) {
+        scope.launch { clearBrowser() }
     }
 }
