@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -35,6 +36,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.DayOfWeek
+import java.util.Locale
 
 /** The quiet hours and mute rule sections of the School Mail notifications page (#354). */
 @RunWith(RobolectricTestRunner::class)
@@ -150,6 +152,17 @@ class SchoolMailMuteSettingsTest {
 
         composeRule.onNode(hasSetTextAction() and hasText("digest")).assertExists()
         inDialog("Add").assertIsEnabled()
+    }
+
+    @Test
+    fun `a time reads on the clock the phone is set to, whatever the language's own`() {
+        // English (UK) writes 24-hour times by default; the phone set to 12-hour has them so.
+        val twelve = quietTimeText(23 * 60, Locale.UK, is24Hour = false)
+        assertTrue(twelve, twelve.startsWith("11:00"))
+        assertEquals("23:00", quietTimeText(23 * 60, Locale.US, is24Hour = true))
+        assertEquals("07:05", quietTimeText(7 * 60 + 5, Locale.UK, is24Hour = true))
+        val taiwan = quietTimeText(23 * 60, Locale.TAIWAN, is24Hour = false)
+        assertTrue(taiwan, "11:00" in taiwan && "23" !in taiwan)
     }
 
     @Test

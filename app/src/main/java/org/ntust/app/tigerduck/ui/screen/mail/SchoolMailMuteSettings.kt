@@ -9,6 +9,9 @@
 
 package org.ntust.app.tigerduck.ui.screen.mail
 
+import android.icu.text.DateTimePatternGenerator
+import android.icu.text.SimpleDateFormat
+import android.icu.util.TimeZone
 import android.text.format.DateFormat
 import android.view.accessibility.AccessibilityManager
 import androidx.compose.foundation.layout.Arrangement
@@ -60,10 +63,8 @@ import org.ntust.app.tigerduck.ui.screen.settings.SettingsLinkRowWithValue
 import org.ntust.app.tigerduck.ui.screen.settings.SettingsToggleRow
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 import java.time.DayOfWeek
-import java.time.LocalTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.temporal.WeekFields
+import java.util.Date
 import java.util.Locale
 
 /** What the page's mute sections change; each goes to [SchoolMailSettingsViewModel]. */
@@ -342,14 +343,20 @@ private val RuleSaver = Saver<MailMuteRule?, ArrayList<String>>(
 
 /** [minute] after midnight as the phone writes a time: 24-hour or not, as its setting says. */
 @Composable
-private fun timeText(minute: Int, locale: Locale): String {
-    val time = LocalTime.of(minute / 60, minute % 60)
-    val format = if (DateFormat.is24HourFormat(LocalContext.current)) {
-        DateTimeFormatter.ofPattern("HH:mm", locale)
-    } else {
-        DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)
-    }
-    return time.format(format)
+private fun timeText(minute: Int, locale: Locale): String =
+    quietTimeText(minute, locale, DateFormat.is24HourFormat(LocalContext.current))
+
+/**
+ * [minute] after midnight on the clock [is24Hour] asks for, in [locale]'s own pattern for that
+ * clock, as the picker shows it: the locale's default can be the other clock (English (UK) writes
+ * 23:00 where the phone is set to 12-hour).
+ */
+internal fun quietTimeText(minute: Int, locale: Locale, is24Hour: Boolean): String {
+    val pattern = DateTimePatternGenerator.getInstance(locale).getBestPattern(if (is24Hour) "HHmm" else "hmm")
+    // ICU's own formatter for ICU's pattern, which can carry letters java.time's does not know
+    // on every Android release (B, the day period zh-TW writes).
+    val format = SimpleDateFormat(pattern, locale).apply { timeZone = TimeZone.getTimeZone("UTC") }
+    return format.format(Date(minute * 60_000L))
 }
 
 /** The days of a week from the one [locale] starts it on. */
