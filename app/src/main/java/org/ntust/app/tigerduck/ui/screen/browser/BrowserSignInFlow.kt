@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.ui.screen.browser
 
-import android.os.SystemClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -16,9 +15,9 @@ import org.ntust.app.tigerduck.ui.AppProcessing
  * one under way.
  *
  * A link the site signs the browser in with comes first. Where none can be had, the app signs in
- * itself ([BrowserSignIn.signInWithoutLink]) behind [processing]'s spinner, at most once every
- * [APP_SIGN_IN_INTERVAL_MS] by itself, so a site that will not keep the session shows the screen
- * rather than loop; "Sign in again" by hand may try it at once.
+ * itself ([BrowserSignIn.signInWithoutLink]) behind [processing]'s spinner, as often as the site's
+ * provider allows by itself ([BrowserSignIn.maySignInWithoutLink]), so a site that will not keep
+ * the session shows the screen rather than loop; "Sign in again" by hand may try it at once.
  */
 internal class BrowserSignInFlow(
     private val state: BrowserPageState,
@@ -28,12 +27,11 @@ internal class BrowserSignInFlow(
     private val load: (String) -> Unit,
     private val stopLoading: () -> Unit,
     private val processing: AppProcessing = AppProcessing(),
-    private val now: () -> Long = SystemClock::elapsedRealtime,
 ) {
     private var job: Job? = null
 
-    /** When the app last signed the browser in itself, by [now]; null for never. */
-    private var appSignInAt: Long? = null
+    /** The page "Sign in again" was tapped for, whose next try is the student's own. */
+    private var byHandFor: String? = null
 
     /** Signs the browser in to [target]'s site through [provider] and loads [target]; the screen when it cannot now. */
     fun signIn(provider: BrowserSignIn, target: String) {
@@ -62,7 +60,7 @@ internal class BrowserSignInFlow(
                 return
             }
         }
-        if (provider.msUntilRetry() == 0L || mayTryApp(provider)) signIn(provider, target) else show(provider, target)
+        if (provider.msUntilRetry() == 0L || provider.maySignInWithoutLink()) signIn(provider, target) else show(provider, target)
     }
 
     /** "Sign in again" on the screen. */
@@ -70,7 +68,7 @@ internal class BrowserSignInFlow(
         val target = state.signIn?.target ?: return
         val provider = signIns.forUrl(target) ?: return
         // Asked for by hand: the app may sign in itself again at once.
-        appSignInAt = null
+        byHandFor = target
         signIn(provider, target)
     }
 
@@ -102,11 +100,13 @@ internal class BrowserSignInFlow(
     }
 
     private suspend fun attempt(provider: BrowserSignIn, target: String) {
+        val byHand = byHandFor == target
+        byHandFor = null
         val signedIn = provider.signedInUrl(target)
         if (signedIn != null) {
             state.signIn = null
             load(signedIn)
-        } else if (mayTryApp(provider) && signInByApp(provider)) {
+        } else if (provider.maySignInWithoutLink(byHand) && signInByApp(provider, byHand)) {
             state.signIn = null
             load(target)
         } else {
@@ -114,17 +114,12 @@ internal class BrowserSignInFlow(
         }
     }
 
-    /** Whether the app may sign the browser in itself now: once every [APP_SIGN_IN_INTERVAL_MS]. */
-    private fun mayTryApp(provider: BrowserSignIn): Boolean =
-        provider.signsInWithoutLink && appSignInAt.let { it == null || now() - it >= APP_SIGN_IN_INTERVAL_MS }
-
     /** The app's own sign-in, behind the spinner, which lets go however it ends. */
-    private suspend fun signInByApp(provider: BrowserSignIn): Boolean {
-        appSignInAt = now()
+    private suspend fun signInByApp(provider: BrowserSignIn, byHand: Boolean): Boolean {
         val hold = processing.newHold()
         hold.start()
         return try {
-            provider.signInWithoutLink()
+            provider.signInWithoutLink(byHand)
         } finally {
             hold.stop()
         }
@@ -166,9 +161,3 @@ internal class BrowserSignInFlow(
         next.start()
     }
 }
-
-/**
- * How often the app signs the browser in by itself, as Moodle gives its keys: a site that will not
- * keep the session it signs in with is not asked again and again.
- */
-internal const val APP_SIGN_IN_INTERVAL_MS = 360_000L

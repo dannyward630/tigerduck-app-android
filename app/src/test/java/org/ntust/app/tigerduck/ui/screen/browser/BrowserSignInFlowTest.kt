@@ -56,8 +56,10 @@ class BrowserSignInFlowTest {
         }
         override fun msUntilRetry() = (dueAt - clock()).coerceAtLeast(0)
         override fun webSignInUrl(target: String) = WEB_SIGN_IN
-        override val signsInWithoutLink get() = appSignIn != null
-        override suspend fun signInWithoutLink(): Boolean {
+        // As Moodle's: by itself once every 6 minutes, by hand at once.
+        override fun maySignInWithoutLink(byHand: Boolean) =
+            appSignIn != null && (byHand || appRuns.lastOrNull()?.let { clock() - it >= 360_000 } ?: true)
+        override suspend fun signInWithoutLink(byHand: Boolean): Boolean {
             appRuns += clock()
             return appSignIn!!()
         }
@@ -78,7 +80,6 @@ class BrowserSignInFlowTest {
             },
             stopLoading = { stops++ },
             processing = processing,
-            now = { testScheduler.currentTime },
         )
     }
 

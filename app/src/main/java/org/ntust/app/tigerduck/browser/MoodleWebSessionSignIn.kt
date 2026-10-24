@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.browser
 
+import android.os.SystemClock
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
@@ -17,6 +18,11 @@ import org.ntust.app.tigerduck.util.logSummary
  * Nothing runs for the demo account or while the browser cannot be used ([usable]: a clearing is
  * owed), and nothing is kept of a run a sign-out or an account change overtook ([generation],
  * which a clearing moves) or that [usable] no longer allows, or that took longer than [timeoutMs].
+ *
+ * By itself it runs at most once every [INTERVAL_MS], for every browser screen alike, a run that
+ * failed included, so Moodle not keeping the session it gets never makes it post the password
+ * again and again; asked for by hand ("Sign in again") it may run at once. The count starts
+ * afresh for another sign-in.
  */
 class MoodleWebSessionSignIn(
     private val run: suspend () -> List<Cookie>,
@@ -26,11 +32,24 @@ class MoodleWebSessionSignIn(
     private val writeCookie: (url: String, value: String) -> Unit,
     private val flush: () -> Unit,
     private val timeoutMs: Long = TIMEOUT_MS,
+    private val now: () -> Long = SystemClock::elapsedRealtime,
 ) {
-    /** Whether the browser now holds a Moodle session from the app's own sign-in. */
-    suspend fun signIn(): Boolean {
+    /** When it last ran by [now], and for which [generation]; null for never. */
+    @Volatile private var lastRun: Pair<Long, Int>? = null
+
+    /** Whether [signIn] may run now: by itself once every [INTERVAL_MS], [byHand] at once. */
+    fun maySignIn(byHand: Boolean = false): Boolean {
         if (isDemo() || !usable()) return false
+        if (byHand) return true
+        val (at, forGeneration) = lastRun ?: return true
+        return forGeneration != generation() || now() - at >= INTERVAL_MS
+    }
+
+    /** Whether the browser now holds a Moodle session from the app's own sign-in. */
+    suspend fun signIn(byHand: Boolean = false): Boolean {
+        if (!maySignIn(byHand)) return false
         val before = generation()
+        lastRun = now() to before
         val cookies = try {
             withTimeoutOrNull(timeoutMs) { run() }
         } catch (e: CancellationException) {
@@ -55,6 +74,9 @@ class MoodleWebSessionSignIn(
 
         /** Longer than a key's wait, shorter than a student waits on a spinner. */
         const val TIMEOUT_MS = 15_000L
+
+        /** As Moodle gives its autologin keys. */
+        const val INTERVAL_MS = 360_000L
 
         const val SESSION = "MoodleSession"
         const val REMEMBERED = "MOODLEID1_"

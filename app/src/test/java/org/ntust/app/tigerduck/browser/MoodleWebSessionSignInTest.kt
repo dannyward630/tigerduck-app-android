@@ -20,6 +20,7 @@ class MoodleWebSessionSignInTest {
     private var generation = 7
     private var usable = true
     private var demo = false
+    private var clock = 1_000_000L
 
     private val moodle = "https://moodle2.ntust.edu.tw/".toHttpUrl()
     private val sso = "https://ssoam2.ntust.edu.tw/".toHttpUrl()
@@ -42,6 +43,7 @@ class MoodleWebSessionSignInTest {
         writeCookie = { url, value -> written += url to value },
         flush = { flushes++ },
         timeoutMs = timeoutMs,
+        now = { clock },
     )
 
     @Test
@@ -108,5 +110,51 @@ class MoodleWebSessionSignInTest {
         assertFalse(signIn(timeoutMs = 15_000) { delay(20_000); session }.signIn())
 
         assertTrue(written.isEmpty())
+    }
+
+    @Test
+    fun `by itself it runs at most once every 6 minutes, even across browser screens`() = runTest {
+        val signIn = signIn()
+        assertTrue(signIn.maySignIn())
+        assertTrue(signIn.signIn())
+
+        clock += 5 * 60_000L
+        assertFalse(signIn.maySignIn())
+        assertFalse(signIn.signIn())
+        assertEquals(1, runs)
+
+        clock += 60_000L
+        assertTrue(signIn.maySignIn())
+        assertTrue(signIn.signIn())
+        assertEquals(2, runs)
+    }
+
+    @Test
+    fun `asked for by hand it may run again at once`() = runTest {
+        val signIn = signIn()
+        signIn.signIn()
+
+        assertTrue(signIn.maySignIn(byHand = true))
+        assertTrue(signIn.signIn(byHand = true))
+        assertEquals(2, runs)
+    }
+
+    @Test
+    fun `a sign-out or account change starts the count afresh`() = runTest {
+        val signIn = signIn()
+        signIn.signIn()
+
+        generation++
+        assertTrue(signIn.maySignIn())
+    }
+
+    @Test
+    fun `a run that failed counts too`() = runTest {
+        val signIn = signIn { runs++; error("SSO is down") }
+        assertFalse(signIn.signIn())
+
+        assertFalse(signIn.maySignIn())
+        assertFalse(signIn.signIn())
+        assertEquals(1, runs)
     }
 }

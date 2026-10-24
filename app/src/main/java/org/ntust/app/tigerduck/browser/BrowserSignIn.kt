@@ -53,15 +53,18 @@ interface BrowserSignIn {
     /** Where "Sign in on the web page" goes for [target], where the student signs in themselves; null for none. */
     fun webSignInUrl(target: String): String?
 
-    /** Whether [signInWithoutLink] can sign the browser in; most sites have no such way. */
-    val signsInWithoutLink: Boolean get() = false
+    /**
+     * Whether [signInWithoutLink] would sign the browser in now: false for a site with no such way,
+     * and by itself only every so often; [byHand] for a sign-in the student asked for.
+     */
+    fun maySignInWithoutLink(byHand: Boolean = false): Boolean = false
 
     /**
      * Signs the browser in to the site without a link, for when [signedInUrl] has none to give: the
      * app signs in itself, out of the browser, and hands it only the site's session. True once the
      * browser holds one.
      */
-    suspend fun signInWithoutLink(): Boolean = false
+    suspend fun signInWithoutLink(byHand: Boolean = false): Boolean = false
 }
 
 /**
@@ -98,9 +101,9 @@ class MoodleBrowserSignIn(
 
     override fun webSignInUrl(target: String): String = WEB_SIGN_IN_URL
 
-    override val signsInWithoutLink: Boolean get() = webSession != null
+    override fun maySignInWithoutLink(byHand: Boolean): Boolean = webSession?.maySignIn(byHand) ?: false
 
-    override suspend fun signInWithoutLink(): Boolean = webSession?.signIn() ?: false
+    override suspend fun signInWithoutLink(byHand: Boolean): Boolean = webSession?.signIn(byHand) ?: false
 
     companion object {
         /** Moodle's OIDC entry, the school SSO's sign-in for Moodle. */
