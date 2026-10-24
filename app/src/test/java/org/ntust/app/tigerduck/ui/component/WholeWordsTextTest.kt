@@ -4,6 +4,7 @@
 package org.ntust.app.tigerduck.ui.component
 
 import android.app.Application
+import android.icu.text.BreakIterator
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredWidth
@@ -16,6 +17,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
@@ -45,6 +47,7 @@ class WholeWordsTextTest {
         val layout = layout()
         assertEquals(Hyphens.Auto, layout.layoutInput.style.hyphens)
         assertTrue("it fit on one line, so the test proves nothing", layout.lineCount > 1)
+        assertHyphenDrawnAtEachBreakInAWord(layout)
     }
 
     @Test
@@ -76,6 +79,35 @@ class WholeWordsTextTest {
         val layout = layout()
         assertTrue("it fit on one line, so the test proves nothing", layout.lineCount > 1)
         assertNotEquals(Hyphens.Auto, layout.layoutInput.style.hyphens)
+    }
+
+    /**
+     * Each line that ends inside a word draws a hyphen there: the line is wider than its own
+     * characters by a hyphen. The style asking for hyphens is not enough, as Android breaks a
+     * word bare where it has no patterns for the text's language.
+     */
+    private fun assertHyphenDrawnAtEachBreakInAWord(layout: TextLayoutResult) {
+        val input = layout.layoutInput
+        val text = input.text.text
+        val plain = input.style.copy(hyphens = Hyphens.None)
+        val measurer = TextMeasurer(input.fontFamilyResolver, input.density, input.layoutDirection)
+        fun width(s: String) = measurer.measure(s, plain).let { it.getLineRight(0) - it.getLineLeft(0) }
+        val hyphen = width("-")
+        val breaks = BreakIterator.getLineInstance(java.util.Locale.ENGLISH).apply { setText(text) }
+        val inAWord = (0 until layout.lineCount - 1).filter { !breaks.isBoundary(layout.getLineEnd(it)) }
+        assertTrue("no line ends inside a word, so the test proves nothing", inAWord.isNotEmpty())
+        inAWord.forEach { line ->
+            val start = layout.getLineStart(line)
+            val end = layout.getLineEnd(line)
+            val drawn = layout.getLineRight(line) - layout.getLineLeft(line)
+            val characters = width(text.substring(start, end))
+            assertEquals(
+                "\"${text.substring(start, end)}\" breaks inside a word with no hyphen drawn",
+                characters + hyphen,
+                drawn,
+                hyphen / 2,
+            )
+        }
     }
 
     private fun show(text: String) {
