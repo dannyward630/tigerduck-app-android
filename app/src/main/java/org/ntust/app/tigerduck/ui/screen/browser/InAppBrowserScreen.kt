@@ -49,6 +49,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.res.stringResource
@@ -149,7 +150,9 @@ fun InAppBrowserScreen(
                     HorizontalDivider(Modifier.fillMaxWidth(), color = colors.outlineVariant)
                 }
             }
-            Box(Modifier.weight(1f).fillMaxWidth()) {
+            // Clipped: a WebView with nothing drawn yet fills its whole canvas with its background,
+            // which, unclipped, painted over the bars until the page's first frame.
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds()) {
                 web(Modifier.fillMaxSize())
                 state.error?.let { BrowserErrorPage(it, actions, Modifier.fillMaxSize()) }
                 state.signIn?.let { BrowserSignInPage(it, actions, Modifier.fillMaxSize()) }
