@@ -1154,11 +1154,27 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `the background download is under way while it counts what it lacks`() = runTest {
+        server.deliver("收件")
+        server.deliver("寄出", folder = "寄件備份匣")
+        val repo = TestSetup(backgroundScope).signedIn()
+        val seen = mutableListOf<MailIndexProgress?>()
+        server.onUndeletedUids = { seen += repo.searchIndexProgress.value }
+
+        repo.updateSearchIndex()
+
+        assertTrue(seen.isNotEmpty())
+        assertTrue("counting, not done: $seen", seen.all { it == MailIndexProgress.COUNTING })
+        assertNull("gone once it is done", repo.searchIndexProgress.value)
+    }
+
+    @Test
     fun `a search catching up shows no download under way`() = runTest {
         repeat(3) { server.deliver("期中考 $it") }
         val repo = TestSetup(backgroundScope).signedIn()
         val seen = mutableListOf<MailIndexProgress?>()
         server.onFetchBody = { seen += repo.searchIndexProgress.value }
+        server.onUndeletedUids = { seen += repo.searchIndexProgress.value }
 
         repo.search("INBOX", "期中")
 

@@ -20,9 +20,6 @@ import java.net.SocketTimeoutException
  */
 class MoodleAssignmentsAnswerTest {
 
-    private val url =
-        "https://moodle2.ntust.edu.tw/webservice/rest/server.php?wsfunction=mod_assign_get_assignments"
-
     // Answers in place of the network: the interceptor never calls proceed().
     private fun answering(body: String, code: Int = 200, type: String = "application/json") =
         OkHttpClient.Builder().addInterceptor { chain ->
@@ -36,7 +33,7 @@ class MoodleAssignmentsAnswerTest {
         }.build()
 
     private fun fetch(client: OkHttpClient) =
-        MoodleService.requestAssignments(client, url, listOf(7, 9))
+        MoodleService.requestAssignments(client, "t1", listOf(7, 9))
 
     private fun fetch(body: String) = fetch(answering(body))
 

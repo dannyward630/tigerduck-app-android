@@ -14,8 +14,7 @@ import org.junit.Test
 /** What [MoodleService.requestSubmissionStatus] sends, and what it makes of the answer. */
 class MoodleSubmissionStatusRequestTest {
 
-    private val url =
-        "https://moodle2.ntust.edu.tw/webservice/rest/server.php?wsfunction=mod_assign_get_submission_status"
+    private val token = "t1"
 
     private val sent = mutableListOf<Request>()
 
@@ -40,28 +39,37 @@ class MoodleSubmissionStatusRequestTest {
 
     @Test
     fun `without a user id it asks about the token's own account`() {
-        MoodleService.requestSubmissionStatus(answering("""{"warnings":[]}"""), url, 20977, userId = null)
+        MoodleService.requestSubmissionStatus(answering("""{"warnings":[]}"""), token, 20977, userId = null)
 
-        assertEquals(listOf("assignid" to "20977"), sentForm())
+        assertEquals(listOf("wstoken" to "t1", "assignid" to "20977"), sentForm())
+    }
+
+    @Test
+    fun `the token goes in the form, never in the URL`() {
+        MoodleService.requestSubmissionStatus(answering("""{"warnings":[]}"""), token, 20977, userId = null)
+
+        val request = sent.single()
+        assertEquals("mod_assign_get_submission_status", request.url.queryParameter("wsfunction"))
+        assertEquals(false, "t1" in request.url.toString())
     }
 
     @Test
     fun `with a user id it asks about that user`() {
-        MoodleService.requestSubmissionStatus(answering("""{"warnings":[]}"""), url, 20977, userId = 16045)
+        MoodleService.requestSubmissionStatus(answering("""{"warnings":[]}"""), token, 20977, userId = 16045)
 
-        assertEquals(listOf("assignid" to "20977", "userid" to "16045"), sentForm())
+        assertEquals(listOf("wstoken" to "t1", "assignid" to "20977", "userid" to "16045"), sentForm())
     }
 
     @Test
     fun `Moodle's maintenance page throws as maintenance, not as an HTTP error`() {
         assertThrows(MoodleWebserviceError.SiteMaintenance::class.java) {
             MoodleService.requestSubmissionStatus(
-                answering("<html>upgrading</html>", code = 503, retryAfter = "300"), url, 20977, userId = null,
+                answering("<html>upgrading</html>", code = 503, retryAfter = "300"), token, 20977, userId = null,
             )
         }
         assertThrows(MoodleWebserviceError.SiteMaintenance::class.java) {
             MoodleService.requestSubmissionStatus(
-                answering("""{"errorcode":"sitemaintenance","exception":"moodle_exception"}"""), url, 20977, userId = null,
+                answering("""{"errorcode":"sitemaintenance","exception":"moodle_exception"}"""), token, 20977, userId = null,
             )
         }
     }
@@ -69,7 +77,7 @@ class MoodleSubmissionStatusRequestTest {
     @Test
     fun `an HTTP error throws`() {
         assertThrows(MoodleWebserviceError.HttpStatus::class.java) {
-            MoodleService.requestSubmissionStatus(answering("", code = 503), url, 20977, userId = null)
+            MoodleService.requestSubmissionStatus(answering("", code = 503), token, 20977, userId = null)
         }
     }
 
@@ -89,7 +97,7 @@ class MoodleSubmissionStatusRequestTest {
                  "assignmentdata":{},"warnings":[]}
                 """.trimIndent()
             ),
-            url,
+            token,
             20977,
             userId = null,
         ).lastattempt

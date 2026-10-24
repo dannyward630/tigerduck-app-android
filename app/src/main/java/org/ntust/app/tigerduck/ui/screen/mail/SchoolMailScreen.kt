@@ -382,8 +382,11 @@ fun SchoolMailScreen(
                         // failure still has a home: the list itself shows the error.
                         //
                         // While every mail downloads for search, which the first time takes a
-                        // while, the dot syncs and the row says how far it has come.
-                        text = indexProgress?.let(::indexProgressText) ?: statusText(mailStatus),
+                        // while, the dot syncs and the row says how far it has come -- or that it
+                        // is syncing while it still counts, rather than an "OK" that says nothing
+                        // has started.
+                        text = indexProgress?.let { indexProgressText(it) ?: stringResource(R.string.sync_status_syncing) }
+                            ?: statusText(mailStatus),
                         isLoading = isLoading || indexProgress != null,
                         syncedAtMs = state.fetchedAt,
                     )
@@ -947,10 +950,14 @@ private fun SchoolMailLoginCard(
     }
 }
 
-/** [progress] as the sync dot's popup shows it: mail downloaded for search, of how many it lacked, as "120/3,456". */
-internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Locale.getDefault()): String {
+/**
+ * [progress] as the sync dot's popup shows it: mail downloaded for search, of how many it lacked, as
+ * "120/3,456". Null while the download is still counting, which has no number to show yet.
+ */
+internal fun indexProgressText(progress: MailIndexProgress, locale: Locale = Locale.getDefault()): String? {
+    val total = progress.total ?: return null
     val number = NumberFormat.getIntegerInstance(locale)
-    return number.format(progress.done) + "/" + number.format(progress.total)
+    return number.format(progress.done) + "/" + number.format(total)
 }
 
 /**
