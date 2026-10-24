@@ -25,6 +25,10 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
 
     private var startedUrl: String? = null
 
+    /** The main-frame request out last; written off the main thread. */
+    @Volatile
+    private var mainFrameRequest: String? = null
+
     /** A page whose error came before the page started. */
     private var failedBeforeStart: String? = null
 
@@ -32,6 +36,14 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
     fun requested(url: String) {
         current = url
         failedBeforeStart = null
+    }
+
+    /**
+     * A main-frame request for [url] goes out (shouldInterceptRequest, off the main thread): a
+     * form's POST included, which nothing else reports before its page starts.
+     */
+    fun mainFrameRequested(url: String) {
+        mainFrameRequest = url
     }
 
     /** [url]'s page started. */
@@ -55,7 +67,7 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
      * all the same, it leaves the page as it is.
      */
     fun certificateFailed(url: String?, host: String?): Boolean {
-        if (url == null || (url != current && url != state.url)) return false
+        if (url == null || (url != current && url != state.url && url != mainFrameRequest)) return false
         failed(url, BrowserError.BadCertificate(host))
         return true
     }

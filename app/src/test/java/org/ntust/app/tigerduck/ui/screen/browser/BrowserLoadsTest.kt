@@ -211,6 +211,21 @@ class BrowserLoadsTest {
     }
 
     @Test
+    fun `a certificate refused for a form's page, before it starts, is the page's`() {
+        loads.requested(A)
+        loads.started(A)
+        state.url = A
+        loads.finished(A)
+        // A form's POST to B: its request goes out, and nothing asks the browser about it.
+        loads.mainFrameRequested(B)
+
+        assertTrue(loads.certificateFailed(B, "moodle2.ntust.edu.tw"))
+
+        assertEquals(BrowserError.BadCertificate("moodle2.ntust.edu.tw"), state.error)
+        assertEquals(B, loads.loadingUrl)
+    }
+
+    @Test
     fun `a certificate refused for a sign-in link is still the page's`() {
         loads.signInTarget = A
         loads.requested(SIGNED_IN)

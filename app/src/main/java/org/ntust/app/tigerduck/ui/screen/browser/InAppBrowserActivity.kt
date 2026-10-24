@@ -734,7 +734,11 @@ class InAppBrowserActivity : AppCompatActivity() {
             // choice, as any script on it can send anywhere too. The allowlist decides which pages
             // this browser shows, and onPageStart stops such a page as it starts.
             val url = request.url.toString()
-            if (!BrowserRouting.blocksRequest(url, request.isForMainFrame, allowlistStore.allowlist.value)) return null
+            if (!BrowserRouting.blocksRequest(url, request.isForMainFrame, allowlistStore.allowlist.value)) {
+                // So a certificate refused for it is known for the page's, before the page starts.
+                if (request.isForMainFrame) loads.mainFrameRequested(url)
+                return null
+            }
             view.post {
                 when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
                     is NavigationDecision.OpenOutside -> state.outsideUrl = decision.url
