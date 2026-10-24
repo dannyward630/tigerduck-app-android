@@ -17,6 +17,8 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.text.TextLayoutResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -62,6 +64,16 @@ class ColorPickerSheetLayoutTest {
     }
 
     @Test
+    @Config(qualifiers = "en-w360dp-h640dp", fontScale = 2f)
+    fun `on a short phone at the app's largest text size the custom picker shows its code whole and keeps both buttons whole`() {
+        showCustomPicker()
+
+        assertWhole("Cancel")
+        assertWhole("Apply")
+        assertCodeWhole()
+    }
+
+    @Test
     fun `on a short phone the picker scrolls, with the buttons below what scrolls`() {
         showCustomPicker()
 
@@ -69,6 +81,15 @@ class ColorPickerSheetLayoutTest {
         val range = scroll.config[SemanticsProperties.VerticalScrollAxisRange]
         assertTrue("there is nothing to scroll", range.maxValue() > 0f)
         assertTrue("the buttons scroll with the controls", button("Cancel").boundsInWindow.top >= scroll.boundsInWindow.bottom)
+
+        // Opening Custom scrolled down to it; a swipe brings the title back, and the buttons stay put.
+        val cancelTop = button("Cancel").boundsInWindow.top
+        val titleTop = text("Pick color").boundsInWindow.top
+        composeRule.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
+            .performTouchInput { swipeDown(startY = centerY, endY = centerY + height / 4f) }
+        composeRule.waitForIdle()
+        assertTrue("a swipe did not scroll the controls", text("Pick color").boundsInWindow.top > titleTop)
+        assertEquals("the buttons moved with the controls", cancelTop, button("Cancel").boundsInWindow.top, 0.5f)
     }
 
     @Test
