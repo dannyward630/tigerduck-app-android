@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -39,12 +40,15 @@ class QrScannerCameraTest {
     }
 
     @Test
-    fun `a camera that does not start offers Retry, which tries again`() {
-        composeRule.setContent { QrScannerCamera(onScanned = { false }) }
+    fun `a camera that does not start offers Retry, which tries again, and offers no flashlight`() {
+        val torch = ScannerTorch()
+        composeRule.setContent { QrScannerCamera(onScanned = { false }, torch = torch) }
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText(retry)).fetchSemanticsNodes().isNotEmpty()
         }
+        assertFalse(torch.isPending)
+        assertFalse(torch.isAvailable)
         composeRule.onNodeWithText(retry).performClick()
 
         // Tried again, and with still no camera, offered again.
