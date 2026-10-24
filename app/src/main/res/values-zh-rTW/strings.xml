@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">桌布顏色</string>
     <string name="color_picker_apply">套用</string>
     <string name="color_picker_custom">自訂</string>
+    <string name="color_picker_hex_code">色碼</string>
     <string name="color_picker_presets_note">預設顏色</string>
     <string name="color_picker_preview_fallback">課程</string>
     <string name="color_picker_selected">已選擇顏色</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">目前學期：%1$s-%2$s</string>
     <string name="settings_about_others">其他</string>
     <string name="settings_accent_color">主題色</string>
+    <string name="settings_accent_gradient_custom">自訂漸層</string>
+    <string name="settings_accent_gradient_direction">漸層方向</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">由下到上</string>
+    <string name="settings_accent_gradient_direction_left_to_right">由左到右</string>
+    <string name="settings_accent_gradient_direction_right_to_left">由右到左</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">由左上到右下</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">由右上到左下</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">由上到下</string>
+    <string name="settings_accent_gradient_end">結束顏色</string>
+    <string name="settings_accent_gradient_name">%1$@到%2$@</string>
+    <string name="settings_accent_gradient_start">起始顏色</string>
+    <string name="settings_accent_gradients">漸層</string>
+    <string name="settings_accent_wallpaper_description">隨桌布變換顏色</string>
     <string name="settings_account_library_system">圖書館系統</string>
     <string name="settings_account_ntust_system">校務系統</string>
     <string name="settings_acknowledged">知道了</string>

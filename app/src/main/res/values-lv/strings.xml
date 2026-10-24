@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Fona tapetes krāsas</string>
     <string name="color_picker_apply">Lietot</string>
     <string name="color_picker_custom">Pielāgota</string>
+    <string name="color_picker_hex_code">Krāsas kods</string>
     <string name="color_picker_presets_note">Iepriekš iestatītās krāsas</string>
     <string name="color_picker_preview_fallback">Kurss</string>
     <string name="color_picker_selected">Izvēlētā krāsa</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Pašreizējais semestris: %1$s-%2$s</string>
     <string name="settings_about_others">Cits</string>
     <string name="settings_accent_color">Akcenta krāsa</string>
+    <string name="settings_accent_gradient_custom">Pielāgota krāsu pāreja</string>
+    <string name="settings_accent_gradient_direction">Krāsu pārejas virziens</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">No apakšas uz augšu</string>
+    <string name="settings_accent_gradient_direction_left_to_right">No kreisās uz labo</string>
+    <string name="settings_accent_gradient_direction_right_to_left">No labās uz kreiso</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">No augšējā kreisā uz apakšējo labo</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">No augšējā labā uz apakšējo kreiso</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">No augšas uz leju</string>
+    <string name="settings_accent_gradient_end">Beigu krāsa</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Sākuma krāsa</string>
+    <string name="settings_accent_gradients">Krāsu pārejas</string>
+    <string name="settings_accent_wallpaper_description">Mainās līdz ar fona tapeti</string>
     <string name="settings_account_library_system">Bibliotēkas sistēma</string>
     <string name="settings_account_ntust_system">Akadēmiskā sistēma</string>
     <string name="settings_acknowledged">Sapratu</string>

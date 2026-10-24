@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Кольори шпалер</string>
     <string name="color_picker_apply">Застосувати</string>
     <string name="color_picker_custom">Власний</string>
+    <string name="color_picker_hex_code">Код кольору</string>
     <string name="color_picker_presets_note">Готові кольори</string>
     <string name="color_picker_preview_fallback">Курс</string>
     <string name="color_picker_selected">Вибраний колір</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Поточний семестр: %1$s-%2$s</string>
     <string name="settings_about_others">Інше</string>
     <string name="settings_accent_color">Акцентний колір</string>
+    <string name="settings_accent_gradient_custom">Власний градієнт</string>
+    <string name="settings_accent_gradient_direction">Напрямок градієнта</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Знизу вгору</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Зліва направо</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Справа наліво</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">З верхнього лівого кута в нижній правий</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">З верхнього правого кута в нижній лівий</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Згори вниз</string>
+    <string name="settings_accent_gradient_end">Кінцевий колір</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Початковий колір</string>
+    <string name="settings_accent_gradients">Градієнти</string>
+    <string name="settings_accent_wallpaper_description">Змінюється разом зі шпалерами</string>
     <string name="settings_account_library_system">Система бібліотеки</string>
     <string name="settings_account_ntust_system">Шкільна система</string>
     <string name="settings_acknowledged">Зрозуміло</string>

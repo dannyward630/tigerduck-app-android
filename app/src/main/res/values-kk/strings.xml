@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Тұсқағаз түстері</string>
     <string name="color_picker_apply">Қолдану</string>
     <string name="color_picker_custom">Өзгертілетін</string>
+    <string name="color_picker_hex_code">Түс коды</string>
     <string name="color_picker_presets_note">Алдын ала орнатылған түстер</string>
     <string name="color_picker_preview_fallback">Курс</string>
     <string name="color_picker_selected">Таңдалған түс</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Ағымдағы семестр: %1$s-%2$s</string>
     <string name="settings_about_others">Басқа</string>
     <string name="settings_accent_color">Екпін түсі</string>
+    <string name="settings_accent_gradient_custom">Жеке градиент</string>
+    <string name="settings_accent_gradient_direction">Градиент бағыты</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Төменнен жоғары</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Солдан оңға</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Оңнан солға</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Жоғарғы сол жақтан төменгі оң жаққа</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Жоғарғы оң жақтан төменгі сол жаққа</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Жоғарыдан төмен</string>
+    <string name="settings_accent_gradient_end">Соңғы түс</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Бастапқы түс</string>
+    <string name="settings_accent_gradients">Градиенттер</string>
+    <string name="settings_accent_wallpaper_description">Тұсқағазбен бірге өзгереді</string>
     <string name="settings_account_library_system">Кітапхана жүйесі</string>
     <string name="settings_account_ntust_system">Оқу жүйесі</string>
     <string name="settings_acknowledged">Түсінікті</string>

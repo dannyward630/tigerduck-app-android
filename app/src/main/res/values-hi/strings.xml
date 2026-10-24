@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">वॉलपेपर के रंग</string>
     <string name="color_picker_apply">लागू करें</string>
     <string name="color_picker_custom">कस्टम</string>
+    <string name="color_picker_hex_code">रंग कोड</string>
     <string name="color_picker_presets_note">प्रीसेट रंग</string>
     <string name="color_picker_preview_fallback">कोर्स</string>
     <string name="color_picker_selected">चुना गया रंग</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">वर्तमान सेमेस्टर: %1$s-%2$s</string>
     <string name="settings_about_others">अन्य</string>
     <string name="settings_accent_color">एक्सेंट रंग</string>
+    <string name="settings_accent_gradient_custom">कस्टम ग्रेडिएंट</string>
+    <string name="settings_accent_gradient_direction">ग्रेडिएंट की दिशा</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">नीचे से ऊपर</string>
+    <string name="settings_accent_gradient_direction_left_to_right">बाएँ से दाएँ</string>
+    <string name="settings_accent_gradient_direction_right_to_left">दाएँ से बाएँ</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">ऊपर बाएँ से नीचे दाएँ</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">ऊपर दाएँ से नीचे बाएँ</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">ऊपर से नीचे</string>
+    <string name="settings_accent_gradient_end">अंतिम रंग</string>
+    <string name="settings_accent_gradient_name">%1$@ से %2$@</string>
+    <string name="settings_accent_gradient_start">शुरुआती रंग</string>
+    <string name="settings_accent_gradients">ग्रेडिएंट</string>
+    <string name="settings_accent_wallpaper_description">वॉलपेपर के साथ बदलता है</string>
     <string name="settings_account_library_system">पुस्तकालय प्रणाली</string>
     <string name="settings_account_ntust_system">शैक्षणिक प्रणाली</string>
     <string name="settings_acknowledged">समझ गया</string>

@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Háttérkép színei</string>
     <string name="color_picker_apply">Alkalmazás</string>
     <string name="color_picker_custom">Egyéni</string>
+    <string name="color_picker_hex_code">Színkód</string>
     <string name="color_picker_presets_note">Előre beállított színek</string>
     <string name="color_picker_preview_fallback">Kurzus</string>
     <string name="color_picker_selected">Kiválasztott szín</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Jelenlegi félév: %1$s-%2$s</string>
     <string name="settings_about_others">Egyéb</string>
     <string name="settings_accent_color">Kiemelő szín</string>
+    <string name="settings_accent_gradient_custom">Egyéni színátmenet</string>
+    <string name="settings_accent_gradient_direction">Színátmenet iránya</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Lentről felfelé</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Balról jobbra</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Jobbról balra</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Bal felsőtől jobb alsóig</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Jobb felsőtől bal alsóig</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Fentről lefelé</string>
+    <string name="settings_accent_gradient_end">Végszín</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Kezdőszín</string>
+    <string name="settings_accent_gradients">Színátmenetek</string>
+    <string name="settings_accent_wallpaper_description">A háttérképpel együtt változik</string>
     <string name="settings_account_library_system">Könyvtári rendszer</string>
     <string name="settings_account_ntust_system">Tanulmányi rendszer</string>
     <string name="settings_acknowledged">Értem</string>

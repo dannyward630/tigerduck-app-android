@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">رنگ‌های کاغذدیواری</string>
     <string name="color_picker_apply">اعمال</string>
     <string name="color_picker_custom">سفارشی</string>
+    <string name="color_picker_hex_code">کد رنگ</string>
     <string name="color_picker_presets_note">رنگ‌های از پیش تعیین‌شده</string>
     <string name="color_picker_preview_fallback">درس</string>
     <string name="color_picker_selected">رنگ انتخاب‌شده</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">ترم فعلی: %1$s-%2$s</string>
     <string name="settings_about_others">سایر</string>
     <string name="settings_accent_color">رنگ تاکید</string>
+    <string name="settings_accent_gradient_custom">گرادیان سفارشی</string>
+    <string name="settings_accent_gradient_direction">جهت گرادیان</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">از پایین به بالا</string>
+    <string name="settings_accent_gradient_direction_left_to_right">از چپ به راست</string>
+    <string name="settings_accent_gradient_direction_right_to_left">از راست به چپ</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">از بالا چپ به پایین راست</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">از بالا راست به پایین چپ</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">از بالا به پایین</string>
+    <string name="settings_accent_gradient_end">رنگ پایانی</string>
+    <string name="settings_accent_gradient_name">%1$@ به %2$@</string>
+    <string name="settings_accent_gradient_start">رنگ آغازین</string>
+    <string name="settings_accent_gradients">گرادیان‌ها</string>
+    <string name="settings_accent_wallpaper_description">با کاغذدیواری تغییر می‌کند</string>
     <string name="settings_account_library_system">سیستم کتابخانه</string>
     <string name="settings_account_ntust_system">سیستم دانشگاه</string>
     <string name="settings_acknowledged">متوجه شدم</string>

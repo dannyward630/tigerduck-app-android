@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Kolory tapety</string>
     <string name="color_picker_apply">Zastosuj</string>
     <string name="color_picker_custom">Niestandardowy</string>
+    <string name="color_picker_hex_code">Kod koloru</string>
     <string name="color_picker_presets_note">Kolory predefiniowane</string>
     <string name="color_picker_preview_fallback">Przedmiot</string>
     <string name="color_picker_selected">Wybrany kolor</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Bieżący semestr: %1$s-%2$s</string>
     <string name="settings_about_others">Inne</string>
     <string name="settings_accent_color">Kolor akcentu</string>
+    <string name="settings_accent_gradient_custom">Gradient niestandardowy</string>
+    <string name="settings_accent_gradient_direction">Kierunek gradientu</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Od dołu do góry</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Od lewej do prawej</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Od prawej do lewej</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Od lewego górnego do prawego dolnego rogu</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Od prawego górnego do lewego dolnego rogu</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Od góry do dołu</string>
+    <string name="settings_accent_gradient_end">Kolor końcowy</string>
+    <string name="settings_accent_gradient_name">%1$@ i %2$@</string>
+    <string name="settings_accent_gradient_start">Kolor początkowy</string>
+    <string name="settings_accent_gradients">Gradienty</string>
+    <string name="settings_accent_wallpaper_description">Zmienia się wraz z tapetą</string>
     <string name="settings_account_library_system">System biblioteczny</string>
     <string name="settings_account_ntust_system">System uczelniany</string>
     <string name="settings_acknowledged">Rozumiem</string>

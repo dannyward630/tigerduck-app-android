@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Couleurs du fond d\'écran</string>
     <string name="color_picker_apply">Appliquer</string>
     <string name="color_picker_custom">Personnalisée</string>
+    <string name="color_picker_hex_code">Code couleur</string>
     <string name="color_picker_presets_note">Couleurs prédéfinies</string>
     <string name="color_picker_preview_fallback">Cours</string>
     <string name="color_picker_selected">Couleur sélectionnée</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Semestre actuel : %1$s-%2$s</string>
     <string name="settings_about_others">Autres</string>
     <string name="settings_accent_color">Couleur d\'accentuation</string>
+    <string name="settings_accent_gradient_custom">Dégradé personnalisé</string>
+    <string name="settings_accent_gradient_direction">Sens du dégradé</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">De bas en haut</string>
+    <string name="settings_accent_gradient_direction_left_to_right">De gauche à droite</string>
+    <string name="settings_accent_gradient_direction_right_to_left">De droite à gauche</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Du coin supérieur gauche au coin inférieur droit</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Du coin supérieur droit au coin inférieur gauche</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">De haut en bas</string>
+    <string name="settings_accent_gradient_end">Couleur de fin</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Couleur de début</string>
+    <string name="settings_accent_gradients">Dégradés</string>
+    <string name="settings_accent_wallpaper_description">Change avec le fond d\'écran</string>
     <string name="settings_account_library_system">Système de la bibliothèque</string>
     <string name="settings_account_ntust_system">Système universitaire</string>
     <string name="settings_acknowledged">Compris</string>

@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Wallpaper colours</string>
     <string name="color_picker_apply">Apply</string>
     <string name="color_picker_custom">Custom</string>
+    <string name="color_picker_hex_code">Colour code</string>
     <string name="color_picker_presets_note">Preset colours</string>
     <string name="color_picker_preview_fallback">Course</string>
     <string name="color_picker_selected">Selected colour</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Current term: %1$s-%2$s</string>
     <string name="settings_about_others">Others</string>
     <string name="settings_accent_color">Accent colour</string>
+    <string name="settings_accent_gradient_custom">Custom gradient</string>
+    <string name="settings_accent_gradient_direction">Gradient direction</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Bottom to top</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Left to right</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Right to left</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Top left to bottom right</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Top right to bottom left</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Top to bottom</string>
+    <string name="settings_accent_gradient_end">End colour</string>
+    <string name="settings_accent_gradient_name">%1$@ to %2$@</string>
+    <string name="settings_accent_gradient_start">Start colour</string>
+    <string name="settings_accent_gradients">Gradients</string>
+    <string name="settings_accent_wallpaper_description">Changes with your wallpaper</string>
     <string name="settings_account_library_system">Library system</string>
     <string name="settings_account_ntust_system">School system</string>
     <string name="settings_acknowledged">Got it</string>

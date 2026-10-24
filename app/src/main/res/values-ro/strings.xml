@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Culorile imaginii de fundal</string>
     <string name="color_picker_apply">Aplică</string>
     <string name="color_picker_custom">Personalizat</string>
+    <string name="color_picker_hex_code">Cod de culoare</string>
     <string name="color_picker_presets_note">Culori prestabilite</string>
     <string name="color_picker_preview_fallback">Curs</string>
     <string name="color_picker_selected">Culoare selectată</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Semestrul curent: %1$s-%2$s</string>
     <string name="settings_about_others">Altele</string>
     <string name="settings_accent_color">Culoare accent</string>
+    <string name="settings_accent_gradient_custom">Degrade personalizat</string>
+    <string name="settings_accent_gradient_direction">Direcția degradeului</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">De jos în sus</string>
+    <string name="settings_accent_gradient_direction_left_to_right">De la stânga la dreapta</string>
+    <string name="settings_accent_gradient_direction_right_to_left">De la dreapta la stânga</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Din stânga sus în dreapta jos</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Din dreapta sus în stânga jos</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">De sus în jos</string>
+    <string name="settings_accent_gradient_end">Culoare finală</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Culoare inițială</string>
+    <string name="settings_accent_gradients">Degradeuri</string>
+    <string name="settings_accent_wallpaper_description">Se schimbă odată cu imaginea de fundal</string>
     <string name="settings_account_library_system">Sistem bibliotecă</string>
     <string name="settings_account_ntust_system">Sistem academic</string>
     <string name="settings_acknowledged">Înțeles</string>

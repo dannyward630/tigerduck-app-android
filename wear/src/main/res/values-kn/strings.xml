@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">ವಾಲ್‌ಪೇಪರ್ ಬಣ್ಣಗಳು</string>
     <string name="color_picker_apply">ಅನ್ವಯಿಸಿ</string>
     <string name="color_picker_custom">ಕಸ್ಟಮ್</string>
+    <string name="color_picker_hex_code">ಬಣ್ಣದ ಕೋಡ್</string>
     <string name="color_picker_presets_note">ಪೂರ್ವ ಹೊಂದಿಸಿದ ಬಣ್ಣಗಳು</string>
     <string name="color_picker_preview_fallback">ಕೋರ್ಸ್</string>
     <string name="color_picker_selected">ಆಯ್ಕೆ ಮಾಡಿದ ಬಣ್ಣ</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">ಪ್ರಸ್ತುತ ಸೆಮಿಸ್ಟರ್: %1$s-%2$s</string>
     <string name="settings_about_others">ಇತರೆ</string>
     <string name="settings_accent_color">ಆಕ್ಸೆಂಟ್ ಬಣ್ಣ</string>
+    <string name="settings_accent_gradient_custom">ಕಸ್ಟಮ್ ಗ್ರೇಡಿಯಂಟ್</string>
+    <string name="settings_accent_gradient_direction">ಗ್ರೇಡಿಯಂಟ್ ದಿಕ್ಕು</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">ಕೆಳಗಿನಿಂದ ಮೇಲಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_direction_left_to_right">ಎಡದಿಂದ ಬಲಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_direction_right_to_left">ಬಲದಿಂದ ಎಡಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">ಮೇಲಿನ ಎಡದಿಂದ ಕೆಳಗಿನ ಬಲಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">ಮೇಲಿನ ಬಲದಿಂದ ಕೆಳಗಿನ ಎಡಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">ಮೇಲಿನಿಂದ ಕೆಳಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_end">ಕೊನೆಯ ಬಣ್ಣ</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">ಆರಂಭದ ಬಣ್ಣ</string>
+    <string name="settings_accent_gradients">ಗ್ರೇಡಿಯಂಟ್‌ಗಳು</string>
+    <string name="settings_accent_wallpaper_description">ವಾಲ್‌ಪೇಪರ್‌ನೊಂದಿಗೆ ಬದಲಾಗುತ್ತದೆ</string>
     <string name="settings_account_library_system">ಗ್ರಂಥಾಲಯ ವ್ಯವಸ್ಥೆ</string>
     <string name="settings_account_ntust_system">ಶಾಲಾ ವ್ಯವಸ್ಥೆ</string>
     <string name="settings_acknowledged">ತಿಳಿಯಿತು</string>

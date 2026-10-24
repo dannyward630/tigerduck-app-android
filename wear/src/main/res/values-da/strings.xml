@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Baggrundsfarver</string>
     <string name="color_picker_apply">Anvend</string>
     <string name="color_picker_custom">Brugerdefineret</string>
+    <string name="color_picker_hex_code">Farvekode</string>
     <string name="color_picker_presets_note">Forudindstillede farver</string>
     <string name="color_picker_preview_fallback">Kursus</string>
     <string name="color_picker_selected">Valgt farve</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Aktuelt semester: %1$s-%2$s</string>
     <string name="settings_about_others">Andet</string>
     <string name="settings_accent_color">Accentfarve</string>
+    <string name="settings_accent_gradient_custom">Brugerdefineret farveovergang</string>
+    <string name="settings_accent_gradient_direction">Retning for farveovergang</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Nedefra og op</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Fra venstre mod højre</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Fra højre mod venstre</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Fra øverst til venstre mod nederst til højre</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Fra øverst til højre mod nederst til venstre</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Oppefra og ned</string>
+    <string name="settings_accent_gradient_end">Slutfarve</string>
+    <string name="settings_accent_gradient_name">%1$@ til %2$@</string>
+    <string name="settings_accent_gradient_start">Startfarve</string>
+    <string name="settings_accent_gradients">Farveovergange</string>
+    <string name="settings_accent_wallpaper_description">Skifter med baggrunden</string>
     <string name="settings_account_library_system">Bibliotekssystem</string>
     <string name="settings_account_ntust_system">Studentportal</string>
     <string name="settings_acknowledged">Forstået</string>

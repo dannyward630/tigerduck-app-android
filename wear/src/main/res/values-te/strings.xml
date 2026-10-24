@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">వాల్‌పేపర్ రంగులు</string>
     <string name="color_picker_apply">వర్తింపజేయి</string>
     <string name="color_picker_custom">కస్టమ్</string>
+    <string name="color_picker_hex_code">రంగు కోడ్</string>
     <string name="color_picker_presets_note">ప్రీసెట్ రంగులు</string>
     <string name="color_picker_preview_fallback">కోర్సు</string>
     <string name="color_picker_selected">ఎంచుకున్న రంగు</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">ప్రస్తుత సెమెస్టర్: %1$s-%2$s</string>
     <string name="settings_about_others">ఇతర</string>
     <string name="settings_accent_color">యాక్సెంట్ రంగు</string>
+    <string name="settings_accent_gradient_custom">అనుకూల గ్రేడియంట్</string>
+    <string name="settings_accent_gradient_direction">గ్రేడియంట్ దిశ</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">కింది నుండి పైకి</string>
+    <string name="settings_accent_gradient_direction_left_to_right">ఎడమ నుండి కుడికి</string>
+    <string name="settings_accent_gradient_direction_right_to_left">కుడి నుండి ఎడమకు</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">పై ఎడమ నుండి కింది కుడికి</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">పై కుడి నుండి కింది ఎడమకు</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">పై నుండి కిందికి</string>
+    <string name="settings_accent_gradient_end">ముగింపు రంగు</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">ప్రారంభ రంగు</string>
+    <string name="settings_accent_gradients">గ్రేడియంట్‌లు</string>
+    <string name="settings_accent_wallpaper_description">వాల్‌పేపర్‌తో పాటు మారుతుంది</string>
     <string name="settings_account_library_system">లైబ్రరీ సిస్టమ్</string>
     <string name="settings_account_ntust_system">అకాడెమిక్ సిస్టమ్</string>
     <string name="settings_acknowledged">అర్థమైంది</string>

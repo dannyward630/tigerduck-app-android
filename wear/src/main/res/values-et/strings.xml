@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Taustapildi värvid</string>
     <string name="color_picker_apply">Rakenda</string>
     <string name="color_picker_custom">Kohandatud</string>
+    <string name="color_picker_hex_code">Värvikood</string>
     <string name="color_picker_presets_note">Eelseadistatud värvid</string>
     <string name="color_picker_preview_fallback">Kursus</string>
     <string name="color_picker_selected">Valitud värv</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Praegune semester: %1$s-%2$s</string>
     <string name="settings_about_others">Muu</string>
     <string name="settings_accent_color">Rõhuvärv</string>
+    <string name="settings_accent_gradient_custom">Kohandatud üleminek</string>
+    <string name="settings_accent_gradient_direction">Ülemineku suund</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Alt üles</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Vasakult paremale</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Paremalt vasakule</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Ülevalt vasakult alla paremale</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Ülevalt paremalt alla vasakule</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Ülevalt alla</string>
+    <string name="settings_accent_gradient_end">Lõppvärv</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Algvärv</string>
+    <string name="settings_accent_gradients">Üleminekud</string>
+    <string name="settings_accent_wallpaper_description">Muutub koos taustapildiga</string>
     <string name="settings_account_library_system">Raamatukogu süsteem</string>
     <string name="settings_account_ntust_system">Akadeemiline süsteem</string>
     <string name="settings_acknowledged">Selge</string>
