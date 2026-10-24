@@ -15,11 +15,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.screen.calendar.CalendarGrid
 import org.ntust.app.tigerduck.ui.screen.calendar.dayCellDescription
 import org.ntust.app.tigerduck.ui.screen.classtable.SoloCourseCell
-import org.ntust.app.tigerduck.ui.screen.settings.AccentColorSwatches
+import org.ntust.app.tigerduck.ui.screen.settings.AccentColorPage
 import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
@@ -120,7 +121,19 @@ class TalkBackActivatableTest {
 
     @Test
     fun theChosenAccentSwatchReadsAsChosen() {
-        rule.setContent { AccentColorSwatches(selectedHex = 0x007AFF, isDark = false, onSelect = {}) }
+        rule.setContent {
+            AccentColorPage(
+                fixedHex = 0x007AFF,
+                gradientEnd = null,
+                direction = AccentGradientDirection.DEFAULT,
+                followsWallpaper = false,
+                isDark = false,
+                onPick = {},
+                onPickGradient = { _, _ -> },
+                onPickDirection = {},
+                onPickWallpaper = {},
+            )
+        }
 
         val info = node(context.getString(R.string.color_name_blue))
         assertTrue("the chosen swatch is not focusable to TalkBack", info.isFocusable)
