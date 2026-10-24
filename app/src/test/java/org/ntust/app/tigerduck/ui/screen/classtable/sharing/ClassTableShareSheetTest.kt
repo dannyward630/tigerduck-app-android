@@ -3,6 +3,9 @@ package org.ntust.app.tigerduck.ui.screen.classtable.sharing
 import android.app.Application
 import android.content.ClipboardManager
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -85,6 +88,57 @@ class ClassTableShareSheetTest {
         composeRule.waitForIdle()
 
         assertEquals(listOf("dismiss", "scan"), calls)
+    }
+
+    @Test
+    fun `a sheet gone before it finished closing opens no scanner`() {
+        var shown by mutableStateOf(true)
+        var scans = 0
+        composeRule.setContent {
+            if (shown) ClassTableShareSheet(share, labelFor = { it }, onDismiss = { shown = false }, onScan = { scans++ })
+        }
+        composeRule.waitForIdle()
+        composeRule.mainClock.autoAdvance = false
+        composeRule.onNodeWithContentDescription(app.getString(R.string.class_table_import)).performClick()
+        composeRule.mainClock.advanceTimeByFrame()
+
+        // A link closed it meanwhile.
+        composeRule.runOnIdle { shown = false }
+        composeRule.mainClock.advanceTimeBy(2_000)
+
+        assertEquals(0, scans)
+    }
+
+    @Test
+    fun `the scanner's share sheet closes for an import opened over it, and at a sign-out`() {
+        var importOpen by mutableStateOf(false)
+        var signedIn by mutableStateOf(true)
+        var shared by mutableStateOf<ClassTableShare?>(share)
+        composeRule.setContent {
+            ScannerShareSheet(
+                share = shared, importOpen = importOpen, signedIn = signedIn,
+                labelFor = { it }, onDismiss = { shared = null }, onScan = {},
+            )
+        }
+        val copy = composeRule.onNodeWithContentDescription(copyLink)
+        copy.assertExists()
+
+        // A share link opened its import.
+        composeRule.runOnIdle { importOpen = true }
+        composeRule.waitForIdle()
+        copy.assertDoesNotExist()
+        assertEquals(null, shared)
+
+        composeRule.runOnIdle {
+            importOpen = false
+            shared = share
+        }
+        composeRule.waitForIdle()
+        copy.assertExists()
+        composeRule.runOnIdle { signedIn = false }
+        composeRule.waitForIdle()
+        copy.assertDoesNotExist()
+        assertEquals(null, shared)
     }
 
     @Test

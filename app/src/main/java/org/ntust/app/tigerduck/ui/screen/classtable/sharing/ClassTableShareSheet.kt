@@ -127,7 +127,10 @@ internal fun ClassTableShareSheet(
                 // The scanner opens only once this sheet is gone, as on iOS.
                 IconButton(
                     onClick = {
-                        scope.launch { sheetState.hide() }.invokeOnCompletion {
+                        // Not for a sheet gone meanwhile, as a link closes it: its scope is
+                        // cancelled, and the scanner would open over the link's page.
+                        scope.launch { sheetState.hide() }.invokeOnCompletion { cause ->
+                            if (cause != null) return@invokeOnCompletion
                             onDismiss()
                             onScan()
                         }
@@ -221,6 +224,26 @@ internal fun ClassTableShareSheet(
             }
         }
     }
+}
+
+/**
+ * The user's own share sheet the import scanner handed over to ([share]), which the navigation
+ * shows once the scanner is gone, as iOS's root presents both. It is no page's: an import opened
+ * over it, as a share link opens one, closes it ([onDismiss]), and so does a sign-out, as the
+ * code names the account that left.
+ */
+@Composable
+internal fun ScannerShareSheet(
+    share: ClassTableShare?,
+    importOpen: Boolean,
+    signedIn: Boolean,
+    labelFor: (semester: String) -> String,
+    onDismiss: () -> Unit,
+    onScan: () -> Unit,
+) {
+    val closes = share != null && (importOpen || !signedIn)
+    LaunchedEffect(closes) { if (closes) onDismiss() }
+    if (share != null && !closes) ClassTableShareSheet(share, labelFor, onDismiss, onScan)
 }
 
 /**

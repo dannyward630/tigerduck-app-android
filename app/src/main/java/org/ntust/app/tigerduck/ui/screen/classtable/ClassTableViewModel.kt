@@ -421,6 +421,9 @@ class ClassTableViewModel @Inject constructor(
     // Double taps on the Class Table tab, for whether the next one swaps back or steps on.
     private val tabDoubleTaps = ClassTableTabDoubleTaps(SystemClock::elapsedRealtime)
 
+    /** Bumped after every write of a term's courses ([DataCache.coursesVersion]), for [refreshShareTerms]'s readers. */
+    val coursesVersion: StateFlow<Int> get() = dataCache.coursesVersion
+
     /** The user's terms the share sheet can offer; see [refreshShareTerms]. */
     private val _shareTerms = MutableStateFlow<List<ClassTableShare.Term>>(emptyList())
     val shareTerms: StateFlow<List<ClassTableShare.Term>> = _shareTerms

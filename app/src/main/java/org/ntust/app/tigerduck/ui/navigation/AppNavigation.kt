@@ -79,7 +79,7 @@ import org.ntust.app.tigerduck.ui.screen.calendar.CalendarViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableScreen
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportHost
-import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableShareSheet
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ScannerShareSheet
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherEntry
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherMenuItems
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportViewModel
@@ -862,6 +862,8 @@ fun MainNavigation(
     val shareTerms by classTableViewModel.shareTerms.collectAsStateWithLifecycle()
     val shownCourses by classTableViewModel.courses.collectAsStateWithLifecycle()
     val semesters by classTableViewModel.availableSemesters.collectAsStateWithLifecycle()
+    // Other terms load into the cache in the background, which the share terms read too.
+    val coursesVersion by classTableViewModel.coursesVersion.collectAsStateWithLifecycle()
     val ownStudentId = classTableViewModel.studentId
         ?.takeIf { signedIn && shareTerms.isNotEmpty() && ClassTableShare.canName(it) }
 
@@ -881,18 +883,17 @@ fun MainNavigation(
             }
         },
         refreshShare = classTableViewModel::refreshShareTerms,
-        shareSource = shownCourses to semesters,
+        shareSource = Triple(shownCourses, semesters, coursesVersion),
     )
-    shareFromScanner?.let { share ->
-        ClassTableShareSheet(
-            share = share,
-            labelFor = classTableViewModel::displayLabel,
-            onDismiss = { shareFromScanner = null },
-            onScan = classTableImportViewModel::start,
-        )
-    }
-    // A sign-out closes the sheet: the code names the account that left.
-    LaunchedEffect(signedIn) { if (!signedIn) shareFromScanner = null }
+    val importSession by classTableImportViewModel.session.collectAsStateWithLifecycle()
+    ScannerShareSheet(
+        share = shareFromScanner,
+        importOpen = importSession != null,
+        signedIn = signedIn,
+        labelFor = classTableViewModel::displayLabel,
+        onDismiss = { shareFromScanner = null },
+        onScan = classTableImportViewModel::start,
+    )
 }
 
 /** The tab the bottom bar shows selected on [route]: a page's own tab, or the one it was opened from. */
