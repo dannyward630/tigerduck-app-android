@@ -45,4 +45,17 @@ class BrowserPageScriptsTest {
         // Matched by where a link starts, not by anything inside it.
         assertFalse(BrowserPageScripts.HIDE_LOGOUT, BrowserPageScripts.HIDE_LOGOUT.contains("*=\"logout.php\""))
     }
+
+    @Test
+    fun `a WebView without has() still hides the logout, and tidies what it leaves by script`() {
+        val script = BrowserPageScripts.HIDE_LOGOUT
+
+        // Two rules: a browser that cannot read :has() drops only the second.
+        assertTrue(script, script.contains("logout + ' { display: none !important; }\\n" + BrowserPageScripts.LEFT_OVER_SELECTOR))
+        assertFalse(BrowserPageScripts.LOGOUT_SELECTOR, BrowserPageScripts.LOGOUT_SELECTOR.contains(":has("))
+        assertTrue(script, script.contains("CSS.supports('selector(:has(*))')"))
+        assertTrue("the divider right above", script.contains("previousElementSibling") && script.contains("dropdown-divider"))
+        assertTrue("the boxes around", script.contains("closest('.logininfo, .singlebutton')"))
+        assertTrue("as the page changes", script.contains("MutationObserver"))
+    }
 }
