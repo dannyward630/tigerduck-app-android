@@ -17,9 +17,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ExpandLess
@@ -33,6 +37,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -88,6 +93,10 @@ fun ColorPickerSheet(
     var sat by remember { mutableFloatStateOf(initialHsv[1]) }
     var value by remember { mutableFloatStateOf(initialHsv[2]) }
     var showCustom by remember { mutableStateOf(false) }
+    val customInView = remember { BringIntoViewRequester() }
+    // Opening Custom adds the square, the slider and the code below what is shown; scroll
+    // them into view rather than leave them under the fold.
+    LaunchedEffect(showCustom) { if (showCustom) customInView.bringIntoView() }
 
     val selectedColor = remember(hue, sat, value) {
         Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, sat, value)))
@@ -111,114 +120,129 @@ fun ColorPickerSheet(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = 24.dp)
         ) {
-            Text(
-                text = stringResource(R.string.color_picker_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = courseNameForDisplay(courseName, maxChars = 40),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            Spacer(Modifier.height(20.dp))
-
-            // Preview: see-through, as on the schedule grid's blocks, or under
-            // TAT the pastel its tiles take.
-            Box(
+            // The controls scroll and the buttons stay below them: with Custom open the
+            // sheet is taller than a short phone, or one with its text size turned up, and
+            // an unscrolled column squeezes whatever comes last.
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(style.courseAccentColor(selectedColor, tint = selectedColor.copy(alpha = 0.85f))),
-                contentAlignment = Alignment.Center
+                    .weight(1f, fill = false)
+                    .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = courseNameForDisplay(
-                        courseName.ifBlank { stringResource(R.string.color_picker_preview_fallback) },
-                        maxChars = 30
-                    ),
-                    color = style.courseAccentTextColor(
-                        tintText = if (selectedColor.red * 0.299f + selectedColor.green * 0.587f + selectedColor.blue * 0.114f > 0.5f)
-                            Color(0xFF1C1C1E) else Color.White
-                    ),
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    text = stringResource(R.string.color_picker_title),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-            }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = courseNameForDisplay(courseName, maxChars = 40),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-            Spacer(Modifier.height(22.dp))
+                Spacer(Modifier.height(20.dp))
 
-            SectionLabel(text = stringResource(R.string.color_picker_presets_note))
-            Spacer(Modifier.height(10.dp))
-
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-                maxItemsInEachRow = 6
-            ) {
-                presetPalette.forEachIndexed { index, preset ->
-                    val presetArgb = preset.toArgb() or 0xFF000000.toInt()
-                    ColorSwatch(
-                        color = style.courseAccentColor(preset, tint = preset),
-                        // Numbered from 1, as iOS reads them.
-                        label = stringResource(R.string.a11y_course_color_swatch)
-                            .replaceIosArg(1, index + 1L),
-                        selected = presetArgb == selectedArgb,
-                        usedByOther = presetArgb in usedByOthers && presetArgb != selectedArgb,
-                        onClick = { setHsvFrom(preset) }
+                // Preview: see-through, as on the schedule grid's blocks, or under
+                // TAT the pastel its tiles take.
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(64.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(style.courseAccentColor(selectedColor, tint = selectedColor.copy(alpha = 0.85f))),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = courseNameForDisplay(
+                            courseName.ifBlank { stringResource(R.string.color_picker_preview_fallback) },
+                            maxChars = 30
+                        ),
+                        color = style.courseAccentTextColor(
+                            tintText = if (selectedColor.red * 0.299f + selectedColor.green * 0.587f + selectedColor.blue * 0.114f > 0.5f)
+                                Color(0xFF1C1C1E) else Color.White
+                        ),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
                 }
-            }
 
-            Spacer(Modifier.height(18.dp))
+                Spacer(Modifier.height(22.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable { showCustom = !showCustom }
-                    .padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SectionLabel(
-                    text = stringResource(R.string.color_picker_custom),
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = if (showCustom) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY)
-                )
-            }
+                SectionLabel(text = stringResource(R.string.color_picker_presets_note))
+                Spacer(Modifier.height(10.dp))
 
-            if (showCustom) {
-                Spacer(Modifier.height(8.dp))
-                SatValSquare(
-                    hue = hue,
-                    sat = sat,
-                    value = value,
-                    onSatValChange = { s, v -> sat = s; value = v }
-                )
-                Spacer(Modifier.height(12.dp))
-                HueSlider(
-                    hue = hue,
-                    onHueChange = { hue = it }
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "#" + String.format("%06X", selectedArgb and 0xFFFFFF),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
-                    modifier = Modifier.align(Alignment.End)
-                )
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    maxItemsInEachRow = 6
+                ) {
+                    presetPalette.forEachIndexed { index, preset ->
+                        val presetArgb = preset.toArgb() or 0xFF000000.toInt()
+                        ColorSwatch(
+                            color = style.courseAccentColor(preset, tint = preset),
+                            // Numbered from 1, as iOS reads them.
+                            label = stringResource(R.string.a11y_course_color_swatch)
+                                .replaceIosArg(1, index + 1L),
+                            selected = presetArgb == selectedArgb,
+                            usedByOther = presetArgb in usedByOthers && presetArgb != selectedArgb,
+                            onClick = { setHsvFrom(preset) }
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(18.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { showCustom = !showCustom }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SectionLabel(
+                        text = stringResource(R.string.color_picker_custom),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = if (showCustom) Icons.Filled.ExpandLess else Icons.Filled.ExpandMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY)
+                    )
+                }
+
+                if (showCustom) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .bringIntoViewRequester(customInView)
+                    ) {
+                        Spacer(Modifier.height(8.dp))
+                        SatValSquare(
+                            hue = hue,
+                            sat = sat,
+                            value = value,
+                            onSatValChange = { s, v -> sat = s; value = v }
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        HueSlider(
+                            hue = hue,
+                            onHueChange = { hue = it }
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "#" + String.format("%06X", selectedArgb and 0xFFFFFF),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
+                            modifier = Modifier.align(Alignment.End)
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(22.dp))
