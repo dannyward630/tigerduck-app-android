@@ -1,9 +1,12 @@
 package org.ntust.app.tigerduck.network
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import okhttp3.Cookie
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.ntust.app.tigerduck.auth.PasswordPosting
 import org.ntust.app.tigerduck.auth.StoredPasswordLatch
 import org.ntust.app.tigerduck.auth.guardAutomaticHarvest
@@ -43,6 +46,11 @@ internal class MoodleTokenCoordinator(
      */
     private val websiteLogin: suspend (studentId: String, password: String, posting: PasswordPosting) -> List<Cookie> =
         { _, _, _ -> throw MoodleWebserviceError.MalformedResponse("no website sign-in") },
+    /**
+     * How long a sign-in to Moodle's website may take, the wait for [mutex] included: the browser
+     * that asked has given up by then, and a renewal must not wait behind it.
+     */
+    private val websiteDeadlineMs: Long = WEBSITE_DEADLINE_MS,
 ) {
     /** Where the token and the account it is harvested with are stored. */
     interface Tokens {
@@ -89,7 +97,12 @@ internal class MoodleTokenCoordinator(
             val password = tokens.password
             if (id == null || password == null) null else id to password
         },
-        signIn = { mutex.withLock { websiteUnlocked() } },
+        // Cut off at its deadline, which stops its calls (performWebsiteSignIn) and lets the lock go.
+        signIn = {
+            // Timed on the clock, wherever the gate's scope dispatches.
+            withContext(Dispatchers.IO) { withTimeoutOrNull(websiteDeadlineMs) { mutex.withLock { websiteUnlocked() } } }
+                ?: throw MoodleWebserviceError.TransientNetwork("website sign-in took longer than $websiteDeadlineMs ms")
+        },
         now = now,
         scope = scope,
         pauseMs = pauseMs,
@@ -181,3 +194,6 @@ internal class HeldRefusal(private val latch: StoredPasswordLatch) : StoredPassw
  * a refusal of it ([HeldRefusal]): no answer of SSO's, so nothing more is counted.
  */
 internal class StoredPasswordHeldBack : Exception("the stored password was refused; not posted again")
+
+/** As long as the TigerDuck browser waits on a sign-in to Moodle's website (MoodleWebSessionSignIn). */
+internal const val WEBSITE_DEADLINE_MS = 15_000L

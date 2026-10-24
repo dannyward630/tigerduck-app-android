@@ -3,10 +3,13 @@ package org.ntust.app.tigerduck.network
 import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
@@ -25,7 +28,6 @@ import org.ntust.app.tigerduck.auth.PersistedStoredPasswordLatch
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
-import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * [MoodleTokenService]'s sign-in to Moodle's website, for the TigerDuck browser when no autologin
@@ -57,7 +59,10 @@ class MoodleWebSignInTest {
     /** Runs as Moodle's OIDC entry is asked for, before its answer. */
     private var onEntry: () -> Unit = {}
 
-    private val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain.request()) }.build()
+    /** Whether SSO holds the next password post until the call is cancelled, as a server that never answers. */
+    private var ssoHangs = false
+
+    private val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain) }.build()
 
     /** The time the latch and the pause read. */
     private var clock = 1_800_000_000_000L
@@ -88,7 +93,7 @@ class MoodleWebSignInTest {
     /** The latch the last service was made with, as a fresh process reads it from disk. */
     private lateinit var latch: PersistedStoredPasswordLatch
 
-    private fun TestScope.service(): MoodleTokenService {
+    private fun TestScope.service(websiteDeadlineMs: Long = 15_000): MoodleTokenService {
         latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) {
             val id = tokens.studentId
             val password = tokens.password
@@ -100,6 +105,7 @@ class MoodleWebSignInTest {
             passwordLatch = latch,
             scope = backgroundScope,
             newCookieJar = { SignInCookieJar().also { jars += it } },
+            websiteDeadlineMs = websiteDeadlineMs,
             now = { clock },
         )
     }
@@ -220,6 +226,25 @@ class MoodleWebSignInTest {
         assertEquals("nothing posted, nothing more counted", 1, latch.refusals.value)
     }
 
+    @Test
+    fun `a website sign-in SSO never answers lets go at its deadline, and a renewal after it goes on`() = runTest(UnconfinedTestDispatcher()) {
+        // The deadline is on the clock; a short one keeps the test quick.
+        val service = service(websiteDeadlineMs = 500)
+        ssoHangs = true
+
+        val website = async { runCatching { service.signInToWebsite() } }
+        val failed = onTheClock { withTimeout(10_000) { website.await() } }
+        assertTrue("the website sign-in failed at its deadline", failed.exceptionOrNull() is MoodleWebserviceError.TransientNetwork)
+
+        // The renewal that waited behind it is not held past the deadline.
+        ssoAnswer = { "$MOODLE/admin/tool/mobile/launch.php?confirmed=1" to tokenPage() }
+        assertEquals("made-up-renewed-wstoken", onTheClock { withTimeout(10_000) { service.renewToken("made-up-wstoken") } })
+    }
+
+    /** [block] timed on the clock rather than the test's virtual time, as the run is. */
+    private suspend fun <T> onTheClock(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T =
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default.limitedParallelism(1), block)
+
     private suspend fun expectFailure(type: Class<out Throwable>, block: suspend () -> Unit) {
         try {
             block()
@@ -231,13 +256,20 @@ class MoodleWebSignInTest {
 
     // --- the fake school: SSO and Moodle, as OkHttp would see them after following redirects ---
 
-    private fun answer(request: Request): Response {
+    private fun answer(chain: okhttp3.Interceptor.Chain): Response {
+        val request = chain.request()
         val url = request.url.toString()
         requests += url
         val jar = jars.last()
         val (landed, html, sets) = when {
             request.method == "POST" && request.url.host == SSO_HOST -> {
                 posts += url
+                if (ssoHangs) {
+                    ssoHangs = false
+                    // As OkHttp's own: a cancelled call gives up on its read.
+                    while (!chain.call().isCanceled()) Thread.sleep(5)
+                    throw java.io.IOException("Canceled")
+                }
                 onPost()
                 val (at, page) = ssoAnswer()
                 Triple(at, page, listOf("$SSO_COOKIE=sso-made-up; Path=/; Secure; HttpOnly"))
@@ -248,6 +280,8 @@ class MoodleWebSignInTest {
                     "<html><body>Dashboard</body></html>",
                     listOf("MoodleSession=fake-session-000; Path=/; Secure; HttpOnly", "MOODLEID1_=made-up; Path=/; Secure"),
                 )
+            // A token renewal's launch, which lands on the sign-in form as the website's entry does.
+            url.startsWith("$MOODLE/admin/tool/mobile/launch.php") -> Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
             url.startsWith("$MOODLE/auth/oidc/") -> {
                 onEntry()
                 Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
@@ -317,6 +351,12 @@ class MoodleWebSignInTest {
             </form>
             </body></html>
         """.trimIndent()
+
+        fun tokenPage(): String {
+            val pair = "signature:::made-up-renewed-wstoken:::made-up-private"
+            val payload = android.util.Base64.encodeToString(pair.toByteArray(), android.util.Base64.NO_WRAP)
+            return """<html><body><a href="moodlemobile://token=$payload">Open</a></body></html>"""
+        }
 
         val MFA_PAGE = """
             <html><body>
