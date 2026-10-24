@@ -224,6 +224,8 @@ class AuthService @Inject constructor(
                 // last one imported, whether imported while signed out or left by a wipe that
                 // never ran.
                 prepareSignedIn = {
+                    // As the account is taken, before anything that can be cancelled.
+                    _signIns.tryEmit(Unit)
                     importedClassTables.accountDidSignIn(normalizedId)
                     // After the store knows who signed in, which empties another account's leftovers.
                     if (demoAccount.isActive) demoAccount.importClassmates()
@@ -274,7 +276,6 @@ class AuthService @Inject constructor(
                 }
             }
 
-            if (outcome != TypedAccountSignIn.Outcome.NOT_SIGNED_IN) _signIns.tryEmit(Unit)
             if (outcome == TypedAccountSignIn.Outcome.SIGNED_IN) {
                 runCatching { pushRegistration.onSignedIn() }
                     .onFailure { e -> if (e is CancellationException) throw e }

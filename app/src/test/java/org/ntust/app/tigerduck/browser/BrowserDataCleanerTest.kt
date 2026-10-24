@@ -36,7 +36,7 @@ class BrowserDataCleanerTest {
         BrowserDataCleaner(storage = { storageCleared++ }, settings = settings, downloads = downloads).clear()
         advanceUntilIdle()
 
-        assertEquals(before + 1, BrowserSession.generation.value)
+        assertEquals(before + 2, BrowserSession.generation.value)
         assertTrue(downloads.items.value.isEmpty())
         assertEquals(BrowserZoom.DEFAULT, settings.zoom("moodle2.ntust.edu.tw"))
         assertEquals(BrowserAppearance.DARK, settings.appearance)
@@ -64,5 +64,23 @@ class BrowserDataCleanerTest {
         // Unrelated input, unrelated output: a stand-in for a certificate's encoding.
         val encoded = KeyPairGenerator.getInstance("EC").apply { initialize(256) }.generateKeyPair().public.encoded
         assertEquals(32 * 3 - 1, CertificateInfo.fingerprint(encoded).length)
+    }
+
+    @Test
+    fun `clearing is marked while it runs and moves the session as it starts and as it ends`() = runTest {
+        val context = RuntimeEnvironment.getApplication()
+        val downloads = BrowserDownloads(this) { _, _ -> error("unused") }
+        val before = BrowserSession.generation.value
+        var seenDuring: Pair<Boolean, Int>? = null
+
+        BrowserDataCleaner(
+            storage = { seenDuring = BrowserSession.clearing.value to BrowserSession.generation.value },
+            settings = BrowserSettings(context),
+            downloads = downloads,
+        ).clear()
+
+        assertEquals(true to before + 1, seenDuring)
+        assertEquals(before + 2, BrowserSession.generation.value)
+        assertEquals(false, BrowserSession.clearing.value)
     }
 }

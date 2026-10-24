@@ -13,7 +13,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.asResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okio.buffer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -239,5 +241,50 @@ class BrowserDownloadsTest {
         assertTrue(call!!.isCanceled())
         assertEquals(listOf("https://moodle2.ntust.edu.tw/a.pdf"), sent)
         assertTrue(downloads.items.value.isEmpty())
+    }
+
+    @Test
+    fun `a download stopped while its body is read cancels the call at once`() = runTest {
+        val reading = java.util.concurrent.CountDownLatch(1)
+        var call: okhttp3.Call? = null
+        val client = OkHttpClient.Builder()
+            .followRedirects(false)
+            .addInterceptor(Interceptor { chain ->
+                call = chain.call()
+                val stalled = object : okio.Source {
+                    override fun read(sink: okio.Buffer, byteCount: Long): Long {
+                        reading.countDown()
+                        // A server that sends nothing more, until the call is cancelled.
+                        while (!chain.call().isCanceled()) Thread.sleep(5)
+                        throw IOException("Canceled")
+                    }
+                    override fun timeout() = okio.Timeout.NONE
+                    override fun close() {}
+                }
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200).message("OK")
+                    .body(stalled.buffer().asResponseBody("application/pdf".toMediaType(), -1))
+                    .build()
+            })
+            .build()
+        val transfer = MediaStoreDownloadTransfer(
+            context = RuntimeEnvironment.getApplication(),
+            allowlist = { BrowserAllowlist.DEFAULT },
+            cookieFor = { null },
+            userAgent = { null },
+            client = client,
+            save = { _, _, input, _ ->
+                input.readBytes()
+                Uri.parse("content://downloads/1")
+            },
+        )
+        val downloads = BrowserDownloads(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO), transfer)
+        downloads.start(save)
+        assertTrue(reading.await(5, java.util.concurrent.TimeUnit.SECONDS))
+
+        val started = System.nanoTime()
+        downloads.clear()
+
+        assertTrue(call!!.isCanceled())
+        assertTrue("cleared in time", System.nanoTime() - started < 5_000_000_000L)
     }
 }

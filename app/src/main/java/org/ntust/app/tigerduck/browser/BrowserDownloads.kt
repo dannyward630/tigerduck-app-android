@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -130,7 +132,8 @@ class BrowserDownloads(
     /** Stops every running download, waits for each to end, and forgets the list. */
     suspend fun clear() {
         val running = synchronized(jobs) { jobs.values.toList().also { jobs.clear() } }
-        running.forEach { it.cancelAndJoin() }
+        running.forEach { it.cancel() }
+        running.joinAll()
         state.value = emptyList()
     }
 
@@ -168,19 +171,46 @@ class MediaStoreDownloadTransfer(
                 cookieFor(url)?.takeIf { it.isNotBlank() }?.let { header("Cookie", it) }
                 userAgent()?.let { header("User-Agent", it) }
             }.build()
-            client.newCall(request).await().use { response ->
+            when (val hop = hop(client.newCall(request), plan, progress)) {
+                is Hop.Redirect -> url = hop.url
+                is Hop.Saved -> return@withContext hop.uri
+            }
+        }
+        throw IOException("too many redirects")
+    }
+
+    private sealed interface Hop {
+        data class Redirect(val url: String) : Hop
+        data class Saved(val uri: Uri) : Hop
+    }
+
+    /**
+     * One request: a redirect to follow, or the file saved. The call is stopped with the
+     * download however far it got, its body's read included, which blocks until the call is.
+     */
+    private suspend fun hop(call: Call, plan: DownloadPlan.Save, progress: (Long, Long?) -> Unit): Hop = coroutineScope {
+        val stopper = launch {
+            try {
+                awaitCancellation()
+            } finally {
+                call.cancel()
+            }
+        }
+        try {
+            call.await().use { response ->
                 if (response.isRedirect) {
-                    url = response.header("Location")?.let { response.request.url.resolve(it)?.toString() }
+                    val next = response.header("Location")?.let { response.request.url.resolve(it)?.toString() }
                         ?: throw IOException("redirect without a location")
-                    return@repeat
+                    return@coroutineScope Hop.Redirect(next)
                 }
                 if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
                 val body = response.body ?: throw IOException("no body")
                 val total = body.contentLength().takeIf { it >= 0 }
-                return@withContext (save ?: ::saveToDownloads)(plan, total, body.byteStream(), progress)
+                Hop.Saved((save ?: ::saveToDownloads)(plan, total, body.byteStream(), progress))
             }
+        } finally {
+            stopper.cancel()
         }
-        throw IOException("too many redirects")
     }
 
     private suspend fun saveToDownloads(plan: DownloadPlan.Save, total: Long?, input: java.io.InputStream, progress: (Long, Long?) -> Unit): Uri {

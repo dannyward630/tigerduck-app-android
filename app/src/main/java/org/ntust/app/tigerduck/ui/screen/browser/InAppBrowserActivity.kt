@@ -55,8 +55,10 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.webkit.WebViewFeature
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.ntust.app.tigerduck.R
@@ -99,9 +101,25 @@ import javax.inject.Inject
 object InAppBrowser {
     const val EXTRA_URL = "org.ntust.app.tigerduck.browser.URL"
 
-    /** Opens [url], an https page, in the TigerDuck browser; false when it is not one or nothing could open. */
+    /**
+     * Whether this phone's WebView can delete everything a site keeps,
+     * service workers and Cache Storage included. The browser opens only
+     * where it can: on an older WebView one student's pages could outlive a
+     * sign-out. Set by tests.
+     */
+    @Volatile
+    internal var canClearEverything: () -> Boolean = {
+        runCatching { WebViewFeature.isFeatureSupported(WebViewFeature.DELETE_BROWSING_DATA) }.getOrDefault(false)
+    }
+
+    /**
+     * Opens [url], an https page, in the TigerDuck browser; false when it is
+     * not one, when this phone's WebView cannot be cleared ([canClearEverything]),
+     * or nothing could open, for the caller to open it another way.
+     */
     fun open(context: Context, url: String): Boolean {
         if (url.toHttpUrlOrNull()?.isHttps != true) return false
+        if (!canClearEverything()) return false
         val intent = Intent(context, InAppBrowserActivity::class.java).putExtra(EXTRA_URL, url)
         if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return runCatching { context.startActivity(intent) }.isSuccess
@@ -194,10 +212,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
         enableEdgeToEdge()
 
-        // A sign-out while this is open clears the browser; the pages shown are the departing student's.
-        val session = BrowserSession.generation.value
-        lifecycleScope.launch { BrowserSession.generation.collect { if (it != session) finish() } }
-
         appearance = settings.appearance
         pageTheme = ContextThemeWrapper(this, R.style.Theme_TigerDuck)
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
@@ -205,7 +219,14 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         val restored = savedInstanceState?.getBundle(KEY_WEB_STATE)?.let { webView.restoreState(it) != null } == true
         signInTarget = savedInstanceState?.getString(KEY_SIGN_IN_TARGET)
-        if (!restored) open(target)
+        lifecycleScope.launch {
+            // Not while a sign-out clears the browser: the departing student's session is still there.
+            BrowserSession.clearing.first { !it }
+            // A sign-out from here on clears the browser; the pages shown are the departing student's.
+            val session = BrowserSession.generation.value
+            launch { BrowserSession.generation.collect { if (it != session) finish() } }
+            if (!restored) open(target)
+        }
 
         onBackPressedDispatcher.addCallback(this) { handleBack() }
 
@@ -568,12 +589,14 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /** What a picker gave back, as far as the page may have it; see [BrowserUpload.safePicks]. */
     private fun deliverPicks(picks: List<Uri>, cameraShot: Uri? = null) =
-        deliverUpload(BrowserUpload.safePicks(picks, cameraShot, ::isOwnAuthority))
+        deliverUpload(BrowserUpload.safePicks(picks, cameraShot, ::isForeignProvider))
 
-    /** Whether [authority] is a provider of this app's own, by name or by who serves it. */
-    private fun isOwnAuthority(authority: String): Boolean =
-        authority == packageName || authority.startsWith("$packageName.") ||
-            runCatching { packageManager.resolveContentProvider(authority, 0)?.packageName == packageName }.getOrDefault(true)
+    /** Whether another app serves [authority]: not one of this app's, by name or by who serves it, and not nothing. */
+    private fun isForeignProvider(authority: String): Boolean {
+        if (authority == packageName || authority.startsWith("$packageName.")) return false
+        val owner = runCatching { packageManager.resolveContentProvider(authority, 0)?.packageName }.getOrNull()
+        return owner != null && owner != packageName
+    }
 
     private fun deliverUpload(uris: Array<Uri>?) {
         pendingUpload?.deliver?.invoke(uris)
@@ -754,7 +777,10 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
             // Off the main thread. A form's POST off the allowlist is stopped here, before it is
-            // sent: shouldOverrideUrlLoading is never asked about one.
+            // sent: shouldOverrideUrlLoading is never asked about one. What no WebView callback
+            // sees is a redirect (307, 308) an allowlisted site answers a POST with: the site's own
+            // choice, as any script on it can send anywhere too. The allowlist decides which pages
+            // this browser shows, and onPageStart stops such a page as it starts.
             val url = request.url.toString()
             if (!BrowserRouting.blocksRequest(url, request.isForMainFrame, allowlistStore.allowlist.value)) return null
             view.post {

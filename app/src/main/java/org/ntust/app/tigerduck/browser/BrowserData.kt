@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -20,13 +22,21 @@ import kotlin.coroutines.resume
 
 /**
  * Moves on whenever the browser's data is cleared, so a browser screen open
- * at that moment, which shows the departing student's pages, closes.
+ * at that moment, which shows the departing student's pages, closes; and
+ * says while a clearing runs, so a screen opened meanwhile waits for it.
  */
 object BrowserSession {
     private val state = MutableStateFlow(0)
     val generation: StateFlow<Int> = state.asStateFlow()
 
+    private val clearingState = MutableStateFlow(false)
+    val clearing: StateFlow<Boolean> = clearingState.asStateFlow()
+
     fun end() = state.update { it + 1 }
+
+    internal fun setClearing(clearing: Boolean) {
+        clearingState.value = clearing
+    }
 }
 
 /** The WebView's own stores: cookies, web storage, saved HTTP auth and the HTTP cache. */
@@ -46,12 +56,25 @@ class BrowserDataCleaner(
     private val settings: BrowserSettings,
     private val downloads: BrowserDownloads,
 ) {
-    suspend fun clear() {
-        BrowserSession.end()
-        downloads.clear()
-        settings.clearSites()
-        runCatching { storage.clear() }.onFailure { Log.w(TAG, "browser storage not cleared: ${it.javaClass.simpleName}") }
+    /**
+     * One clearing at a time. The session moves on as it starts, closing the
+     * screens open, and again as it ends, closing one opened meanwhile, which
+     * may have shown the departing student's pages before the cookies went.
+     */
+    suspend fun clear() = lock.withLock {
+        BrowserSession.setClearing(true)
+        try {
+            BrowserSession.end()
+            downloads.clear()
+            settings.clearSites()
+            runCatching { storage.clear() }.onFailure { Log.w(TAG, "browser storage not cleared: ${it.javaClass.simpleName}") }
+        } finally {
+            BrowserSession.end()
+            BrowserSession.setClearing(false)
+        }
     }
+
+    private val lock = Mutex()
 
     private companion object {
         const val TAG = "BrowserData"

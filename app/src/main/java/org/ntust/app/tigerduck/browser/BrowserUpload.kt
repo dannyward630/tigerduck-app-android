@@ -52,15 +52,19 @@ object BrowserUpload {
     /**
      * The picks a page may have: `content:` URIs from another app's provider,
      * and the photo the browser's own camera took ([cameraShot]). Anything
-     * else is dropped: a `file:` URI, or one of this app's own providers
-     * ([isOwnAuthority]), which a picker app could hand back to reach a file
-     * of the app's the page must never see, as the WebView reads it with the
-     * app's own access. Null when nothing is left, which the page takes as no
-     * file.
+     * else is dropped: a `file:` URI, an authority with a user in it
+     * (`0@…`, which Android strips before it opens the provider, so it
+     * could name one of ours in disguise), or any provider not
+     * [isForeignProvider]: one of this app's own, which a picker app could
+     * hand back to reach a file of the app's the page must never see, as the
+     * WebView reads it with the app's own access, or one nothing serves.
+     * Null when nothing is left, which the page takes as no file.
      */
-    fun safePicks(picks: List<Uri>, cameraShot: Uri?, isOwnAuthority: (String) -> Boolean): Array<Uri>? =
+    fun safePicks(picks: List<Uri>, cameraShot: Uri?, isForeignProvider: (String) -> Boolean): Array<Uri>? =
         picks.filter { uri ->
-            uri == cameraShot || (uri.scheme == "content" && uri.authority?.takeIf { it.isNotEmpty() }?.let { !isOwnAuthority(it) } == true)
+            if (uri == cameraShot) return@filter true
+            val authority = uri.authority?.takeIf { it.isNotEmpty() } ?: return@filter false
+            uri.scheme == "content" && '@' !in authority && isForeignProvider(authority)
         }.toTypedArray().takeIf { it.isNotEmpty() }
 
     private fun isImageType(type: String): Boolean =

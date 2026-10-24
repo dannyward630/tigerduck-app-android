@@ -219,9 +219,16 @@ internal fun ownProfileEditorUrl(): String = MoodlePage.webUrl(MoodlePage.PROFIL
 
 /**
  * The pencil: Moodle's profile editor in the TigerDuck browser, whatever "Open links with" says,
- * so it opens signed in and stays in the app. Moodle has no web service for these fields.
+ * so it opens signed in and stays in the app. Moodle has no web service for these fields. Where
+ * the browser cannot open (a WebView too old to clear it), [elsewhere] opens it as before.
  */
-internal fun editOwnProfile(context: Context): Boolean = InAppBrowser.open(context, ownProfileEditorUrl())
+internal fun editOwnProfile(
+    context: Context,
+    elsewhere: (Context, String) -> Unit = { c, url -> openMoodleWebPage(c, url) },
+) {
+    val url = ownProfileEditorUrl()
+    if (!InAppBrowser.open(context, url)) elsewhere(context, url)
+}
 
 private fun writeWithMailApp(context: Context, address: String) {
     runCatching {
