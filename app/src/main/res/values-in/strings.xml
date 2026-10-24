@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Tekan kembali sekali lagi untuk keluar</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Kamu saat ini berada di luar zona waktu Taiwan. Aplikasi ini secara otomatis menggunakan waktu Taiwan.\nMohon periksa kembali tanggal dan waktu. Selamat jalan!</string>
+    <string name="app_processing_keep_open">Memproses…\nJangan tutup aplikasi.</string>
     <string name="app_reset_required_action">Setel ulang</string>
     <string name="app_reset_required_message">Status login dan preferensi kamu tidak dapat dibaca lagi, mungkin karena pembaruan OS, pemulihan cadangan, atau masalah penyimpanan.\n\nKetuk \"Setel ulang\" untuk menghapus data lama, lalu masuk dan konfigurasi ulang preferensi kamu.</string>
     <string name="app_reset_required_title">Perlu disetel ulang</string>

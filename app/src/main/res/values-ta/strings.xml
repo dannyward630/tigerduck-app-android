@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">வெளியேற மீண்டும் பின்செல் அழுத்தவும்</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">நீங்கள் தற்போது தைவான் நேரமண்டலுக்கு வெளியே இருக்கிறீர்கள். இந்த App தைவான் நேரத்தை தானாக பயன்படுத்துகிறது.\nதேதிகளையும் நேரங்களையும் இருமுறை சரிபார்க்கவும். பயணம் சுகமாக இருக்கட்டும்!</string>
+    <string name="app_processing_keep_open">செயலாக்கப்படுகிறது…\nதயவுசெய்து App-ஐ மூட வேண்டாம்.</string>
     <string name="app_reset_required_action">மீட்டமை</string>
     <string name="app_reset_required_message">உங்கள் உள்நுழைவு நிலை மற்றும் விருப்பங்களை இனி படிக்க முடியவில்லை, OS மேம்படுத்தல், காப்பு மீட்டமைவு அல்லது சேமிப்பக சிக்கலால் இருக்கலாம்.\n\nபழைய தரவை அழிக்க \"மீட்டமை\" என்பதை தட்டவும், பின்னர் உள்நுழைந்து உங்கள் விருப்பங்களை மீண்டும் கட்டமைக்கவும்.</string>
     <string name="app_reset_required_title">மீட்டமைவு தேவை</string>

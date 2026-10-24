@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Stlačte späť znova pre ukončenie</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Momentálne sa nachádzate mimo taiwanského časového pásma. Táto aplikácia automaticky používa taiwanský čas.\nSkontrolujte prosím dátumy a časy. Príjemnú cestu!</string>
+    <string name="app_processing_keep_open">Spracúva sa…\nAplikáciu nezatvárajte.</string>
     <string name="app_reset_required_action">Obnoviť</string>
     <string name="app_reset_required_message">Váš stav prihlásenia a predvoľby sa nedajú načítať, pravdepodobne kvôli aktualizácii OS, obnove zálohy alebo problému s úložiskom.\n\nKlepnutím na \"Obnoviť\" vymažte staré údaje, potom sa prihláste a znovu nastavte predvoľby.</string>
     <string name="app_reset_required_title">Vyžaduje sa obnovenie</string>

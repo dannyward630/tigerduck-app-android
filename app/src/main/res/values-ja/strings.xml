@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">もう一度戻るボタンを押すと終了します</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">現在台湾時間外にいます。このアプリは自動的に台湾時間を使用しています。\n日付と時刻にご注意ください。よい旅を！</string>
+    <string name="app_processing_keep_open">処理中…\nアプリを閉じないでください。</string>
     <string name="app_reset_required_action">リセット</string>
     <string name="app_reset_required_message">サインイン状態と環境設定が読み取れなくなりました。OS のアップグレード、バックアップの復元、またはストレージの問題が原因の可能性があります。\n\n「リセット」をタップして古いデータを削除した後、再度サインインして設定をやり直してください。</string>
     <string name="app_reset_required_title">再設定が必要です</string>

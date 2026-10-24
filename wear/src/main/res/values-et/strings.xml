@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Vajutage uuesti tagasi väljumiseks</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Olete praegu väljaspool Taiwani ajavööndit. Rakendus kasutab automaatselt Taiwani aega.\nKontrollige kuupäevi ja kellaaegu. Head reisi!</string>
+    <string name="app_processing_keep_open">Töötlemine…\nÄrge sulgege rakendust.</string>
     <string name="app_reset_required_action">Lähtesta</string>
     <string name="app_reset_required_message">Teie sisselogimisolekut ja eelistusi ei saa enam lugeda, tõenäoliselt OS-i uuenduse, varukoopia taastamise või salvestusprobleemi tõttu.\n\nPuudutage „Lähtesta\", et kustutada vanad andmed, seejärel logige sisse ja seadistage eelistused uuesti.</string>
     <string name="app_reset_required_title">Lähtestamine vajalik</string>

@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">പുറത്ത് കടക്കാൻ വീണ്ടും Back അമർത്തുക</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">നിങ്ങൾ ഇപ്പോൾ തായ്‌വാൻ ടൈം സോണിന് പുറത്താണ്. ഈ ആപ്പ് സ്വയം തായ്‌വാൻ സമയം ഉപയോഗിക്കുന്നു.\nതീയതികൾ, സമയങ്ങൾ ഇരട്ടിപ്രാവശ്യം പരിശോധിക്കുക. സുരക്ഷിത യാത്ര!</string>
+    <string name="app_processing_keep_open">പ്രോസസ്സ് ചെയ്യുന്നു…\nദയവായി ആപ്പ് അടയ്ക്കരുത്.</string>
     <string name="app_reset_required_action">റീസെറ്റ്</string>
     <string name="app_reset_required_message">OS അപ്‌ഗ്രേഡ്, ബാക്കപ്പ് പുനഃസ്ഥാപനം, അല്ലെങ്കിൽ സംഭരണ പ്രശ്‌നം കാരണം നിങ്ങളുടെ സൈൻ-ഇൻ നില, ക്രമീകരണങ്ങൾ എന്നിവ ഇനി വായിക്കാൻ കഴിയില്ല.\n\nപഴയ ഡേറ്റ മായ്ക്കാൻ \"റീസെറ്റ്\" ടാപ്പ് ചെയ്യുക, തുടർന്ന് സൈൻ ഇൻ ചെയ്ത് ക്രമീകരണങ്ങൾ വീണ്ടും ക്രമീകരിക്കുക.</string>
     <string name="app_reset_required_title">റീസെറ്റ് ആവശ്യമാണ്</string>

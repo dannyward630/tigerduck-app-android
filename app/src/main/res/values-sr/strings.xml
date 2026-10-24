@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Притисните назад поново за излаз</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Тренутно се налазите изван тајванске временске зоне. Ова апликација аутоматски користи тајванско вријеме.\nПроверите датуме и времена. Срећан пут!</string>
+    <string name="app_processing_keep_open">Обрађује се…\nНе затварајте апликацију.</string>
     <string name="app_reset_required_action">Ресетуј</string>
     <string name="app_reset_required_message">Ваше стање пријаве и подешавања се више не могу прочитати, вероватно услед надоградње ОС-а, враћања резервне копије или проблема са складиштем.\n\nДодирните „Ресетуј\" да бисте обрисали старе податке, а затим се пријавите и поново конфигуришите подешавања.</string>
     <string name="app_reset_required_title">Потребно је ресетовање</string>
