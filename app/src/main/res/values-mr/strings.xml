@@ -38,6 +38,7 @@
     <string name="action_clear_text">मजकूर साफ करा</string>
     <string name="action_close">बंद करा</string>
     <string name="action_confirm">पुष्टी करा</string>
+    <string name="action_continue">पुढे जा</string>
     <string name="action_done">झाले</string>
     <string name="action_go_to_settings">सेटिंग्जवर जा</string>
     <string name="action_got_it">समजले</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">सध्याचे Tabs</string>
     <string name="tab_editor_title">खालील नेव्हिगेशन बार कस्टमाइझ करा</string>
     <string name="tag_server_notification">सर्व्हर सूचना</string>
+    <string name="tls_certificate_fingerprint">SHA-256 फिंगरप्रिंट</string>
+    <string name="tls_certificate_intermediate">मध्यवर्ती</string>
+    <string name="tls_certificate_issuer">जारीकर्ता</string>
+    <string name="tls_certificate_list_title">प्रमाणपत्रे</string>
+    <string name="tls_certificate_name">नाव</string>
+    <string name="tls_certificate_root">रूट</string>
+    <string name="tls_certificate_validity">वैधता</string>
+    <string name="tls_pin_mismatch_details">%1$@ चे प्रमाणपत्र TigerDuck मध्ये नोंदवलेल्यापेक्षा वेगळे आहे, परंतु ते विश्वासार्ह संस्थेने जारी केले आहे, त्यामुळे वेबसाइटने प्रमाणपत्र नूतनीकृत केले असावे. पुढे गेल्यास TigerDuck पुढील अपडेटपर्यंत या प्रमाणपत्रावर विश्वास ठेवेल, %2$@ अंतर्गत सर्व साइटसाठी.</string>
+    <string name="tls_pin_mismatch_issuer">जारीकर्ता: %@</string>
+    <string name="tls_pin_mismatch_message">वेबसाइटचे प्रमाणपत्र नोंदवलेल्या प्रमाणपत्राशी जुळत नाही, त्यामुळे कनेक्शनच्या सुरक्षिततेवर परिणाम होतो. या वेबसाइटवर पुढे जायचे का?</string>
+    <string name="tls_pin_mismatch_show_details">तपशील</string>
+    <string name="tls_pin_mismatch_title">प्रमाणपत्र बदलले आहे</string>
+    <string name="tls_pin_mismatch_view_certificate">प्रमाणपत्र पहा</string>
     <string name="update_action_later">नंतर</string>
     <string name="update_action_skip_version">ही आवृत्ती वगळा</string>
     <string name="update_action_update_now">आत्ता अपडेट करा</string>

@@ -38,6 +38,7 @@
     <string name="action_clear_text">Изчистване на текста</string>
     <string name="action_close">Затвори</string>
     <string name="action_confirm">Потвърди</string>
+    <string name="action_continue">Продължи</string>
     <string name="action_done">Готово</string>
     <string name="action_go_to_settings">Към настройките</string>
     <string name="action_got_it">Разбрах</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Текущи табове</string>
     <string name="tab_editor_title">Персонализиране на долната лента</string>
     <string name="tag_server_notification">Сървърно известие</string>
+    <string name="tls_certificate_fingerprint">SHA-256 отпечатък</string>
+    <string name="tls_certificate_intermediate">Междинен</string>
+    <string name="tls_certificate_issuer">Издател</string>
+    <string name="tls_certificate_list_title">Сертификати</string>
+    <string name="tls_certificate_name">Име</string>
+    <string name="tls_certificate_root">Основен</string>
+    <string name="tls_certificate_validity">Валидност</string>
+    <string name="tls_pin_mismatch_details">Сертификатът на %1$@ се различава от записания в TigerDuck, но е издаден от доверен орган, така че е възможно уебсайтът да го е подновил. Ако продължите, TigerDuck ще се доверява на този сертификат до следващата актуализация за всички сайтове под %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Издаден от %@</string>
+    <string name="tls_pin_mismatch_message">Сертификатът на уебсайта не съвпада със записания, което засяга сигурността на връзката. Да продължите ли към този уебсайт?</string>
+    <string name="tls_pin_mismatch_show_details">Подробности</string>
+    <string name="tls_pin_mismatch_title">Сертификатът е променен</string>
+    <string name="tls_pin_mismatch_view_certificate">Преглед на сертификата</string>
     <string name="update_action_later">По-късно</string>
     <string name="update_action_skip_version">Пропусни тази версия</string>
     <string name="update_action_update_now">Актуализирай сега</string>

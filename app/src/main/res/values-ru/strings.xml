@@ -38,6 +38,7 @@
     <string name="action_clear_text">Очистить текст</string>
     <string name="action_close">Закрыть</string>
     <string name="action_confirm">Подтвердить</string>
+    <string name="action_continue">Продолжить</string>
     <string name="action_done">Готово</string>
     <string name="action_go_to_settings">Перейти в настройки</string>
     <string name="action_got_it">Понятно</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Текущие вкладки</string>
     <string name="tab_editor_title">Настроить нижнюю панель</string>
     <string name="tag_server_notification">Уведомление сервера</string>
+    <string name="tls_certificate_fingerprint">Отпечаток SHA-256</string>
+    <string name="tls_certificate_intermediate">Промежуточный</string>
+    <string name="tls_certificate_issuer">Издатель</string>
+    <string name="tls_certificate_list_title">Сертификаты</string>
+    <string name="tls_certificate_name">Имя</string>
+    <string name="tls_certificate_root">Корневой</string>
+    <string name="tls_certificate_validity">Срок действия</string>
+    <string name="tls_pin_mismatch_details">Сертификат %1$@ отличается от записанного в TigerDuck, но выдан доверенным центром, поэтому сайт мог его обновить. Если продолжить, TigerDuck будет доверять этому сертификату до следующего обновления для всех сайтов в %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Выдан: %@</string>
+    <string name="tls_pin_mismatch_message">Сертификат сайта не совпадает с записанным, что снижает безопасность соединения. Перейти на этот сайт?</string>
+    <string name="tls_pin_mismatch_show_details">Подробности</string>
+    <string name="tls_pin_mismatch_title">Сертификат изменился</string>
+    <string name="tls_pin_mismatch_view_certificate">Показать сертификат</string>
     <string name="update_action_later">Позже</string>
     <string name="update_action_skip_version">Пропустить эту версию</string>
     <string name="update_action_update_now">Обновить сейчас</string>

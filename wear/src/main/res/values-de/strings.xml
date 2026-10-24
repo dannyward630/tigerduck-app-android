@@ -38,6 +38,7 @@
     <string name="action_clear_text">Text löschen</string>
     <string name="action_close">Schließen</string>
     <string name="action_confirm">Bestätigen</string>
+    <string name="action_continue">Fortfahren</string>
     <string name="action_done">Fertig</string>
     <string name="action_go_to_settings">Zu den Einstellungen</string>
     <string name="action_got_it">Verstanden</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Aktuelle Tabs</string>
     <string name="tab_editor_title">Untere Navigation anpassen</string>
     <string name="tag_server_notification">Serverbenachrichtigung</string>
+    <string name="tls_certificate_fingerprint">SHA-256-Fingerabdruck</string>
+    <string name="tls_certificate_intermediate">Zwischenzertifikat</string>
+    <string name="tls_certificate_issuer">Aussteller</string>
+    <string name="tls_certificate_list_title">Zertifikate</string>
+    <string name="tls_certificate_name">Name</string>
+    <string name="tls_certificate_root">Stammzertifikat</string>
+    <string name="tls_certificate_validity">Gültig</string>
+    <string name="tls_pin_mismatch_details">Das Zertifikat von %1$@ weicht von dem ab, das TigerDuck hinterlegt hat, wurde aber von einer vertrauenswürdigen Stelle ausgestellt. Die Website hat ihr Zertifikat möglicherweise erneuert. Wenn du fortfährst, vertraut TigerDuck diesem Zertifikat bis zum nächsten Update, für alle Seiten unter %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Ausgestellt von %@</string>
+    <string name="tls_pin_mismatch_message">Das Zertifikat der Website stimmt nicht mit dem hinterlegten überein, was die Sicherheit der Verbindung beeinträchtigt. Weiter zu dieser Website?</string>
+    <string name="tls_pin_mismatch_show_details">Details</string>
+    <string name="tls_pin_mismatch_title">Zertifikat geändert</string>
+    <string name="tls_pin_mismatch_view_certificate">Zertifikat anzeigen</string>
     <string name="update_action_later">Später</string>
     <string name="update_action_skip_version">Diese Version überspringen</string>
     <string name="update_action_update_now">Jetzt aktualisieren</string>

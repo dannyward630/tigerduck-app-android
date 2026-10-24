@@ -38,6 +38,7 @@
     <string name="action_clear_text">Ryd tekst</string>
     <string name="action_close">Luk</string>
     <string name="action_confirm">Bekræft</string>
+    <string name="action_continue">Fortsæt</string>
     <string name="action_done">Færdig</string>
     <string name="action_go_to_settings">Gå til indstillinger</string>
     <string name="action_got_it">Forstået</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Aktuelle faneblade</string>
     <string name="tab_editor_title">Tilpas bundnavigationen</string>
     <string name="tag_server_notification">Servernotifikation</string>
+    <string name="tls_certificate_fingerprint">SHA-256-fingeraftryk</string>
+    <string name="tls_certificate_intermediate">Mellemliggende</string>
+    <string name="tls_certificate_issuer">Udsteder</string>
+    <string name="tls_certificate_list_title">Certifikater</string>
+    <string name="tls_certificate_name">Navn</string>
+    <string name="tls_certificate_root">Rod</string>
+    <string name="tls_certificate_validity">Gyldighed</string>
+    <string name="tls_pin_mismatch_details">Certifikatet for %1$@ adskiller sig fra det, TigerDuck har registreret, men er udstedt af en betroet udsteder, så webstedet har måske fornyet det. Hvis du fortsætter, stoler TigerDuck på certifikatet indtil næste opdatering, for alle websteder under %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Udstedt af %@</string>
+    <string name="tls_pin_mismatch_message">Webstedets certifikat svarer ikke til det registrerede, hvilket påvirker forbindelsens sikkerhed. Vil du fortsætte til webstedet?</string>
+    <string name="tls_pin_mismatch_show_details">Detaljer</string>
+    <string name="tls_pin_mismatch_title">Certifikatet er ændret</string>
+    <string name="tls_pin_mismatch_view_certificate">Vis certifikat</string>
     <string name="update_action_later">Senere</string>
     <string name="update_action_skip_version">Spring denne version over</string>
     <string name="update_action_update_now">Opdater nu</string>

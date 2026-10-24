@@ -38,6 +38,7 @@
     <string name="action_clear_text">テキストをクリア</string>
     <string name="action_close">閉じる</string>
     <string name="action_confirm">確認</string>
+    <string name="action_continue">続行</string>
     <string name="action_done">完了</string>
     <string name="action_go_to_settings">設定を開く</string>
     <string name="action_got_it">了解！</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">現在のタブ</string>
     <string name="tab_editor_title">下部タブの編集</string>
     <string name="tag_server_notification">サーバー通知</string>
+    <string name="tls_certificate_fingerprint">SHA-256フィンガープリント</string>
+    <string name="tls_certificate_intermediate">中間証明書</string>
+    <string name="tls_certificate_issuer">発行元</string>
+    <string name="tls_certificate_list_title">証明書</string>
+    <string name="tls_certificate_name">名前</string>
+    <string name="tls_certificate_root">ルート証明書</string>
+    <string name="tls_certificate_validity">有効期間</string>
+    <string name="tls_pin_mismatch_details">%1$@の証明書はTigerDuckの記録と異なりますが、信頼できる機関が発行しているため、Webサイトが証明書を更新した可能性があります。続行すると、TigerDuckは次回の更新までこの証明書を信頼し、%2$@配下のすべてのサイトに適用します。</string>
+    <string name="tls_pin_mismatch_issuer">発行元：%@</string>
+    <string name="tls_pin_mismatch_message">このWebサイトの証明書が記録と一致しないため、接続の安全性が損なわれます。このWebサイトに進みますか？</string>
+    <string name="tls_pin_mismatch_show_details">詳細</string>
+    <string name="tls_pin_mismatch_title">証明書が変更されました</string>
+    <string name="tls_pin_mismatch_view_certificate">証明書を表示</string>
     <string name="update_action_later">後で</string>
     <string name="update_action_skip_version">このバージョンをスキップ</string>
     <string name="update_action_update_now">今すぐ更新</string>

@@ -38,6 +38,7 @@
     <string name="action_clear_text">Vymazat text</string>
     <string name="action_close">Zavřít</string>
     <string name="action_confirm">Potvrdit</string>
+    <string name="action_continue">Pokračovat</string>
     <string name="action_done">Hotovo</string>
     <string name="action_go_to_settings">Přejít do nastavení</string>
     <string name="action_got_it">Rozumím</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Aktuální záložky</string>
     <string name="tab_editor_title">Přizpůsobit spodní lištu</string>
     <string name="tag_server_notification">Serverové oznámení</string>
+    <string name="tls_certificate_fingerprint">Otisk SHA-256</string>
+    <string name="tls_certificate_intermediate">Zprostředkující</string>
+    <string name="tls_certificate_issuer">Vydavatel</string>
+    <string name="tls_certificate_list_title">Certifikáty</string>
+    <string name="tls_certificate_name">Název</string>
+    <string name="tls_certificate_root">Kořenový</string>
+    <string name="tls_certificate_validity">Platnost</string>
+    <string name="tls_pin_mismatch_details">Certifikát webu %1$@ se liší od toho, který má TigerDuck zaznamenaný, ale vydala ho důvěryhodná autorita, takže web mohl certifikát obnovit. Pokud budete pokračovat, TigerDuck bude tomuto certifikátu důvěřovat do další aktualizace, pro všechny weby v doméně %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Vydal: %@</string>
+    <string name="tls_pin_mismatch_message">Certifikát webu neodpovídá zaznamenanému, což ovlivňuje bezpečnost připojení. Pokračovat na tento web?</string>
+    <string name="tls_pin_mismatch_show_details">Podrobnosti</string>
+    <string name="tls_pin_mismatch_title">Certifikát se změnil</string>
+    <string name="tls_pin_mismatch_view_certificate">Zobrazit certifikát</string>
     <string name="update_action_later">Později</string>
     <string name="update_action_skip_version">Přeskočit tuto verzi</string>
     <string name="update_action_update_now">Aktualizovat nyní</string>
