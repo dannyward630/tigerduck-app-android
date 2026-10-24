@@ -46,7 +46,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -162,7 +164,12 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     private lateinit var pageTheme: ContextThemeWrapper
     private lateinit var webView: WebView
+
+    /** The WebView once made, which is after the window's first frame; see [onCreate]. */
     private val web: WebView? get() = if (::webView.isInitialized) webView else null
+
+    /** Whether [web] is made, for the screen to show it. */
+    private var webReady by mutableStateOf(false)
     private lateinit var mobileUserAgent: String
 
     /** The session the page was loaded in, once the clearing gate let it load. */
@@ -222,28 +229,21 @@ class InAppBrowserActivity : AppCompatActivity() {
         paintWindow(BrowserColors.barsDark(appearance, pageDark = null))
         pageTheme = ContextThemeWrapper(this, R.style.Theme_TigerDuck)
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
-        webView = createWebView()
         loads = BrowserLoads(state, signIns)
-        signInFlow = BrowserSignInFlow(state, loads, signIns, lifecycleScope, ::load) { webView.stopLoading() }
+        signInFlow = BrowserSignInFlow(state, loads, signIns, lifecycleScope, ::load) { web?.stopLoading() }
 
         val savedWeb = savedInstanceState?.getBundle(KEY_WEB_STATE)
         val savedSession = savedInstanceState?.getInt(KEY_SESSION, -1)
         loads.signInTarget = savedInstanceState?.getString(KEY_SIGN_IN_TARGET)
-        lifecycleScope.launch {
-            // Nothing loads while a sign-out clears the browser, a page put back from saved state
-            // included: the departing student's session is still there.
-            BrowserSession.clearing.first { !it }
-            if (!BrowserSession.usable || BrowserCleanup.of(this@InAppBrowserActivity).isPending()) {
-                finish()
-                return@launch
-            }
-            // A sign-out from here on clears the browser; the pages shown are the departing student's.
-            val session = BrowserSession.generation.value
-            loadedSession = session
-            launch { BrowserSession.generation.collect { if (it != session) finish() } }
-            // Saved state from before a sign-out is the departing student's: started afresh instead.
-            val restored = savedWeb != null && savedSession == session && webView.restoreState(savedWeb) != null
-            if (!restored) open(target)
+        // The first WebView in a process loads the WebView provider, and making one takes the main
+        // thread for a while even then. Made here, it held the window's first frame back, and the
+        // opening animation waited for it: the browser felt slow to open. Made after the first
+        // frame, the bars are on screen from the start, over a light page area.
+        afterFirstFrame(window.decorView) {
+            if (isFinishing || isDestroyed) return@afterFirstFrame
+            webView = createWebView()
+            webReady = true
+            startPage(target, savedWeb, savedSession)
         }
 
         onBackPressedDispatcher.addCallback(this) { handleBack() }
@@ -271,12 +271,37 @@ class InAppBrowserActivity : AppCompatActivity() {
                     downloads = items,
                     actions = actions,
                 ) { modifier ->
-                    AndroidView(
-                        factory = { webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
-                        modifier = modifier,
-                    )
+                    if (webReady) {
+                        AndroidView(
+                            factory = { webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
+                            modifier = modifier,
+                        )
+                    } else {
+                        // The page area, light or dark as the WebView will start, until it's made.
+                        Box(modifier.background(androidx.compose.ui.graphics.Color(BrowserColors.webBackground(appearance, state.pageDark))))
+                    }
                 }
             }
+        }
+    }
+
+    /** Loads [target], or the page put back from [savedWeb], once no sign-out's clearing is owed. */
+    private fun startPage(target: String, savedWeb: Bundle?, savedSession: Int?) {
+        lifecycleScope.launch {
+            // Nothing loads while a sign-out clears the browser, a page put back from saved state
+            // included: the departing student's session is still there.
+            BrowserSession.clearing.first { !it }
+            if (!BrowserSession.usable || BrowserCleanup.of(this@InAppBrowserActivity).isPending()) {
+                finish()
+                return@launch
+            }
+            // A sign-out from here on clears the browser; the pages shown are the departing student's.
+            val session = BrowserSession.generation.value
+            loadedSession = session
+            launch { BrowserSession.generation.collect { if (it != session) finish() } }
+            // Saved state from before a sign-out is the departing student's: started afresh instead.
+            val restored = savedWeb != null && savedSession == session && webView.restoreState(savedWeb) != null
+            if (!restored) open(target)
         }
     }
 
@@ -407,9 +432,10 @@ class InAppBrowserActivity : AppCompatActivity() {
     private fun load(url: String) {
         when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
             NavigationDecision.Load -> {
+                val web = web ?: return
                 state.error = null
                 loads.requested(url)
-                webView.loadUrl(url)
+                web.loadUrl(url)
             }
             is NavigationDecision.OpenOutside -> state.outsideUrl = decision.url
             is NavigationDecision.HandOff -> openLink(this, decision.url, BrowserPreference.SYSTEM)
@@ -628,7 +654,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private fun handleBack() {
         when {
             state.find != null -> actions.endFind()
-            webView.canGoBack() -> {
+            web?.canGoBack() == true -> {
                 // Leaving a sign-in under way stops it: its result would load its page over this one.
                 if (state.signIn != null) signInFlow.leave()
                 state.error = null
@@ -658,27 +684,27 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun close() = finish()
         override fun back() = handleBack()
         override fun forward() {
-            if (!webView.canGoForward()) return
+            val web = web?.takeIf { it.canGoForward() } ?: return
             if (state.signIn != null) signInFlow.leave()
-            webView.goForward()
+            web.goForward()
         }
         override fun reload() {
-            if (state.error != null) retry() else webView.reload()
+            if (state.error != null) retry() else web?.reload()
         }
         override fun stop() {
-            webView.stopLoading()
+            web?.stopLoading()
             state.loading = false
         }
         override fun startFind() { state.find = FindState() }
         override fun find(query: String) {
             state.find = (state.find ?: FindState()).copy(query = query, ordinal = 0, count = 0, done = query.isEmpty())
-            if (query.isEmpty()) webView.clearMatches() else webView.findAllAsync(query)
+            if (query.isEmpty()) web?.clearMatches() else web?.findAllAsync(query)
         }
         override fun findNext(forward: Boolean) {
-            if ((state.find?.count ?: 0) > 0) webView.findNext(forward)
+            if ((state.find?.count ?: 0) > 0) web?.findNext(forward)
         }
         override fun endFind() {
-            webView.clearMatches()
+            web?.clearMatches()
             state.find = null
         }
         override fun share(url: String) {
@@ -699,12 +725,13 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun zoomReset() = setZoom(BrowserZoom.DEFAULT)
         private fun setZoom(percent: Int) {
             state.zoom = percent
-            webView.settings.textZoom = percent
+            web?.settings?.textZoom = percent
             state.host?.let { settings.setZoom(it, percent) }
         }
         override fun setDesktopSite(desktop: Boolean) {
             state.desktopSite = desktop
             state.host?.let { settings.setDesktopSite(it, desktop) }
+            if (web == null) return
             applyUserAgent(desktop)
             webView.reload()
         }
@@ -715,7 +742,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun print() {
             val name = state.title?.takeIf { it.isNotBlank() } ?: state.host ?: getString(R.string.app_name)
             val printer = getSystemService(PrintManager::class.java) ?: return
-            runCatching { printer.print(name, webView.createPrintDocumentAdapter(name), null) }
+            val web = web ?: return
+            runCatching { printer.print(name, web.createPrintDocumentAdapter(name), null) }
         }
         override fun copyCertificate(text: String) = copyText(getString(R.string.browser_certificate_title), text, R.string.browser_copied)
         override fun cancelDownload(id: Long) = downloads.cancel(id)
