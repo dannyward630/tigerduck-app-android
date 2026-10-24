@@ -63,4 +63,23 @@ class RepeatedQrCodeFilterTest {
         for (frame in 61 until 120) handOff.read("A", frame * 33L)
         assertEquals(listOf("A"), taken)
     }
+
+    @Test
+    fun `a refusal does not let go of a code the import took, as across a gap with its confirm step open`() {
+        val filter = RepeatedQrCodeFilter()
+        var confirming = false
+        val taken = mutableListOf<String>()
+        val handOff = QrCodeHandOff(filter, post = Runnable::run) { text ->
+            if (confirming) false else true.also { taken += text; confirming = true }
+        }
+
+        handOff.read("A", 0)
+        // Back from two seconds in the background, A still in front of the camera, its step open.
+        for (frame in 0 until 30) handOff.read("A", 2_000 + frame * 33L)
+        confirming = false
+        for (frame in 30 until 60) handOff.read("A", 2_000 + frame * 33L)
+
+        // Cancelling the step does not reopen it while A stays in view.
+        assertEquals(listOf("A"), taken)
+    }
 }

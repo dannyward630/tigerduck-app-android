@@ -7,11 +7,14 @@ package org.ntust.app.tigerduck.ui.screen.classtable.sharing
  *
  * A code the import [refused] passes again at the next frame: refused while something was over
  * the scanner, as the Enter link dialog, a confirm step or a prompt, it would otherwise stay
- * held for as long as it stayed in view, and scan only once moved out of it.
+ * held for as long as it stayed in view, and scan only once moved out of it. Not one the import
+ * has [taken] on this page, though: refused while its own confirm step is open, as when it comes
+ * back into view, it stays held, so cancelling the step does not reopen it.
  * Called from the camera's thread and the main thread.
  */
 class RepeatedQrCodeFilter {
     private val lastSeen = mutableMapOf<String, Long>()
+    private val takenCodes = mutableSetOf<String>()
 
     /** Whether [text], read at [nowMs], is new: unseen, or out of view for longer than [GAP_MS]. */
     @Synchronized
@@ -22,10 +25,16 @@ class RepeatedQrCodeFilter {
         return seen == null || nowMs - seen > GAP_MS
     }
 
-    /** [text], passed on, was not taken: it is new again at the next frame that shows it. */
+    /** [text], passed on, was taken by the import. */
+    @Synchronized
+    fun taken(text: String) {
+        takenCodes += text
+    }
+
+    /** [text], passed on, was not taken: unless it was before, it is new again at the next frame that shows it. */
     @Synchronized
     fun refused(text: String) {
-        lastSeen.remove(text)
+        if (text !in takenCodes) lastSeen.remove(text)
     }
 
     companion object {
@@ -36,7 +45,8 @@ class RepeatedQrCodeFilter {
 
 /**
  * Hands the codes the camera reads ([read], on its thread) to the import through [post], on the
- * main thread where [take] says whether it took one, and tells [filter] of each it refused.
+ * main thread where [take] says whether it took one, and tells [filter] which it took and which
+ * it refused.
  */
 class QrCodeHandOff(
     private val filter: RepeatedQrCodeFilter,
@@ -45,7 +55,7 @@ class QrCodeHandOff(
 ) {
     fun read(text: String, nowMs: Long) {
         if (!filter.isNew(text, nowMs)) return
-        post(Runnable { if (!take(text)) filter.refused(text) })
+        post(Runnable { if (take(text)) filter.taken(text) else filter.refused(text) })
     }
 }
 
