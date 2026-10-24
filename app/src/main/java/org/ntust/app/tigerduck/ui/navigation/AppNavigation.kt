@@ -569,6 +569,7 @@ fun MainNavigation(
                 CalendarScreen(
                     viewModel = calendarViewModel,
                     onOpenSignInSettings = openSignInSettings,
+                    onOpenAssignment = { navController.navigate(Screen.Assignment.route(it)) },
                 )
             }
             page(Screen.Announcements.route) {

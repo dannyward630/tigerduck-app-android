@@ -3,8 +3,11 @@ package org.ntust.app.tigerduck.ui.screen.calendar
 import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -36,9 +39,9 @@ class CalendarEventRowTest {
         sourceRaw = source.raw,
     )
 
-    private fun show(vararg events: CalendarEvent) = composeRule.setContent {
+    private fun show(vararg events: CalendarEvent, onOpenAssignment: ((String) -> Unit)? = null) = composeRule.setContent {
         TigerDuckAppTheme(darkTheme = false) {
-            Column { events.forEach { EventRow(event = it) } }
+            Column { events.forEach { EventRow(event = it, onOpenAssignment = onOpenAssignment) } }
         }
     }
 
@@ -63,6 +66,21 @@ class CalendarEventRowTest {
     fun `a Moodle deadline at midnight keeps its time`() {
         show(event("Lab report", EventSource.MOODLE, "2026-11-02T00:00"))
         composeRule.onNodeWithText("00:00").assertExists()
+    }
+
+    @Test
+    fun `a Moodle deadline opens its assignment, and a school row opens nothing`() {
+        val opened = mutableListOf<String>()
+        show(
+            event("Lab report", EventSource.MOODLE, "2026-11-02T23:59").copy(eventId = "moodle-4242"),
+            event("Midterm week", EventSource.SCHOOL, "2026-11-02T00:00"),
+            onOpenAssignment = { opened += it },
+        )
+
+        composeRule.onNodeWithText("Lab report").performClick()
+
+        assertEquals(listOf("4242"), opened)
+        composeRule.onNodeWithText("Midterm week").assertHasNoClickAction()
     }
 
     @Test

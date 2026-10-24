@@ -72,7 +72,7 @@ internal fun withMoodleRows(
 private fun List<Assignment>.toCalendarEvents(): List<CalendarEvent> =
     map { assignment ->
         CalendarEvent(
-            eventId = "moodle-${assignment.assignmentId}",
+            eventId = CalendarEvent.moodleEventId(assignment.assignmentId),
             title = assignment.title,
             date = assignment.studentDueDate,
             sourceRaw = EventSource.MOODLE.raw
