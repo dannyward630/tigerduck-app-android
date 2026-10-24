@@ -33,7 +33,7 @@ class BrowserDataCleanerTest {
         var storageCleared = 0
         val before = BrowserSession.generation.value
 
-        BrowserDataCleaner(storage = { storageCleared++ }, settings = settings, downloads = downloads).clear()
+        BrowserDataCleaner(storage = { storageCleared++; true }, settings = settings, downloads = downloads, cleanup = BrowserCleanup(context)).clear()
         advanceUntilIdle()
 
         assertEquals(before + 2, BrowserSession.generation.value)
@@ -49,7 +49,7 @@ class BrowserDataCleanerTest {
         val settings = BrowserSettings(context).apply { setDesktopSite("moodle2.ntust.edu.tw", true) }
         val downloads = BrowserDownloads(this) { _, _ -> error("unused") }
 
-        BrowserDataCleaner(storage = { throw IllegalStateException("no WebView") }, settings = settings, downloads = downloads).clear()
+        BrowserDataCleaner(storage = { throw IllegalStateException("no WebView") }, settings = settings, downloads = downloads, cleanup = BrowserCleanup(context)).clear()
 
         assertEquals(false, settings.desktopSite("moodle2.ntust.edu.tw"))
     }
@@ -74,9 +74,13 @@ class BrowserDataCleanerTest {
         var seenDuring: Pair<Boolean, Int>? = null
 
         BrowserDataCleaner(
-            storage = { seenDuring = BrowserSession.clearing.value to BrowserSession.generation.value },
+            storage = {
+                seenDuring = BrowserSession.clearing.value to BrowserSession.generation.value
+                true
+            },
             settings = BrowserSettings(context),
             downloads = downloads,
+            cleanup = BrowserCleanup(context),
         ).clear()
 
         assertEquals(true to before + 1, seenDuring)
@@ -101,5 +105,22 @@ class BrowserDataCleanerTest {
     fun `a deletion that reports in time leaves the browser usable`() = runTest {
         assertTrue(awaitDeletion(timeoutMs = 5_000) { done -> done() })
         assertTrue(BrowserSession.usable)
+    }
+
+    @Test
+    fun `the clearing is owed on disk until every deletion reports, and a full one settles it`() = runTest {
+        val context = RuntimeEnvironment.getApplication()
+        val cleanup = BrowserCleanup(context).apply { markDone() }
+        val downloads = BrowserDownloads(this) { _, _ -> error("unused") }
+        var owedDuring = false
+
+        BrowserDataCleaner(storage = { owedDuring = cleanup.isPending(); false }, settings = BrowserSettings(context), downloads = downloads, cleanup = cleanup).clear()
+
+        assertTrue("owed while it runs", owedDuring)
+        assertTrue("still owed when a deletion did not report", cleanup.isPending())
+
+        BrowserDataCleaner(storage = { true }, settings = BrowserSettings(context), downloads = downloads, cleanup = cleanup).clear()
+
+        assertEquals(false, cleanup.isPending())
     }
 }

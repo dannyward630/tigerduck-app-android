@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.ntust.app.tigerduck.browser.BrowserCleanup
 import org.ntust.app.tigerduck.browser.BrowserDataCleaner
 import org.ntust.app.tigerduck.liveactivity.LiveActivityManager
 import org.ntust.app.tigerduck.notification.AccountNotifications
@@ -35,6 +36,8 @@ class AccountSessionEffects internal constructor(
     private val stopLiveUpdates: () -> Unit,
     /** Clears the TigerDuck browser: the account it was signed in to is not the one now. */
     private val clearBrowser: suspend () -> Unit,
+    /** Whether a clearing a process death cut short is still owed; see [BrowserCleanup]. */
+    private val browserClearingOwed: () -> Boolean,
 ) {
     @Inject
     constructor(
@@ -43,6 +46,7 @@ class AccountSessionEffects internal constructor(
         assignmentReminders: AssignmentNotificationScheduler,
         liveActivityManager: LiveActivityManager,
         browserData: BrowserDataCleaner,
+        browserCleanup: BrowserCleanup,
     ) : this(
         context = context,
         authState = authService.authState,
@@ -51,6 +55,7 @@ class AccountSessionEffects internal constructor(
         refreshLiveUpdates = { liveActivityManager.refresh() },
         stopLiveUpdates = liveActivityManager::stop,
         clearBrowser = browserData::clear,
+        browserClearingOwed = browserCleanup::isPending,
     )
 
     /** Follows the sign-in state on [scope] for the life of the process. */
@@ -66,6 +71,8 @@ class AccountSessionEffects internal constructor(
         }
         // A student signing in over another never turns authState off and on.
         scope.launch { signIns.collect { clearBrowser() } }
+        // One a process death cut short, or one whose deletions did not all report, goes again.
+        if (browserClearingOwed()) scope.launch { clearBrowser() }
     }
 
     private suspend fun onSignedIn() {

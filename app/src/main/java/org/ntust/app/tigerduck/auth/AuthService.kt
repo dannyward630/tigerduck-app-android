@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ntust.app.tigerduck.browser.BrowserCleanup
 import org.ntust.app.tigerduck.data.cache.BulletinCache
 import org.ntust.app.tigerduck.data.BulletinReadStateStore
 import org.ntust.app.tigerduck.data.cache.DataCache
@@ -224,7 +225,9 @@ class AuthService @Inject constructor(
                 // last one imported, whether imported while signed out or left by a wipe that
                 // never ran.
                 prepareSignedIn = {
-                    // As the account is taken, before anything that can be cancelled.
+                    // As the account is taken, before anything that can be cancelled: on disk first,
+                    // so a process death before the clearing still leaves it owed.
+                    BrowserCleanup.of(context).markPending()
                     _signIns.tryEmit(Unit)
                     importedClassTables.accountDidSignIn(normalizedId)
                     // After the store knows who signed in, which empties another account's leftovers.
@@ -362,6 +365,9 @@ class AuthService @Inject constructor(
         // pushRegistration.unregister() below sends its DELETE afterwards, until
         // the server has it, and without the departing session it would find
         // none to go out with, and leak the device row.
+        // On disk before the account goes: the in-app browser's clearing is owed even if the
+        // process dies before it runs.
+        BrowserCleanup.of(context).markPending()
         val departing = synchronized(accountLock) {
             credentials.signOutSchoolAccount()
             authTokenManager.logout()

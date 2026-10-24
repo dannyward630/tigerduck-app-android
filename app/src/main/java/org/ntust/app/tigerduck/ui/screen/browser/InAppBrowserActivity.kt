@@ -64,6 +64,7 @@ import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.browser.BrowserAllowlistStore
 import org.ntust.app.tigerduck.browser.BrowserAppearance
+import org.ntust.app.tigerduck.browser.BrowserCleanup
 import org.ntust.app.tigerduck.browser.BrowserColors
 import org.ntust.app.tigerduck.browser.BrowserDownload
 import org.ntust.app.tigerduck.browser.BrowserDownloadPlans
@@ -119,7 +120,7 @@ object InAppBrowser {
      */
     fun open(context: Context, url: String): Boolean {
         if (url.toHttpUrlOrNull()?.isHttps != true) return false
-        if (!canClearEverything() || !BrowserSession.usable) return false
+        if (!canClearEverything() || !BrowserSession.usable || BrowserCleanup.of(context).isPending()) return false
         val intent = Intent(context, InAppBrowserActivity::class.java).putExtra(EXTRA_URL, url)
         if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return runCatching { context.startActivity(intent) }.isSuccess
@@ -227,7 +228,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             // Nothing loads while a sign-out clears the browser, a page put back from saved state
             // included: the departing student's session is still there.
             BrowserSession.clearing.first { !it }
-            if (!BrowserSession.usable) {
+            if (!BrowserSession.usable || BrowserCleanup.of(this@InAppBrowserActivity).isPending()) {
                 finish()
                 return@launch
             }

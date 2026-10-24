@@ -11,6 +11,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import org.ntust.app.tigerduck.browser.AndroidWebViewStorage
 import org.ntust.app.tigerduck.browser.BrowserAllowlistStore
+import org.ntust.app.tigerduck.browser.BrowserCleanup
 import org.ntust.app.tigerduck.browser.BrowserDataCleaner
 import org.ntust.app.tigerduck.browser.BrowserDownloads
 import org.ntust.app.tigerduck.browser.BrowserSettings
@@ -51,11 +52,16 @@ object BrowserModule {
 
     @Provides
     @Singleton
+    fun provideBrowserCleanup(@ApplicationContext context: Context): BrowserCleanup = BrowserCleanup.of(context)
+
+    @Provides
+    @Singleton
     fun provideBrowserDataCleaner(
         @ApplicationContext context: Context,
         settings: BrowserSettings,
         downloads: BrowserDownloads,
-    ): BrowserDataCleaner = BrowserDataCleaner(AndroidWebViewStorage(context), settings, downloads)
+        cleanup: BrowserCleanup,
+    ): BrowserDataCleaner = BrowserDataCleaner(AndroidWebViewStorage(context), settings, downloads, cleanup)
 
     /**
      * Who signs the browser in where: Moodle, through its autologin. A school

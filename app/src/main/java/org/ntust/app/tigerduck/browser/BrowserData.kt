@@ -67,7 +67,37 @@ suspend fun awaitDeletion(timeoutMs: Long, delete: (onDone: () -> Unit) -> Unit)
 
 /** The WebView's own stores: cookies, web storage, saved HTTP auth and the HTTP cache. */
 fun interface WebViewStorage {
-    suspend fun clear()
+    /** Clears them; true once every deletion has reported done. */
+    suspend fun clear(): Boolean
+}
+
+/**
+ * Whether the browser still has to be cleared, kept on disk so a clearing a
+ * process death cut short is not forgotten: set before an account change is
+ * published (a sign-out, a sign-in taken), and taken off only by a clearing
+ * every deletion of which reported done. While it is set the browser does not
+ * open, and the app clears it again as it starts.
+ */
+class BrowserCleanup(context: Context) {
+    private val prefs = context.applicationContext.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
+
+    fun isPending(): Boolean = prefs.getBoolean(KEY_PENDING, false)
+
+    /** Written to disk before it returns: the account change it precedes may be the last thing the process does. */
+    fun markPending() {
+        prefs.edit().putBoolean(KEY_PENDING, true).commit()
+    }
+
+    fun markDone() {
+        prefs.edit().remove(KEY_PENDING).commit()
+    }
+
+    companion object {
+        const val PREFS_FILE = "tigerduck_browser_cleanup"
+        private const val KEY_PENDING = "pending"
+
+        fun of(context: Context) = BrowserCleanup(context)
+    }
 }
 
 /**
@@ -81,6 +111,7 @@ class BrowserDataCleaner(
     private val storage: WebViewStorage,
     private val settings: BrowserSettings,
     private val downloads: BrowserDownloads,
+    private val cleanup: BrowserCleanup,
 ) {
     /**
      * One clearing at a time. The session moves on as it starts, closing the
@@ -88,12 +119,17 @@ class BrowserDataCleaner(
      * may have shown the departing student's pages before the cookies went.
      */
     suspend fun clear() = lock.withLock {
+        cleanup.markPending()
         BrowserSession.setClearing(true)
         try {
             BrowserSession.end()
             downloads.clear()
             settings.clearSites()
-            runCatching { storage.clear() }.onFailure { Log.w(TAG, "browser storage not cleared: ${it.javaClass.simpleName}") }
+            val complete = runCatching { storage.clear() }
+                .onFailure { Log.w(TAG, "browser storage not cleared: ${it.javaClass.simpleName}") }
+                .getOrDefault(false)
+            // Short of that, the next start clears it again, and the browser stays closed till then.
+            if (complete) cleanup.markDone()
         } finally {
             BrowserSession.end()
             BrowserSession.setClearing(false)
@@ -114,10 +150,12 @@ class BrowserDataCleaner(
  * the main thread, as the WebView wants. The mail WebViews keep none of these.
  */
 class AndroidWebViewStorage(private val context: Context) : WebViewStorage {
-    override suspend fun clear(): Unit = withContext(Dispatchers.Main) {
+    override suspend fun clear(): Boolean = withContext(Dispatchers.Main) {
         val cookies = CookieManager.getInstance()
+        var complete = true
         if (!awaitDeletion(CLEAR_TIMEOUT_MS) { done -> cookies.removeAllCookies { done() } }) {
             Log.w(TAG, "cookie removal did not report back yet")
+            complete = false
         }
         cookies.flush()
         // Everything a site can keep, service workers and Cache Storage too, where the WebView
@@ -125,9 +163,11 @@ class AndroidWebViewStorage(private val context: Context) : WebViewStorage {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DELETE_BROWSING_DATA)) {
             if (!awaitDeletion(CLEAR_TIMEOUT_MS) { done -> WebStorageCompat.deleteBrowsingData(WebStorage.getInstance()) { done() } }) {
                 Log.w(TAG, "browsing data deletion did not report back yet")
+                complete = false
             }
         } else {
             Log.w(TAG, "this WebView cannot delete service workers and Cache Storage")
+            complete = false
         }
         WebStorage.getInstance().deleteAllData()
         WebViewDatabase.getInstance(context).clearHttpAuthUsernamePassword()
@@ -137,7 +177,7 @@ class AndroidWebViewStorage(private val context: Context) : WebViewStorage {
         }
         // Photos taken for a page's upload field.
         withContext(Dispatchers.IO) { java.io.File(context.cacheDir, UPLOADS_DIR).deleteRecursively() }
-        Unit
+        complete
     }
 
     private companion object {

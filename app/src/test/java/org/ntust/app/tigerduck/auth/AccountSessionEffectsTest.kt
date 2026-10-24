@@ -53,6 +53,7 @@ class AccountSessionEffectsTest {
     private val signedIn = MutableStateFlow(false)
     private val liveUpdates = mutableListOf<String>()
     private val browserClears = mutableListOf<Boolean>()
+    private var clearingOwed = false
     private val signIns = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     @Before
@@ -79,6 +80,7 @@ class AccountSessionEffectsTest {
             refreshLiveUpdates = { liveUpdates += "refresh" },
             stopLiveUpdates = { liveUpdates += "stop" },
             clearBrowser = { browserClears += signedIn.value },
+            browserClearingOwed = { clearingOwed },
         ).also { it.start(scope) }
     }
 
@@ -131,6 +133,14 @@ class AccountSessionEffectsTest {
         effects(startSignedIn = true)
 
         signIns.tryEmit(Unit)
+
+        assertEquals(listOf(true), browserClears)
+    }
+
+    @Test
+    fun `a clearing a process death cut short is run again at the start`() {
+        clearingOwed = true
+        effects(startSignedIn = true)
 
         assertEquals(listOf(true), browserClears)
     }
