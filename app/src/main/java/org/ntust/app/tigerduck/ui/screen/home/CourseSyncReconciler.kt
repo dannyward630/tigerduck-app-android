@@ -100,6 +100,15 @@ object CourseSyncReconciler {
      * and a tombstone or the server's silence would hide it for good, its add
      * then let go unsent. The add forces its key past the tombstone once it
      * lands.
+     *
+     * [restoredNos] are the courses a course selection answer brought back
+     * from a deleted hand-added course's hide that no snapshot has listed
+     * since, from `DataCache.restoredCoursesIn`: the roster upload naming
+     * them may not have landed, so the server's silence is no delete
+     * elsewhere. A tombstone still hides them: the backend leaves the one
+     * this device's delete wrote out of its snapshot, so one there is
+     * another device's. [tombstones] holds none of their hides: see
+     * [withoutRestored].
      */
     fun reconcileSemester(
         semester: String,
@@ -111,6 +120,7 @@ object CourseSyncReconciler {
         graceCourseNos: Set<String> = emptySet(),
         pendingAddNos: Set<String> = emptySet(),
         selectionDroppedNos: Set<String> = emptySet(),
+        restoredNos: Set<String> = emptySet(),
     ): SemesterOutcome {
         // Misfiled rows are neither a roster nor evidence of presence, and
         // neither is a course 選課 has dropped.
@@ -180,7 +190,7 @@ object CourseSyncReconciler {
         // a snapshot has carried the number, absence is a deletion.
         for (course in localCourses) {
             if (course.courseNo in serverNos) continue
-            if (notOnServerYet(course)) continue
+            if (notOnServerYet(course) || course.courseNo in restoredNos) continue
             if (CourseTombstoneKeys.isHidden(course.courseNo, semester, updated)) continue
             updated = CourseTombstoneKeys.hide(course.courseNo, semester, updated)
         }
@@ -211,6 +221,46 @@ object CourseSyncReconciler {
             merged = merged,
             serverKnownNos = serverKnownNos + serverNos,
         )
+    }
+
+    /**
+     * [tombstones], a sync's read of the hides, without those of
+     * [restoredNos], [semester]'s courses being brought back
+     * (`DataCache.restoredCoursesIn`), read after the term's courses: a
+     * course selection answer may have lifted them since the read, and the
+     * term's courses may hold them again. What the reconcile is handed, and
+     * what its commit (`DataCache.updateDeletedCourseNos`) is measured
+     * against, so such a course is neither pruned from the term by the older
+     * read nor written back as a removal over a delete of it made since.
+     */
+    fun withoutRestored(semester: String, tombstones: Set<String>, restoredNos: Set<String>): Set<String> =
+        tombstones - restoredNos.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
+
+    /**
+     * The term's courses as a sync commits them: [current], the list as it
+     * stands now, without the courses the sync pruned from [read], its own
+     * earlier load, as [kept] says, that [hidden], the course numbers hidden
+     * in the term now, still names, and with the rows it merged down
+     * ([merged]) that [current] still lacks and [hidden] does not name. A
+     * course a delete or a fetch took out or put in since the read stays as
+     * that left it, where writing [kept] back would undo it: one pruned for a
+     * hide a course selection answer has lifted since is back in the term.
+     * [newlyHidden], the course numbers whose hide the sync's commit added
+     * (`DataCache.commitSyncHides`), go as the pruned do, so the term holds
+     * none that such an answer saved back into it since the read.
+     */
+    fun committedCourses(
+        current: List<Course>,
+        read: List<Course>,
+        kept: List<Course>,
+        merged: List<Course>,
+        hidden: Set<String>,
+        newlyHidden: Set<String> = emptySet(),
+    ): List<Course> {
+        val pruned = read.mapTo(mutableSetOf()) { it.courseNo } - kept.mapTo(mutableSetOf()) { it.courseNo } + newlyHidden
+        val held = current.filter { it.courseNo !in pruned || it.courseNo !in hidden }
+        val heldNos = held.mapTo(mutableSetOf()) { it.courseNo }
+        return held + merged.filter { it.courseNo !in heldNos && it.courseNo !in hidden }
     }
 
     data class SemesterOutcome(

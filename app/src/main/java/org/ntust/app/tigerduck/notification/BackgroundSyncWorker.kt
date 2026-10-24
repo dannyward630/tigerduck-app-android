@@ -41,6 +41,7 @@ import org.ntust.app.tigerduck.di.ApplicationScope
 import org.ntust.app.tigerduck.push.BackendSyncResult
 import org.ntust.app.tigerduck.ui.screen.home.BackgroundMarkStep
 import org.ntust.app.tigerduck.ui.screen.home.CourseSyncReconciler
+import org.ntust.app.tigerduck.ui.screen.home.commitReconciledTerm
 import org.ntust.app.tigerduck.ui.screen.home.sendMovedColors
 import org.ntust.app.tigerduck.data.CourseRosterMerge
 import org.ntust.app.tigerduck.data.RefreshPolicy
@@ -297,7 +298,9 @@ class BackgroundSyncWorker @AssistedInject constructor(
         )
         if (semester in stale) return
         val localCourses = dataCache.loadCourses(semester)
-        val stored = dataCache.loadDeletedCourseNos()
+        // After the courses: see CourseSyncReconciler.withoutRestored.
+        val restored = dataCache.restoredCoursesIn(semester, result.fetchedAtMs)
+        val stored = CourseSyncReconciler.withoutRestored(semester, dataCache.loadDeletedCourseNos(), restored)
         val storedKnown = dataCache.loadServerKnownNos()
         // A course reset made on another device, which this worker leaves to
         // Home's sync (HomeBackendSync.applyCourseReset): it wipes the
@@ -306,11 +309,12 @@ class BackgroundSyncWorker @AssistedInject constructor(
             result.coursesResetAt, prefs.lastSeenCoursesResetAt, prefs.legacyLastCourseSyncAtMs,
         ).apply
         val knownHere = storedKnown[semester].orEmpty().toSet()
+        val tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones)
         val outcome = CourseSyncReconciler.reconcileSemester(
             semester = semester,
             localCourses = localCourses,
             serverRows = result.serverCourses.filter { it.semester == semester },
-            tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones),
+            tombstoneNos = tombstoneNos,
             tombstones = stored,
             serverKnownNos = knownHere,
             // Deletes the retry above could not land: the snapshot still lists them.
@@ -318,19 +322,21 @@ class BackgroundSyncWorker @AssistedInject constructor(
             // Adds the retry above could not land: the snapshot does not list them yet.
             pendingAddNos = if (resetElsewhere) emptySet() else pendingCourseAdds.waitingIn(semester),
             selectionDroppedNos = dataCache.loadSelectionDroppedNos()[semester].orEmpty().toSet(),
+            restoredNos = restored,
         )
-        if (outcome.tombstones != stored) {
-            dataCache.saveDeletedCourseNos(outcome.tombstones)
-        }
+        dataCache.restoredCoursesListed(
+            semester, result.serverCourses.filter { it.semester == semester }.map { it.courseNo }, result.fetchedAtMs,
+        )
         // Unconditional: a course hidden by an earlier build and left in
         // the cache is pruned on the first run, not the next change.
-        CourseSyncReconciler.pruneHidden(semester, localCourses, outcome.tombstones, legacyBare = false)
-            ?.let { kept ->
-                dataCache.saveCourses(kept, semester)
-                // A course hidden since takes its waiting colour and name
-                // with it; see PendingCourseOverrides.forget.
-                pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
-            }
+        val pruned = CourseSyncReconciler.pruneHidden(semester, localCourses, outcome.tombstones, legacyBare = false)
+        // Merging down is Home's: nothing merged here.
+        commitReconciledTerm(dataCache, semester, stored, outcome.tombstones, tombstoneNos, localCourses, pruned, emptyList())
+        pruned?.let { kept ->
+            // A course hidden since takes its waiting colour and name
+            // with it; see PendingCourseOverrides.forget.
+            pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
+        }
         var known = outcome.serverKnownNos
         if (outcome.uploadLocal) {
             // resend: the server has nothing for the term, whatever list the
