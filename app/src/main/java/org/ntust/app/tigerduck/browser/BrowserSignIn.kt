@@ -90,6 +90,33 @@ class MoodleBrowserSignIn(private val autologin: MoodleAutologin) : BrowserSignI
     }
 }
 
+/**
+ * The sign-in screen's wait: shows [msUntilRetry] every half second while
+ * the screen is up ([stillShowing]), and tries again ([retry]) once a wait
+ * that was counting reaches nothing. A key that comes back after the screen
+ * gave up on it starts Moodle's wait late; watching on catches that and
+ * counts it down too, rather than leave the screen with nothing to wait for.
+ */
+suspend fun watchSignInRetry(
+    msUntilRetry: () -> Long,
+    show: (Long) -> Unit,
+    retry: suspend () -> Unit,
+    stillShowing: () -> Boolean,
+    tickMs: Long = 500,
+) {
+    var wasWaiting = msUntilRetry() > 0
+    while (stillShowing()) {
+        val left = msUntilRetry()
+        show(left)
+        if (wasWaiting && left == 0L) {
+            retry()
+            return
+        }
+        wasWaiting = left > 0
+        kotlinx.coroutines.delay(tickMs)
+    }
+}
+
 /** The providers the browser asks, first match wins. */
 class BrowserSignIns(private val providers: List<BrowserSignIn>) {
     fun forUrl(url: String): BrowserSignIn? = providers.firstOrNull { it.handles(url) }

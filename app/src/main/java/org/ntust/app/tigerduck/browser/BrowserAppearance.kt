@@ -107,12 +107,14 @@ object BrowserColors {
     fun parseColor(text: String?): Rgba? {
         val value = text?.trim() ?: return null
         FUNCTIONAL.matchEntire(value)?.let { m ->
-            val (r, g, b) = (1..3).map { m.groupValues[it].toDouble().toInt().coerceIn(0, 255) }
+            // The pattern lets "." and "1.2.3" through; a page's color is whatever it wrote.
+            fun number(text: String): Double? = text.toDoubleOrNull()?.takeIf { it.isFinite() }
+            val (r, g, b) = (1..3).map { number(m.groupValues[it])?.toInt()?.coerceIn(0, 255) ?: return null }
             val alphaText = m.groupValues[4]
             val alpha = when {
                 alphaText.isEmpty() -> 1.0
-                alphaText.endsWith("%") -> alphaText.removeSuffix("%").toDouble() / 100
-                else -> alphaText.toDouble()
+                alphaText.endsWith("%") -> (number(alphaText.removeSuffix("%")) ?: return null) / 100
+                else -> number(alphaText) ?: return null
             }
             return Rgba(r, g, b, alpha.coerceIn(0.0, 1.0))
         }

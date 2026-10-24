@@ -92,4 +92,14 @@ class BrowserColorsTest {
         assertEquals(BrowserAppearance.AUTO, BrowserAppearance.fromCode(null))
         assertEquals(BrowserAppearance.AUTO, BrowserAppearance.fromCode("sepia"))
     }
+
+    @Test
+    fun `a malformed number in a page's color is no color, not a crash`() {
+        assertNull(BrowserColors.parseColor("rgb(.,0,0)"))
+        assertNull(BrowserColors.parseColor("rgb(1.2.3, 0, 0)"))
+        assertNull(BrowserColors.parseColor("rgba(0, 0, 0, .)"))
+        assertNull(BrowserColors.parseColor("rgba(0, 0, 0, .%)"))
+        // A theme color the page wrote wrong is skipped for the scheme.
+        assertTrue(BrowserColors.pageTone(probe(body = "rgba(0, 0, 0, 0)", theme = "rgb(.,0,0)", scheme = "dark"), false)!!)
+    }
 }

@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.auth
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.browser.BrowserDataCleaner
@@ -27,6 +28,8 @@ import javax.inject.Singleton
 class AccountSessionEffects internal constructor(
     private val context: Context,
     private val authState: StateFlow<Boolean>,
+    /** Each sign-in by hand, a student signing in over another included; see [AuthService.signIns]. */
+    private val signIns: Flow<Unit>,
     private val assignmentReminders: AssignmentNotificationScheduler,
     private val refreshLiveUpdates: () -> Unit,
     private val stopLiveUpdates: () -> Unit,
@@ -43,6 +46,7 @@ class AccountSessionEffects internal constructor(
     ) : this(
         context = context,
         authState = authService.authState,
+        signIns = authService.signIns,
         assignmentReminders = assignmentReminders,
         refreshLiveUpdates = { liveActivityManager.refresh() },
         stopLiveUpdates = liveActivityManager::stop,
@@ -60,6 +64,8 @@ class AccountSessionEffects internal constructor(
                 if (signedIn) onSignedIn() else onSignedOut()
             }
         }
+        // A student signing in over another never turns authState off and on.
+        scope.launch { signIns.collect { clearBrowser() } }
     }
 
     private suspend fun onSignedIn() {

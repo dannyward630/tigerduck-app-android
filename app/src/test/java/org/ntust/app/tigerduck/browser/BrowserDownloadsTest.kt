@@ -205,4 +205,39 @@ class BrowserDownloadsTest {
         assertTrue(saved.isEmpty())
         assertNull(sent.firstOrNull { it.first.contains("example") })
     }
+
+    @Test
+    fun `a download stopped mid-request cancels the call and asks for nothing more`() = runTest {
+        val sent = mutableListOf<String>()
+        val inFlight = java.util.concurrent.CountDownLatch(1)
+        var call: okhttp3.Call? = null
+        val client = OkHttpClient.Builder()
+            .followRedirects(false)
+            .addInterceptor(Interceptor { chain ->
+                sent += chain.request().url.toString()
+                call = chain.call()
+                inFlight.countDown()
+                // Waits as a slow server would, until the call is cancelled.
+                while (!chain.call().isCanceled()) Thread.sleep(5)
+                throw IOException("Canceled")
+            })
+            .build()
+        val transfer = MediaStoreDownloadTransfer(
+            context = RuntimeEnvironment.getApplication(),
+            allowlist = { BrowserAllowlist.DEFAULT },
+            cookieFor = { "MoodleSession=abc" },
+            userAgent = { null },
+            client = client,
+            save = { _, _, _, _ -> Uri.parse("content://downloads/1") },
+        )
+        val downloads = BrowserDownloads(kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO), transfer)
+        downloads.start(save)
+        inFlight.await(5, java.util.concurrent.TimeUnit.SECONDS)
+
+        downloads.clear()
+
+        assertTrue(call!!.isCanceled())
+        assertEquals(listOf("https://moodle2.ntust.edu.tw/a.pdf"), sent)
+        assertTrue(downloads.items.value.isEmpty())
+    }
 }

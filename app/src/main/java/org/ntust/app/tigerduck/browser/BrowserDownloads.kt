@@ -13,14 +13,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.coroutines.resumeWithException
 
 /** What the browser does with a file a page offers. */
 sealed interface DownloadPlan {
@@ -120,10 +127,10 @@ class BrowserDownloads(
         change(id) { if (it.state == BrowserDownload.State.RUNNING) it.copy(state = BrowserDownload.State.CANCELLED) else it }
     }
 
-    /** Stops every running download and forgets the list. */
-    fun clear() {
+    /** Stops every running download, waits for each to end, and forgets the list. */
+    suspend fun clear() {
         val running = synchronized(jobs) { jobs.values.toList().also { jobs.clear() } }
-        running.forEach { it.cancel() }
+        running.forEach { it.cancelAndJoin() }
         state.value = emptyList()
     }
 
@@ -154,12 +161,14 @@ class MediaStoreDownloadTransfer(
     override suspend fun download(plan: DownloadPlan.Save, progress: (Long, Long?) -> Unit): Uri = withContext(Dispatchers.IO) {
         var url = plan.url
         repeat(MAX_REDIRECTS + 1) {
+            // A download stopped at a sign-out asks for nothing more, under anyone's cookies.
+            currentCoroutineContext().ensureActive()
             if (!allowlist().allows(url)) throw IOException("download left the allowlist")
             val request = Request.Builder().url(url).apply {
                 cookieFor(url)?.takeIf { it.isNotBlank() }?.let { header("Cookie", it) }
                 userAgent()?.let { header("User-Agent", it) }
             }.build()
-            client.newCall(request).execute().use { response ->
+            client.newCall(request).await().use { response ->
                 if (response.isRedirect) {
                     url = response.header("Location")?.let { response.request.url.resolve(it)?.toString() }
                         ?: throw IOException("redirect without a location")
@@ -188,7 +197,7 @@ class MediaStoreDownloadTransfer(
                 val buffer = ByteArray(64 * 1024)
                 var bytes = 0L
                 while (true) {
-                    if (!kotlinx.coroutines.currentCoroutineContext().isActive) throw CancellationException()
+                    currentCoroutineContext().ensureActive()
                     val read = input.read(buffer)
                     if (read < 0) break
                     out.write(buffer, 0, read)
@@ -196,12 +205,27 @@ class MediaStoreDownloadTransfer(
                     progress(bytes, total)
                 }
             } ?: throw IOException("Downloads entry not writable")
+            currentCoroutineContext().ensureActive()
             resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
             return uri
         } catch (e: Throwable) {
             runCatching { resolver.delete(uri, null, null) }
             throw e
         }
+    }
+
+    /** The call, stopped when the coroutine waiting on it is: a blocking execute() would run on. */
+    private suspend fun Call.await(): Response = suspendCancellableCoroutine { cont ->
+        cont.invokeOnCancellation { cancel() }
+        enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                cont.resume(response) { _, _, _ -> response.close() }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                if (cont.isActive) cont.resumeWithException(e)
+            }
+        })
     }
 
     companion object {

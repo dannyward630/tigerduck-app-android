@@ -6,6 +6,8 @@ import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewDatabase
+import androidx.webkit.WebStorageCompat
+import androidx.webkit.WebViewFeature
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -70,6 +72,18 @@ class AndroidWebViewStorage(private val context: Context) : WebViewStorage {
         }
         if (removed == null) Log.w(TAG, "cookie removal did not report back")
         cookies.flush()
+        // Everything a site can keep, service workers and Cache Storage too, where the WebView
+        // can; deleteAllData below leaves those.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DELETE_BROWSING_DATA)) {
+            val deleted = withTimeoutOrNull(CLEAR_TIMEOUT_MS) {
+                suspendCancellableCoroutine { cont ->
+                    WebStorageCompat.deleteBrowsingData(WebStorage.getInstance()) { cont.resume(Unit) }
+                }
+            }
+            if (deleted == null) Log.w(TAG, "browsing data deletion did not report back")
+        } else {
+            Log.w(TAG, "this WebView cannot delete service workers and Cache Storage")
+        }
         WebStorage.getInstance().deleteAllData()
         WebViewDatabase.getInstance(context).clearHttpAuthUsernamePassword()
         WebView(context.applicationContext).apply {

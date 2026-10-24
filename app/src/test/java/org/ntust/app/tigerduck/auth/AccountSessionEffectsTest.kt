@@ -53,6 +53,7 @@ class AccountSessionEffectsTest {
     private val signedIn = MutableStateFlow(false)
     private val liveUpdates = mutableListOf<String>()
     private val browserClears = mutableListOf<Boolean>()
+    private val signIns = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     @Before
     fun setUp() {
@@ -73,6 +74,7 @@ class AccountSessionEffectsTest {
         return AccountSessionEffects(
             context = context,
             authState = signedIn,
+            signIns = signIns,
             assignmentReminders = assignmentReminders,
             refreshLiveUpdates = { liveUpdates += "refresh" },
             stopLiveUpdates = { liveUpdates += "stop" },
@@ -122,6 +124,15 @@ class AccountSessionEffectsTest {
 
         // Cleared once signed out, and again at the next student's sign-in.
         assertEquals(listOf(false, true), browserClears)
+    }
+
+    @Test
+    fun `a student signing in over another clears the in-app browser though it never signs out`() {
+        effects(startSignedIn = true)
+
+        signIns.tryEmit(Unit)
+
+        assertEquals(listOf(true), browserClears)
     }
 
     @Test

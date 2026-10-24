@@ -29,5 +29,14 @@ object BrowserRouting {
         else -> NavigationDecision.Refuse
     }
 
+    /**
+     * Whether a request the WebView is about to send must not go: a main-frame
+     * one the allowlist does not let in. A form's POST is never put to
+     * `shouldOverrideUrlLoading`, so this is the check that stops it before
+     * the form reaches another site.
+     */
+    fun blocksRequest(url: String, isForMainFrame: Boolean, allowlist: BrowserAllowlist): Boolean =
+        isForMainFrame && navigation(url, allowlist) != NavigationDecision.Load
+
     private fun scheme(url: String): String? = url.substringBefore(':', "").takeIf { it.isNotEmpty() }?.lowercase()
 }

@@ -63,4 +63,40 @@ class BrowserSignInTest {
         override fun msUntilRetry() = 0L
         override fun webSignInUrl(target: String): String? = null
     }
+
+    @Test
+    fun `the wait counts down and tries again once, when a counting wait runs out`() = kotlinx.coroutines.test.runTest {
+        val shown = mutableListOf<Long>()
+        var retries = 0
+        watchSignInRetry(
+            msUntilRetry = { (1_500L - testScheduler.currentTime).coerceAtLeast(0) },
+            show = { shown += it },
+            retry = { retries++ },
+            stillShowing = { true },
+        )
+        assertEquals(listOf(1_500L, 1_000L, 500L, 0L), shown)
+        assertEquals(1, retries)
+    }
+
+    @Test
+    fun `a key that comes late starts a wait the screen counts down too`() = kotlinx.coroutines.test.runTest {
+        // Nothing to wait for at first: the key request is still out. Then it comes and Moodle's wait starts.
+        val answers = ArrayDeque(listOf(0L, 0L, 0L, 1_000L, 500L, 0L))
+        var retries = 0
+        watchSignInRetry(
+            msUntilRetry = { answers.removeFirstOrNull() ?: 0L },
+            show = {},
+            retry = { retries++ },
+            stillShowing = { true },
+        )
+        assertEquals(1, retries)
+    }
+
+    @Test
+    fun `nothing is tried once the screen is gone`() = kotlinx.coroutines.test.runTest {
+        var showing = 3
+        var retries = 0
+        watchSignInRetry(msUntilRetry = { 0L }, show = {}, retry = { retries++ }, stillShowing = { showing-- > 0 })
+        assertEquals(0, retries)
+    }
 }

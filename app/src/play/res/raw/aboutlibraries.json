@@ -2833,6 +2833,31 @@
             ]
         },
         {
+            "uniqueId": "androidx.webkit:webkit",
+            "artifactVersion": "1.17.1",
+            "name": "Webkit",
+            "description": "The Jetpack Webkit Library is a static library you can add to your Android application in order to use android.webkit APIs that are not available for older platform versions.",
+            "website": "https://developer.android.com/jetpack/androidx/releases/webkit#1.17.1",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "androidx.window:window",
             "artifactVersion": "1.5.0",
             "name": "WindowManager",

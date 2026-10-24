@@ -33,6 +33,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -56,7 +57,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.ntust.app.tigerduck.R
@@ -79,12 +79,14 @@ import org.ntust.app.tigerduck.browser.DownloadPlan
 import org.ntust.app.tigerduck.browser.NavigationDecision
 import org.ntust.app.tigerduck.browser.PageSchemeFollow
 import org.ntust.app.tigerduck.browser.UploadSource
+import org.ntust.app.tigerduck.browser.watchSignInRetry
 import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
 import org.ntust.app.tigerduck.ui.BrowserPreference
 import org.ntust.app.tigerduck.ui.openLink
 import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
 import org.ntust.app.tigerduck.util.fileProviderAuthority
+import java.io.ByteArrayInputStream
 import java.io.File
 import javax.inject.Inject
 
@@ -154,15 +156,15 @@ class InAppBrowserActivity : AppCompatActivity() {
     private var cameraFile: Uri? = null
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        deliverUpload(uri?.let { arrayOf(it) })
+        deliverPicks(listOfNotNull(uri))
     }
     private val pickImages = registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia()) { uris ->
-        deliverUpload(uris.takeIf { it.isNotEmpty() }?.toTypedArray())
+        deliverPicks(uris)
     }
     private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { taken ->
         val uri = cameraFile
         cameraFile = null
-        deliverUpload(if (taken && uri != null) arrayOf(uri) else null)
+        deliverPicks(if (taken && uri != null) listOf(uri) else emptyList(), cameraShot = uri)
     }
     private val cameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) launchCamera() else {
@@ -171,10 +173,10 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
     }
     private val openDocument = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        deliverUpload(uri?.let { arrayOf(it) })
+        deliverPicks(listOfNotNull(uri))
     }
     private val openDocuments = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
-        deliverUpload(uris.takeIf { it.isNotEmpty() }?.toTypedArray())
+        deliverPicks(uris)
     }
 
     override fun attachBaseContext(newBase: Context) {
@@ -346,6 +348,8 @@ class InAppBrowserActivity : AppCompatActivity() {
             return
         }
         signInTarget = target
+        // No page yet: the bars name the one on its way.
+        if (state.url == null) state.url = target
         state.signIn = SignInState(provider.siteName, target, msLeft = 0, working = true, hasWebSignIn = provider.webSignInUrl(target) != null)
         signInJob?.cancel()
         signInJob = lifecycleScope.launch {
@@ -362,10 +366,18 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
     }
 
+    /** Loads [url], one the app chose, on the same terms as a page's own navigation. */
     private fun load(url: String) {
-        state.error = null
-        loadingUrl = url
-        webView.loadUrl(url)
+        when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
+            NavigationDecision.Load -> {
+                state.error = null
+                loadingUrl = url
+                webView.loadUrl(url)
+            }
+            is NavigationDecision.OpenOutside -> state.outsideUrl = decision.url
+            is NavigationDecision.HandOff -> openLink(this, decision.url, BrowserPreference.SYSTEM)
+            NavigationDecision.Refuse -> Unit
+        }
     }
 
     /** The browser's sign-in screen for [provider], counting down to the next try and trying when due. */
@@ -381,19 +393,12 @@ class InAppBrowserActivity : AppCompatActivity() {
         )
         signInJob?.cancel()
         signInJob = lifecycleScope.launch {
-            var wasWaiting = provider.msUntilRetry() > 0
-            while (true) {
-                val current = state.signIn ?: break
-                val left = provider.msUntilRetry()
-                state.signIn = current.copy(msLeft = left)
-                if (wasWaiting && left == 0L) {
-                    trySignIn(provider, target)
-                    break
-                }
-                wasWaiting = left > 0
-                if (left == 0L) break
-                delay(500)
-            }
+            watchSignInRetry(
+                msUntilRetry = provider::msUntilRetry,
+                show = { left -> state.signIn?.let { state.signIn = it.copy(msLeft = left) } },
+                retry = { trySignIn(provider, target) },
+                stillShowing = { state.signIn?.target == target && state.signIn?.working == false },
+            )
         }
     }
 
@@ -478,7 +483,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private fun probeTone() {
         val told = toldDark ?: false
         webView.evaluateJavascript(BrowserColors.TONE_PROBE) { result ->
-            BrowserColors.pageTone(result, told)?.let { state.pageDark = it }
+            runCatching { BrowserColors.pageTone(result, told) }.getOrNull()?.let { state.pageDark = it }
         }
     }
 
@@ -560,6 +565,15 @@ class InAppBrowserActivity : AppCompatActivity() {
         pendingUpload = request
         state.upload = request
     }
+
+    /** What a picker gave back, as far as the page may have it; see [BrowserUpload.safePicks]. */
+    private fun deliverPicks(picks: List<Uri>, cameraShot: Uri? = null) =
+        deliverUpload(BrowserUpload.safePicks(picks, cameraShot, ::isOwnAuthority))
+
+    /** Whether [authority] is a provider of this app's own, by name or by who serves it. */
+    private fun isOwnAuthority(authority: String): Boolean =
+        authority == packageName || authority.startsWith("$packageName.") ||
+            runCatching { packageManager.resolveContentProvider(authority, 0)?.packageName == packageName }.getOrDefault(true)
 
     private fun deliverUpload(uris: Array<Uri>?) {
         pendingUpload?.deliver?.invoke(uris)
@@ -737,6 +751,21 @@ class InAppBrowserActivity : AppCompatActivity() {
     private inner class Client : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
             request.isForMainFrame && handleNavigation(request.url.toString())
+
+        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+            // Off the main thread. A form's POST off the allowlist is stopped here, before it is
+            // sent: shouldOverrideUrlLoading is never asked about one.
+            val url = request.url.toString()
+            if (!BrowserRouting.blocksRequest(url, request.isForMainFrame, allowlistStore.allowlist.value)) return null
+            view.post {
+                when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
+                    is NavigationDecision.OpenOutside -> state.outsideUrl = decision.url
+                    else -> Unit
+                }
+            }
+            // 204: the page stays as it was.
+            return WebResourceResponse("text/plain", "utf-8", 204, "No Content", emptyMap(), ByteArrayInputStream(ByteArray(0)))
+        }
 
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
             url?.let(::onPageStart)

@@ -3,8 +3,11 @@ package org.ntust.app.tigerduck.auth
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -99,6 +102,15 @@ class AuthService @Inject constructor(
     val authState: StateFlow<Boolean> = _authState
 
     private val loginMutex = Mutex()
+
+    private val _signIns = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Each sign-in by hand the school took, whoever it is: another student
+     * signing in over this one leaves [authState] true throughout, so what
+     * follows an account, such as the in-app browser's data, follows this too.
+     */
+    val signIns: SharedFlow<Unit> = _signIns.asSharedFlow()
 
     // Held by a sign-out while it drops the stored account and moves the sign-in generation, and
     // by a sign-in while it checks that generation and stores what it got: one that started
@@ -262,6 +274,7 @@ class AuthService @Inject constructor(
                 }
             }
 
+            if (outcome != TypedAccountSignIn.Outcome.NOT_SIGNED_IN) _signIns.tryEmit(Unit)
             if (outcome == TypedAccountSignIn.Outcome.SIGNED_IN) {
                 runCatching { pushRegistration.onSignedIn() }
                     .onFailure { e -> if (e is CancellationException) throw e }
