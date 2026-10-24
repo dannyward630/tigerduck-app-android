@@ -74,6 +74,9 @@ class MoodleAutologin internal constructor(
     private var requesting = false
     private var privateTokenFetch: Deferred<Boolean>? = null
 
+    /** The sign-in [privateTokenFetch] was started for; opens after a sign-out don't share it. */
+    private var privateTokenFetchFor: Int? = null
+
     /** The sign-in a fetch got no private token for, which no open fetches for again. */
     private var noPrivateTokenFor: Int? = null
 
@@ -128,10 +131,10 @@ class MoodleAutologin internal constructor(
 
     /**
      * Fetches the private token missing beside the stored Moodle token, true once one is stored
-     * and no sign-out came meanwhile. Opens at once share one fetch, and each waits for it up to
-     * [PRIVATE_TOKEN_WAIT_MS]. It runs on in the app's scope after an open stops waiting, so the
-     * next open finds the private token stored; no key is asked for the open that gave up, as
-     * Moodle would count a key nobody uses against the next [KEY_INTERVAL_MS].
+     * and no sign-out came meanwhile. Opens at once for one sign-in share one fetch, and each
+     * waits for it up to [PRIVATE_TOKEN_WAIT_MS]. It runs on in the app's scope after an open
+     * stops waiting, so the next open finds the private token stored; no key is asked for the open
+     * that gave up, as Moodle would count a key nobody uses against the next [KEY_INTERVAL_MS].
      *
      * A failed fetch is tried again at the next open, which the token renewal holds back as it
      * holds back any: after a failure that was not the network's, and while the stored password
@@ -142,7 +145,11 @@ class MoodleAutologin internal constructor(
         if (!canFetchPrivateToken()) return false
         val fetch = synchronized(lock) {
             if (noPrivateTokenFor == generation) return false
-            privateTokenFetch?.takeIf { it.isActive } ?: startPrivateTokenFetch(generation).also { privateTokenFetch = it }
+            privateTokenFetch?.takeIf { it.isActive && privateTokenFetchFor == generation }
+                ?: startPrivateTokenFetch(generation).also {
+                    privateTokenFetch = it
+                    privateTokenFetchFor = generation
+                }
         }
         return withTimeoutOrNull(PRIVATE_TOKEN_WAIT_MS) { fetch.await() } == true && isStillSignedIn(generation)
     }

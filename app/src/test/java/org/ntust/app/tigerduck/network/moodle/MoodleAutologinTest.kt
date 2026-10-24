@@ -293,6 +293,30 @@ class MoodleAutologinTest {
         assertEquals(0, requests)
     }
 
+    @Test
+    fun `a fetch started before a sign-out is not shared with an open after it`() = runTest {
+        privateToken = null
+        val gate = CompletableDeferred<Unit>()
+        fetch = {
+            gate.await()
+            false
+        }
+        val autologin = autologin()
+        val departing = backgroundScope.async { autologin.url(page) }
+        runCurrent()
+        // The student signs out and in again while the departing account's fetch is out.
+        generation++
+        fetch = {
+            privateToken = "private"
+            true
+        }
+
+        assertTrue(autologin.url(page).contains("key=onetime"))
+        assertEquals(2, fetches)
+        gate.complete(Unit)
+        assertEquals(page, departing.await())
+    }
+
     // --- the request ---
 
     private var sentBody: String? = null
