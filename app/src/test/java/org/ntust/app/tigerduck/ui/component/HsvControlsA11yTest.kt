@@ -2,12 +2,19 @@ package org.ntust.app.tigerduck.ui.component
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -25,6 +32,7 @@ import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
@@ -200,14 +208,44 @@ class HsvControlsA11yTest {
     fun `up and down move the keyboard focus on instead of changing a value`() {
         showControls(startHue = 30f, startSat = 0.5f, startValue = 0.5f)
         val saturation = control(R.string.a11y_color_picker_saturation)
+        val brightness = control(R.string.a11y_color_picker_brightness)
         saturation.requestFocus()
 
         saturation.performKeyInput { pressKey(Key.DirectionDown) }
         composeRule.waitForIdle()
+        brightness.assertIsFocused()
+        brightness.performKeyInput { pressKey(Key.DirectionUp) }
+        composeRule.waitForIdle()
+        saturation.assertIsFocused()
 
         assertEquals(0.5f, sat, 0.001f)
         assertEquals(0.5f, value, 0.001f)
-        control(R.string.a11y_color_picker_brightness).assertIsFocused()
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun `an arrow past a control's end moves the keyboard focus on`() {
+        composeRule.setContent {
+            var h by remember { mutableFloatStateOf(360f) }
+            hue = h
+            Row {
+                HueSlider(hue = h, onHueChange = { h = it }, modifier = Modifier.weight(1f))
+                Box(Modifier.size(48.dp).testTag(AFTER).focusable())
+            }
+        }
+        composeRule.waitForIdle()
+        val hueBar = control(R.string.a11y_color_picker_hue)
+        hueBar.requestFocus()
+
+        hueBar.performKeyInput { pressKey(Key.DirectionRight) }
+        composeRule.waitForIdle()
+
+        assertEquals(360f, hue, 0.001f)
+        composeRule.onNodeWithTag(AFTER).assertIsFocused()
+    }
+
+    private companion object {
+        const val AFTER = "after the hue bar"
     }
 
     @Test
