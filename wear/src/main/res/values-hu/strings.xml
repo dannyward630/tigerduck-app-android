@@ -38,6 +38,7 @@
     <string name="action_clear_text">Szöveg törlése</string>
     <string name="action_close">Bezárás</string>
     <string name="action_confirm">Megerősítés</string>
+    <string name="action_continue">Folytatás</string>
     <string name="action_done">Kész</string>
     <string name="action_go_to_settings">Beállítások megnyitása</string>
     <string name="action_got_it">Értem</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Jelenlegi lapok</string>
     <string name="tab_editor_title">Alsó sáv testreszabása</string>
     <string name="tag_server_notification">Szerver-értesítés</string>
+    <string name="tls_certificate_fingerprint">SHA-256 ujjlenyomat</string>
+    <string name="tls_certificate_intermediate">Köztes</string>
+    <string name="tls_certificate_issuer">Kibocsátó</string>
+    <string name="tls_certificate_list_title">Tanúsítványok</string>
+    <string name="tls_certificate_name">Név</string>
+    <string name="tls_certificate_root">Gyökér</string>
+    <string name="tls_certificate_validity">Érvényesség</string>
+    <string name="tls_pin_mismatch_details">A(z) %1$@ tanúsítványa eltér attól, amelyet a TigerDuck rögzített, de megbízható hatóság állította ki, így előfordulhat, hogy a webhely megújította. Ha folytatod, a TigerDuck a következő frissítésig megbízik ebben a tanúsítványban, a(z) %2$@ alatti összes webhelyen.</string>
+    <string name="tls_pin_mismatch_issuer">Kibocsátó: %@</string>
+    <string name="tls_pin_mismatch_message">A webhely tanúsítványa nem egyezik a rögzítettel, ami veszélyezteti a kapcsolat biztonságát. Folytatod ezen a webhelyen?</string>
+    <string name="tls_pin_mismatch_show_details">Részletek</string>
+    <string name="tls_pin_mismatch_title">A tanúsítvány megváltozott</string>
+    <string name="tls_pin_mismatch_view_certificate">Tanúsítvány megtekintése</string>
     <string name="update_action_later">Később</string>
     <string name="update_action_skip_version">Verzió kihagyása</string>
     <string name="update_action_update_now">Frissítés most</string>

@@ -38,6 +38,7 @@
     <string name="action_clear_text">Tekst wissen</string>
     <string name="action_close">Sluiten</string>
     <string name="action_confirm">Bevestigen</string>
+    <string name="action_continue">Doorgaan</string>
     <string name="action_done">Klaar</string>
     <string name="action_go_to_settings">Ga naar instellingen</string>
     <string name="action_got_it">Begrepen</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Huidige tabbladen</string>
     <string name="tab_editor_title">Onderste balk aanpassen</string>
     <string name="tag_server_notification">Servermelding</string>
+    <string name="tls_certificate_fingerprint">SHA-256-vingerafdruk</string>
+    <string name="tls_certificate_intermediate">Tussencertificaat</string>
+    <string name="tls_certificate_issuer">Uitgever</string>
+    <string name="tls_certificate_list_title">Certificaten</string>
+    <string name="tls_certificate_name">Naam</string>
+    <string name="tls_certificate_root">Basiscertificaat</string>
+    <string name="tls_certificate_validity">Geldig</string>
+    <string name="tls_pin_mismatch_details">Het certificaat van %1$@ wijkt af van het certificaat dat TigerDuck heeft vastgelegd, maar is wel uitgegeven door een vertrouwde instantie. De website heeft het certificaat mogelijk vernieuwd. Als je doorgaat, vertrouwt TigerDuck dit certificaat tot de volgende update, voor alle sites onder %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Uitgegeven door %@</string>
+    <string name="tls_pin_mismatch_message">Het certificaat van de website komt niet overeen met het vastgelegde certificaat, wat de beveiliging van de verbinding aantast. Doorgaan naar deze website?</string>
+    <string name="tls_pin_mismatch_show_details">Details</string>
+    <string name="tls_pin_mismatch_title">Certificaat gewijzigd</string>
+    <string name="tls_pin_mismatch_view_certificate">Certificaat bekijken</string>
     <string name="update_action_later">Later</string>
     <string name="update_action_skip_version">Deze versie overslaan</string>
     <string name="update_action_update_now">Nu bijwerken</string>

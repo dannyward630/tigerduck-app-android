@@ -38,6 +38,7 @@
     <string name="action_clear_text">వచనాన్ని క్లియర్ చేయండి</string>
     <string name="action_close">మూసివేయండి</string>
     <string name="action_confirm">నిర్ధారించండి</string>
+    <string name="action_continue">కొనసాగించు</string>
     <string name="action_done">పూర్తయింది</string>
     <string name="action_go_to_settings">సెట్టింగ్స్‌కు వెళ్ళండి</string>
     <string name="action_got_it">అర్థమైంది</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">ప్రస్తుత ట్యాబ్‌లు</string>
     <string name="tab_editor_title">బాటమ్ నావిగేషన్‌ను కస్టమైజ్ చేయండి</string>
     <string name="tag_server_notification">సర్వర్ నోటిఫికేషన్</string>
+    <string name="tls_certificate_fingerprint">SHA-256 ఫింగర్‌ప్రింట్</string>
+    <string name="tls_certificate_intermediate">ఇంటర్మీడియట్</string>
+    <string name="tls_certificate_issuer">జారీ చేసినవారు</string>
+    <string name="tls_certificate_list_title">సర్టిఫికెట్లు</string>
+    <string name="tls_certificate_name">పేరు</string>
+    <string name="tls_certificate_root">రూట్</string>
+    <string name="tls_certificate_validity">చెల్లుబాటు</string>
+    <string name="tls_pin_mismatch_details">%1$@ సర్టిఫికెట్ TigerDuck నమోదు చేసిన దానికి భిన్నంగా ఉంది, కానీ దీన్ని విశ్వసనీయ సంస్థ జారీ చేసింది, కాబట్టి వెబ్‌సైట్ సర్టిఫికెట్‌ను రెన్యూ చేసి ఉండవచ్చు. కొనసాగితే, తదుపరి అప్‌డేట్ వరకు TigerDuck ఈ సర్టిఫికెట్‌ను నమ్ముతుంది, %2$@ కింద ఉన్న అన్ని సైట్‌లకు.</string>
+    <string name="tls_pin_mismatch_issuer">జారీ చేసినవారు: %@</string>
+    <string name="tls_pin_mismatch_message">వెబ్‌సైట్ సర్టిఫికెట్ నమోదైన దానితో సరిపోలడం లేదు, దీని వల్ల కనెక్షన్ భద్రతపై ప్రభావం పడుతుంది. ఈ వెబ్‌సైట్‌కు కొనసాగాలా?</string>
+    <string name="tls_pin_mismatch_show_details">వివరాలు</string>
+    <string name="tls_pin_mismatch_title">సర్టిఫికెట్ మారింది</string>
+    <string name="tls_pin_mismatch_view_certificate">సర్టిఫికెట్ చూడండి</string>
     <string name="update_action_later">తర్వాత</string>
     <string name="update_action_skip_version">ఈ వెర్షన్ దాటవేయండి</string>
     <string name="update_action_update_now">ఇప్పుడు అప్‌డేట్ చేయండి</string>

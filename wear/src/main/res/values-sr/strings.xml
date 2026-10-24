@@ -38,6 +38,7 @@
     <string name="action_clear_text">Обриши текст</string>
     <string name="action_close">Затвори</string>
     <string name="action_confirm">Потврди</string>
+    <string name="action_continue">Настави</string>
     <string name="action_done">Готово</string>
     <string name="action_go_to_settings">Иди у поставке</string>
     <string name="action_got_it">Разумем</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Тренутне картице</string>
     <string name="tab_editor_title">Прилагоди доњу траку</string>
     <string name="tag_server_notification">Серверско обавештење</string>
+    <string name="tls_certificate_fingerprint">SHA-256 отисак</string>
+    <string name="tls_certificate_intermediate">Посредни</string>
+    <string name="tls_certificate_issuer">Издавач</string>
+    <string name="tls_certificate_list_title">Сертификати</string>
+    <string name="tls_certificate_name">Назив</string>
+    <string name="tls_certificate_root">Коренски</string>
+    <string name="tls_certificate_validity">Важење</string>
+    <string name="tls_pin_mismatch_details">Сертификат за %1$@ разликује се од оног који TigerDuck има забележен, али га је издао поуздан ауторитет, па је сајт можда обновио сертификат. Ако наставите, TigerDuck ће веровати овом сертификату до следећег ажурирања, за све сајтове под %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Издао: %@</string>
+    <string name="tls_pin_mismatch_message">Сертификат веб-сајта се не поклапа са забележеним, што утиче на безбедност везе. Наставити на овај веб-сајт?</string>
+    <string name="tls_pin_mismatch_show_details">Детаљи</string>
+    <string name="tls_pin_mismatch_title">Сертификат је промењен</string>
+    <string name="tls_pin_mismatch_view_certificate">Прикажи сертификат</string>
     <string name="update_action_later">Касније</string>
     <string name="update_action_skip_version">Прескочи ову верзију</string>
     <string name="update_action_update_now">Ажурирај сада</string>

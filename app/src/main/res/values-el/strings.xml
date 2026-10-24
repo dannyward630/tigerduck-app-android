@@ -38,6 +38,7 @@
     <string name="action_clear_text">Εκκαθάριση κειμένου</string>
     <string name="action_close">Κλείσιμο</string>
     <string name="action_confirm">Επιβεβαίωση</string>
+    <string name="action_continue">Συνέχεια</string>
     <string name="action_done">Τέλος</string>
     <string name="action_go_to_settings">Μετάβαση στις ρυθμίσεις</string>
     <string name="action_got_it">Κατάλαβα</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Τρέχουσες καρτέλες</string>
     <string name="tab_editor_title">Προσαρμογή κάτω πλοήγησης</string>
     <string name="tag_server_notification">Ειδοποίηση διακομιστή</string>
+    <string name="tls_certificate_fingerprint">Αποτύπωμα SHA-256</string>
+    <string name="tls_certificate_intermediate">Ενδιάμεσο</string>
+    <string name="tls_certificate_issuer">Εκδότης</string>
+    <string name="tls_certificate_list_title">Πιστοποιητικά</string>
+    <string name="tls_certificate_name">Όνομα</string>
+    <string name="tls_certificate_root">Ρίζας</string>
+    <string name="tls_certificate_validity">Ισχύς</string>
+    <string name="tls_pin_mismatch_details">Το πιστοποιητικό του %1$@ διαφέρει από αυτό που έχει καταγράψει το TigerDuck, αλλά εκδόθηκε από αξιόπιστη αρχή, οπότε ο ιστότοπος μπορεί να το ανανέωσε. Αν συνεχίσετε, το TigerDuck θα εμπιστεύεται αυτό το πιστοποιητικό μέχρι την επόμενη ενημέρωση, για όλους τους ιστότοπους υπό %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Εκδότης: %@</string>
+    <string name="tls_pin_mismatch_message">Το πιστοποιητικό του ιστότοπου δεν ταιριάζει με αυτό που έχει καταγραφεί, γεγονός που επηρεάζει την ασφάλεια της σύνδεσης. Να συνεχίσετε σε αυτόν τον ιστότοπο;</string>
+    <string name="tls_pin_mismatch_show_details">Λεπτομέρειες</string>
+    <string name="tls_pin_mismatch_title">Το πιστοποιητικό άλλαξε</string>
+    <string name="tls_pin_mismatch_view_certificate">Προβολή πιστοποιητικού</string>
     <string name="update_action_later">Αργότερα</string>
     <string name="update_action_skip_version">Παράλειψη αυτής της έκδοσης</string>
     <string name="update_action_update_now">Ενημέρωση τώρα</string>

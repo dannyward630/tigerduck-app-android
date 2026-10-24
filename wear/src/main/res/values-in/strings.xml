@@ -38,6 +38,7 @@
     <string name="action_clear_text">Hapus teks</string>
     <string name="action_close">Tutup</string>
     <string name="action_confirm">Konfirmasi</string>
+    <string name="action_continue">Lanjutkan</string>
     <string name="action_done">Selesai</string>
     <string name="action_go_to_settings">Buka pengaturan</string>
     <string name="action_got_it">Mengerti</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Tab saat ini</string>
     <string name="tab_editor_title">Sesuaikan menu bawah</string>
     <string name="tag_server_notification">Notifikasi server</string>
+    <string name="tls_certificate_fingerprint">Sidik jari SHA-256</string>
+    <string name="tls_certificate_intermediate">Perantara</string>
+    <string name="tls_certificate_issuer">Penerbit</string>
+    <string name="tls_certificate_list_title">Sertifikat</string>
+    <string name="tls_certificate_name">Nama</string>
+    <string name="tls_certificate_root">Root</string>
+    <string name="tls_certificate_validity">Masa berlaku</string>
+    <string name="tls_pin_mismatch_details">Sertifikat %1$@ berbeda dari yang tercatat di TigerDuck, tetapi diterbitkan oleh otoritas tepercaya, sehingga situs web mungkin telah memperbarui sertifikatnya. Jika Anda melanjutkan, TigerDuck akan memercayai sertifikat ini hingga pembaruan berikutnya, untuk semua situs di bawah %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Diterbitkan oleh %@</string>
+    <string name="tls_pin_mismatch_message">Sertifikat situs web tidak cocok dengan yang tercatat, sehingga memengaruhi keamanan koneksi. Lanjutkan ke situs web ini?</string>
+    <string name="tls_pin_mismatch_show_details">Detail</string>
+    <string name="tls_pin_mismatch_title">Sertifikat berubah</string>
+    <string name="tls_pin_mismatch_view_certificate">Lihat sertifikat</string>
     <string name="update_action_later">Nanti</string>
     <string name="update_action_skip_version">Lewati versi ini</string>
     <string name="update_action_update_now">Perbarui sekarang</string>

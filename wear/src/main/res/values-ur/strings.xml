@@ -38,6 +38,7 @@
     <string name="action_clear_text">متن صاف کریں</string>
     <string name="action_close">بند کریں</string>
     <string name="action_confirm">تصدیق کریں</string>
+    <string name="action_continue">جاری رکھیں</string>
     <string name="action_done">مکمل</string>
     <string name="action_go_to_settings">ترتیبات پر جائیں</string>
     <string name="action_got_it">سمجھ گیا</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">موجودہ ٹیبز</string>
     <string name="tab_editor_title">نچلی نیویگیشن بار کسٹمائز کریں</string>
     <string name="tag_server_notification">سرور اطلاع</string>
+    <string name="tls_certificate_fingerprint">SHA-256 فنگر پرنٹ</string>
+    <string name="tls_certificate_intermediate">درمیانی</string>
+    <string name="tls_certificate_issuer">جاری کنندہ</string>
+    <string name="tls_certificate_list_title">سرٹیفکیٹس</string>
+    <string name="tls_certificate_name">نام</string>
+    <string name="tls_certificate_root">روٹ</string>
+    <string name="tls_certificate_validity">میعاد</string>
+    <string name="tls_pin_mismatch_details">%1$@ کا سرٹیفکیٹ اس سے مختلف ہے جو TigerDuck کے پاس ریکارڈ ہے، لیکن اسے ایک قابلِ اعتماد ادارے نے جاری کیا ہے، اس لیے ممکن ہے ویب سائٹ نے سرٹیفکیٹ کی تجدید کی ہو۔ جاری رکھنے پر TigerDuck اگلی اپ ڈیٹ تک اس سرٹیفکیٹ پر بھروسا کرے گا، %2$@ کے تحت تمام سائٹس کے لیے۔</string>
+    <string name="tls_pin_mismatch_issuer">جاری کنندہ: %@</string>
+    <string name="tls_pin_mismatch_message">ویب سائٹ کا سرٹیفکیٹ ریکارڈ شدہ سرٹیفکیٹ سے مطابقت نہیں رکھتا، جس سے کنکشن کی سلامتی متاثر ہوتی ہے۔ کیا اس ویب سائٹ پر جاری رکھیں؟</string>
+    <string name="tls_pin_mismatch_show_details">تفصیلات</string>
+    <string name="tls_pin_mismatch_title">سرٹیفکیٹ تبدیل ہو گیا</string>
+    <string name="tls_pin_mismatch_view_certificate">سرٹیفکیٹ دیکھیں</string>
     <string name="update_action_later">بعد میں</string>
     <string name="update_action_skip_version">یہ ورژن چھوڑیں</string>
     <string name="update_action_update_now">ابھی اپ ڈیٹ کریں</string>

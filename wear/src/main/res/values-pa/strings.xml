@@ -38,6 +38,7 @@
     <string name="action_clear_text">ਟੈਕਸਟ ਸਾਫ਼ ਕਰੋ</string>
     <string name="action_close">ਬੰਦ ਕਰੋ</string>
     <string name="action_confirm">ਪੁਸ਼ਟੀ ਕਰੋ</string>
+    <string name="action_continue">ਅੱਗੇ ਵਧੋ</string>
     <string name="action_done">ਹੋ ਗਿਆ</string>
     <string name="action_go_to_settings">ਸੈਟਿੰਗਾਂ \'ਤੇ ਜਾਓ</string>
     <string name="action_got_it">ਸਮਝ ਗਿਆ</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">ਮੌਜੂਦਾ ਟੈਬ</string>
     <string name="tab_editor_title">ਹੇਠਲੀ ਨੈਵੀਗੇਸ਼ਨ ਨੂੰ ਕਸਟਮਾਈਜ਼ ਕਰੋ</string>
     <string name="tag_server_notification">ਸਰਵਰ ਸੂਚਨਾ</string>
+    <string name="tls_certificate_fingerprint">SHA-256 ਫਿੰਗਰਪ੍ਰਿੰਟ</string>
+    <string name="tls_certificate_intermediate">ਵਿਚਕਾਰਲਾ</string>
+    <string name="tls_certificate_issuer">ਜਾਰੀਕਰਤਾ</string>
+    <string name="tls_certificate_list_title">ਸਰਟੀਫਿਕੇਟ</string>
+    <string name="tls_certificate_name">ਨਾਮ</string>
+    <string name="tls_certificate_root">ਰੂਟ</string>
+    <string name="tls_certificate_validity">ਮਿਆਦ</string>
+    <string name="tls_pin_mismatch_details">%1$@ ਦਾ ਸਰਟੀਫਿਕੇਟ TigerDuck ਵਿੱਚ ਦਰਜ ਸਰਟੀਫਿਕੇਟ ਤੋਂ ਵੱਖਰਾ ਹੈ, ਪਰ ਇਹ ਭਰੋਸੇਯੋਗ ਸੰਸਥਾ ਨੇ ਜਾਰੀ ਕੀਤਾ ਹੈ, ਇਸ ਲਈ ਹੋ ਸਕਦਾ ਹੈ ਵੈੱਬਸਾਈਟ ਨੇ ਸਰਟੀਫਿਕੇਟ ਨਵਿਆਇਆ ਹੋਵੇ। ਅੱਗੇ ਵਧਣ ਤੇ TigerDuck ਅਗਲੇ ਅੱਪਡੇਟ ਤੱਕ ਇਸ ਸਰਟੀਫਿਕੇਟ ਤੇ ਭਰੋਸਾ ਕਰੇਗਾ, %2$@ ਹੇਠ ਸਾਰੀਆਂ ਸਾਈਟਾਂ ਲਈ।</string>
+    <string name="tls_pin_mismatch_issuer">ਜਾਰੀਕਰਤਾ: %@</string>
+    <string name="tls_pin_mismatch_message">ਵੈੱਬਸਾਈਟ ਦਾ ਸਰਟੀਫਿਕੇਟ ਦਰਜ ਕੀਤੇ ਸਰਟੀਫਿਕੇਟ ਨਾਲ ਮੇਲ ਨਹੀਂ ਖਾਂਦਾ, ਜਿਸ ਨਾਲ ਕਨੈਕਸ਼ਨ ਦੀ ਸੁਰੱਖਿਆ ਪ੍ਰਭਾਵਿਤ ਹੁੰਦੀ ਹੈ। ਕੀ ਇਸ ਵੈੱਬਸਾਈਟ ਵੱਲ ਅੱਗੇ ਵਧਣਾ ਹੈ?</string>
+    <string name="tls_pin_mismatch_show_details">ਵੇਰਵੇ</string>
+    <string name="tls_pin_mismatch_title">ਸਰਟੀਫਿਕੇਟ ਬਦਲ ਗਿਆ ਹੈ</string>
+    <string name="tls_pin_mismatch_view_certificate">ਸਰਟੀਫਿਕੇਟ ਵੇਖੋ</string>
     <string name="update_action_later">ਬਾਅਦ ਵਿੱਚ</string>
     <string name="update_action_skip_version">ਇਸ ਵਰਜ਼ਨ ਨੂੰ ਛੱਡੋ</string>
     <string name="update_action_update_now">ਹੁਣ ਅੱਪਡੇਟ ਕਰੋ</string>

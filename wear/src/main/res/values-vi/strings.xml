@@ -38,6 +38,7 @@
     <string name="action_clear_text">Xóa văn bản</string>
     <string name="action_close">Đóng</string>
     <string name="action_confirm">Xác nhận</string>
+    <string name="action_continue">Tiếp tục</string>
     <string name="action_done">Xong</string>
     <string name="action_go_to_settings">Đến cài đặt</string>
     <string name="action_got_it">Đã hiểu</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Tab hiện tại</string>
     <string name="tab_editor_title">Tùy chỉnh thanh điều hướng dưới</string>
     <string name="tag_server_notification">Thông báo máy chủ</string>
+    <string name="tls_certificate_fingerprint">Dấu vân tay SHA-256</string>
+    <string name="tls_certificate_intermediate">Trung gian</string>
+    <string name="tls_certificate_issuer">Nơi cấp</string>
+    <string name="tls_certificate_list_title">Chứng chỉ</string>
+    <string name="tls_certificate_name">Tên</string>
+    <string name="tls_certificate_root">Gốc</string>
+    <string name="tls_certificate_validity">Hiệu lực</string>
+    <string name="tls_pin_mismatch_details">Chứng chỉ của %1$@ khác với chứng chỉ TigerDuck đã ghi nhận, nhưng do một tổ chức đáng tin cậy cấp, nên có thể trang web đã gia hạn chứng chỉ. Nếu tiếp tục, TigerDuck sẽ tin cậy chứng chỉ này cho đến lần cập nhật sau, áp dụng cho mọi trang web thuộc %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Cấp bởi %@</string>
+    <string name="tls_pin_mismatch_message">Chứng chỉ của trang web không khớp với chứng chỉ đã ghi nhận, làm ảnh hưởng đến độ an toàn của kết nối. Tiếp tục truy cập trang web này?</string>
+    <string name="tls_pin_mismatch_show_details">Chi tiết</string>
+    <string name="tls_pin_mismatch_title">Chứng chỉ đã thay đổi</string>
+    <string name="tls_pin_mismatch_view_certificate">Xem chứng chỉ</string>
     <string name="update_action_later">Để sau</string>
     <string name="update_action_skip_version">Bỏ qua phiên bản này</string>
     <string name="update_action_update_now">Cập nhật ngay</string>

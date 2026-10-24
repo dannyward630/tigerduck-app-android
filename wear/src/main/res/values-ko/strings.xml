@@ -38,6 +38,7 @@
     <string name="action_clear_text">텍스트 지우기</string>
     <string name="action_close">닫기</string>
     <string name="action_confirm">확인</string>
+    <string name="action_continue">계속</string>
     <string name="action_done">완료</string>
     <string name="action_go_to_settings">설정으로 이동</string>
     <string name="action_got_it">확인</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">현재 탭</string>
     <string name="tab_editor_title">하단 탭 편집</string>
     <string name="tag_server_notification">서버 알림</string>
+    <string name="tls_certificate_fingerprint">SHA-256 지문</string>
+    <string name="tls_certificate_intermediate">중간 인증서</string>
+    <string name="tls_certificate_issuer">발급자</string>
+    <string name="tls_certificate_list_title">인증서</string>
+    <string name="tls_certificate_name">이름</string>
+    <string name="tls_certificate_root">루트 인증서</string>
+    <string name="tls_certificate_validity">유효 기간</string>
+    <string name="tls_pin_mismatch_details">%1$@의 인증서가 TigerDuck에 기록된 것과 다르지만 신뢰할 수 있는 기관이 발급했으므로, 웹사이트가 인증서를 갱신했을 수 있습니다. 계속하면 TigerDuck은 다음 업데이트 전까지 이 인증서를 신뢰하며 %2$@ 아래의 모든 사이트에 적용합니다.</string>
+    <string name="tls_pin_mismatch_issuer">발급자: %@</string>
+    <string name="tls_pin_mismatch_message">웹사이트의 인증서가 기록된 인증서와 일치하지 않아 연결의 보안에 영향을 줍니다. 이 웹사이트로 계속 이동할까요?</string>
+    <string name="tls_pin_mismatch_show_details">세부 정보</string>
+    <string name="tls_pin_mismatch_title">인증서가 변경됨</string>
+    <string name="tls_pin_mismatch_view_certificate">인증서 보기</string>
     <string name="update_action_later">나중에</string>
     <string name="update_action_skip_version">이 버전 건너뛰기</string>
     <string name="update_action_update_now">지금 업데이트</string>

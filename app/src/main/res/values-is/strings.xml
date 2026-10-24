@@ -38,6 +38,7 @@
     <string name="action_clear_text">Hreinsa texta</string>
     <string name="action_close">Loka</string>
     <string name="action_confirm">Staðfesta</string>
+    <string name="action_continue">Halda áfram</string>
     <string name="action_done">Lokið</string>
     <string name="action_go_to_settings">Fara í stillingar</string>
     <string name="action_got_it">Skil</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Núverandi flipar</string>
     <string name="tab_editor_title">Sérsníða neðri stikuna</string>
     <string name="tag_server_notification">Þjónatilkynning</string>
+    <string name="tls_certificate_fingerprint">SHA-256 fingrafar</string>
+    <string name="tls_certificate_intermediate">Milliskilríki</string>
+    <string name="tls_certificate_issuer">Útgefandi</string>
+    <string name="tls_certificate_list_title">Skilríki</string>
+    <string name="tls_certificate_name">Heiti</string>
+    <string name="tls_certificate_root">Rótarskilríki</string>
+    <string name="tls_certificate_validity">Gildistími</string>
+    <string name="tls_pin_mismatch_details">Skilríki %1$@ eru önnur en þau sem TigerDuck hefur skráð, en traustur aðili gaf þau út, svo vefurinn kann að hafa endurnýjað þau. Ef þú heldur áfram treystir TigerDuck þessum skilríkjum fram að næstu uppfærslu, fyrir alla vefi undir %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Útgefandi: %@</string>
+    <string name="tls_pin_mismatch_message">Skilríki vefsins passa ekki við skráð skilríki, sem hefur áhrif á öryggi tengingarinnar. Halda áfram á þennan vef?</string>
+    <string name="tls_pin_mismatch_show_details">Nánari upplýsingar</string>
+    <string name="tls_pin_mismatch_title">Skilríki breytt</string>
+    <string name="tls_pin_mismatch_view_certificate">Skoða skilríki</string>
     <string name="update_action_later">Seinna</string>
     <string name="update_action_skip_version">Sleppa þessari útgáfu</string>
     <string name="update_action_update_now">Uppfæra núna</string>

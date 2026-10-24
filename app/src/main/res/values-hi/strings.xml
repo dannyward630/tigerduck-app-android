@@ -38,6 +38,7 @@
     <string name="action_clear_text">टेक्स्ट साफ़ करें</string>
     <string name="action_close">बंद करें</string>
     <string name="action_confirm">पुष्टि करें</string>
+    <string name="action_continue">आगे बढ़ें</string>
     <string name="action_done">हो गया</string>
     <string name="action_go_to_settings">सेटिंग पर जाएँ</string>
     <string name="action_got_it">समझ गया</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">वर्तमान Tabs</string>
     <string name="tab_editor_title">नीचे का नेविगेशन बार कस्टमाइज़ करें</string>
     <string name="tag_server_notification">सर्वर सूचना</string>
+    <string name="tls_certificate_fingerprint">SHA-256 फ़िंगरप्रिंट</string>
+    <string name="tls_certificate_intermediate">मध्यवर्ती</string>
+    <string name="tls_certificate_issuer">जारीकर्ता</string>
+    <string name="tls_certificate_list_title">प्रमाणपत्र</string>
+    <string name="tls_certificate_name">नाम</string>
+    <string name="tls_certificate_root">रूट</string>
+    <string name="tls_certificate_validity">वैधता</string>
+    <string name="tls_pin_mismatch_details">%1$@ का प्रमाणपत्र उससे अलग है जो TigerDuck में दर्ज है, लेकिन इसे एक विश्वसनीय संस्था ने जारी किया है, इसलिए हो सकता है वेबसाइट ने प्रमाणपत्र नवीनीकृत किया हो। आगे बढ़ने पर TigerDuck अगले अपडेट तक इस प्रमाणपत्र पर भरोसा करेगा, %2$@ के अंतर्गत सभी साइटों के लिए।</string>
+    <string name="tls_pin_mismatch_issuer">जारीकर्ता: %@</string>
+    <string name="tls_pin_mismatch_message">वेबसाइट का प्रमाणपत्र दर्ज किए गए प्रमाणपत्र से मेल नहीं खाता, जिससे कनेक्शन की सुरक्षा प्रभावित होती है। क्या इस वेबसाइट पर आगे बढ़ें?</string>
+    <string name="tls_pin_mismatch_show_details">विवरण</string>
+    <string name="tls_pin_mismatch_title">प्रमाणपत्र बदल गया है</string>
+    <string name="tls_pin_mismatch_view_certificate">प्रमाणपत्र देखें</string>
     <string name="update_action_later">बाद में</string>
     <string name="update_action_skip_version">इस संस्करण को छोड़ें</string>
     <string name="update_action_update_now">अभी अपडेट करें</string>
