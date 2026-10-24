@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Predmeti</string>
     <string name="class_table_import_enter_link">Vnesi povezavo</string>
     <string name="class_table_import_failed">Urnika ni bilo mogoče uvoziti</string>
+    <string name="class_table_import_flashlight">Svetilka</string>
     <string name="class_table_import_invalid_message">Koda za deljenje je poškodovana ali spremenjena.</string>
     <string name="class_table_import_link_placeholder">Povezava za deljenje</string>
     <string name="class_table_import_lookup_failed">Podrobnosti o predmetih ni bilo mogoče naložiti</string>

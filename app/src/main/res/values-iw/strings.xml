@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">קורסים</string>
     <string name="class_table_import_enter_link">הזנת קישור</string>
     <string name="class_table_import_failed">לא ניתן היה לייבא את מערכת השעות</string>
+    <string name="class_table_import_flashlight">פנס</string>
     <string name="class_table_import_invalid_message">קוד השיתוף פגום או שהוא שונה.</string>
     <string name="class_table_import_link_placeholder">קישור לשיתוף</string>
     <string name="class_table_import_lookup_failed">לא ניתן היה לטעון את פרטי הקורסים</string>

@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">பாடங்களின் எண்ணிக்கை</string>
     <string name="class_table_import_enter_link">இணைப்பை உள்ளிடு</string>
     <string name="class_table_import_failed">வகுப்பு அட்டவணையை இறக்குமதி செய்ய முடியவில்லை</string>
+    <string name="class_table_import_flashlight">டார்ச்</string>
     <string name="class_table_import_invalid_message">பகிர்வுக் குறியீடு சேதமடைந்துள்ளது அல்லது மாற்றப்பட்டுள்ளது.</string>
     <string name="class_table_import_link_placeholder">பகிர்வு இணைப்பு</string>
     <string name="class_table_import_lookup_failed">பாட விவரங்களை ஏற்ற முடியவில்லை</string>

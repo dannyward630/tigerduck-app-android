@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Cursos</string>
     <string name="class_table_import_enter_link">Introducir enlace</string>
     <string name="class_table_import_failed">No se pudo importar el horario</string>
+    <string name="class_table_import_flashlight">Linterna</string>
     <string name="class_table_import_invalid_message">El código para compartir está dañado o se ha modificado.</string>
     <string name="class_table_import_link_placeholder">Enlace para compartir</string>
     <string name="class_table_import_lookup_failed">No se pudieron cargar los detalles de los cursos</string>

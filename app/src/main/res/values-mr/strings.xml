@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">अभ्यासक्रमांची संख्या</string>
     <string name="class_table_import_enter_link">लिंक प्रविष्ट करा</string>
     <string name="class_table_import_failed">वर्ग वेळापत्रक आयात करता आले नाही</string>
+    <string name="class_table_import_flashlight">टॉर्च</string>
     <string name="class_table_import_invalid_message">शेअर कोड खराब झाला आहे किंवा त्यात बदल केला आहे.</string>
     <string name="class_table_import_link_placeholder">शेअर लिंक</string>
     <string name="class_table_import_lookup_failed">अभ्यासक्रमांचे तपशील लोड करता आले नाहीत</string>

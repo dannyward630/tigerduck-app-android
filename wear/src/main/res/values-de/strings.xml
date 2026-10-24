@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kurse</string>
     <string name="class_table_import_enter_link">Link eingeben</string>
     <string name="class_table_import_failed">Stundenplan konnte nicht importiert werden</string>
+    <string name="class_table_import_flashlight">Taschenlampe</string>
     <string name="class_table_import_invalid_message">Der Freigabecode ist beschädigt oder wurde verändert.</string>
     <string name="class_table_import_link_placeholder">Freigabelink</string>
     <string name="class_table_import_lookup_failed">Kursdetails konnten nicht geladen werden</string>

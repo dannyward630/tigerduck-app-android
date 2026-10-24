@@ -66,6 +66,14 @@ class DataCache @Inject constructor(
     val backgroundSyncVersion: StateFlow<Int> = _backgroundSyncVersion.asStateFlow()
     fun notifyBackgroundSyncComplete() { _backgroundSyncVersion.update { it + 1 } }
 
+    private val _coursesVersion = MutableStateFlow(0)
+
+    /**
+     * Bumped after every write of a term's courses, for a reader of terms other than the one on
+     * screen, such as the import scanner's share button, to read them again as other terms load.
+     */
+    val coursesVersion: StateFlow<Int> = _coursesVersion.asStateFlow()
+
     private val _assignmentsVersion = MutableStateFlow(0)
 
     /**
@@ -183,6 +191,7 @@ class DataCache @Inject constructor(
         val (manual, remote) = courses.partition { it.isManual }
         save(remote, coursesFilename(semester))
         saveToUserData(manual, manualCoursesFilename(semester))
+        _coursesVersion.update { it + 1 }
         onCoursesSaved?.invoke()
     }
 

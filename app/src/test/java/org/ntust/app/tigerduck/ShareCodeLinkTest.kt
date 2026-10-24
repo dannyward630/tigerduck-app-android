@@ -119,7 +119,9 @@ class ShareCodeLinkTest {
 
     @Test
     fun `a link on the share host that the decoder does not take says the code is damaged`() = runTest {
-        val link = links[0].replaceFirst("://share.tigerduck.app/", "://share.tigerduck.app:443/", ignoreCase = true)
+        // The host with a port and no code: a whole code after it would read, as the end of any
+        // link does (decision record 0023), so none is there.
+        val link = "https://share.tigerduck.app:443/"
         assertNotNull(take(link))
 
         val opened = openLink(link)

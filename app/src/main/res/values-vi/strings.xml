@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Số môn học</string>
     <string name="class_table_import_enter_link">Nhập liên kết</string>
     <string name="class_table_import_failed">Không thể nhập thời khóa biểu</string>
+    <string name="class_table_import_flashlight">Đèn pin</string>
     <string name="class_table_import_invalid_message">Mã chia sẻ bị hỏng hoặc đã bị thay đổi.</string>
     <string name="class_table_import_link_placeholder">Liên kết chia sẻ</string>
     <string name="class_table_import_lookup_failed">Không thể tải thông tin môn học</string>

@@ -33,7 +33,8 @@ data class ClassTableShareCode(
     )
 
     companion object {
-        private const val SHARE_HOST = "HTTPS://SHARE.TIGERDUCK.APP"
+        private const val SHARE_HOST_NAME = "SHARE.TIGERDUCK.APP"
+        private const val SHARE_HOST = "HTTPS://$SHARE_HOST_NAME"
 
         /**
          * Where every share link lives, in the upper case that keeps a QR code in alphanumeric
@@ -46,30 +47,100 @@ data class ClassTableShareCode(
         /** A class table's share code: the type `CLASSTABLE`, then the packed layout's version and payload. */
         const val PREFIX = SHARE_ROOT + "CLASSTABLE/"
 
+        private const val CLASS_TABLE_TYPE = "/CLASSTABLE/"
+        private val TAT_ADDRESS = TAT_PREFIX.removePrefix("HTTPS://")
+
         /**
-         * Reads any share code the app accepts, ignoring surrounding whitespace and letter case,
-         * and throws a [ClassTableShareCodeError] for anything else.
+         * Reads a code as scanned, typed, pasted or opened as a link, and throws a
+         * [ClassTableShareCodeError] for anything else. The forms it takes are in the decision
+         * record's "Reading a share code", as the iOS app reads them: percent-encoding decoded,
+         * surrounding whitespace and letter case ignored, a query or fragment dropped, with
+         * `https://`, `http://` or no scheme and a `/` after the code. Off the share host and
+         * TAT's, the last `/` segment is read as the code.
          */
         fun decode(text: String): ClassTableShareCode {
-            val code = text.trim { it in TRIMMED }.uppercase()
-            return when {
-                code.startsWith(PREFIX) -> PackedClassTableCode.decode(code)
-                isOnShareHost(code) -> throw if (code.startsWith(SHARE_ROOT) && namesType(code.substring(SHARE_ROOT.length))) {
-                    ClassTableShareCodeError.UnknownType()
-                } else {
-                    ClassTableShareCodeError.Malformed()
+            // A pasted TAT link carries the spaces that pad a short student ID as `%20`.
+            val code = (percentDecoded(text) ?: text).trim { it in TRIMMED }.uppercase()
+            // No code holds `?` or `#`, so what follows is a query or fragment someone added.
+            val link = code.takeWhile { it != '?' && it != '#' }
+            val scheme = listOf("HTTPS://", "HTTP://").firstOrNull { link.startsWith(it) }
+            val address = link.removePrefix(scheme.orEmpty())
+            shareHostPath(address)?.let { path ->
+                if (path.startsWith(CLASS_TABLE_TYPE)) {
+                    return PackedClassTableCode.decode(PREFIX + withoutTrailingSlash(path.removePrefix(CLASS_TABLE_TYPE)))
                 }
-                code.startsWith(TAT_PREFIX) -> decodeTat(code)
-                else -> throw ClassTableShareCodeError.UnknownPrefix()
+                throw if (namesType(path)) ClassTableShareCodeError.UnknownType() else ClassTableShareCodeError.Malformed()
+            }
+            if (address.startsWith(TAT_ADDRESS)) {
+                return decodeTat(TAT_PREFIX + withoutTrailingSlash(address.removePrefix(TAT_ADDRESS)))
+            }
+            // Off both hosts the code is the last segment, and anything short of a whole code is
+            // not one, so a stray QR code or word never shows an error.
+            val last = address.split('/').lastOrNull { it.isNotEmpty() }.orEmpty()
+            return try {
+                if (last.startsWith("TAT")) decodeTat(TAT_PREFIX + last) else PackedClassTableCode.decode(PREFIX + last)
+            } catch (_: ClassTableShareCodeError) {
+                throw ClassTableShareCodeError.UnknownPrefix()
             }
         }
 
-        /** The share host alone, or with a path, query or fragment after it; not a host that only starts the same. */
-        private fun isOnShareHost(code: String): Boolean =
-            code == SHARE_HOST || code.startsWith(SHARE_HOST) && code[SHARE_HOST.length] in "/?#"
+        private fun withoutTrailingSlash(text: String) = text.removeSuffix("/")
 
-        /** Whether [path] starts with a type, as a newer app may write one: letters or digits, then `/`. */
-        private fun namesType(path: String): Boolean = isUpperAlphanumerics(path.substringBefore('/', ""))
+        /** [char]'s value as an ASCII hex digit; null for anything else, fullwidth digits included. */
+        private fun asciiHexDigit(char: Char): Int? = when (char) {
+            in '0'..'9' -> char - '0'
+            in 'a'..'f' -> char - 'a' + 10
+            in 'A'..'F' -> char - 'A' + 10
+            else -> null
+        }
+
+        /** What follows the share host when the host ends there; null for another host, including one that only starts the same. */
+        private fun shareHostPath(address: String): String? {
+            if (!address.startsWith(SHARE_HOST_NAME)) return null
+            val rest = address.substring(SHARE_HOST_NAME.length)
+            return rest.takeIf { it.isEmpty() || it.startsWith('/') }
+        }
+
+        /** Whether [path], after the share host, starts with a type, as a newer app may write one: letters or digits, then `/`. */
+        private fun namesType(path: String): Boolean {
+            if (!path.startsWith('/')) return false
+            val afterSlash = path.substring(1)
+            return '/' in afterSlash && isUpperAlphanumerics(afterSlash.substringBefore('/'))
+        }
+
+        /**
+         * [text] with its `%XX` escapes decoded as UTF-8, as Foundation's `removingPercentEncoding`
+         * does; null when a `%` starts no escape or the bytes are not UTF-8, so the text is read
+         * as it came, as on iOS.
+         */
+        internal fun percentDecoded(text: String): String? {
+            if ('%' !in text) return text
+            val bytes = java.io.ByteArrayOutputStream()
+            var index = 0
+            while (index < text.length) {
+                val char = text[index]
+                if (char == '%') {
+                    val high = text.getOrNull(index + 1)?.let(::asciiHexDigit) ?: return null
+                    val low = text.getOrNull(index + 2)?.let(::asciiHexDigit) ?: return null
+                    bytes.write(high * 16 + low)
+                    index += 3
+                } else {
+                    // A surrogate pair goes whole, so a character outside the BMP keeps its bytes.
+                    val end = if (char.isHighSurrogate() && index + 1 < text.length) index + 2 else index + 1
+                    bytes.write(text.substring(index, end).toByteArray(Charsets.UTF_8))
+                    index = end
+                }
+            }
+            return try {
+                Charsets.UTF_8.newDecoder()
+                    .onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+                    .decode(java.nio.ByteBuffer.wrap(bytes.toByteArray()))
+                    .toString()
+            } catch (_: java.nio.charset.CharacterCodingException) {
+                null
+            }
+        }
 
         /**
          * Our code for [terms]: one of the user's terms, or every term that has courses. Course

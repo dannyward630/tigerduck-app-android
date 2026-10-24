@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Cursos</string>
     <string name="class_table_import_enter_link">Introdueix l\'enllaç</string>
     <string name="class_table_import_failed">No s\'ha pogut importar l\'horari</string>
+    <string name="class_table_import_flashlight">Llanterna</string>
     <string name="class_table_import_invalid_message">El codi per compartir està malmès o s\'ha modificat.</string>
     <string name="class_table_import_link_placeholder">Enllaç per compartir</string>
     <string name="class_table_import_lookup_failed">No s\'han pogut carregar els detalls dels cursos</string>

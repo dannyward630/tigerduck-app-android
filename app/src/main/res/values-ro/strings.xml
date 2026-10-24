@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Cursuri</string>
     <string name="class_table_import_enter_link">Introdu linkul</string>
     <string name="class_table_import_failed">Orarul nu a putut fi importat</string>
+    <string name="class_table_import_flashlight">Lanternă</string>
     <string name="class_table_import_invalid_message">Codul de distribuire este deteriorat sau a fost modificat.</string>
     <string name="class_table_import_link_placeholder">Link de distribuire</string>
     <string name="class_table_import_lookup_failed">Detaliile cursurilor nu au putut fi încărcate</string>

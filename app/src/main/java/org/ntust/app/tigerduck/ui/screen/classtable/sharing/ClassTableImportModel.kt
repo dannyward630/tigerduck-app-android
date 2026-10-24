@@ -63,6 +63,24 @@ class ClassTableImportModel(
         data class SaveFailed(val job: ImportJob) : Prompt
     }
 
+    /**
+     * What the scanner's camera hears of a code it read ([scan]), which decides whether the camera
+     * hands it over again while it stays in view ([RepeatedQrCodeFilter]).
+     */
+    enum class ScanAnswer {
+        /** Taken: held while it stays in view, so cancelling its step does not reopen it. */
+        TAKEN,
+
+        /** Not a share code, such as another app's: held too, as it never becomes one. */
+        NOT_SHARE_CODE,
+
+        /** Something else is open: handed over again at the next frame, to be taken once it closes. */
+        BUSY,
+
+        /** The code the import is busy with, its step or prompt open: held, as when it was taken. */
+        HOLDING,
+    }
+
     data class State(
         val prompt: Prompt? = null,
         /** The code the confirm screen shows, with the nickname field above its details. */
@@ -101,6 +119,13 @@ class ClassTableImportModel(
     private var lookupJob: Job? = null
     private var imageJob: Job? = null
 
+    /**
+     * The code the import is busy with, as the camera read it and as decoded, for [scan]'s
+     * [ScanAnswer.HOLDING]; read only while the import is not idle.
+     */
+    private var heldText: String? = null
+    private var heldCode: ClassTableShareCode? = null
+
     // --- Reading a code ---
 
     /**
@@ -108,16 +133,27 @@ class ClassTableImportModel(
      * scanning goes on, and so is any code while something else is on screen. Returns whether
      * the code was taken.
      */
-    fun scanned(text: String): Boolean {
-        if (!_state.value.isIdle) return false
-        when (val reading = reading(text)) {
-            Reading.NotShareCode -> return false
+    fun scanned(text: String): Boolean = scan(text) == ScanAnswer.TAKEN
+
+    /** [scanned], with what the camera needs to know of a code it was not given ([ScanAnswer]). */
+    fun scan(text: String): ScanAnswer {
+        val idle = _state.value.isIdle
+        val reading = reading(text, log = idle)
+        if (reading == Reading.NotShareCode) return ScanAnswer.NOT_SHARE_CODE
+        if (!idle) {
+            val held = text == heldText || (reading is Reading.Code && reading.code == heldCode)
+            return if (held) ScanAnswer.HOLDING else ScanAnswer.BUSY
+        }
+        when (reading) {
             Reading.Invalid -> _state.update { it.copy(prompt = Prompt.Invalid) }
             Reading.NeedsUpdate -> _state.update { it.copy(prompt = Prompt.NeedsUpdate) }
             is Reading.Code -> open(reading.code)
+            Reading.NotShareCode -> Unit
         }
+        heldText = text
+        heldCode = (reading as? Reading.Code)?.code
         _state.update { it.copy(tookCode = true) }
-        return true
+        return ScanAnswer.TAKEN
     }
 
     /**
@@ -135,8 +171,11 @@ class ClassTableImportModel(
      */
     fun imageRead(payloads: List<String>) {
         if (!_state.value.isIdle) return
-        val readings = payloads.map(::reading)
+        val readings = payloads.map { reading(it) }
         val code = readings.firstNotNullOfOrNull { (it as? Reading.Code)?.code }
+        // The picture's code is the one held now; none the camera read before.
+        heldText = null
+        heldCode = code
         if (code != null) {
             open(code)
         } else {
@@ -156,6 +195,8 @@ class ClassTableImportModel(
      */
     fun readImage(read: suspend () -> List<String>?) {
         if (!_state.value.isIdle) return
+        heldText = null
+        heldCode = null
         _state.update { it.copy(isReadingImage = true) }
         imageJob = scope.launch {
             val payloads = try {
@@ -292,7 +333,8 @@ class ClassTableImportModel(
         data class Code(val code: ClassTableShareCode) : Reading
     }
 
-    private fun reading(text: String): Reading = try {
+    /** [text] as the import reads it; [log] a refused code, though not one read again while the import is busy. */
+    private fun reading(text: String, log: Boolean = true): Reading = try {
         Reading.Code(ClassTableShareCode.decode(text))
     } catch (_: ClassTableShareCodeError.UnknownPrefix) {
         Reading.NotShareCode
@@ -301,7 +343,7 @@ class ClassTableImportModel(
     } catch (_: ClassTableShareCodeError.UnknownType) {
         Reading.NeedsUpdate
     } catch (e: ClassTableShareCodeError) {
-        Log.i(TAG, "Share code refused: ${e.javaClass.simpleName}")
+        if (log) Log.i(TAG, "Share code refused: ${e.javaClass.simpleName}")
         Reading.Invalid
     }
 

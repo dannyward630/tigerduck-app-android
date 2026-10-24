@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">จำนวนรายวิชา</string>
     <string name="class_table_import_enter_link">ป้อนลิงก์</string>
     <string name="class_table_import_failed">ไม่สามารถนำเข้าตารางเรียนได้</string>
+    <string name="class_table_import_flashlight">ไฟฉาย</string>
     <string name="class_table_import_invalid_message">รหัสแชร์เสียหายหรือถูกแก้ไข</string>
     <string name="class_table_import_link_placeholder">ลิงก์แชร์</string>
     <string name="class_table_import_lookup_failed">ไม่สามารถโหลดรายละเอียดรายวิชาได้</string>

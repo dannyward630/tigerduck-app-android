@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kurser</string>
     <string name="class_table_import_enter_link">Indtast link</string>
     <string name="class_table_import_failed">Skemaet kunne ikke importeres</string>
+    <string name="class_table_import_flashlight">Lommelygte</string>
     <string name="class_table_import_invalid_message">Delingskoden er beskadiget eller ændret.</string>
     <string name="class_table_import_link_placeholder">Delingslink</string>
     <string name="class_table_import_lookup_failed">Kursusoplysningerne kunne ikke indlæses</string>

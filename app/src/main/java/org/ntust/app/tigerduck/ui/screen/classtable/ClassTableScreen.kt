@@ -897,6 +897,7 @@ fun ClassTableScreen(
             share = share,
             labelFor = viewModel::displayLabel,
             onDismiss = { sharing = null },
+            onScan = onRequestImport,
         )
     }
     // A sign-out closes the sheet: the code names the account that left.

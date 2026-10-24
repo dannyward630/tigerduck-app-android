@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kurssit</string>
     <string name="class_table_import_enter_link">Anna linkki</string>
     <string name="class_table_import_failed">Lukujärjestyksen tuonti epäonnistui</string>
+    <string name="class_table_import_flashlight">Taskulamppu</string>
     <string name="class_table_import_invalid_message">Jakokoodi on vioittunut tai sitä on muutettu.</string>
     <string name="class_table_import_link_placeholder">Jakolinkki</string>
     <string name="class_table_import_lookup_failed">Kurssitietoja ei voitu ladata</string>

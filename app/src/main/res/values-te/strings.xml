@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">కోర్సుల సంఖ్య</string>
     <string name="class_table_import_enter_link">లింక్‌ను నమోదు చేయండి</string>
     <string name="class_table_import_failed">తరగతి షెడ్యూల్‌ను దిగుమతి చేయలేకపోయాము</string>
+    <string name="class_table_import_flashlight">టార్చ్</string>
     <string name="class_table_import_invalid_message">షేర్ కోడ్ పాడైంది లేదా మార్చబడింది.</string>
     <string name="class_table_import_link_placeholder">షేర్ లింక్</string>
     <string name="class_table_import_lookup_failed">కోర్సు వివరాలను లోడ్ చేయలేకపోయాము</string>

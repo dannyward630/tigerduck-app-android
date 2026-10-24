@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">ਕੋਰਸਾਂ ਦੀ ਗਿਣਤੀ</string>
     <string name="class_table_import_enter_link">ਲਿੰਕ ਦਰਜ ਕਰੋ</string>
     <string name="class_table_import_failed">ਕਲਾਸ ਸਾਰਣੀ ਆਯਾਤ ਨਹੀਂ ਹੋ ਸਕੀ</string>
+    <string name="class_table_import_flashlight">ਟਾਰਚ</string>
     <string name="class_table_import_invalid_message">ਸ਼ੇਅਰ ਕੋਡ ਖਰਾਬ ਹੈ ਜਾਂ ਇਸ ਵਿੱਚ ਬਦਲਾਅ ਕੀਤਾ ਗਿਆ ਹੈ।</string>
     <string name="class_table_import_link_placeholder">ਸ਼ੇਅਰ ਲਿੰਕ</string>
     <string name="class_table_import_lookup_failed">ਕੋਰਸ ਦੇ ਵੇਰਵੇ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ</string>

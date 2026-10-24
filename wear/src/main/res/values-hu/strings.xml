@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kurzusok</string>
     <string name="class_table_import_enter_link">Hivatkozás megadása</string>
     <string name="class_table_import_failed">Az órarend importálása nem sikerült</string>
+    <string name="class_table_import_flashlight">Zseblámpa</string>
     <string name="class_table_import_invalid_message">A megosztási kód sérült, vagy módosították.</string>
     <string name="class_table_import_link_placeholder">Megosztási hivatkozás</string>
     <string name="class_table_import_lookup_failed">Nem sikerült betölteni a kurzusok részleteit</string>
