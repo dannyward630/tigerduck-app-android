@@ -1033,4 +1033,43 @@ class SchoolMailComposeViewModelTest {
 
         assertEquals("m1", store.orphan(owner)?.id)
     }
+
+    @Test
+    fun `a failed send's mail is forgotten before the form can be sent again`() {
+        signedIn()
+        val io = EitherEndDispatcher()
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, io, heldSends)
+            .also { it.sendHoldMs = 0; it.prefill(labels); it.setTo("amy@mail.ntust.edu.tw") }
+        repo.sendError = MailError.Network()
+        vm.send()
+        // Until the form is usable again; whatever IO of the failed send is left then waits.
+        while (vm.state.value.sending) io.runOldest()
+
+        // Sent again at once, and held this time. Its keeping runs ahead of what the first attempt
+        // left, as a pool of threads may run them; nothing of the first attempt may take it.
+        repo.sendError = null
+        vm.sendHoldMs = SchoolMailComposeViewModel.SEND_HOLD_MS
+        vm.send()
+        io.runNewest()
+        io.drain()
+
+        assertNotNull(afterRestart().orphan(owner))
+    }
+}
+
+/** Holds what it is handed for a test to run oldest or newest first, as a pool of threads may. */
+private class EitherEndDispatcher : kotlinx.coroutines.CoroutineDispatcher() {
+    private val queued = ArrayDeque<Runnable>()
+
+    override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
+        queued.addLast(block)
+    }
+
+    fun runOldest() = queued.removeFirst().run()
+
+    fun runNewest() = queued.removeLast().run()
+
+    fun drain() {
+        while (queued.isNotEmpty()) runOldest()
+    }
 }

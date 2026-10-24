@@ -89,6 +89,23 @@ class HeldSendStoreTest {
     }
 
     @Test
+    fun `a sign-out's late cleanup leaves a mail a sign-in since has kept`() {
+        val store = store()
+        store.save("before", me, fields, emptyList(), generation = 1) { true }
+        // The same student signed in again, and kept a mail, before the cleanup ran.
+        store.save("since", me, fields, emptyList(), generation = 3) { true }
+        // And one this process did not keep: from before a restart.
+        File(root, "earlier").mkdirs()
+        HeldSendStore(root).save("earlier", me, fields, emptyList(), generation = 9) { true }
+
+        store.clear(me, below = 2)
+
+        assertFalse(File(root, "before").exists())
+        assertFalse(File(root, "earlier").exists())
+        assertEquals("since", store().orphan(me)?.id)
+    }
+
+    @Test
     fun `marking a mail as sending says whether it was marked`() {
         val store = store()
         store.save("m1", me, fields, emptyList()) { true }

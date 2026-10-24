@@ -98,15 +98,29 @@ class HeldSendStore(
     private val live = mutableSetOf<String>()
 
     /**
-     * Keeps mail [id] of [owner], held, unless [stillCurrent] says the account has left, asked
-     * under the lock [clear] takes. A mail kept before is replaced, its copies the new one still
-     * names kept as they are and the others deleted. Says whether it kept it; a file that cannot
-     * be read leaves the mail as it was.
+     * The sign-in generation each mail kept in this process was kept under, which a sign-out's late
+     * cleanup goes by ([clear]); in memory alone, like the generation.
+     */
+    private val keptUnder = mutableMapOf<String, Int>()
+
+    /**
+     * Keeps mail [id] of [owner], held, under sign-in [generation], unless [stillCurrent] says the
+     * account has left, asked under the lock [clear] takes. A mail kept before is replaced, its
+     * copies the new one still names kept as they are and the others deleted. Says whether it kept
+     * it; a file that cannot be read leaves the mail as it was.
      */
     @Synchronized
-    fun save(id: String, owner: String, fields: Fields, attachments: List<Keep>, stillCurrent: () -> Boolean): Boolean {
+    fun save(
+        id: String,
+        owner: String,
+        fields: Fields,
+        attachments: List<Keep>,
+        generation: Int = 0,
+        stillCurrent: () -> Boolean,
+    ): Boolean {
         if (!stillCurrent()) return false
         live += id
+        keptUnder[id] = generation
         val dir = File(root, id)
         val before = dir.listFiles()?.mapTo(mutableSetOf()) { it.name }.orEmpty()
         return try {
@@ -165,6 +179,7 @@ class HeldSendStore(
     @Synchronized
     fun delete(id: String) {
         live -= id
+        keptUnder -= id
         File(root, id).deleteRecursively()
     }
 
@@ -181,20 +196,26 @@ class HeldSendStore(
 
     /**
      * The kept mail of [owner] goes, as anything unreadable does, when that account leaves: it
-     * signed out, or another student signed in. Only theirs, as the cleanup of a sign-out runs
-     * some time after it, when the next student may have mail of their own kept. Null: everything.
+     * signed out, or another student signed in. Only what was kept under a sign-in before
+     * [below], and what this process did not keep, from before a restart: the cleanup of a
+     * sign-out runs some time after it, when the next student, or the same one signed in again,
+     * may have mail of their own kept. Null: everything.
      */
     @Synchronized
-    fun clear(owner: String?) {
+    fun clear(owner: String?, below: Int = Int.MAX_VALUE) {
         if (owner == null) {
             live.clear()
+            keptUnder.clear()
             root.deleteRecursively()
             return
         }
         root.listFiles().orEmpty().filter { it.isDirectory }.forEach { dir ->
             val record = read(dir)
-            if (record == null || record.owner.equals(owner, ignoreCase = true)) {
+            val departing = record == null ||
+                (record.owner.equals(owner, ignoreCase = true) && (keptUnder[dir.name] ?: Int.MIN_VALUE) < below)
+            if (departing) {
                 live -= dir.name
+                keptUnder -= dir.name
                 dir.deleteRecursively()
             }
         }

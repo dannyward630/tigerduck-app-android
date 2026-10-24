@@ -627,7 +627,7 @@ class SchoolMailComposeViewModel @Inject constructor(
                 )
             }
         }
-        return heldSends.save(id, owner, fields, attachments) { account.accountGeneration == generation }
+        return heldSends.save(id, owner, fields, attachments, generation) { account.accountGeneration == generation }
     }
 
     /**
@@ -671,8 +671,9 @@ class SchoolMailComposeViewModel @Inject constructor(
         val generation = account.accountGeneration
         withStaged(onError = { error ->
             // Failed for sure, the mail is back in the editor alone, as after an Undo. One that may
-            // have gone out stays kept as sending, to say so after a restart.
-            if (error !is MailError.SendUnconfirmed) heldId?.let { id -> viewModelScope.launch { withContext(io) { heldSends.forget(id) } } }
+            // have gone out stays kept as sending, to say so after a restart. Before the form can
+            // be sent again: a retry keeps the mail under the same id, which this must not take.
+            if (error !is MailError.SendUnconfirmed) heldId?.let { id -> withContext(io) { heldSends.forget(id) } }
             ComposeError.SendFailed(error)
         }) { attachments ->
             // Staging can take a while: a student signed in over the one who confirmed it sends none of it.
@@ -763,7 +764,7 @@ class SchoolMailComposeViewModel @Inject constructor(
     }
 
     /** Downloads carried-over attachments to temp files for the duration of [block], then deletes them. */
-    private fun withStaged(onError: (MailError) -> ComposeError, block: suspend (List<OutgoingAttachment>) -> Unit) {
+    private fun withStaged(onError: suspend (MailError) -> ComposeError, block: suspend (List<OutgoingAttachment>) -> Unit) {
         viewModelScope.launch {
             // As in [runPrefill]: the sign-in a rejection is for.
             val generation = account.accountGeneration

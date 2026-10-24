@@ -187,13 +187,13 @@ class MailAccount @Inject constructor(
 
     /**
      * The mail on the phone of [departing], an account that leaves: the cache, and the mail it
-     * held to send. Only its own held mail: a sign-out's cleanup runs some time after it, and the
-     * next student may have mail of their own held by then. A read of the encrypted store when
-     * the caller reads [departing]: for the IO dispatcher.
+     * held to send under a sign-in before [keptBefore]. Only its own held mail: a sign-out's
+     * cleanup runs some time after it, and the next student may have mail of their own held by
+     * then. A read of the encrypted store when the caller reads [departing]: for the IO dispatcher.
      */
-    private fun leaveMailOf(departing: String?) {
+    private fun leaveMailOf(departing: String?, keptBefore: Int = Int.MAX_VALUE) {
         cache.clearAll()
-        heldSends?.clear(departing)
+        heldSends?.clear(departing, below = keptBefore)
     }
 
     /** A password typed again keeps what the student chose; see [MailStateStore.clearSignIn]. */
@@ -210,9 +210,10 @@ class MailAccount @Inject constructor(
         scheduler.cancel()
         // Together, so a snapshot holds the departing account with its own generation or nothing.
         onLockWait?.invoke()
+        var leftAt = 0
         val departing = synchronized(accountLock) {
             ownAddress.also {
-                generation.incrementAndGet()
+                leftAt = generation.incrementAndGet()
                 credentials.clearMailCredentials()
             }
         }
@@ -221,7 +222,9 @@ class MailAccount @Inject constructor(
         _authFailed.value = false
         _signOuts.tryEmit(departing)
         scope.launch(Dispatchers.IO) {
-            leaveMailOf(departing)
+            // Only the mail of the sign-in that left: by now the same student may have signed in
+            // again and kept a mail of the new sign-in's.
+            leaveMailOf(departing, keptBefore = leftAt)
             notifier.cancelAll()
         }
     }
