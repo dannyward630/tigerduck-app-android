@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Premi di nuovo indietro per uscire</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Attualmente sei al di fuori del fuso orario di Taiwan. Quest\'app sta utilizzando automaticamente l\'ora di Taiwan.\nControlla bene date e orari. Buon viaggio!</string>
+    <string name="app_processing_keep_open">Elaborazione in corso…\nNon chiudere l\'app.</string>
     <string name="app_reset_required_action">Ripristina</string>
     <string name="app_reset_required_message">Lo stato di accesso e le preferenze non possono più essere letti, possibilmente a causa di un aggiornamento del sistema operativo, di un ripristino da backup o di un problema di archiviazione.\n\nTocca \"Ripristina\" per cancellare i vecchi dati, quindi accedi e riconfigura le tue preferenze.</string>
     <string name="app_reset_required_title">Ripristino necessario</string>

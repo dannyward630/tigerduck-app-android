@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">กดย้อนกลับอีกครั้งเพื่อออก</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">ตอนนี้คุณอยู่นอกเขตเวลาไต้หวัน แอปนี้ใช้เวลาไต้หวันโดยอัตโนมัติ\nกรุณาตรวจสอบวันที่และเวลาให้รอบคอบ เดินทางปลอดภัย!</string>
+    <string name="app_processing_keep_open">กำลังประมวลผล…\nโปรดอย่าปิดแอป</string>
     <string name="app_reset_required_action">รีเซ็ต</string>
     <string name="app_reset_required_message">ไม่สามารถอ่านสถานะการเข้าสู่ระบบและการตั้งค่าของคุณได้ อาจเกิดจากการอัปเกรดระบบปฏิบัติการ การกู้คืนจากข้อมูลสำรอง หรือปัญหาที่จัดเก็บข้อมูล\n\nแตะ \"รีเซ็ต\" เพื่อล้างข้อมูลเก่า จากนั้นเข้าสู่ระบบและตั้งค่าใหม่</string>
     <string name="app_reset_required_title">ต้องตั้งค่าใหม่</string>

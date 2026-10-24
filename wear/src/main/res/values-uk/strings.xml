@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Натисніть «Назад» ще раз, щоб вийти</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Зараз ви перебуваєте поза часовим поясом Тайваню. Цей застосунок автоматично використовує час Тайваню.\nБудь ласка, перевіряйте дати та час. Безпечної подорожі!</string>
+    <string name="app_processing_keep_open">Обробка…\nНе закривайте застосунок.</string>
     <string name="app_reset_required_action">Скинути</string>
     <string name="app_reset_required_message">Стан вашого входу та налаштування неможливо прочитати, можливо, через оновлення ОС, відновлення з резервної копії або проблему зі сховищем.\n\nТоркніться «Скинути», щоб очистити старі дані, потім увійдіть і налаштуйте параметри заново.</string>
     <string name="app_reset_required_title">Потрібне скидання</string>

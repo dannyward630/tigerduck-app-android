@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Paspauskite atgal dar kartą, kad išeitumėte</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Šiuo metu esate ne Taivano laiko juostoje. Programa automatiškai naudoja Taivano laiką.\nAtidžiai tikrinkite datas ir laikus. Saugios kelionės!</string>
+    <string name="app_processing_keep_open">Apdorojama…\nNeuždarykite programėlės.</string>
     <string name="app_reset_required_action">Atstatyti</string>
     <string name="app_reset_required_message">Jūsų prisijungimo būsenos ir nuostatų nebegalima perskaityti – galbūt dėl OS atnaujinimo, atsarginės kopijos atstatymo ar saugyklos problemos.\n\nBakstelėkite \"Atstatyti\", kad išvalytumėte senus duomenis, tada prisijunkite ir iš naujo konfigūruokite nuostatas.</string>
     <string name="app_reset_required_title">Reikalingas atstatymas</string>

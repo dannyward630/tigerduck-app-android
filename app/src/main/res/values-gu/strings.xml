@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">બહાર નીકળવા ફરી પાછળ દબાવો</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">તમે હાલ તાઇવાનના ટાઇમઝોનની બહાર છો. આ App આપોઆપ તાઇવાનનો સમય ઉપયોગ કરી રહ્યો છે.\nતારીખ અને સમય ડબલ-ચૅક કરો. સુરક્ષિત પ્રવાસ!</string>
+    <string name="app_processing_keep_open">પ્રક્રિયા ચાલી રહી છે…\nકૃપા કરીને App બંધ કરશો નહીં.</string>
     <string name="app_reset_required_action">રીસેટ કરો</string>
     <string name="app_reset_required_message">તમારી સાઇન-ઇન સ્થિતિ અને પ્રેફરન્સ હવે વાંચી શકાતી નથી, કદાચ OS અપગ્રેડ, બૅકઅપ રિસ્ટોર અથવા સ્ટોરેજ સમસ્યાને કારણે.\n\nજૂનો ડેટા ક્લિયર કરવા \"રીસેટ કરો\" ટૅપ કરો, પછી સાઇન ઇન કરો અને પ્રેફરન્સ ફરી ગોઠવો.</string>
     <string name="app_reset_required_title">રીસેટ જરૂરી</string>

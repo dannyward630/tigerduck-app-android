@@ -6,6 +6,7 @@ import android.content.ComponentName
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -17,6 +18,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
+import org.ntust.app.tigerduck.ui.AppProcessing
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
@@ -58,14 +60,21 @@ class MoodleWebPagesTest {
     }
 
     private var asked = mutableListOf<String>()
+    private val processing = AppProcessing()
 
-    private fun pages(answer: String? = signed) = SignedInMoodleWebPages(
-        signIn = {
-            asked += it
-            answer
-        },
+    private fun pages(answer: String? = signed) = pages { url, _ ->
+        asked += url
+        answer
+    }
+
+    private fun pages(
+        scope: kotlinx.coroutines.CoroutineScope = kotlinx.coroutines.CoroutineScope(UnconfinedTestDispatcher()),
+        signIn: suspend (String, (Boolean) -> Unit) -> String?,
+    ) = SignedInMoodleWebPages(
+        signIn = signIn,
         browserPreference = { "system" },
-        scope = kotlinx.coroutines.CoroutineScope(UnconfinedTestDispatcher()),
+        scope = scope,
+        processing = processing,
         main = Dispatchers.Unconfined,
     )
 
@@ -141,6 +150,87 @@ class MoodleWebPagesTest {
         assertFalse(MoodleAutologin.isSignInTarget("https://moodle2.ntust.edu.tw/login/index.php"))
         assertFalse(MoodleAutologin.isSignInTarget("https://moodle2.ntust.edu.tw/admin/tool/mobile/autologin.php?key=x"))
         assertFalse(MoodleAutologin.isSignInTarget("moodlemobile://https://moodle2.ntust.edu.tw?redirect=/course/view.php"))
+    }
+
+    // --- the app-wide spinner while an open waits on its sign-in ---
+
+    @Test
+    fun `the spinner is held while an open reports a wait, and let go before the page opens`() = runTest {
+        installBrowser()
+        val gate = CompletableDeferred<Unit>()
+        var heldWhileWaiting = -1
+        val scope = kotlinx.coroutines.CoroutineScope(UnconfinedTestDispatcher(testScheduler))
+
+        pages(scope) { _, waiting ->
+            waiting(true)
+            gate.await()
+            heldWhileWaiting = processing.holds.value
+            waiting(false)
+            signed
+        }.open(context, page, "system")
+        assertEquals(1, processing.holds.value)
+        assertTrue(started.isEmpty())
+
+        gate.complete(Unit)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(1, heldWhileWaiting)
+        assertEquals(0, processing.holds.value)
+        assertEquals(signed, started.single().dataString)
+    }
+
+    @Test
+    fun `an open that reports no wait never holds the spinner`() = runTest {
+        installBrowser()
+        var held = -1
+
+        pages { _, _ ->
+            held = processing.holds.value
+            signed
+        }.open(context, page, "system")
+
+        assertEquals(0, held)
+        assertEquals(0, processing.holds.value)
+    }
+
+    @Test
+    fun `the spinner is let go when the sign-in ends without saying so`() = runTest {
+        installBrowser()
+
+        pages { _, waiting ->
+            waiting(true)
+            null
+        }.open(context, page, "system")
+
+        assertEquals(0, processing.holds.value)
+        assertEquals(page, started.single().dataString)
+    }
+
+    @Test
+    fun `the spinner is let go when the sign-in fails or is cancelled`() = runTest {
+        installBrowser()
+        val failing = kotlinx.coroutines.CoroutineScope(
+            UnconfinedTestDispatcher(testScheduler) + kotlinx.coroutines.CoroutineExceptionHandler { _, _ -> },
+        )
+        pages(failing) { _, waiting ->
+            waiting(true)
+            throw IllegalStateException("boom")
+        }.open(context, page, "system")
+        assertEquals(0, processing.holds.value)
+
+        val gate = CompletableDeferred<Unit>()
+        val cancelled = kotlinx.coroutines.CoroutineScope(UnconfinedTestDispatcher(testScheduler) + kotlinx.coroutines.Job())
+        pages(cancelled) { _, waiting ->
+            waiting(true)
+            gate.await()
+            signed
+        }.open(context, page, "system")
+        assertEquals(1, processing.holds.value)
+
+        cancelled.coroutineContext[kotlinx.coroutines.Job]!!.cancel()
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(0, processing.holds.value)
     }
 
     // --- routing ---

@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">한 번 더 누르면 앱이 종료됩니다</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">현재 대만 시간대 밖에 있습니다. 이 앱은 자동으로 대만 시간을 사용합니다.\n날짜와 시간을 다시 한번 확인해 주세요. 즐거운 여행 되세요!</string>
+    <string name="app_processing_keep_open">처리 중…\n앱을 닫지 마세요.</string>
     <string name="app_reset_required_action">재설정</string>
     <string name="app_reset_required_message">로그인 상태와 환경 설정을 더 이상 읽을 수 없습니다. OS 업그레이드, 백업 복원 또는 저장소 문제 때문일 수 있습니다.\n\n\"재설정\"을 탭해 이전 데이터를 지운 다음 로그인하고 환경 설정을 다시 구성해 주세요.</string>
     <string name="app_reset_required_title">재설정 필요</string>

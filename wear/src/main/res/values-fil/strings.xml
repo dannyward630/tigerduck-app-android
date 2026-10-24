@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Pindutin ulit ang back para lumabas</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Kasalukuyan kang nasa labas ng Taiwan time zone. Awtomatikong gumagamit ang app ng Taiwan time.\nPakitingnan ang mga petsa at oras. Ingat po sa paglalakbay!</string>
+    <string name="app_processing_keep_open">Pinoproseso…\nHuwag isara ang app.</string>
     <string name="app_reset_required_action">I-reset</string>
     <string name="app_reset_required_message">Hindi na mabasa ang iyong sign-in state at mga kagustuhan, posibleng dahil sa pag-upgrade ng OS, pagpapanumbalik ng backup, o isyu sa storage.\n\nI-tap ang \"I-reset\" para burahin ang lumang data, pagkatapos ay mag-sign in muli at i-reconfigure ang iyong mga kagustuhan.</string>
     <string name="app_reset_required_title">Kailangan ng reset</string>

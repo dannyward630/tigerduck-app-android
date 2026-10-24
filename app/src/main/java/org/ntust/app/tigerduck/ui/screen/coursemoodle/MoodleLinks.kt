@@ -23,6 +23,7 @@ import org.ntust.app.tigerduck.mail.resolveAttachmentMimeType
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
 import org.ntust.app.tigerduck.network.moodle.SHARED_NOT_VIEWED_EXTENSIONS
 import org.ntust.app.tigerduck.network.moodle.MoodleWebservice
+import org.ntust.app.tigerduck.ui.AppProcessing
 import org.ntust.app.tigerduck.ui.openLink
 import org.ntust.app.tigerduck.util.fileProviderAuthority
 import org.ntust.app.tigerduck.util.logSummary
@@ -108,10 +109,12 @@ fun interface MoodleWebPages {
     companion object {
         fun of(context: Context): MoodleWebPages {
             val links = EntryPointAccessors.fromApplication(context.applicationContext, MoodleLinksEntryPoint::class.java)
+            val autologin = links.autologin()
             return SignedInMoodleWebPages(
-                signIn = links.autologin()::signedIn,
+                signIn = { url, waiting -> autologin.signedIn(url, waiting) },
                 browserPreference = { links.appPreferences().browserPreference },
                 scope = links.appScope(),
+                processing = links.appProcessing(),
             )
         }
     }
@@ -122,12 +125,14 @@ fun interface MoodleWebPages {
  * a plain link. A signed-in link carries a one-time key, so it goes only to the default browser,
  * named in the intent, or a Custom Tab of it, never to whatever app claims the link; with no
  * browser to name, no key is asked for at all. The key is asked for in [scope], the app's, so
- * leaving the screen meanwhile does not stop the page opening.
+ * leaving the screen meanwhile does not stop the page opening. While [signIn] says it waits on a
+ * sign-in, [processing] shows the app-wide spinner.
  */
 internal class SignedInMoodleWebPages(
-    private val signIn: suspend (String) -> String?,
+    private val signIn: suspend (url: String, waiting: (Boolean) -> Unit) -> String?,
     private val browserPreference: () -> String,
     private val scope: CoroutineScope,
+    private val processing: AppProcessing,
     private val main: CoroutineDispatcher = Dispatchers.Main.immediate,
 ) : MoodleWebPages {
     override fun open(context: Context, url: String, browserPreference: String?) {
@@ -138,7 +143,14 @@ internal class SignedInMoodleWebPages(
             return
         }
         scope.launch(main) {
-            val signedIn = signIn(url)
+            // The app-wide spinner, while the open waits on a sign-in the reader would otherwise
+            // wait on with nothing on screen; let go on every way out, before the page opens.
+            val hold = processing.newHold()
+            val signedIn = try {
+                signIn(url) { waiting -> if (waiting) hold.start() else hold.stop() }
+            } finally {
+                hold.stop()
+            }
             if (signedIn == null) {
                 openLink(context, url, preference)
             } else {
@@ -176,6 +188,7 @@ internal fun defaultBrowserPackage(packageManager: PackageManager): String? {
 internal interface MoodleLinksEntryPoint {
     fun autologin(): MoodleAutologin
     fun appPreferences(): AppPreferences
+    fun appProcessing(): AppProcessing
 
     @ApplicationScope
     fun appScope(): CoroutineScope

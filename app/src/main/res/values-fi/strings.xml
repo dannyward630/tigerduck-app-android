@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Paina takaisin uudelleen poistuaksesi</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Olet tällä hetkellä Taiwanin aikavyöhykkeen ulkopuolella. Sovellus käyttää automaattisesti Taiwanin aikaa.\nTarkista päivämäärät ja kellonajat. Hyvää matkaa!</string>
+    <string name="app_processing_keep_open">Käsitellään…\nÄlä sulje sovellusta.</string>
     <string name="app_reset_required_action">Nollaa</string>
     <string name="app_reset_required_message">Kirjautumistilasi ja asetuksiasi ei voida enää lukea, mahdollisesti käyttöjärjestelmäpäivityksen, varmuuskopiopalautuksen tai tallennusongelman vuoksi.\n\nNollaa vanhat tiedot napauttamalla \"Nollaa\", kirjaudu sitten sisään ja määritä asetukset uudelleen.</string>
     <string name="app_reset_required_title">Nollaus vaaditaan</string>

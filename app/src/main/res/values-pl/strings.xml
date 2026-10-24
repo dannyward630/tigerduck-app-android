@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Naciśnij Wstecz ponownie, aby wyjść</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Aktualnie znajdują się Państwo poza strefą czasową Tajwanu. Aplikacja używa automatycznie czasu tajwańskiego.\nProszę dwukrotnie sprawdzić daty i godziny. Bezpiecznej podróży!</string>
+    <string name="app_processing_keep_open">Przetwarzanie…\nProsimy nie zamykać aplikacji.</string>
     <string name="app_reset_required_action">Zresetuj</string>
     <string name="app_reset_required_message">Stan logowania oraz preferencje nie mogą zostać odczytane, prawdopodobnie z powodu aktualizacji systemu, przywrócenia kopii zapasowej lub problemu z pamięcią.\n\nStuknąć „Zresetuj”, aby usunąć stare dane, następnie zalogować się ponownie i skonfigurować preferencje.</string>
     <string name="app_reset_required_title">Wymagane zresetowanie</string>

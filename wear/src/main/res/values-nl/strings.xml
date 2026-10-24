@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Druk nogmaals op terug om af te sluiten</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Je bevindt je momenteel buiten de Taiwanese tijdzone. Deze app gebruikt automatisch de Taiwanese tijd.\nControleer datums en tijden goed. Goede reis!</string>
+    <string name="app_processing_keep_open">Bezig met verwerken…\nSluit de app niet.</string>
     <string name="app_reset_required_action">Resetten</string>
     <string name="app_reset_required_message">Je inlogstatus en voorkeuren kunnen niet meer worden gelezen, mogelijk door een OS-upgrade, het terugzetten van een back-up of een opslagprobleem.\n\nTik op \"Resetten\" om oude gegevens te wissen, log dan opnieuw in en stel je voorkeuren opnieuw in.</string>
     <string name="app_reset_required_title">Reset vereist</string>

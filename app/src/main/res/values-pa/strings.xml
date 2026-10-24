@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">ਬਾਹਰ ਜਾਣ ਲਈ ਦੁਬਾਰਾ ਵਾਪਸ ਦਬਾਓ</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">ਤੁਸੀਂ ਇਸ ਸਮੇਂ ਤਾਈਵਾਨ ਸਮੇਂ ਤੋਂ ਬਾਹਰ ਹੋ। ਇਹ ਐਪ ਆਪਣੇ ਆਪ ਤਾਈਵਾਨ ਸਮਾਂ ਵਰਤ ਰਿਹਾ ਹੈ।\nਕਿਰਪਾ ਕਰਕੇ ਮਿਤੀਆਂ ਅਤੇ ਸਮੇਂ ਦੁਬਾਰਾ ਜਾਂਚੋ। ਸੁਰੱਖਿਅਤ ਯਾਤਰਾ!</string>
+    <string name="app_processing_keep_open">ਪ੍ਰਕਿਰਿਆ ਜਾਰੀ ਹੈ…\nਕਿਰਪਾ ਕਰਕੇ ਐਪ ਬੰਦ ਨਾ ਕਰੋ।</string>
     <string name="app_reset_required_action">ਰੀਸੈੱਟ ਕਰੋ</string>
     <string name="app_reset_required_message">ਤੁਹਾਡੀ ਸਾਈਨ-ਇਨ ਸਥਿਤੀ ਅਤੇ ਤਰਜੀਹਾਂ ਹੁਣ ਪੜ੍ਹੀਆਂ ਨਹੀਂ ਜਾ ਸਕਦੀਆਂ, ਸੰਭਵ ਤੌਰ \'ਤੇ OS ਅੱਪਗ੍ਰੇਡ, ਬੈਕਅੱਪ ਰੀਸਟੋਰ ਜਾਂ ਸਟੋਰੇਜ ਸਮੱਸਿਆ ਕਾਰਨ।\n\n\"ਰੀਸੈੱਟ\" ਟੈਪ ਕਰੋ ਤਾਂ ਜੋ ਪੁਰਾਣਾ ਡੇਟਾ ਸਾਫ਼ ਕੀਤਾ ਜਾ ਸਕੇ, ਫਿਰ ਸਾਈਨ ਇਨ ਕਰੋ ਅਤੇ ਆਪਣੀਆਂ ਤਰਜੀਹਾਂ ਦੁਬਾਰਾ ਸੈੱਟ ਕਰੋ।</string>
     <string name="app_reset_required_title">ਰੀਸੈੱਟ ਲੋੜੀਂਦਾ ਹੈ</string>
