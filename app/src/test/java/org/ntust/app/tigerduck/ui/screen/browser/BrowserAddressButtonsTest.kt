@@ -82,6 +82,10 @@ class BrowserAddressButtonsTest {
     fun `Chinese at 150 percent`() = assertLabelsWhole()
 
     @Test
+    @Config(qualifiers = "+el")
+    fun `Greek, the longest labels, at the default size`() = assertLabelsWhole()
+
+    @Test
     fun `English at the default size`() = assertLabelsWhole()
 
     @Test
