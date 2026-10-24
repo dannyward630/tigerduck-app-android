@@ -271,6 +271,23 @@ class BrowserDownloadsTest {
     }
 
     @Test
+    fun `cookies of one name go longest path first, as a browser sends them`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
+                302,
+                "https://moodle2.ntust.edu.tw/files/b.pdf",
+                setCookies = listOf("sid=outer; Path=/", "sid=download; Path=/files"),
+            ),
+            "https://moodle2.ntust.edu.tw/files/b.pdf" to Hop(200, body = "PDF"),
+        )
+
+        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
+
+        assertEquals("MoodleSession=abc; sid=download; sid=outer", sent.last().second)
+    }
+
+    @Test
     fun `a download's cookies end with it`() = runTest(StandardTestDispatcher()) {
         val sent = mutableListOf<Pair<String, String?>>()
         val hops = mapOf(

@@ -180,7 +180,8 @@ internal class DownloadCookies(private val now: () -> Long = System::currentTime
         val replaced = mine.mapTo(HashSet()) { it.name }
         val fromBrowser = browser.orEmpty().split(';').map { it.trim() }
             .filter { it.isNotEmpty() && it.substringBefore('=').trim() !in replaced }
-        val live = mine.filter { it.expiresAt > now() }.map { "${it.name}=${it.value}" }
+        // Longest path first, as a browser sends them (RFC 6265, 5.4); a server often takes the first of a name.
+        val live = mine.filter { it.expiresAt > now() }.sortedByDescending { it.path.length }.map { "${it.name}=${it.value}" }
         return (fromBrowser + live).joinToString("; ").takeIf { it.isNotEmpty() }
     }
 }
