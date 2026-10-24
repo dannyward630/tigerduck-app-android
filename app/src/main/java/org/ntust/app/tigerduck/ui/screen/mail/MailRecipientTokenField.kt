@@ -184,12 +184,14 @@ internal fun MailRecipientTokenField(
     val labelHalfHeight = with(LocalDensity.current) { MaterialTheme.typography.bodySmall.lineHeight.toDp() / 2 }
     // Read with the field: without them it announced itself as empty however many it held.
     val finishedText = field.tokens.joinToString(", ") { it.text }
-    Column(modifier.fillMaxWidth()) {
+    // [modifier] stays on the text field itself, which is what a tag passed in has to find to type
+    // into; the suggestions sit below it.
+    Column(Modifier.fillMaxWidth()) {
         CompositionLocalProvider(LocalTextSelectionColors provides colors.textSelectionColors) {
             BasicTextField(
                 value = draft,
                 onValueChange = ::onDraftChange,
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxWidth()
                     // The label is read as part of the field, as OutlinedTextField's is. Each bubble is
                     // its own clickable, and so stays separately reachable.

@@ -125,6 +125,17 @@ class SchoolMailComposeViewModelTest {
     }
 
     @Test
+    fun `an address typed in full still suggests its contact, with the name the mail gave`() {
+        val teacher = MailAddress("王大明", "wang@example.com")
+        repo.correspondence = listOf(mailSummary(1, from = teacher))
+        val vm = vm(ComposeMode.NEW)
+
+        vm.updateRecipients(RecipientSlot.TO) { it.typed(emptyList(), "wang@example.com") }
+
+        assertEquals(listOf(teacher), vm.state.value.suggestions(RecipientSlot.TO))
+    }
+
+    @Test
     fun `the suggestions go with a sign-out`() {
         repo.correspondence = listOf(mailSummary(1, from = MailAddress("王大明", "wang@example.com")))
         val vm = vm(ComposeMode.NEW)

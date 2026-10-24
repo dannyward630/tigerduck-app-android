@@ -151,7 +151,11 @@ class SchoolMailComposeViewModel @Inject constructor(
         /** Anything changed since the screen opened — leaving asks to save a draft (spec §6.4). */
         val dirty: Boolean get() = fields != baseline
 
-        /** Who [slot]'s field suggests for what is being typed in it, leaving out anyone the mail is to already. */
+        /**
+         * Who [slot]'s field suggests for what is being typed in it, leaving out anyone a bubble
+         * of the mail already names. Not what is being typed: an address typed in full still
+         * suggests its contact, with the name the mail gave.
+         */
         fun suggestions(slot: RecipientSlot): List<MailAddress> {
             val field = when (slot) {
                 RecipientSlot.TO -> to
@@ -159,7 +163,9 @@ class SchoolMailComposeViewModel @Inject constructor(
                 RecipientSlot.BCC -> bcc
             }
             if (field.draft.isBlank()) return emptyList()
-            val taken = listOf(to, cc, bcc).flatMap { ComposeRules.parseRecipients(it.entries).addresses }.map { it.address }
+            val taken = listOf(to, cc, bcc)
+                .flatMap { f -> ComposeRules.parseRecipients(f.tokens.map { it.text }).addresses }
+                .map { it.address }
             return RecipientSuggestions.matching(contacts, field.draft, taken)
         }
     }
