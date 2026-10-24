@@ -441,6 +441,10 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         get() = prefs.getInt("accentGradientStartHex", AccentPolicy.NO_GRADIENT)
         set(value) = prefs.edit().putInt("accentGradientStartHex", value).apply()
 
+    /** The preferences the accent the watch is sent is read from. */
+    private fun watchAccent() =
+        listOf(accentColorHex, accentGradientStartHex, accentGradientEndHex, accentGradientDirection.code)
+
     /**
      * Stores a pick from the accent color page whole: the swatch [lightHex],
      * and the gradient from [gradientStartHex] to [gradientEndHex], or
@@ -1104,7 +1108,11 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
 
     /** Wipe every pref key. Used by the full-reset flow only. */
     fun clearAllPrefs() {
+        val accentBefore = watchAccent()
         prefs.edit().clear().apply()
+        // The watch hears of the accent only through accentColorChanged, and a
+        // reset while signed out publishes nothing else.
+        if (watchAccent() != accentBefore) _accentColorChanged.tryEmit(Unit)
         forgetLegacyLastCourseSyncAt()
         // `alwaysShowAllPeriods` and the class table's display switches are
         // read from in-memory mirrors rather than the file, so clearing the

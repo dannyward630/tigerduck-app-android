@@ -163,6 +163,35 @@ class WearAccentHexTest {
         listening.cancel()
     }
 
+    // A reset while signed out publishes nothing else, so the watch would
+    // keep the gradient the phone no longer draws.
+    @Test
+    fun `a full reset sends the watch Blue again`() = runTest {
+        AccentSetting(prefs).pickGradient(0xFF2D55, 0xFF9500)
+        val sent = mutableListOf<Pair<String, WearAccentGradient?>>()
+        val listening = launch(UnconfinedTestDispatcher(testScheduler)) {
+            prefs.accentColorChanged.collect { sent += wearAccentHex(prefs) to wearAccentGradient(prefs) }
+        }
+
+        prefs.clearAllPrefs()
+
+        assertEquals(listOf("#007AFF" to null), sent)
+        listening.cancel()
+    }
+
+    @Test
+    fun `a full reset with the accent untouched tells the watch nothing`() = runTest {
+        var heard = 0
+        val listening = launch(UnconfinedTestDispatcher(testScheduler)) {
+            prefs.accentColorChanged.collect { heard++ }
+        }
+
+        prefs.clearAllPrefs()
+
+        assertEquals(0, heard)
+        listening.cancel()
+    }
+
     @Test
     fun `with the wallpaper picked the watch is sent the gradient last picked`() {
         AccentSetting(prefs).apply {

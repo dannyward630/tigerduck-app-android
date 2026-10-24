@@ -18,7 +18,9 @@ class DataLayerListener : WearableListenerService() {
 
     // One callback's payloads at a time, as they came, so an older one's
     // write never lands over a newer one's.
-    private val inOrder = InArrivalOrder(scope)
+    private val inOrder = InArrivalOrder(scope) { e ->
+        Log.e(TAG, "failed to apply a payload: ${e.javaClass.simpleName}")
+    }
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         // Copy events out before the buffer is closed by the platform.
