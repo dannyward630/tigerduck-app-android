@@ -257,8 +257,11 @@ class MoodleTokenService internal constructor(
             remainingSteps = 6,
             arrived = { _, url -> url.takeIf(::isPastMoodleSignIn) },
         )
-        val (_, checked) = getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!)
-        if (!checked.host.equals(moodleBaseUrl.host, ignoreCase = true) || checked.encodedPath != SIGNED_IN_CHECK) {
+        val (editor, checked) = getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!)
+        if (!checked.host.equals(moodleBaseUrl.host, ignoreCase = true) ||
+            checked.encodedPath != SIGNED_IN_CHECK ||
+            !isSignedInEditor(editor)
+        ) {
             throw MoodleWebserviceError.MalformedResponse("Moodle's website did not keep the session")
         }
         jar.loadForRequest(moodleBaseUrl)
@@ -266,6 +269,17 @@ class MoodleTokenService internal constructor(
             .takeIf { cookies -> cookies.any { it.name.startsWith(MOODLE_SESSION_COOKIE) } }
             ?: throw MoodleWebserviceError.MalformedResponse("Moodle set no session cookie")
     }
+
+    /**
+     * Whether [html] is Moodle's profile editor as a signed-in student gets it: the page Moodle names
+     * `page-user-edit`, with its form back to the editor carrying the session key, and not marked
+     * signed out. Anything else at the editor's address (a challenge, a gateway's page) is not.
+     */
+    private fun isSignedInEditor(html: String): Boolean =
+        EDITOR_BODY.containsMatchIn(html) &&
+            EDITOR_FORM.containsMatchIn(html) &&
+            html.contains("name=\"sesskey\"") &&
+            !NOT_LOGGED_IN_BODY.containsMatchIn(html)
 
     /** A page on Moodle past its sign-in: not under `/login/`, nor its sign-in entries under `/auth/`. */
     private fun isPastMoodleSignIn(url: HttpUrl): Boolean {
@@ -588,5 +602,9 @@ class MoodleTokenService internal constructor(
         /** Moodle's session cookie, with the site's suffix if it sets one, and its remembered username. */
         const val MOODLE_SESSION_COOKIE = "MoodleSession"
         const val MOODLE_ID_COOKIE = "MOODLEID1_"
+
+        val EDITOR_BODY = Regex("""<body[^>]*\bid="page-user-edit"""", RegexOption.IGNORE_CASE)
+        val EDITOR_FORM = Regex("""<form[^>]*\baction="https://moodle2\.ntust\.edu\.tw/user/edit\.php"""", RegexOption.IGNORE_CASE)
+        val NOT_LOGGED_IN_BODY = Regex("""<body[^>]*\bclass="[^"]*\bnotloggedin\b""", RegexOption.IGNORE_CASE)
     }
 }

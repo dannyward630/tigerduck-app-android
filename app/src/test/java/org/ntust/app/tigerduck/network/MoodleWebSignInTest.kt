@@ -56,6 +56,12 @@ class MoodleWebSignInTest {
 
     private val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain.request()) }.build()
 
+    /** The time the latch and the pause read. */
+    private var clock = 1_800_000_000_000L
+
+    /** What Moodle's profile editor answers a signed-in request with. */
+    private var editorPage = EDITOR_PAGE
+
     private class Tokens : MoodleTokenPairStore {
         override var token: String? = "made-up-wstoken"
         override var privateToken: String? = null
@@ -77,7 +83,7 @@ class MoodleWebSignInTest {
     }
 
     private fun TestScope.service(): MoodleTokenService {
-        val latch = PersistedStoredPasswordLatch(latchPrefs, now = { 1_800_000_000_000L }) {
+        val latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) {
             val id = tokens.studentId
             val password = tokens.password
             if (id == null || password == null) null else id to password
@@ -87,8 +93,8 @@ class MoodleWebSignInTest {
             tokenStore = tokens,
             passwordLatch = latch,
             scope = backgroundScope,
-            now = { 1_800_000_000_000L },
             newCookieJar = { SignInCookieJar().also { jars += it } },
+            now = { clock },
         )
     }
 
@@ -165,6 +171,28 @@ class MoodleWebSignInTest {
         assertTrue(posts.isEmpty())
     }
 
+    @Test
+    fun `a refused password is not posted again for the website, whatever the app-wide wait allows`() = runTest(UnconfinedTestDispatcher()) {
+        ssoAnswer = { SSO_LOGIN_URL to LOGIN_PAGE_REFUSED }
+        val service = service()
+        expectFailure(MoodleWebserviceError.SsoLoginRejected::class.java) { service.signInToWebsite() }
+
+        // The app-wide count lets a first refusal be tried again after a short wait; the website does not.
+        clock += 60 * 60_000L
+        ssoAnswer = { BRIDGE_URL to BRIDGE_PAGE }
+        expectFailure(MoodleWebserviceError.SsoLoginRejected::class.java) { service.signInToWebsite() }
+
+        assertEquals(1, posts.size)
+    }
+
+    @Test
+    fun `a page at the editor's address that is not the editor is a failure, session cookie or not`() = runTest(UnconfinedTestDispatcher()) {
+        // A challenge the school's gateway serves in place of the page, say.
+        editorPage = "<html><body><h1>Checking your browser</h1></body></html>"
+
+        expectFailure(MoodleWebserviceError.MalformedResponse::class.java) { service().signInToWebsite() }
+    }
+
     private suspend fun expectFailure(type: Class<out Throwable>, block: suspend () -> Unit) {
         try {
             block()
@@ -196,7 +224,7 @@ class MoodleWebSignInTest {
             url.startsWith("$MOODLE/auth/oidc/") -> Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
             url == "$MOODLE/user/edit.php" -> {
                 val sent = jar.loadForRequest(request.url).any { it.name == "MoodleSession" }
-                if (sent && moodleHoldsSession) Triple(url, "<html><body>Edit profile</body></html>", emptyList())
+                if (sent && moodleHoldsSession) Triple(url, editorPage, emptyList())
                 else Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
             }
             else -> error("unexpected $url")
@@ -247,6 +275,15 @@ class MoodleWebSignInTest {
               <input type="hidden" name="code" value="made-up-code" />
               <input type="hidden" name="state" value="made-up-state" />
               <input type="hidden" name="iss" value="https://$SSO_HOST" />
+            </form>
+            </body></html>
+        """.trimIndent()
+
+        /** Moodle's profile editor as it opens signed in: its body, and its form with the session key. */
+        val EDITOR_PAGE = """
+            <html><body id="page-user-edit" class="format-site path-user loggedin">
+            <form autocomplete="off" action="$MOODLE/user/edit.php" method="post" accept-charset="utf-8">
+              <input name="sesskey" type="hidden" value="made-up-sesskey" />
             </form>
             </body></html>
         """.trimIndent()

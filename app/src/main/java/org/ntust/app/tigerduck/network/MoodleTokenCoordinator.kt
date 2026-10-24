@@ -93,7 +93,7 @@ internal class MoodleTokenCoordinator(
         now = now,
         scope = scope,
         pauseMs = pauseMs,
-        refusal = LatchedRefusal(passwordLatch),
+        refusal = KeptRefusal(LatchedRefusal(passwordLatch)),
     )
 
     /**
@@ -151,4 +151,26 @@ internal class LatchedRefusal(private val latch: StoredPasswordLatch) : StoredPa
     override fun isRefused(fingerprint: String): Boolean = latch.postMustWait()
     override fun markRefused(fingerprint: String) = Unit
     override fun clear() = latch.clear()
+}
+
+/**
+ * [refusal], and besides it the credentials SSO refused here, kept until they change or a sign-in
+ * by hand clears them. The app-wide count lets a first refusal be tried again after a short wait;
+ * a sign-in to Moodle's website, which only spares the student a sign-in screen, never posts a
+ * password SSO refused again.
+ */
+internal class KeptRefusal(private val refusal: StoredPasswordRefusal) : StoredPasswordRefusal {
+    @Volatile private var refused: String? = null
+
+    override fun isRefused(fingerprint: String): Boolean = refused == fingerprint || refusal.isRefused(fingerprint)
+
+    override fun markRefused(fingerprint: String) {
+        refused = fingerprint
+        refusal.markRefused(fingerprint)
+    }
+
+    override fun clear() {
+        refused = null
+        refusal.clear()
+    }
 }
