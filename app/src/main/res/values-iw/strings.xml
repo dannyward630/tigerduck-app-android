@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">צבעי הטפט</string>
     <string name="color_picker_apply">החל</string>
     <string name="color_picker_custom">מותאם אישית</string>
+    <string name="color_picker_hex_code">קוד צבע</string>
     <string name="color_picker_presets_note">צבעים מוגדרים מראש</string>
     <string name="color_picker_preview_fallback">קורס</string>
     <string name="color_picker_selected">צבע נבחר</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">סמסטר נוכחי: %1$s-%2$s</string>
     <string name="settings_about_others">אחר</string>
     <string name="settings_accent_color">צבע הדגש</string>
+    <string name="settings_accent_gradient_custom">מעבר צבע מותאם אישית</string>
+    <string name="settings_accent_gradient_direction">כיוון מעבר הצבע</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">מלמטה למעלה</string>
+    <string name="settings_accent_gradient_direction_left_to_right">משמאל לימין</string>
+    <string name="settings_accent_gradient_direction_right_to_left">מימין לשמאל</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">משמאל למעלה לימין למטה</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">מימין למעלה לשמאל למטה</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">מלמעלה למטה</string>
+    <string name="settings_accent_gradient_end">צבע סיום</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">צבע התחלה</string>
+    <string name="settings_accent_gradients">מעברי צבע</string>
+    <string name="settings_accent_wallpaper_description">משתנה יחד עם הטפט</string>
     <string name="settings_account_library_system">מערכת ספרייה</string>
     <string name="settings_account_ntust_system">מערכת אקדמית</string>
     <string name="settings_acknowledged">הבנתי</string>

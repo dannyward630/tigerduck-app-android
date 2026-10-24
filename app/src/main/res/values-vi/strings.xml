@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Màu hình nền</string>
     <string name="color_picker_apply">Áp dụng</string>
     <string name="color_picker_custom">Tùy chỉnh</string>
+    <string name="color_picker_hex_code">Mã màu</string>
     <string name="color_picker_presets_note">Màu có sẵn</string>
     <string name="color_picker_preview_fallback">Môn học</string>
     <string name="color_picker_selected">Màu đã chọn</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Học kỳ hiện tại: %1$s-%2$s</string>
     <string name="settings_about_others">Khác</string>
     <string name="settings_accent_color">Màu nhấn</string>
+    <string name="settings_accent_gradient_custom">Chuyển màu tùy chỉnh</string>
+    <string name="settings_accent_gradient_direction">Hướng chuyển màu</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Từ dưới lên trên</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Từ trái sang phải</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Từ phải sang trái</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Từ trên trái xuống dưới phải</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Từ trên phải xuống dưới trái</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Từ trên xuống dưới</string>
+    <string name="settings_accent_gradient_end">Màu kết thúc</string>
+    <string name="settings_accent_gradient_name">%1$@ sang %2$@</string>
+    <string name="settings_accent_gradient_start">Màu bắt đầu</string>
+    <string name="settings_accent_gradients">Chuyển màu</string>
+    <string name="settings_accent_wallpaper_description">Thay đổi theo hình nền</string>
     <string name="settings_account_library_system">Hệ thống thư viện</string>
     <string name="settings_account_ntust_system">Hệ thống học vụ</string>
     <string name="settings_acknowledged">Đã hiểu</string>

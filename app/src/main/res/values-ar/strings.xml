@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">ألوان الخلفية</string>
     <string name="color_picker_apply">تطبيق</string>
     <string name="color_picker_custom">مخصص</string>
+    <string name="color_picker_hex_code">رمز اللون</string>
     <string name="color_picker_presets_note">ألوان معدّة مسبقًا</string>
     <string name="color_picker_preview_fallback">المقرر</string>
     <string name="color_picker_selected">اللون المحدد</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">الفصل الحالي: %1$s-%2$s</string>
     <string name="settings_about_others">أخرى</string>
     <string name="settings_accent_color">اللون المميز</string>
+    <string name="settings_accent_gradient_custom">تدرج مخصص</string>
+    <string name="settings_accent_gradient_direction">اتجاه التدرج</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">من الأسفل إلى الأعلى</string>
+    <string name="settings_accent_gradient_direction_left_to_right">من اليسار إلى اليمين</string>
+    <string name="settings_accent_gradient_direction_right_to_left">من اليمين إلى اليسار</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">من أعلى اليسار إلى أسفل اليمين</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">من أعلى اليمين إلى أسفل اليسار</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">من الأعلى إلى الأسفل</string>
+    <string name="settings_accent_gradient_end">لون النهاية</string>
+    <string name="settings_accent_gradient_name">%1$@ إلى %2$@</string>
+    <string name="settings_accent_gradient_start">لون البداية</string>
+    <string name="settings_accent_gradients">التدرجات</string>
+    <string name="settings_accent_wallpaper_description">يتغير مع الخلفية</string>
     <string name="settings_account_library_system">نظام المكتبة</string>
     <string name="settings_account_ntust_system">النظام الأكاديمي</string>
     <string name="settings_acknowledged">حسنًا</string>

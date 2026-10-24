@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Barvy tapety</string>
     <string name="color_picker_apply">Použít</string>
     <string name="color_picker_custom">Vlastní</string>
+    <string name="color_picker_hex_code">Kód barvy</string>
     <string name="color_picker_presets_note">Přednastavené barvy</string>
     <string name="color_picker_preview_fallback">Kurz</string>
     <string name="color_picker_selected">Vybraná barva</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Aktuální semestr: %1$s-%2$s</string>
     <string name="settings_about_others">Ostatní</string>
     <string name="settings_accent_color">Akcentová barva</string>
+    <string name="settings_accent_gradient_custom">Vlastní přechod</string>
+    <string name="settings_accent_gradient_direction">Směr přechodu</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Zdola nahoru</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Zleva doprava</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Zprava doleva</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Zleva shora doprava dolů</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Zprava shora doleva dolů</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Shora dolů</string>
+    <string name="settings_accent_gradient_end">Koncová barva</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Počáteční barva</string>
+    <string name="settings_accent_gradients">Přechody</string>
+    <string name="settings_accent_wallpaper_description">Mění se podle tapety</string>
     <string name="settings_account_library_system">Systém knihovny</string>
     <string name="settings_account_ntust_system">Školní systém</string>
     <string name="settings_acknowledged">Rozumím</string>

@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">Colori dello sfondo</string>
     <string name="color_picker_apply">Applica</string>
     <string name="color_picker_custom">Personalizzato</string>
+    <string name="color_picker_hex_code">Codice colore</string>
     <string name="color_picker_presets_note">Colori predefiniti</string>
     <string name="color_picker_preview_fallback">Corso</string>
     <string name="color_picker_selected">Colore selezionato</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">Semestre attuale: %1$s-%2$s</string>
     <string name="settings_about_others">Altro</string>
     <string name="settings_accent_color">Colore di accento</string>
+    <string name="settings_accent_gradient_custom">Sfumatura personalizzata</string>
+    <string name="settings_accent_gradient_direction">Direzione della sfumatura</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">Dal basso verso l\'alto</string>
+    <string name="settings_accent_gradient_direction_left_to_right">Da sinistra a destra</string>
+    <string name="settings_accent_gradient_direction_right_to_left">Da destra a sinistra</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">Dall\'alto a sinistra al basso a destra</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">Dall\'alto a destra al basso a sinistra</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">Dall\'alto verso il basso</string>
+    <string name="settings_accent_gradient_end">Colore finale</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">Colore iniziale</string>
+    <string name="settings_accent_gradients">Sfumature</string>
+    <string name="settings_accent_wallpaper_description">Cambia con lo sfondo</string>
     <string name="settings_account_library_system">Sistema biblioteca</string>
     <string name="settings_account_ntust_system">Sistema accademico</string>
     <string name="settings_acknowledged">Ho capito</string>

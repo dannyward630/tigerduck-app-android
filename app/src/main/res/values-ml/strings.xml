@@ -275,6 +275,7 @@
     <string name="color_name_wallpaper">വാൾപേപ്പർ നിറങ്ങൾ</string>
     <string name="color_picker_apply">പ്രയോഗിക്കുക</string>
     <string name="color_picker_custom">ഇഷ്ടാനുസൃതം</string>
+    <string name="color_picker_hex_code">നിറ കോഡ്</string>
     <string name="color_picker_presets_note">മുൻനിശ്ചിത നിറങ്ങൾ</string>
     <string name="color_picker_preview_fallback">കോഴ്‌സ്</string>
     <string name="color_picker_selected">തിരഞ്ഞെടുത്ത നിറം</string>
@@ -936,6 +937,19 @@
     <string name="score_term_format">നിലവിലെ ടേം: %1$s-%2$s</string>
     <string name="settings_about_others">മറ്റുള്ളവ</string>
     <string name="settings_accent_color">ആക്‌സെന്റ് നിറം</string>
+    <string name="settings_accent_gradient_custom">ഇഷ്ടാനുസൃത ഗ്രേഡിയന്റ്</string>
+    <string name="settings_accent_gradient_direction">ഗ്രേഡിയന്റ് ദിശ</string>
+    <string name="settings_accent_gradient_direction_bottom_to_top">താഴെ നിന്ന് മുകളിലേക്ക്</string>
+    <string name="settings_accent_gradient_direction_left_to_right">ഇടത്തുനിന്ന് വലത്തേക്ക്</string>
+    <string name="settings_accent_gradient_direction_right_to_left">വലത്തുനിന്ന് ഇടത്തേക്ക്</string>
+    <string name="settings_accent_gradient_direction_top_left_to_bottom_right">മുകളിൽ ഇടത്തുനിന്ന് താഴെ വലത്തേക്ക്</string>
+    <string name="settings_accent_gradient_direction_top_right_to_bottom_left">മുകളിൽ വലത്തുനിന്ന് താഴെ ഇടത്തേക്ക്</string>
+    <string name="settings_accent_gradient_direction_top_to_bottom">മുകളിൽ നിന്ന് താഴേക്ക്</string>
+    <string name="settings_accent_gradient_end">അവസാന നിറം</string>
+    <string name="settings_accent_gradient_name">%1$@ – %2$@</string>
+    <string name="settings_accent_gradient_start">ആരംഭ നിറം</string>
+    <string name="settings_accent_gradients">ഗ്രേഡിയന്റുകൾ</string>
+    <string name="settings_accent_wallpaper_description">വാൾപേപ്പറിനൊപ്പം മാറുന്നു</string>
     <string name="settings_account_library_system">ഗ്രന്ഥശാല സിസ്റ്റം</string>
     <string name="settings_account_ntust_system">അക്കാദമിക് സിസ്റ്റം</string>
     <string name="settings_acknowledged">മനസ്സിലായി</string>
