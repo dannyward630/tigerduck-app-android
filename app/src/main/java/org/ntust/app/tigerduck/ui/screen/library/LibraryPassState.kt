@@ -69,6 +69,12 @@ internal class LibraryPassState<Image : Any>(
     val countdown: StateFlow<Int> = cycle.countdown
     val isLoading: StateFlow<Boolean> = cycle.isLoading
 
+    /** Whether the error banner offers Retry: the wait after a failed code request. */
+    val waitingToRetry: StateFlow<Boolean> = cycle.waitingToRetry
+
+    /** The banner's Retry; see [LibraryQRCycle.retryNow]. */
+    fun retryNow() = cycle.retryNow()
+
     /**
      * When the code on screen was fetched, for the dot's "Last synced" row: [fetchedAt] while a
      * code is up, 0 while none is -- before the first lands, after an expired one has gone, or

@@ -19,9 +19,10 @@ import org.ntust.app.tigerduck.shared.LibraryApi
  * A fetch that fails while the session is still valid (a server error, a
  * timeout, a short network drop) is tried again after 60, 120, then every 300
  * seconds, as on the iPhone, so a flapping server is not asked every 30
- * seconds and the page recovers on its own. An expired code is never left on
- * screen to be scanned: it goes as soon as a fetch fails. A failure with the
- * session gone hands back to [onSessionEnded].
+ * seconds and the page recovers on its own; the page's Retry asks sooner
+ * ([retryNow]). An expired code is never left on screen to be scanned: it
+ * goes as soon as a fetch fails. A failure with the session gone hands back
+ * to [onSessionEnded].
  *
  * Each code goes into [cache]. Coming back to the page while the last code
  * still has [LibraryQRCache.REUSE_THRESHOLD_SECONDS] left shows that code at
@@ -68,6 +69,11 @@ internal class LibraryQRCycle<Image : Any>(
      */
     val fetching: StateFlow<Boolean> = _fetching.asStateFlow()
 
+    private val _waitingToRetry = MutableStateFlow(false)
+
+    /** Whether the cycle waits to ask again after a failed request, which [retryNow] cuts short. */
+    val waitingToRetry: StateFlow<Boolean> = _waitingToRetry.asStateFlow()
+
     private var job: Job? = null
 
     /** Transient failures since the last code that landed; drives [retryDelaySeconds]. */
@@ -86,11 +92,25 @@ internal class LibraryQRCycle<Image : Any>(
     fun stop() {
         job?.cancel()
         job = null
+        // Not left to the cancelled wait, which may end only after a Retry has read it.
+        _waitingToRetry.value = false
     }
 
     fun restart() {
         stop()
         start()
+    }
+
+    /**
+     * Retry on the page's error banner: asks for a code at once during the wait after a failed
+     * request, as on the iPhone, and starts the backoff over, so one that fails too waits its
+     * first step again. Outside that wait it does nothing, so a request already out is never
+     * sent twice and a stopped cycle stays stopped.
+     */
+    fun retryNow() {
+        if (!_waitingToRetry.value) return
+        consecutiveErrors = 0
+        restart()
     }
 
     /** Stops, and takes the code off the screen: the account it belongs to has gone. */
@@ -187,8 +207,12 @@ internal class LibraryQRCycle<Image : Any>(
         }
     }
 
-    /** Waits [ms], taking a code still on screen off it the moment it runs out. */
+    /**
+     * Waits [ms], taking a code still on screen off it the moment it runs out. [stop] ends the
+     * wait's [waitingToRetry] when it cancels it.
+     */
     private suspend fun waitToRetry(ms: Long) {
+        _waitingToRetry.value = true
         val retryAt = now() + ms
         val issuedAt = shownIssuedAt
         if (issuedAt != null) {
@@ -199,6 +223,7 @@ internal class LibraryQRCycle<Image : Any>(
             }
         }
         delay((retryAt - now()).coerceAtLeast(0))
+        _waitingToRetry.value = false
     }
 
     private suspend fun countDown(seconds: Int) {
