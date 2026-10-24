@@ -3,7 +3,11 @@ package org.ntust.app.tigerduck.browser
 import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -199,14 +203,20 @@ class BrowserDataCleanerTest {
     ) = BrowserDataCleaner(storage, BrowserSettings(RuntimeEnvironment.getApplication()), downloads, cleanup, this)
 
     @Test
-    fun `the WebView's clearing takes Moodle's session cookie with it`() = runTest {
-        val context = RuntimeEnvironment.getApplication()
-        val cookies = android.webkit.CookieManager.getInstance()
-        cookies.setCookie("https://moodle2.ntust.edu.tw/", "MoodleSession=fakesession000; Path=/; Secure; HttpOnly")
-        assertTrue(cookies.getCookie("https://moodle2.ntust.edu.tw/my/").orEmpty().contains("MoodleSession"))
+    fun `the WebView's clearing takes Moodle's session cookie with it`() = runTest(UnconfinedTestDispatcher()) {
+        // The clearing hops to the main thread, which is this test's: run that hop here.
+        Dispatchers.setMain(UnconfinedTestDispatcher(testScheduler))
+        try {
+            val context = RuntimeEnvironment.getApplication()
+            val cookies = android.webkit.CookieManager.getInstance()
+            cookies.setCookie("https://moodle2.ntust.edu.tw/", "MoodleSession=fakesession000; Path=/; Secure; HttpOnly")
+            assertTrue(cookies.getCookie("https://moodle2.ntust.edu.tw/my/").orEmpty().contains("MoodleSession"))
 
-        AndroidWebViewStorage(context).clear()
+            AndroidWebViewStorage(context).clear()
 
-        assertFalse(cookies.getCookie("https://moodle2.ntust.edu.tw/my/").orEmpty().contains("MoodleSession"))
+            assertFalse(cookies.getCookie("https://moodle2.ntust.edu.tw/my/").orEmpty().contains("MoodleSession"))
+        } finally {
+            Dispatchers.resetMain()
+        }
     }
 }
