@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kolegiji</string>
     <string name="class_table_import_enter_link">Unesi poveznicu</string>
     <string name="class_table_import_failed">Raspored nije moguće uvesti</string>
+    <string name="class_table_import_flashlight">Svjetiljka</string>
     <string name="class_table_import_invalid_message">Kod za dijeljenje oštećen je ili izmijenjen.</string>
     <string name="class_table_import_link_placeholder">Poveznica za dijeljenje</string>
     <string name="class_table_import_lookup_failed">Nije moguće učitati pojedinosti o kolegijima</string>

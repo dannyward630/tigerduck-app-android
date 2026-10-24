@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Corsi</string>
     <string name="class_table_import_enter_link">Inserisci link</string>
     <string name="class_table_import_failed">Impossibile importare l\'orario</string>
+    <string name="class_table_import_flashlight">Torcia</string>
     <string name="class_table_import_invalid_message">Il codice di condivisione è danneggiato o è stato modificato.</string>
     <string name="class_table_import_link_placeholder">Link di condivisione</string>
     <string name="class_table_import_lookup_failed">Impossibile caricare i dettagli dei corsi</string>

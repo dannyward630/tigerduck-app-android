@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Курсеви</string>
     <string name="class_table_import_enter_link">Унеси везу</string>
     <string name="class_table_import_failed">Није могуће увести распоред</string>
+    <string name="class_table_import_flashlight">Батеријска лампа</string>
     <string name="class_table_import_invalid_message">Код за дељење је оштећен или измењен.</string>
     <string name="class_table_import_link_placeholder">Веза за дељење</string>
     <string name="class_table_import_lookup_failed">Није могуће учитати детаље курсева</string>

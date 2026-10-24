@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Jumlah mata kuliah</string>
     <string name="class_table_import_enter_link">Masukkan tautan</string>
     <string name="class_table_import_failed">Tidak dapat mengimpor jadwal kuliah</string>
+    <string name="class_table_import_flashlight">Senter</string>
     <string name="class_table_import_invalid_message">Kode berbagi rusak atau telah diubah.</string>
     <string name="class_table_import_link_placeholder">Tautan berbagi</string>
     <string name="class_table_import_lookup_failed">Tidak dapat memuat detail mata kuliah</string>

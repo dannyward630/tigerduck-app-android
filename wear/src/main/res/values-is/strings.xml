@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Námskeið</string>
     <string name="class_table_import_enter_link">Slá inn tengil</string>
     <string name="class_table_import_failed">Ekki tókst að flytja inn stundaskrána</string>
+    <string name="class_table_import_flashlight">Vasaljós</string>
     <string name="class_table_import_invalid_message">Deilikóðinn er skemmdur eða honum hefur verið breytt.</string>
     <string name="class_table_import_link_placeholder">Deilingartengill</string>
     <string name="class_table_import_lookup_failed">Ekki tókst að hlaða inn upplýsingum um námskeið</string>

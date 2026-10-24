@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">課程數</string>
     <string name="class_table_import_enter_link">輸入連結</string>
     <string name="class_table_import_failed">無法匯入課表</string>
+    <string name="class_table_import_flashlight">手電筒</string>
     <string name="class_table_import_invalid_message">分享碼已損毀或被修改。</string>
     <string name="class_table_import_link_placeholder">分享連結</string>
     <string name="class_table_import_lookup_failed">無法取得課程資料</string>

@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kurser</string>
     <string name="class_table_import_enter_link">Ange länk</string>
     <string name="class_table_import_failed">Det gick inte att importera schemat</string>
+    <string name="class_table_import_flashlight">Ficklampa</string>
     <string name="class_table_import_invalid_message">Delningskoden är skadad eller har ändrats.</string>
     <string name="class_table_import_link_placeholder">Delningslänk</string>
     <string name="class_table_import_lookup_failed">Det gick inte att läsa in kursinformationen</string>
