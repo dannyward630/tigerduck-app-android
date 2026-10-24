@@ -700,9 +700,9 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         get() = prefs.getBoolean("analyticsEnabled", false)
         set(value) = prefs.edit().putBoolean("analyticsEnabled", value).apply()
 
-    // Default off, as on the iPhone: the app offers it once a library account
-    // is signed in (FlipToLibraryPrompt). Until 2.5 it defaulted on, which
-    // FlipToLibraryDefaultOffMigration handles for an upgrade.
+    // Default off, as on the iPhone: with a library account signed in, the
+    // first flip offers it (FlipToLibraryPrompt). Until 2.5 it defaulted on,
+    // which FlipToLibraryDefaultOffMigration handles for an upgrade.
     var flipToLibraryEnabled: Boolean
         get() = prefs.getBoolean(FLIP_TO_LIBRARY, false)
         set(value) = prefs.edit().putBoolean(FLIP_TO_LIBRARY, value).apply()

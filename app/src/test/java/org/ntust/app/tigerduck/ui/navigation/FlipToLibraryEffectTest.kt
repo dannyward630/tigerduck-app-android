@@ -10,6 +10,9 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.os.Looper
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -18,7 +21,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -45,6 +50,9 @@ class FlipToLibraryEffectTest {
     private var nowNanos = 0L
     private var haptics = 0
 
+    /** Each question asked, with what its Turn on does: open Library for that flip. */
+    private val offers = mutableListOf<() -> Unit>()
+
     @Before
     fun setUp() {
         sensor = SensorBuilder.newBuilder().setType(Sensor.TYPE_ROTATION_VECTOR).build()
@@ -53,16 +61,26 @@ class FlipToLibraryEffectTest {
 
     private fun sensorManager() = composeRule.activity.getSystemService(SensorManager::class.java)
 
-    /** The app as MainNavigation wires it: the effect first, then the NavHost it drives. */
-    private fun show(withGraph: Boolean = true) {
+    /**
+     * The app as MainNavigation wires it: the effect first, then the NavHost it drives. [enabled]
+     * is the switch, [offerUnanswered] whether the question that offers it is still to ask.
+     */
+    private fun show(
+        withGraph: Boolean = true,
+        enabled: Boolean = true,
+        signedIn: Boolean = true,
+        offerUnanswered: () -> Boolean = { false },
+    ) {
         composeRule.setContent {
             navController = rememberNavController()
             FlipToLibraryEffect(
                 navController = navController,
-                flipToLibraryEnabled = { true },
-                signedInToLibrary = { true },
-                stillSignedInToLibrary = { true },
+                flipToLibraryEnabled = { enabled },
+                signedInToLibrary = { signedIn },
+                stillSignedInToLibrary = { signedIn },
                 onNavigated = { haptics++ },
+                offerUnanswered = offerUnanswered,
+                onOffer = { openLibrary -> offers += openLibrary },
             )
             if (withGraph) {
                 NavHost(navController = navController, startDestination = "home") {
@@ -159,6 +177,95 @@ class FlipToLibraryEffectTest {
         focusWindow(true)
         flip()
         assertNull(navController.currentBackStackEntry)
+    }
+
+    @Test
+    fun `with the switch off, a flip asks whether to turn it on rather than opening Library`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(true)
+        flip()
+        assertEquals(1, offers.size)
+        assertEquals("home", route())
+        assertEquals(0, haptics)
+    }
+
+    @Test
+    fun `turning it on from the question opens Library for that flip`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(true)
+        flip()
+        composeRule.runOnUiThread { offers.single()() }
+        composeRule.waitForIdle()
+        assertEquals(Screen.Library.route, route())
+        assertEquals(1, haptics)
+    }
+
+    @Test
+    fun `nothing is asked before a flip`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(true)
+        assertTrue(offers.isEmpty())
+    }
+
+    @Test
+    fun `with the switch off and the question answered, nothing listens`() {
+        show(enabled = false, offerUnanswered = { false })
+        focusWindow(true)
+        assertTrue(shadowOf(sensorManager()).listeners.isEmpty())
+        flip()
+        assertTrue(offers.isEmpty())
+        assertEquals("home", route())
+    }
+
+    @Test
+    fun `an answer to the question stops the listening`() {
+        var unanswered by mutableStateOf(true)
+        show(enabled = false, offerUnanswered = { unanswered })
+        focusWindow(true)
+        assertFalse(shadowOf(sensorManager()).listeners.isEmpty())
+        composeRule.runOnUiThread { unanswered = false }
+        composeRule.waitForIdle()
+        assertTrue(shadowOf(sensorManager()).listeners.isEmpty())
+    }
+
+    @Test
+    fun `signed out of the library, a flip asks nothing`() {
+        show(enabled = false, signedIn = false, offerUnanswered = { true })
+        focusWindow(true)
+        flip()
+        assertTrue(offers.isEmpty())
+    }
+
+    @Test
+    fun `a flip over a dialog asks nothing, and the next one asks`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(false)
+        flip()
+        assertTrue(offers.isEmpty())
+
+        focusWindow(true)
+        flip()
+        assertEquals(1, offers.size)
+    }
+
+    @Test
+    fun `a flip on the Library page asks nothing`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(true)
+        composeRule.runOnUiThread { navController.navigate(Screen.Library.route) }
+        composeRule.waitForIdle()
+        flip()
+        assertTrue(offers.isEmpty())
+    }
+
+    @Test
+    fun `a flip on the mail composer asks nothing`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(true)
+        composeRule.runOnUiThread { navController.navigate(Screen.SchoolMailCompose.route(ComposeMode.NEW)) }
+        composeRule.waitForIdle()
+        flip()
+        assertTrue(offers.isEmpty())
     }
 
     private companion object {
