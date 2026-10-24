@@ -57,7 +57,7 @@ class FlipToLibraryEffectTest {
     /** Where the question's Turn on goes, the app-wide singleton in the app. */
     private val openRequest = FlipToLibraryOpenRequest()
 
-    /** Moved on to rebuild the page with a new NavController, as an activity recreation does. */
+    /** Moved on to rebuild the page with a new NavController, the part of an activity recreation the question outlives. */
     private var generation by mutableStateOf(0)
 
     /** The switch, which a Turn on stores on. */
@@ -115,8 +115,8 @@ class FlipToLibraryEffectTest {
         composeRule.waitForIdle()
     }
 
-    /** A theme, font or display size change: the activity and its NavController are made anew. */
-    private fun recreate() {
+    /** The page and its NavController made anew, as a theme, font or display size change does. */
+    private fun rebuildPage() {
         composeRule.runOnUiThread { generation++ }
         composeRule.waitForIdle()
     }
@@ -231,15 +231,16 @@ class FlipToLibraryEffectTest {
 
     /**
      * The question is the app's, not the page's: it stays up while a theme, font or display
-     * size change makes the activity anew under it, and its Turn on opens Library there.
+     * size change makes the activity anew under it, and its Turn on opens Library on the new
+     * page. The page is rebuilt here with a new NavController rather than a new activity.
      */
     @Test
-    fun `a Turn on after the activity is made anew opens Library on the new page`() {
+    fun `a Turn on after the page is rebuilt with a new NavController opens Library on the new one`() {
         show(enabled = false, offerUnanswered = { true })
         focusWindow(true)
         flip()
         val asked = navController
-        recreate()
+        rebuildPage()
         turnOn()
         assertEquals(Screen.Library.route, route())
         assertEquals(1, haptics)
