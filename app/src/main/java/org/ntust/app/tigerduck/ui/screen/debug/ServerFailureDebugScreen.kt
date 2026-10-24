@@ -158,6 +158,7 @@ private fun ServerFailureRow(
         ServerKind.MOODLE -> "Moodle"
         ServerKind.COURSE_SELECTION -> "Course Selection"
         ServerKind.BACKEND -> "TigerDuck Backend"
+        ServerKind.LIBRARY -> "Library"
     }
     val statusColor = when (currentStatus) {
         ServerStatus.UNKNOWN -> Color.Gray

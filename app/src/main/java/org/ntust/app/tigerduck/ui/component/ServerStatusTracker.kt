@@ -13,6 +13,13 @@ enum class ServerKind {
     MOODLE,
     COURSE_SELECTION,
     BACKEND,
+
+    /**
+     * The library's passport and code service. Only the server failure
+     * simulator uses it so far: no page's header lists it, so the sync dot
+     * never shows it.
+     */
+    LIBRARY,
 }
 
 enum class ServerStatus {
