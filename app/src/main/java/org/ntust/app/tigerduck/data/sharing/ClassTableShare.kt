@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.data.sharing
 
+import org.ntust.app.tigerduck.network.CourseService
 import org.ntust.app.tigerduck.shared.Course
 import java.time.Instant
 
@@ -75,7 +76,7 @@ class ClassTableShare(studentId: String, val terms: List<Term>) {
          */
         fun shareable(semester: String, courses: List<Course>, isHidden: (courseNo: String) -> Boolean): List<Course> {
             if (!ClassTableShareCode.isSemester(semester.uppercase())) return emptyList()
-            return courses.filter { !isHidden(it.courseNo) && ClassTableShareCode.isCourseNo(it.courseNo.uppercase()) }
+            return courses.filter { !isHidden(it.courseNo) && CourseService.isCourseNo(it.courseNo.uppercase()) }
         }
     }
 }

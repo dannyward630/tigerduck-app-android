@@ -263,7 +263,7 @@ class DemoFixtureTest {
             assertEquals(5, classmate.courses.size)
             // A share code names the classmate and carries each course, so the import is real.
             assertTrue(org.ntust.app.tigerduck.data.sharing.ClassTableShare.canName(classmate.studentId))
-            assertTrue(classmate.courses.all { it.courseNo.matches(Regex("3?[A-Z]{2}[A-Z0-9]{6,7}")) })
+            assertTrue(classmate.courses.all { org.ntust.app.tigerduck.network.CourseService.isCourseNo(it.courseNo) })
             assertTrue(classmate.studentId != root().get("studentId").asString.uppercase())
         }
         // Read back from the file rather than repeated here, so a new

@@ -252,7 +252,7 @@ class MoodleService @Inject constructor(
                 Assignment(
                     assignmentId = a.id.toString(),
                     courseNo = courseNoById[courseId] ?: "",
-                    courseName = parseCourseName(course?.fullname).decodeHtmlEntities(),
+                    courseName = courseName(course?.fullname).decodeHtmlEntities(),
                     title = a.name.decodeHtmlEntities(),
                     dueDate = Date(a.duedate * 1000),
                     isCompleted = submitted,
@@ -374,19 +374,6 @@ class MoodleService @Inject constructor(
         requestSubmissionStatus(client, submissionStatusUrl(token), assignId, userId)
 
     /**
-     * Moodle course fullname is typically "1142 PE139B022 課程名稱 / English".
-     * Strip the semester + course-number prefix to recover the Chinese name.
-     * Mirrors the iOS `courseName(from:)` helper.
-     */
-    private fun parseCourseName(fullname: String?): String {
-        if (fullname.isNullOrBlank()) return ""
-        val parts = fullname.split(" ")
-        val courseNoRegex = Regex("3?[A-Z]{2}[A-Z0-9]{6,7}")
-        val idx = parts.indexOfFirst { courseNoRegex.containsMatchIn(it) }
-        return if (idx >= 0 && idx + 1 < parts.size) parts[idx + 1] else fullname
-    }
-
-    /**
      * The order of the status answers the cached assignments take, a round's and the pages';
      * see [storeAssignments] and [AssignmentStatusWriter].
      */
@@ -407,6 +394,20 @@ class MoodleService @Inject constructor(
 
     companion object {
         private val decodeGson = Gson()
+
+        /**
+         * Moodle course fullname is typically "1142 PE139B022 課程名稱 / English".
+         * Strip the semester + course-number prefix to recover the Chinese name,
+         * the course number read by [CourseService.COURSE_NO], so a course taken
+         * at NTU or NTNU loses its `3N…` too. Mirrors the iOS `courseName(from:)`
+         * helper.
+         */
+        internal fun courseName(fullname: String?): String {
+            if (fullname.isNullOrBlank()) return ""
+            val parts = fullname.split(" ")
+            val idx = parts.indexOfFirst { CourseService.COURSE_NO.containsMatchIn(it) }
+            return if (idx >= 0 && idx + 1 < parts.size) parts[idx + 1] else fullname
+        }
 
         /** The write behind [MoodleService.storeAssignments], on the given cache and ledger. */
         internal suspend fun storeAssignments(

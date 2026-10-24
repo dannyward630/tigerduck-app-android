@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.data.sharing
 
+import org.ntust.app.tigerduck.network.CourseService
 import java.time.Instant
 
 /**
@@ -82,7 +83,7 @@ data class ClassTableShareCode(
             val semesters = mutableSetOf<String>()
             val kept = terms.mapNotNull { term ->
                 val semester = term.semester.uppercase()
-                val courseNos = term.courseNos.map { it.uppercase() }.filter(::isCourseNo).toSortedSet().toList()
+                val courseNos = term.courseNos.map { it.uppercase() }.filter(CourseService::isCourseNo).toSortedSet().toList()
                 if (!isSemester(semester) || courseNos.isEmpty() || !semesters.add(semester)) null
                 else Term(semester, courseNos)
             }
@@ -92,14 +93,7 @@ data class ClassTableShareCode(
 
         // --- Shared rules ---
 
-        private val COURSE_NO = Regex("(3[A-Z]{2}|[A-Z]{2}|3[A-Z])[A-Z0-9]{6,7}")
-
-        /**
-         * NTUST's course-number shape, as the packed layout holds it: a head of `3` and two letters,
-         * two letters, or `3` and one letter (courses taken at NTU and NTNU, such as `3N1004701`),
-         * then six or seven letters or digits.
-         */
-        internal fun isCourseNo(text: String): Boolean = COURSE_NO.matches(text)
+        // A course code's shape is the app's one rule, CourseService.isCourseNo.
 
         /** The ROC year and the term: `1151`, `1142`, `114H`. */
         internal fun isSemester(text: String): Boolean =
@@ -113,7 +107,7 @@ data class ClassTableShareCode(
             if (items.any { it.isEmpty() } || items.toSet().size != items.size) {
                 throw ClassTableShareCodeError.Malformed()
             }
-            items.firstOrNull { !isCourseNo(it) }?.let { throw ClassTableShareCodeError.InvalidCourseCode(it) }
+            items.firstOrNull { !CourseService.isCourseNo(it) }?.let { throw ClassTableShareCodeError.InvalidCourseCode(it) }
             return items
         }
 
