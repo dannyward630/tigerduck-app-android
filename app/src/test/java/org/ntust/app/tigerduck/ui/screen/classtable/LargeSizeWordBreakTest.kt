@@ -66,6 +66,8 @@ class LargeSizeWordBreakTest {
         assertBreaksBetweenWords(text("Time"))
         assertBreaksBetweenWords(text("TR-313"))
         assertBreaksBetweenWords(text("09:10 - 12:00"))
+        // Room, not hyphens: the cards go one under the other.
+        assertTrue("the cards are still side by side", bounds("Time").top > bounds("Classroom").bottom)
     }
 
     @Test
@@ -94,6 +96,11 @@ class LargeSizeWordBreakTest {
         showRenameRow(defaultName = "Operating Systems", fontScale = LargestTextScale)
 
         assertBreaksBetweenWords(text("Default: Operating Systems"))
+        // Room, not hyphens: the button goes under the name.
+        assertTrue(
+            "the button is still beside the name",
+            bounds("Revert to default").top >= bounds("Default: Operating Systems").bottom,
+        )
     }
 
     @Test
@@ -177,10 +184,13 @@ class LargeSizeWordBreakTest {
         return results.single()
     }
 
-    /** Every line but the last ends between words, unless the text is set to hyphenate. */
+    /**
+     * Every line but the last ends between words, without hyphens: at these sizes every one of
+     * these words has room for itself.
+     */
     private fun assertBreaksBetweenWords(layout: TextLayoutResult) {
         val text = layout.layoutInput.text.text
-        if (layout.layoutInput.style.hyphens == Hyphens.Auto) return
+        assertNotEquals("\"$text\" is hyphenated", Hyphens.Auto, layout.layoutInput.style.hyphens)
         val breaks = BreakIterator.getLineInstance(java.util.Locale.ENGLISH).apply { setText(text) }
         (0 until layout.lineCount - 1).forEach { line ->
             val end = layout.getLineEnd(line)
