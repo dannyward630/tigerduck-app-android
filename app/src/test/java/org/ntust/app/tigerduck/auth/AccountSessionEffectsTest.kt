@@ -52,6 +52,7 @@ class AccountSessionEffectsTest {
     private val scope = CoroutineScope(UnconfinedTestDispatcher())
     private val signedIn = MutableStateFlow(false)
     private val liveUpdates = mutableListOf<String>()
+    private val browserClears = mutableListOf<Boolean>()
 
     @Before
     fun setUp() {
@@ -75,6 +76,7 @@ class AccountSessionEffectsTest {
             assignmentReminders = assignmentReminders,
             refreshLiveUpdates = { liveUpdates += "refresh" },
             stopLiveUpdates = { liveUpdates += "stop" },
+            clearBrowser = { browserClears += signedIn.value },
         ).also { it.start(scope) }
     }
 
@@ -108,6 +110,18 @@ class AccountSessionEffectsTest {
         effects(startSignedIn = true)
 
         assertEquals(emptyList<WorkInfo.State>(), backgroundSync())
+    }
+
+    @Test
+    fun `a sign-out and a sign-in each clear the in-app browser`() {
+        effects(startSignedIn = true)
+        assertEquals(emptyList<Boolean>(), browserClears)
+
+        signedIn.value = false
+        signedIn.value = true
+
+        // Cleared once signed out, and again at the next student's sign-in.
+        assertEquals(listOf(false, true), browserClears)
     }
 
     @Test

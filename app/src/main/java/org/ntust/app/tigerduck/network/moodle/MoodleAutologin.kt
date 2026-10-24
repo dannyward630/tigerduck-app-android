@@ -114,10 +114,17 @@ class MoodleAutologin internal constructor(
     private fun isStillSignedIn(generation: Int): Boolean = signInGeneration() == generation && hasPrivateToken()
 
     /** A last key stamped ahead of the clock, left by a clock set back, counts as old. */
-    private fun isKeyDue(): Boolean {
-        val last = lastKeyAtMs ?: return true
+    private fun isKeyDue(): Boolean = msUntilKeyDue() == 0L
+
+    /**
+     * How long until Moodle gives this account a key again, as far as this app knows, or 0 when
+     * one may be asked for now. Keys the Moodle app asked for are not counted, so a key due here
+     * can still be refused.
+     */
+    fun msUntilKeyDue(): Long = synchronized(lock) {
+        val last = lastKeyAtMs ?: return@synchronized 0L
         val age = now() - last
-        return age >= KEY_INTERVAL_MS || age < 0
+        if (age < 0) 0L else (KEY_INTERVAL_MS - age).coerceAtLeast(0L)
     }
 
     companion object {

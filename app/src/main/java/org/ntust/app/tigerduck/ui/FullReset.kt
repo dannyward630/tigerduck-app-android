@@ -25,6 +25,8 @@ internal class FullReset(
     private val credentials: CredentialManager,
     private val prefs: AppPreferences,
     private val publishLibraryCredentialsToWatch: suspend () -> Unit,
+    /** The TigerDuck browser's cookies, storage and lists; see [org.ntust.app.tigerduck.browser.BrowserDataCleaner]. */
+    private val clearBrowser: suspend () -> Unit,
 ) {
     /** Signs out, then wipes the stores in [scope] and runs [onWiped]. */
     fun start(scope: CoroutineScope, onWiped: () -> Unit): Job {
@@ -38,6 +40,7 @@ internal class FullReset(
 
     private suspend fun wipeStores() {
         runCatching { clearCaches() }
+        runCatching { clearBrowser() }
         credentials.clearAll()
         // Then the watch, so a library account of another student, which the
         // school sign-out before keeps, does not stay on it.

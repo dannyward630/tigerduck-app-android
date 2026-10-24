@@ -5,6 +5,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import org.ntust.app.tigerduck.browser.BrowserDataCleaner
 import org.ntust.app.tigerduck.liveactivity.LiveActivityManager
 import org.ntust.app.tigerduck.notification.AccountNotifications
 import org.ntust.app.tigerduck.notification.AssignmentNotificationScheduler
@@ -29,6 +30,8 @@ class AccountSessionEffects internal constructor(
     private val assignmentReminders: AssignmentNotificationScheduler,
     private val refreshLiveUpdates: () -> Unit,
     private val stopLiveUpdates: () -> Unit,
+    /** Clears the TigerDuck browser: the account it was signed in to is not the one now. */
+    private val clearBrowser: suspend () -> Unit,
 ) {
     @Inject
     constructor(
@@ -36,12 +39,14 @@ class AccountSessionEffects internal constructor(
         authService: AuthService,
         assignmentReminders: AssignmentNotificationScheduler,
         liveActivityManager: LiveActivityManager,
+        browserData: BrowserDataCleaner,
     ) : this(
         context = context,
         authState = authService.authState,
         assignmentReminders = assignmentReminders,
         refreshLiveUpdates = { liveActivityManager.refresh() },
         stopLiveUpdates = liveActivityManager::stop,
+        clearBrowser = browserData::clear,
     )
 
     /** Follows the sign-in state on [scope] for the life of the process. */
@@ -57,16 +62,21 @@ class AccountSessionEffects internal constructor(
         }
     }
 
-    private fun onSignedIn() {
+    private suspend fun onSignedIn() {
         BackgroundSyncWorker.schedule(context)
         refreshLiveUpdates()
+        // A student switch goes through a sign-out, which cleared it already; the demo account's
+        // sign-in may not, and a page left from before either must not show signed in to it.
+        clearBrowser()
     }
 
-    private fun onSignedOut() {
+    private suspend fun onSignedOut() {
         BackgroundSyncWorker.cancel(context)
         stopLiveUpdates()
         assignmentReminders.cancelAllTracked()
         // What the departing student was shown stays in the shade otherwise.
         AccountNotifications.cancelAll(context)
+        // Moodle's session cookie, the pages and downloads list are the departing student's.
+        clearBrowser()
     }
 }
