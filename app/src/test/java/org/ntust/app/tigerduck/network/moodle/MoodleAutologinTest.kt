@@ -317,6 +317,132 @@ class MoodleAutologinTest {
         assertEquals(page, departing.await())
     }
 
+    // --- what an open reports while it waits on the fetch ---
+
+    private val waits = mutableListOf<Boolean>()
+
+    private fun record(waiting: Boolean) {
+        waits += waiting
+    }
+
+    @Test
+    fun `an open that fetches the private token reports a wait from the fetch until its key comes`() = runTest {
+        privateToken = null
+        val keyGate = CompletableDeferred<Unit>()
+        answer = {
+            keyGate.await()
+            key
+        }
+        val autologin = autologin()
+        val open = backgroundScope.async { autologin.signedIn(page, ::record) }
+        runCurrent()
+
+        // The private token is in and the key is on its way: still waiting.
+        assertEquals(1, fetches)
+        assertEquals(listOf(true), waits)
+        keyGate.complete(Unit)
+
+        assertTrue(open.await()!!.contains("key=onetime"))
+        assertEquals(listOf(true, false), waits)
+    }
+
+    @Test
+    fun `an open with its private token stored reports no wait`() = runTest {
+        autologin().signedIn(page, ::record)
+
+        assertEquals(1, requests)
+        assertEquals(emptyList<Boolean>(), waits)
+    }
+
+    @Test
+    fun `an open with no fetch to wait for reports no wait`() = runTest {
+        val autologin = autologin()
+        privateToken = null
+
+        // Off the Moodle site.
+        autologin.signedIn("https://example.com/a", ::record)
+        // Without a Moodle token to fetch for.
+        moodleToken = false
+        autologin.signedIn(page, ::record)
+        // After a pair that came without a private token, for the same sign-in.
+        moodleToken = true
+        fetch = { false }
+        waits.clear()
+        autologin.signedIn(page, ::record)
+        assertEquals(listOf(true, false), waits)
+        waits.clear()
+        autologin.signedIn(page, ::record)
+
+        assertEquals(emptyList<Boolean>(), waits)
+    }
+
+    @Test
+    fun `the wait ends when the fetch fails`() = runTest {
+        privateToken = null
+        fetch = { throw java.io.IOException("offline") }
+
+        assertNull(autologin().signedIn(page, ::record))
+        assertEquals(listOf(true, false), waits)
+    }
+
+    @Test
+    fun `the wait ends when the fetch is too slow`() = runTest {
+        privateToken = null
+        fetch = {
+            delay(MoodleAutologin.PRIVATE_TOKEN_WAIT_MS + 5_000L)
+            privateToken = "private"
+            true
+        }
+
+        assertNull(autologin().signedIn(page, ::record))
+        assertEquals(listOf(true, false), waits)
+    }
+
+    @Test
+    fun `the wait ends at a sign-out during the fetch`() = runTest {
+        privateToken = null
+        fetch = {
+            privateToken = "private"
+            generation++
+            true
+        }
+
+        assertNull(autologin().signedIn(page, ::record))
+        assertEquals(listOf(true, false), waits)
+    }
+
+    @Test
+    fun `the wait ends when the key that follows the fetch never comes`() = runTest {
+        privateToken = null
+        answer = {
+            delay(MoodleAutologin.KEY_WAIT_MS + 1_000L)
+            key
+        }
+
+        assertNull(autologin().signedIn(page, ::record))
+        assertEquals(listOf(true, false), waits)
+    }
+
+    @Test
+    fun `the wait ends when the open is cancelled`() = runTest {
+        privateToken = null
+        val gate = CompletableDeferred<Unit>()
+        fetch = {
+            gate.await()
+            privateToken = "private"
+            true
+        }
+        val autologin = autologin()
+        val open = backgroundScope.async { autologin.signedIn(page, ::record) }
+        runCurrent()
+        assertEquals(listOf(true), waits)
+
+        open.cancel()
+        runCurrent()
+
+        assertEquals(listOf(true, false), waits)
+    }
+
     // --- the request ---
 
     private var sentBody: String? = null
