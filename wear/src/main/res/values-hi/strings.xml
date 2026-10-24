@@ -990,6 +990,14 @@
     <string name="settings_classroom_mandarin_display_translated">अनुवाद दिखाएँ</string>
     <string name="settings_color_theme">रंग थीम</string>
     <string name="settings_delete_account">खाता हटाएँ</string>
+    <string name="settings_display_size_app_footer">फ़ोन के डिस्प्ले और फ़ॉन्ट आकार के ऊपर ऐप के आकार बदलता है।</string>
+    <string name="settings_display_size_app_section">ऐप में</string>
+    <string name="settings_display_size_preview_footer">स्लाइडर छोड़ते ही ऐप नए आकार में बदल जाता है।</string>
+    <string name="settings_display_size_text">टेक्स्ट का आकार</string>
+    <string name="settings_display_size_title">डिस्प्ले और टेक्स्ट का आकार</string>
+    <string name="settings_display_size_ui">डिस्प्ले का आकार</string>
+    <string name="settings_display_size_widget_footer">हर विजेट का आकार होम स्क्रीन तय करती है। ये आकार विजेट के अंदर दिखने वाली चीज़ों को बदलते हैं।</string>
+    <string name="settings_display_size_widget_section">विजेट</string>
     <string name="settings_feedback_bug_report">फीडबैक / समस्या रिपोर्ट करें</string>
     <string name="settings_flip_to_library_summary">लाइब्रेरी QR खोलने के लिए फ़ोन को स्क्रीन नीचे करके पलटें।</string>
     <string name="settings_flip_to_library_title">लाइब्रेरी QR दिखाने के लिए पलटें</string>

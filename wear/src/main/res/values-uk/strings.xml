@@ -990,6 +990,14 @@
     <string name="settings_classroom_mandarin_display_translated">Показати переклад</string>
     <string name="settings_color_theme">Кольорова тема</string>
     <string name="settings_delete_account">Видалення облікового запису</string>
+    <string name="settings_display_size_app_footer">Змінює розміри в застосунку додатково до масштабу екрана й розміру шрифту на телефоні.</string>
+    <string name="settings_display_size_app_section">У застосунку</string>
+    <string name="settings_display_size_preview_footer">Застосунок перейде на новий розмір, коли ви відпустите повзунок.</string>
+    <string name="settings_display_size_text">Розмір тексту</string>
+    <string name="settings_display_size_title">Розмір інтерфейсу й тексту</string>
+    <string name="settings_display_size_ui">Розмір інтерфейсу</string>
+    <string name="settings_display_size_widget_footer">Розмір кожного віджета визначає головний екран. Ці налаштування змінюють те, що показано всередині нього.</string>
+    <string name="settings_display_size_widget_section">Віджети</string>
     <string name="settings_feedback_bug_report">Відгук / Повідомити про проблему</string>
     <string name="settings_flip_to_library_summary">Переверніть телефон екраном донизу, щоб відкрити QR бібліотеки.</string>
     <string name="settings_flip_to_library_title">Перевернути для показу QR бібліотеки</string>

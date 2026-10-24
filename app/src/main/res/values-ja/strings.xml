@@ -990,6 +990,14 @@
     <string name="settings_classroom_mandarin_display_translated">訳語を表示</string>
     <string name="settings_color_theme">カラーテーマ</string>
     <string name="settings_delete_account">アカウント削除</string>
+    <string name="settings_display_size_app_footer">端末の表示サイズとフォントサイズを基準に、このアプリだけの大きさを変えます。</string>
+    <string name="settings_display_size_app_section">アプリ内</string>
+    <string name="settings_display_size_preview_footer">スライダーから指を離すと、アプリが新しいサイズに切り替わります。</string>
+    <string name="settings_display_size_text">文字サイズ</string>
+    <string name="settings_display_size_title">表示サイズと文字サイズ</string>
+    <string name="settings_display_size_ui">表示サイズ</string>
+    <string name="settings_display_size_widget_footer">ウィジェット自体の大きさはホーム画面で決まります。ここでは中に表示される内容の大きさを変えます。</string>
+    <string name="settings_display_size_widget_section">ウィジェット</string>
     <string name="settings_feedback_bug_report">フィードバック / 不具合報告</string>
     <string name="settings_flip_to_library_summary">スマホを画面下向きに裏返すと図書館 QR を開きます。</string>
     <string name="settings_flip_to_library_title">裏返して図書館 QR を表示</string>

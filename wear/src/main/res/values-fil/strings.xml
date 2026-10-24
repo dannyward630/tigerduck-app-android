@@ -990,6 +990,14 @@
     <string name="settings_classroom_mandarin_display_translated">Ipakita ang salin</string>
     <string name="settings_color_theme">Kulay na tema</string>
     <string name="settings_delete_account">Burahin ang Account</string>
+    <string name="settings_display_size_app_footer">Binabago ang laki ng app batay sa laki ng display at font ng iyong telepono.</string>
+    <string name="settings_display_size_app_section">Sa app</string>
+    <string name="settings_display_size_preview_footer">Lilipat ang app sa bagong laki kapag binitawan mo ang slider.</string>
+    <string name="settings_display_size_text">Laki ng text</string>
+    <string name="settings_display_size_title">Laki ng display at text</string>
+    <string name="settings_display_size_ui">Laki ng display</string>
+    <string name="settings_display_size_widget_footer">Ang home screen ang nagtatakda kung gaano kalaki ang bawat widget. Binabago ng mga laking ito ang nakikita sa loob nito.</string>
+    <string name="settings_display_size_widget_section">Mga widget</string>
     <string name="settings_feedback_bug_report">Feedback / Mag-ulat ng isyu</string>
     <string name="settings_flip_to_library_summary">I-flip ang telepono naka-mukha ang screen pababa para buksan ang library QR.</string>
     <string name="settings_flip_to_library_title">I-flip para ipakita ang library QR</string>

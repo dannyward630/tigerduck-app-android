@@ -990,6 +990,14 @@
     <string name="settings_classroom_mandarin_display_translated">Hiển thị bản dịch</string>
     <string name="settings_color_theme">Chủ đề màu</string>
     <string name="settings_delete_account">Xóa tài khoản</string>
+    <string name="settings_display_size_app_footer">Điều chỉnh kích thước của ứng dụng dựa trên kích thước hiển thị và cỡ chữ của điện thoại.</string>
+    <string name="settings_display_size_app_section">Trong ứng dụng</string>
+    <string name="settings_display_size_preview_footer">Ứng dụng chuyển sang kích thước mới khi bạn thả thanh trượt.</string>
+    <string name="settings_display_size_text">Cỡ chữ</string>
+    <string name="settings_display_size_title">Kích thước hiển thị và văn bản</string>
+    <string name="settings_display_size_ui">Kích thước hiển thị</string>
+    <string name="settings_display_size_widget_footer">Màn hình chính quyết định kích thước của từng widget. Các kích thước này thay đổi nội dung hiển thị bên trong.</string>
+    <string name="settings_display_size_widget_section">Widget</string>
     <string name="settings_feedback_bug_report">Phản hồi / Báo lỗi</string>
     <string name="settings_flip_to_library_summary">Lật điện thoại úp màn hình xuống để mở QR thư viện.</string>
     <string name="settings_flip_to_library_title">Lật để hiển thị QR thư viện</string>

@@ -990,6 +990,14 @@
     <string name="settings_classroom_mandarin_display_translated">Mostrar traducción</string>
     <string name="settings_color_theme">Tema de color</string>
     <string name="settings_delete_account">Eliminar cuenta</string>
+    <string name="settings_display_size_app_footer">Ajusta los tamaños de la app sobre el tamaño de pantalla y de fuente de tu teléfono.</string>
+    <string name="settings_display_size_app_section">En la app</string>
+    <string name="settings_display_size_preview_footer">La app cambia al nuevo tamaño al soltar el control deslizante.</string>
+    <string name="settings_display_size_text">Tamaño del texto</string>
+    <string name="settings_display_size_title">Tamaño de pantalla y texto</string>
+    <string name="settings_display_size_ui">Tamaño de pantalla</string>
+    <string name="settings_display_size_widget_footer">Tu pantalla de inicio decide el tamaño de cada widget. Estos tamaños cambian lo que se muestra dentro.</string>
+    <string name="settings_display_size_widget_section">Widgets</string>
     <string name="settings_feedback_bug_report">Comentarios / Reportar problema</string>
     <string name="settings_flip_to_library_summary">Voltea el teléfono boca abajo para abrir el QR de la biblioteca.</string>
     <string name="settings_flip_to_library_title">Voltear para mostrar el QR de la biblioteca</string>
