@@ -3,6 +3,9 @@ package org.ntust.app.tigerduck.network
 import android.util.Base64
 import android.util.Log
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
@@ -252,25 +255,6 @@ class MoodleTokenService internal constructor(
         walkWebsiteSignIn(studentId, password, posting, RunningCalls())
     }
 
-    /**
-     * Runs one of the website sign-in's calls, [call], apart from its caller, which stops waiting
-     * the moment it is cancelled (at the run's deadline, say) and lets its locks go then, the
-     * password post's among them: a blocking call does not stop for a cancelled coroutine, and one
-     * stuck where Call.cancel cannot reach (an address lookup) would hold them. Cancelled, every
-     * call of the run is cancelled at once, and any it would start after, and what an abandoned
-     * call answers is never read: no refusal counted, no password taken.
-     */
-    private suspend fun <T> apart(calls: RunningCalls, call: () -> T): T {
-        val running = CoroutineScope(Dispatchers.IO).async { call() }
-        return try {
-            running.await()
-        } catch (e: CancellationException) {
-            calls.cancelAll()
-            running.cancel()
-            throw e
-        }
-    }
-
     private suspend fun walkWebsiteSignIn(
         studentId: String,
         password: String,
@@ -285,7 +269,7 @@ class MoodleTokenService internal constructor(
             .build()
         val entry = moodleBaseUrl.resolve(WEBSITE_SIGN_IN_ENTRY)!!
         Log.i("MoodleTokenService", "website sign-in GET ${entry.redactForLog()}")
-        val (html, finalUrl) = apart(calls) { getPage(client, entry) }
+        val (html, finalUrl) = awaitApart(calls::cancelAll) { getPage(client, entry) }
         walkOidc(
             client = client,
             html = html,
@@ -295,9 +279,9 @@ class MoodleTokenService internal constructor(
             posting = posting,
             remainingSteps = 6,
             arrived = { _, url -> url.takeIf(::isPastMoodleSignIn) },
-            io = { call -> apart(calls, call) },
+            io = { call -> awaitApart(calls::cancelAll, call = call) },
         )
-        val (editor, checked) = apart(calls) { getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!) }
+        val (editor, checked) = awaitApart(calls::cancelAll) { getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!) }
         if (!checked.host.equals(moodleBaseUrl.host, ignoreCase = true) ||
             checked.encodedPath != SIGNED_IN_CHECK ||
             !isSignedInEditor(editor)
@@ -672,5 +656,30 @@ class MoodleTokenService internal constructor(
         val EDITOR_BODY = Regex("""<body[^>]*\bid="page-user-edit"""", RegexOption.IGNORE_CASE)
         val EDITOR_FORM = Regex("""<form[^>]*\baction="https://moodle2\.ntust\.edu\.tw/user/edit\.php"""", RegexOption.IGNORE_CASE)
         val NOT_LOGGED_IN_BODY = Regex("""<body[^>]*\bclass="[^"]*\bnotloggedin\b""", RegexOption.IGNORE_CASE)
+    }
+}
+
+/**
+ * Runs [call], a blocking one, apart from its caller on [dispatcher], and hands its answer over
+ * only while the caller is still there for it. Cancelled (at a deadline, say), the caller stops
+ * waiting at once and lets its locks go then, a password post's among them: a blocking call does
+ * not stop for a cancelled coroutine, and one stuck where Call.cancel cannot reach (an address
+ * lookup) would hold them. Then [onCancel] cancels what the call is doing, and its answer is
+ * never read, even one that came in just as the caller was cancelled: no refusal counted, no
+ * password taken.
+ */
+internal suspend fun <T> awaitApart(
+    onCancel: () -> Unit,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    call: () -> T,
+): T {
+    currentCoroutineContext().ensureActive()
+    val running = CoroutineScope(dispatcher).async { call() }
+    return try {
+        running.await().also { currentCoroutineContext().ensureActive() }
+    } catch (e: CancellationException) {
+        onCancel()
+        running.cancel()
+        throw e
     }
 }
