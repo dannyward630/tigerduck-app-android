@@ -40,7 +40,7 @@ class PinMismatchRetryTest {
 
     @Test
     fun `a call the resolver clears is tried again and goes through`() {
-        val result = call { mismatch ->
+        val result = call { mismatch, _ ->
             asked.incrementAndGet()
             // As a newer document or a Continue would.
             state.update { it.with(acceptances = listOf(PinAcceptance(mismatch.setId, mismatch.acceptableSpkis, 30, 1))) }
@@ -54,7 +54,7 @@ class PinMismatchRetryTest {
     @Test
     fun `a call the resolver doesn't clear fails on its mismatch, untried again`() {
         try {
-            call { asked.incrementAndGet(); false }
+            call { _, _ -> asked.incrementAndGet(); false }
             fail("the call went through")
         } catch (e: IOException) {
             assertNotNull(e.pinMismatch())
@@ -67,7 +67,7 @@ class PinMismatchRetryTest {
     fun `a retry that fails again isn't tried a third time`() {
         val seen = AtomicReference<PinMismatch>()
         try {
-            call { seen.set(it); asked.incrementAndGet(); true }
+            call { mismatch, _ -> seen.set(mismatch); asked.incrementAndGet(); true }
             fail("the call went through")
         } catch (e: IOException) {
             assertNotNull(e.pinMismatch())

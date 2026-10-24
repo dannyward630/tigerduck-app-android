@@ -51,7 +51,12 @@ object MailProperties {
             MailTransportSecurity.NONE -> Unit
         }
         // Angus makes both an implicit TLS connection and a STARTTLS upgrade with this one.
-        if (tls != null && endpoint.security != MailTransportSecurity.NONE) put("$p.ssl.socketFactory", tls)
+        if (tls != null && endpoint.security != MailTransportSecurity.NONE) {
+            put("$p.ssl.socketFactory", tls)
+            // Otherwise Angus retries a connection the factory refused, a pin mismatch's
+            // included, with the platform's default factory, which has no pins.
+            put("$p.socketFactory.fallback", "false")
+        }
     }
 
     fun imap(config: MailServerConfig, tls: SSLSocketFactory? = null): Properties {

@@ -177,6 +177,24 @@ class PinnedTrustManagerTest {
         assertEquals("ok", client(policy(elsewhere)).get(server))
     }
 
+    @Test
+    fun `a pinned host reached over another host's connection must meet its own pins`() {
+        val school = PinSet("school", listOf(PinDomain("school.test", true)), setOf(pinnedCa.certificate.spki), now.plusSeconds(3600))
+        val trust = PinnedTrustManager(systemTrust, AnchoringValidator(systemTrust), { policy(school) }, {}, { now })
+        val served = listOf(leaf.certificate, intermediate.certificate, root.certificate)
+
+        // A connection made for an unpinned host, its chain not the school's.
+        val refused = runCatching { trust.checkReused("moodle.school.test", "elsewhere.test", served) }.exceptionOrNull()
+        assertTrue("not refused: $refused", refused is javax.net.ssl.SSLPeerUnverifiedException)
+
+        // Its chain meets the school's pins, or it was made for a host of the same set.
+        trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leaf.certificate, pinnedCa.certificate))
+        trust.checkReused("moodle.school.test", "sso.school.test", served)
+        // The host itself, or an unpinned one.
+        trust.checkReused("moodle.school.test", "moodle.school.test", served)
+        trust.checkReused("other.test", "elsewhere.test", served)
+    }
+
     private companion object {
         const val HOST = "localhost"
 

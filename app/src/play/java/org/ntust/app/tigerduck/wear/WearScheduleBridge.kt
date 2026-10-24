@@ -50,9 +50,15 @@ class WearScheduleBridge @Inject constructor(
         "wear_bridge_state", Context.MODE_PRIVATE
     )
 
+    /**
+     * The TLS pins push's version: the wall clock, or one past the last when the clock is behind
+     * it. A clock-based start keeps a reinstalled phone, whose counter would begin again at 1,
+     * ahead of what the watch last took, so its pushes, empty acceptances included, aren't
+     * refused.
+     */
     @Synchronized
     private fun nextTlsPinsEpoch(): Long {
-        val next = bridgePrefs.getLong(KEY_TLS_PINS_EPOCH, 0L) + 1
+        val next = tlsPinsVersion(bridgePrefs.getLong(KEY_TLS_PINS_EPOCH, 0L), System.currentTimeMillis())
         bridgePrefs.edit().putLong(KEY_TLS_PINS_EPOCH, next).apply()
         return next
     }
@@ -233,6 +239,9 @@ class WearScheduleBridge @Inject constructor(
         const val KEY_TLS_PINS_EPOCH = "tlsPinsEpoch"
     }
 }
+
+/** The TLS pins push after [last]: the wall clock [now], or one past [last] when the clock is behind. */
+internal fun tlsPinsVersion(last: Long, now: Long): Long = maxOf(last + 1, now)
 
 /**
  * The accent the watch is sent, as `#RRGGBB`: the swatch last picked, or the

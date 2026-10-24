@@ -4,12 +4,14 @@ import android.net.http.X509TrustManagerExtensions
 import java.net.Socket
 import java.security.KeyStore
 import java.security.MessageDigest
+import java.security.cert.Certificate
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import java.time.Instant
 import java.util.Base64
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
+import javax.net.ssl.SSLPeerUnverifiedException
 import javax.net.ssl.SSLSocket
 import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManagerFactory
@@ -104,6 +106,24 @@ class PinnedTrustManager(
 
     override fun getAcceptedIssuers(): Array<X509Certificate> = platform.acceptedIssuers
 
+    /**
+     * For a request to [host] carried over a connection made for [connectedTo], as OkHttp's
+     * HTTP/2 coalescing does without asking this manager again: the connection's
+     * [peerCertificates] must meet [host]'s own pins when its set isn't [connectedTo]'s.
+     * Throws before the request is written.
+     */
+    fun checkReused(host: String, connectedTo: String, peerCertificates: List<Certificate>) {
+        if (host.equals(connectedTo, ignoreCase = true)) return
+        val rules = policy()
+        val at = now()
+        val set = rules.setFor(host, at) ?: return
+        if (rules.setFor(connectedTo, at)?.id == set.id) return
+        val spkis = peerCertificates.filterIsInstance<X509Certificate>().map { it.spki }.toSet()
+        if (rules.decide(set, spkis, at) != PinDecision.Allowed) {
+            throw SSLPeerUnverifiedException("pins for $host not met on a connection made for $connectedTo")
+        }
+    }
+
     private fun check(chain: Array<X509Certificate>, authType: String, host: String?, unpinned: () -> Unit) {
         val rules = policy()
         val at = now()
@@ -130,13 +150,14 @@ class PinnedTrustManager(
  * may wait for a newer pin document or, in the foreground, the student's answer (A4, A6).
  */
 fun interface PinMismatchResolver {
-    fun mayRetry(mismatch: PinMismatch): Boolean
+    /** Whether to try once more; [isCanceled] says the call was given up, by its timeout or its caller. */
+    fun mayRetry(mismatch: PinMismatch, isCanceled: () -> Boolean): Boolean
 }
 
 /** The TLS every TigerDuck HTTPS client takes: [PinnedTrustManager]'s socket factory and the manager. */
 class PinnedTls(
     val trustManager: X509TrustManager,
-    val resolver: PinMismatchResolver = PinMismatchResolver { false },
+    val resolver: PinMismatchResolver = PinMismatchResolver { _, _ -> false },
 ) {
 
     val socketFactory: SSLSocketFactory =

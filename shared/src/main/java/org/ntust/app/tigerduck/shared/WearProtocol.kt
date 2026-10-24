@@ -103,7 +103,10 @@ object WearProtocol {
          */
         const val KEY_ACCEPTANCES = "acceptances"
 
-        /** Strictly increasing across phone restarts; the watch drops a push not above its last. */
+        /**
+         * Strictly increasing, from the wall clock, so it stays ahead across phone restarts and
+         * reinstalls; the watch drops a push not above its last.
+         */
         const val KEY_VERSION = "version"
 
         /**

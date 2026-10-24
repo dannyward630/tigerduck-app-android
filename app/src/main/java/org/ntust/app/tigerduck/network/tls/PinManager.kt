@@ -71,7 +71,11 @@ class PinManager internal constructor(
     /** The pins every connection reads. */
     val state = PinState(PinPolicy(document = documents.load(), acceptances = acceptances.all, appVersion = versionCode))
 
-    val prompts = PinMismatchPrompts(acceptances, clock, ::accept)
+    val prompts = PinMismatchPrompts(acceptances, clock, ::accept) { mismatch ->
+        // Asked again when shown and when answered: the document that made it eligible (D18)
+        // may have expired, or been replaced by one without its root, since it was queued.
+        state.policy.mayPrompt(mismatch, Instant.ofEpochMilli(clock()))
+    }
 
     private val _changes = MutableSharedFlow<Unit>(extraBufferCapacity = 8)
 
@@ -123,10 +127,15 @@ class PinManager internal constructor(
         executor.execute { settle(mismatch) }
     }
 
-    override fun mayRetry(mismatch: PinMismatch): Boolean {
+    /**
+     * A foreground request waits for the student's answer, but no longer than its call lives:
+     * once the call is given up, by its own timeout or its caller, it stops waiting and fails. A
+     * Continue made after that still holds for the requests that follow.
+     */
+    override fun mayRetry(mismatch: PinMismatch, isCanceled: () -> Boolean): Boolean {
         if (settle(mismatch)) return true
-        if (!isForeground()) return false
-        return prompts.awaitAnswer(mismatch.setId, ANSWER_WAIT_MS) && allows(mismatch)
+        if (!isForeground() || isCanceled()) return false
+        return prompts.awaitAnswer(mismatch.setId, ANSWER_WAIT_MS, isCanceled) && !isCanceled() && allows(mismatch)
     }
 
     /**

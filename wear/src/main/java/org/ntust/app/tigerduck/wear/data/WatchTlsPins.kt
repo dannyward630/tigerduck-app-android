@@ -38,7 +38,7 @@ class WatchTlsPins internal constructor(
     )
 
     /** The trust the watch's library client uses: no retry, no prompt. */
-    val tls: PinnedTls by lazy { PinnedTls.forPlatform(state, onMismatch = {}, resolver = PinMismatchResolver { false }) }
+    val tls: PinnedTls by lazy { PinnedTls.forPlatform(state, onMismatch = {}, resolver = PinMismatchResolver { _, _ -> false }) }
 
     /** Applies a phone push; a [version] not above the last applied is dropped. */
     @Synchronized

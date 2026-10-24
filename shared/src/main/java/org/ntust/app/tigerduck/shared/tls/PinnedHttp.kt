@@ -19,8 +19,28 @@ fun pinnedClientBuilder(tls: PinnedTls?): OkHttpClient.Builder {
         builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
         // First, so a retry passes through every interceptor the client adds after it.
         builder.addInterceptor(PinMismatchRetry(tls.resolver))
+        (tls.trustManager as? PinnedTrustManager)?.let { builder.addNetworkInterceptor(ReusedConnectionPins(it)) }
     }
     return builder
+}
+
+/**
+ * OkHttp may carry a request over an HTTP/2 connection made for another host, without a new
+ * handshake: a pinned host reached that way gets its own pins checked against the connection's
+ * chain, before a byte of the request is written.
+ */
+class ReusedConnectionPins(private val trust: PinnedTrustManager) : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val connection = chain.connection()
+        if (connection != null) {
+            trust.checkReused(
+                host = chain.request().url.host,
+                connectedTo = connection.route().address.url.host,
+                peerCertificates = connection.handshake()?.peerCertificates.orEmpty(),
+            )
+        }
+        return chain.proceed(chain.request())
+    }
 }
 
 /**
@@ -36,7 +56,7 @@ class PinMismatchRetry(private val resolver: PinMismatchResolver) : Interceptor 
             chain.proceed(request)
         } catch (e: IOException) {
             val mismatch = e.pinMismatch() ?: throw e
-            if (!resolver.mayRetry(mismatch)) throw e
+            if (!resolver.mayRetry(mismatch) { chain.call().isCanceled() }) throw e
             chain.proceed(request)
         }
     }

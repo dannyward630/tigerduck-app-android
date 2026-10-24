@@ -119,7 +119,7 @@ class PinManagerTest {
         val pins = manager()
         served += document(2, school(chain.intermediate.certificate.spki))
 
-        assertTrue(pins.mayRetry(chain.mismatch()))
+        assertTrue(pins.mayRetry(chain.mismatch()) { false })
         assertNull(pins.prompts.pending.value)
     }
 
@@ -128,8 +128,8 @@ class PinManagerTest {
         val pins = manager()
         served += null
 
-        pins.mayRetry(chain.mismatch())
-        pins.mayRetry(chain.mismatch())
+        pins.mayRetry(chain.mismatch()) { false }
+        pins.mayRetry(chain.mismatch()) { false }
         pins.onMismatch(chain.mismatch())
 
         assertEquals(1, fetches.get())
@@ -143,7 +143,7 @@ class PinManagerTest {
         served += null
 
         foreground = false
-        assertFalse("a background request doesn't wait", pins.mayRetry(chain.mismatch()))
+        assertFalse("a background request doesn't wait", pins.mayRetry(chain.mismatch()) { false })
         assertEquals("ntust", pins.prompts.pending.value?.setId)
     }
 
@@ -153,7 +153,7 @@ class PinManagerTest {
         val pins = manager()
         pins.refresh()
 
-        assertFalse(pins.mayRetry(chain.mismatch()))
+        assertFalse(pins.mayRetry(chain.mismatch()) { false })
         assertNull(pins.prompts.pending.value)
     }
 
@@ -162,7 +162,7 @@ class PinManagerTest {
         val pins = manager()
         served += null
 
-        assertFalse(pins.mayRetry(chain.mismatch()))
+        assertFalse(pins.mayRetry(chain.mismatch()) { false })
         assertNull(pins.prompts.pending.value)
     }
 
@@ -172,7 +172,7 @@ class PinManagerTest {
         val pins = manager()
         pins.refresh()
         served += null
-        val waiting = CompletableFuture.supplyAsync { pins.mayRetry(chain.mismatch()) }
+        val waiting = CompletableFuture.supplyAsync { pins.mayRetry(chain.mismatch()) { false } }
         while (pins.prompts.pending.value == null) Thread.sleep(10)
 
         pins.prompts.continueToSite()
@@ -185,12 +185,26 @@ class PinManagerTest {
     }
 
     @Test
+    fun `a call already given up doesn't wait for the student`() {
+        served += document(2, school(fake(1)))
+        val pins = manager()
+        pins.refresh()
+        served += null
+
+        val started = System.nanoTime()
+        assertFalse(pins.mayRetry(chain.mismatch()) { true })
+        assertTrue(System.nanoTime() - started < java.util.concurrent.TimeUnit.SECONDS.toNanos(5))
+        // The prompt is still queued for the student.
+        assertEquals("ntust", pins.prompts.pending.value?.setId)
+    }
+
+    @Test
     fun `Cancel stores nothing and the request stays failed`() {
         served += document(2, school(fake(1)))
         val pins = manager()
         pins.refresh()
         served += null
-        val waiting = CompletableFuture.supplyAsync { pins.mayRetry(chain.mismatch()) }
+        val waiting = CompletableFuture.supplyAsync { pins.mayRetry(chain.mismatch()) { false } }
         while (pins.prompts.pending.value == null) Thread.sleep(10)
 
         pins.prompts.cancel()
