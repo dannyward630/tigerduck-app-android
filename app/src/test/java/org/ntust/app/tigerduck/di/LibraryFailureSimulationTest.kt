@@ -10,6 +10,7 @@ import org.junit.Test
 import org.ntust.app.tigerduck.library.FakeLibraryServer
 import org.ntust.app.tigerduck.library.MemoryLibraryStore
 import org.ntust.app.tigerduck.shared.LibraryService
+import org.ntust.app.tigerduck.ui.component.ServerFailureInterceptor
 import org.ntust.app.tigerduck.ui.component.ServerFailureSimulator
 import org.ntust.app.tigerduck.ui.component.ServerKind
 import org.ntust.app.tigerduck.ui.component.SimulatedFailure
@@ -95,6 +96,51 @@ class LibraryFailureSimulationTest {
 
         assertEquals("code", library(debug = false).generateQRCode())
     }
+
+    @Test
+    fun `Slow holds the code back for its delay, then lets it through`() = runBlocking {
+        signedIn()
+        ServerFailureSimulator.setFailure(SimulatedFailure.SLOW, ServerKind.LIBRARY)
+
+        assertEquals("code", simulatedLibrary().generateQRCode())
+
+        assertEquals(listOf(ServerFailureSimulator.SLOW_MS), waits)
+        assertEquals("nothing went out while it waited", listOf(emptyList<String>()), requestsWhenWaited)
+        assertEquals(1, requests.size)
+    }
+
+    @Test
+    fun `Timeout fails the sign-in after its delay, without reaching the library`() = runBlocking {
+        store.storeExpired(username = "B00015999")
+        ServerFailureSimulator.setFailure(SimulatedFailure.TIMEOUT, ServerKind.LIBRARY)
+
+        val result = runCatching { simulatedLibrary().generateQRCode() }
+
+        assertTrue(result.exceptionOrNull() is IOException)
+        assertEquals(listOf(ServerFailureSimulator.TIMEOUT_MS), waits)
+        assertEquals(emptyList<String>(), requests)
+        assertEquals(0, server.signIns)
+    }
+
+    /** What the simulator waited for, each time, and what had gone out to the library by then. */
+    private val waits = mutableListOf<Long>()
+    private val requests = mutableListOf<String>()
+    private val requestsWhenWaited = mutableListOf<List<String>>()
+
+    /** A library client with the simulator's interceptor, whose waits return at once and are recorded. */
+    private fun simulatedLibrary() = LibraryService(
+        store,
+        extraInterceptors = listOf(
+            ServerFailureInterceptor(ServerKind.LIBRARY) { ms ->
+                waits += ms
+                requestsWhenWaited += requests.toList()
+            },
+            Interceptor { chain ->
+                requests += chain.request().url.encodedPath
+                server.interceptor.intercept(chain)
+            },
+        ),
+    )
 
     private fun signedIn() {
         store.libraryUsername = "B00015999"
