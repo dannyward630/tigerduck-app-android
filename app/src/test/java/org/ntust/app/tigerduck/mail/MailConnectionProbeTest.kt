@@ -29,7 +29,7 @@ class MailConnectionProbeTest {
     private val store = InMemoryMailDevServerStore()
     private val site = MailSite(store)
     private val credentials = InMemoryCredentialStore()
-    private val probe = SocketMailConnectionProbe(credentials, site)
+    private val probe = SocketMailConnectionProbe(credentials, site, javax.net.ssl.SSLSocketFactory.getDefault() as javax.net.ssl.SSLSocketFactory)
 
     /**
      * The invented third-party account the override points at: not the school's, by construction.

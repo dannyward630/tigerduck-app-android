@@ -12,12 +12,12 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
 import org.ntust.app.tigerduck.network.ApiVersionInterceptor
-import org.ntust.app.tigerduck.network.tls.PinMismatchPrompts
-import org.ntust.app.tigerduck.network.tls.PinOverrideStore
+import org.ntust.app.tigerduck.network.tls.PinManager
 import org.ntust.app.tigerduck.push.OwedUnregister
 import org.ntust.app.tigerduck.push.PushIdentity
 import org.ntust.app.tigerduck.shared.LibraryService
 import org.ntust.app.tigerduck.shared.tls.PinnedTls
+import org.ntust.app.tigerduck.shared.tls.pinnedClientBuilder
 import org.ntust.app.tigerduck.ui.component.ServerFailureInterceptor
 import org.ntust.app.tigerduck.ui.component.ServerKind
 import java.util.concurrent.TimeUnit
@@ -35,13 +35,11 @@ object NetworkModule {
      */
     /**
      * The trust every HTTPS client of the app's uses, the library's and School Mail's among
-     * them: network_security_config.xml's pins, except on a pinned domain the student chose to
-     * continue to after its certificate stopped matching them.
+     * them: the platform's system trust with [PinManager]'s pins on top (TLS pins spec, A9).
      */
     @Provides
     @Singleton
-    fun providePinnedTls(overrides: PinOverrideStore, prompts: PinMismatchPrompts): PinnedTls =
-        PinnedTls.forPlatform(overrides, prompts::report)
+    fun providePinnedTls(pins: PinManager): PinnedTls = PinnedTls.forPlatform(pins.state, pins::onMismatch, pins)
 
     @Provides
     @Singleton
@@ -50,8 +48,7 @@ object NetworkModule {
         demoMode: DemoModeInterceptor,
         tls: PinnedTls,
     ): OkHttpClient =
-        OkHttpClient.Builder()
-            .sslSocketFactory(tls.socketFactory, tls.trustManager)
+        pinnedClientBuilder(tls)
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)

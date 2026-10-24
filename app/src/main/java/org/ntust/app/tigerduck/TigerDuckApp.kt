@@ -2,11 +2,16 @@ package org.ntust.app.tigerduck
 
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.auth.AccountSessionEffects
 import org.ntust.app.tigerduck.auth.AuthService
@@ -16,6 +21,8 @@ import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.UiLanguageMonitor
+import org.ntust.app.tigerduck.network.tls.PinManager
+import org.ntust.app.tigerduck.notification.BackgroundSyncWorker
 import org.ntust.app.tigerduck.ui.component.ServerStatusTracker
 import org.ntust.app.tigerduck.debug.DebugClockController
 import org.ntust.app.tigerduck.di.ApplicationScope
@@ -52,6 +59,9 @@ class TigerDuckApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var wearBridge: WearScheduleBridge
+
+    @Inject
+    lateinit var pinManager: PinManager
 
     @Inject
     lateinit var academicCalendar: AcademicCalendarStore
@@ -130,6 +140,22 @@ class TigerDuckApp : Application(), Configuration.Provider {
         uiLanguage.onLocales(resources.configuration.locales.toLanguageTags())
         fcmBootstrap.start()
         warnIfPinsNearExpiry()
+
+        // TLS pins (TLS pins spec, A5, A6 and A8): TigerSync's document at each start to the
+        // foreground, at most every 6 hours; the watch told of every new document and
+        // acceptance; and after a Continue, a sync, as after a network error.
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            object : DefaultLifecycleObserver {
+                override fun onStart(owner: LifecycleOwner) = pinManager.refreshIfDue()
+            },
+        )
+        appScope.launch { wearBridge.publishTlsPins() }
+        appScope.launch { pinManager.changes.collect { wearBridge.publishTlsPins() } }
+        appScope.launch {
+            pinManager.accepted.collect {
+                withContext(Dispatchers.IO) { BackgroundSyncWorker.requestSync(this@TigerDuckApp) }
+            }
+        }
 
         // Wear OS bridge — publish to paired watch on schedule/auth/accent changes.
         // On fdroid the bridge is a no-op stub; these calls are still safe.
@@ -234,13 +260,13 @@ class TigerDuckApp : Application(), Configuration.Provider {
         if (daysUntilExpiry in 0..30) {
             android.util.Log.w(
                 "TigerDuckApp",
-                "NTUST cert pins expire in $daysUntilExpiry day(s); rotate before lapse — " +
-                        "post-expiry the platform falls back to system CA trust silently",
+                "Built-in cert pins expire in $daysUntilExpiry day(s); rotate before lapse — " +
+                        "past it a set falls back to system CA trust unless a TigerSync document extends it",
             )
         } else if (daysUntilExpiry < 0) {
             android.util.Log.e(
                 "TigerDuckApp",
-                "NTUST cert pins EXPIRED ${-daysUntilExpiry} day(s) ago — rotation overdue",
+                "Built-in cert pins EXPIRED ${-daysUntilExpiry} day(s) ago — rotation overdue",
             )
         }
     }

@@ -619,6 +619,21 @@ fun SettingsScreen(
                             // they can be re-fired after a single dismissal.
                             SettingsLinkRow("Triggers") { onNavigateToTriggersDebug() }
                             HorizontalDivider()
+                            // Makes the next request to a school host meet the TLS pin-mismatch
+                            // prompt, as a certificate the pins don't know would.
+                            var simulatingPinMismatch by remember {
+                                mutableStateOf(viewModel.pinManager.state.policy.simulatedMismatch != null)
+                            }
+                            SettingsToggleRow(
+                                label = "Simulate a TLS pin mismatch",
+                                checked = simulatingPinMismatch,
+                                subtitle = "Replaces ntust.edu.tw's pins with one no chain has, and offers its mismatch whatever the TigerSync document says, until the app restarts.",
+                                onCheckedChange = {
+                                    simulatingPinMismatch = it
+                                    viewModel.pinManager.simulateMismatch(if (it) "ntust" else null)
+                                },
+                            )
+                            HorizontalDivider()
                             SettingsToggleRow(
                                 label = "Disable screen-capture protection",
                                 checked = viewModel.appState.disableScreenCaptureProtection,

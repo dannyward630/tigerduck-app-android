@@ -50,7 +50,7 @@ class PinPolicyTest {
 
     @Test
     fun `with no document, the built-in pins are in force`() {
-        assertEquals(setOf(pin(1)), policy().setFor("i.ntust.edu.tw")?.pins)
+        assertEquals(setOf(pin(1)), policy().setFor("i.ntust.edu.tw", now)?.pins)
     }
 
     @Test
@@ -59,15 +59,25 @@ class PinPolicyTest {
 
         val rules = policy(document(101, newer))
 
-        assertEquals(setOf(pin(9)), rules.setFor("i.ntust.edu.tw")?.pins)
-        assertEquals(setOf(pin(2)), rules.setFor("api.lib.ntust.edu.tw")?.pins)
+        assertEquals(setOf(pin(9)), rules.setFor("i.ntust.edu.tw", now)?.pins)
+        assertEquals(setOf(pin(2)), rules.setFor("api.lib.ntust.edu.tw", now)?.pins)
     }
 
     @Test
     fun `a document no newer than the built-in table's baseline is ignored`() {
         val older = school.copy(pins = setOf(pin(9)))
 
-        assertEquals(setOf(pin(1)), policy(document(100, older)).setFor("i.ntust.edu.tw")?.pins)
+        assertEquals(setOf(pin(1)), policy(document(100, older)).setFor("i.ntust.edu.tw", now)?.pins)
+    }
+
+    @Test
+    fun `a document held past its own expiry stops applying`() {
+        val rules = policy(document(101, school.copy(pins = setOf(pin(9)))))
+        val later = now.plusSeconds(2 * 86_400)
+
+        assertEquals(setOf(pin(9)), rules.setFor("i.ntust.edu.tw", now)?.pins)
+        assertEquals(setOf(pin(1)), rules.setFor("i.ntust.edu.tw", later)?.pins)
+        assertNull(rules.documentAt(later))
     }
 
     @Test
@@ -75,24 +85,24 @@ class PinPolicyTest {
         val later = school.copy(expiresAt = Instant.parse("2028-01-01T00:00:00Z"))
         val earlier = school.copy(expiresAt = Instant.parse("2026-11-01T00:00:00Z"))
 
-        assertEquals(later.expiresAt, policy(document(101, later)).setFor("i.ntust.edu.tw")?.expiresAt)
-        assertEquals(school.expiresAt, policy(document(101, earlier)).setFor("i.ntust.edu.tw")?.expiresAt)
+        assertEquals(later.expiresAt, policy(document(101, later)).setFor("i.ntust.edu.tw", now)?.expiresAt)
+        assertEquals(school.expiresAt, policy(document(101, earlier)).setFor("i.ntust.edu.tw", now)?.expiresAt)
     }
 
     @Test
     fun `a set only the document lists is enforced from it`() {
         val extra = PinSet("extra", listOf(PinDomain("example.test", true)), setOf(pin(7)), now.plusSeconds(60))
 
-        assertEquals(setOf(pin(7)), policy(document(101, extra)).setFor("www.example.test")?.pins)
+        assertEquals(setOf(pin(7)), policy(document(101, extra)).setFor("www.example.test", now)?.pins)
     }
 
     @Test
     fun `an acceptance joins its set's pins under the build it was made in only`() {
         val acceptance = PinAcceptance("ntust", setOf(pin(5)), appVersion = 30, acceptedAt = 1L)
 
-        assertEquals(setOf(pin(1), pin(5)), policy(acceptances = listOf(acceptance)).setFor("i.ntust.edu.tw")?.pins)
-        assertEquals(setOf(pin(1)), policy(acceptances = listOf(acceptance), version = 31).setFor("i.ntust.edu.tw")?.pins)
-        assertEquals(setOf(pin(2)), policy(acceptances = listOf(acceptance)).setFor("api.lib.ntust.edu.tw")?.pins)
+        assertEquals(setOf(pin(1), pin(5)), policy(acceptances = listOf(acceptance)).setFor("i.ntust.edu.tw", now)?.pins)
+        assertEquals(setOf(pin(1)), policy(acceptances = listOf(acceptance), version = 31).setFor("i.ntust.edu.tw", now)?.pins)
+        assertEquals(setOf(pin(2)), policy(acceptances = listOf(acceptance)).setFor("api.lib.ntust.edu.tw", now)?.pins)
     }
 
     @Test
@@ -108,8 +118,8 @@ class PinPolicyTest {
     fun `a simulated mismatch empties a set of every real pin`() {
         val rules = PinPolicy(builtIn, appVersion = 30, simulatedMismatch = "ntust")
 
-        assertEquals(setOf(PinPolicy.SIMULATED_PIN), rules.setFor("i.ntust.edu.tw")?.pins)
-        assertEquals(setOf(pin(2)), rules.setFor("api.lib.ntust.edu.tw")?.pins)
+        assertEquals(setOf(PinPolicy.SIMULATED_PIN), rules.setFor("i.ntust.edu.tw", now)?.pins)
+        assertEquals(setOf(pin(2)), rules.setFor("api.lib.ntust.edu.tw", now)?.pins)
     }
 
     @Test
@@ -119,11 +129,13 @@ class PinPolicyTest {
         val chain = listOf(leaf.certificate, root.certificate)
         val mismatch = PinMismatch("ntust", "i.ntust.edu.tw", school.domains, chain, chain.map { it.spki }.toSet())
 
-        assertFalse("no document", policy().mayPrompt(mismatch))
-        assertTrue(policy(document(1, promptRoots = setOf(root.certificate.spki))).mayPrompt(mismatch))
-        assertFalse(policy(document(1, promptRoots = setOf(pin(6)))).mayPrompt(mismatch))
+        assertFalse("no document", policy().mayPrompt(mismatch, now))
+        assertTrue(policy(document(1, promptRoots = setOf(root.certificate.spki))).mayPrompt(mismatch, now))
+        assertFalse(policy(document(1, promptRoots = setOf(pin(6)))).mayPrompt(mismatch, now))
         // A leaf among the roots doesn't make its chain eligible: only the anchor counts.
-        assertFalse(policy(document(1, promptRoots = setOf(leaf.certificate.spki))).mayPrompt(mismatch))
+        assertFalse(policy(document(1, promptRoots = setOf(leaf.certificate.spki))).mayPrompt(mismatch, now))
+        // A debug build's simulated mismatch is offered with no document.
+        assertTrue(PinPolicy(builtIn, appVersion = 30, simulatedMismatch = "ntust").mayPrompt(mismatch, now))
     }
 
     private companion object {

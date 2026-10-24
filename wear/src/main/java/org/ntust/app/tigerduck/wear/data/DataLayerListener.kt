@@ -35,6 +35,7 @@ class DataLayerListener : WearableListenerService() {
             when (item.uri.path) {
                 WearProtocol.Schedule.PATH -> handleSchedule(item)
                 WearProtocol.LibraryCredentials.PATH -> handleLibraryCredentials(item)
+                WearProtocol.TlsPins.PATH -> handleTlsPins(item)
             }
         }
     }
@@ -96,6 +97,15 @@ class DataLayerListener : WearableListenerService() {
             issuedAtMs = issuedAtMs,
         )
         Log.d(TAG, "library credentials push: $result (version=$version, has=$hasCredentials)")
+    }
+
+    private fun handleTlsPins(item: com.google.android.gms.wearable.DataItem) {
+        val map = DataMapItem.fromDataItem(item).dataMap
+        WatchTlsPins.get(this).applyPush(
+            envelope = map.getByteArray(WearProtocol.TlsPins.KEY_ENVELOPE),
+            acceptances = map.getString(WearProtocol.TlsPins.KEY_ACCEPTANCES),
+            version = map.getLong(WearProtocol.TlsPins.KEY_VERSION),
+        )
     }
 
     override fun onDestroy() {

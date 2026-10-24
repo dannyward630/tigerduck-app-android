@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.wear.data
 
+import javax.net.ssl.SSLHandshakeException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
@@ -17,6 +18,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.shared.LibraryServiceError
+import org.ntust.app.tigerduck.shared.tls.PinDomain
+import org.ntust.app.tigerduck.shared.tls.PinMismatch
+import org.ntust.app.tigerduck.shared.tls.PinMismatchException
 import org.robolectric.RobolectricTestRunner
 import java.io.IOException
 import kotlin.coroutines.Continuation
@@ -56,6 +60,16 @@ class LibraryQRControllerTest {
 
         assertEquals(ACCOUNT_CHANGED, controller.error.value)
         assertNull(controller.qrBitmap.value)
+    }
+
+    @Test
+    fun `a pin mismatch says to open TigerDuck on the phone, which settles it`() {
+        val mismatch = PinMismatch("library", "api.lib.ntust.edu.tw", listOf(PinDomain("api.lib.ntust.edu.tw", true)), emptyList(), emptySet())
+        answers += { throw SSLHandshakeException("handshake failed").apply { initCause(PinMismatchException(mismatch)) } }
+
+        controller.start(64, accounts)
+
+        assertEquals(ACCOUNT_CHANGED, controller.error.value)
     }
 
     /**

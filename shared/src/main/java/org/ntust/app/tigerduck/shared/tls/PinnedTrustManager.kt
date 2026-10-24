@@ -106,14 +106,15 @@ class PinnedTrustManager(
 
     private fun check(chain: Array<X509Certificate>, authType: String, host: String?, unpinned: () -> Unit) {
         val rules = policy()
-        val set = host?.let(rules::setFor)
+        val at = now()
+        val set = host?.let { rules.setFor(it, at) }
         if (host == null || set == null) {
             unpinned()
             return
         }
         val validated = validator.validate(chain, authType, host)
         val spkis = validated.map { it.spki }.toSet()
-        when (val decision = rules.decide(set, spkis, now())) {
+        when (val decision = rules.decide(set, spkis, at)) {
             PinDecision.Allowed -> Unit
             is PinDecision.Mismatch -> {
                 val mismatch = PinMismatch(decision.set.id, host, decision.set.domains, validated, spkis)

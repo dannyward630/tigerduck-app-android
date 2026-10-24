@@ -17,9 +17,11 @@ import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.library.libraryCredentialsForWatch
+import org.ntust.app.tigerduck.network.tls.PinManager
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.shared.WearProtocol
 import org.ntust.app.tigerduck.shared.clock.AppClock
+import org.ntust.app.tigerduck.shared.tls.PinAcceptances
 import org.ntust.app.tigerduck.util.logSummary
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
@@ -35,6 +37,7 @@ class WearScheduleBridge @Inject constructor(
     private val appPreferences: AppPreferences,
     private val credentials: CredentialManager,
     private val academicCalendar: AcademicCalendarStore,
+    private val pins: PinManager,
 ) {
     private val gson = Gson()
 
@@ -46,6 +49,13 @@ class WearScheduleBridge @Inject constructor(
     private val bridgePrefs = context.getSharedPreferences(
         "wear_bridge_state", Context.MODE_PRIVATE
     )
+
+    @Synchronized
+    private fun nextTlsPinsEpoch(): Long {
+        val next = bridgePrefs.getLong(KEY_TLS_PINS_EPOCH, 0L) + 1
+        bridgePrefs.edit().putLong(KEY_TLS_PINS_EPOCH, next).apply()
+        return next
+    }
 
     @Synchronized
     private fun nextCredentialEpoch(): Long {
@@ -173,6 +183,25 @@ class WearScheduleBridge @Inject constructor(
         }
     }
 
+    /**
+     * The TLS pins for the watch (TLS pins spec, A8): the document envelope the phone verified,
+     * as received, and the student's acceptances, each with the phone's build number. The watch
+     * verifies the envelope with its own keys and applies an acceptance only while its build is
+     * the matching one.
+     */
+    suspend fun publishTlsPins() {
+        val request = PutDataMapRequest.create(WearProtocol.TlsPins.PATH).apply {
+            pins.envelope?.let { dataMap.putByteArray(WearProtocol.TlsPins.KEY_ENVELOPE, it) }
+            dataMap.putString(WearProtocol.TlsPins.KEY_ACCEPTANCES, PinAcceptances.encode(pins.currentAcceptances))
+            dataMap.putLong(WearProtocol.TlsPins.KEY_VERSION, nextTlsPinsEpoch())
+        }.asPutDataRequest().setUrgent()
+        try {
+            Wearable.getDataClient(context).putDataItem(request).await()
+        } catch (t: Throwable) {
+            Log.w(TAG, "TLS pins publish failed: ${t.logSummary()}")
+        }
+    }
+
     private fun Course.toDto(): CourseDto = toWearDto()
 
     /** On-the-wire shape; explicit so we can evolve [Course] without breaking watch JSON. */
@@ -201,6 +230,7 @@ class WearScheduleBridge @Inject constructor(
     private companion object {
         const val TAG = "WearBridge"
         const val KEY_CRED_EPOCH = "libraryCredentialEpoch"
+        const val KEY_TLS_PINS_EPOCH = "tlsPinsEpoch"
     }
 }
 

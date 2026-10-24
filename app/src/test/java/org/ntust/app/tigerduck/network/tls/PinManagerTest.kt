@@ -1,0 +1,211 @@
+package org.ntust.app.tigerduck.network.tls
+
+import android.app.Application
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.shared.tls.BuiltInPins
+import org.ntust.app.tigerduck.shared.tls.PinDocumentVerifier
+import org.ntust.app.tigerduck.shared.tls.PinSet
+import org.ntust.app.tigerduck.shared.tls.spki
+import org.robolectric.RobolectricTestRunner
+import java.io.File
+import java.time.Instant
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import org.robolectric.annotation.Config
+
+/** The phone's pin manager: the document (A5), a mismatch's outcome (A4) and Continue (A6). */
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
+class PinManagerTest {
+
+    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val signer = PinTestSigner()
+    private var now = Instant.parse("2026-10-25T04:00:00Z").toEpochMilli()
+    private val chain = PinTestChain()
+    private val file = File(context.noBackupFilesDir, "tls/pin-document.json")
+
+    private val served = mutableListOf<ByteArray?>()
+    private val fetches = AtomicInteger()
+    private var foreground = true
+    private val direct = Executor { it.run() }
+
+    private fun manager(): PinManager {
+        val verifier = PinDocumentVerifier(signer.keys) { Instant.ofEpochMilli(now) }
+        return PinManager(
+            documents = PinDocumentStore(file, verifier),
+            acceptances = PinAcceptanceStore(context.getSharedPreferences(PinAcceptanceStore.FILE, Context.MODE_PRIVATE), 30),
+            client = { _ -> fetches.incrementAndGet(); served.removeFirstOrNull() },
+            verifier = verifier,
+            versionCode = 30,
+            clock = { now },
+            isForeground = { foreground },
+            executor = direct,
+        )
+    }
+
+    private val expiry get() = Instant.ofEpochMilli(now).plusSeconds(30L * 86_400)
+
+    /** The school set as a document lists it, with [pins]. */
+    private fun school(vararg pins: String) = BuiltInPins.sets.single { it.id == "ntust" }.copy(pins = pins.toSet())
+
+    /** A well-formed pin no certificate here has. */
+    private fun fake(n: Int): String = java.util.Base64.getEncoder().encodeToString(ByteArray(32) { n.toByte() })
+
+    private fun document(serial: Long, vararg sets: PinSet, promptRoots: Set<String> = setOf(chain.root.certificate.spki)) =
+        signer.envelope(serial, expiry, sets.toList(), promptRoots)
+
+    @Test
+    fun `a new document is taken, kept on disk and verified again on load`() {
+        val envelope = document(2, school(fake(1)))
+        served += envelope
+        val pins = manager()
+
+        assertTrue(pins.refresh())
+
+        assertArrayEquals(envelope, pins.envelope)
+        assertArrayEquals(envelope, file.readBytes())
+        assertEquals(2L, manager().document?.serial)
+    }
+
+    @Test
+    fun `a document changed on disk counts as none`() {
+        served += document(2, school(fake(1)))
+        manager().refresh()
+        file.writeBytes(file.readBytes().also { it[it.size / 2] = (it[it.size / 2] + 1).toByte() })
+
+        assertNull(manager().document)
+    }
+
+    @Test
+    fun `an older document, the same serial with other bytes, or an expired one is refused`() {
+        served += document(5, school(fake(1)))
+        val pins = manager()
+        pins.refresh()
+
+        served += document(4, school(fake(2)))
+        assertFalse(pins.refresh())
+        served += signer.envelope(5, expiry.plusSeconds(60), listOf(school(fake(2))))
+        assertFalse(pins.refresh())
+        served += signer.envelope(6, Instant.ofEpochMilli(now), listOf(school(fake(2))))
+        assertFalse(pins.refresh())
+        assertEquals(5L, pins.document?.serial)
+    }
+
+    @Test
+    fun `a newer document that allows the chain fixes a mismatch silently`() {
+        val pins = manager()
+        served += document(2, school(chain.intermediate.certificate.spki))
+
+        assertTrue(pins.mayRetry(chain.mismatch()))
+        assertNull(pins.prompts.pending.value)
+    }
+
+    @Test
+    fun `a mismatch refreshes the document once per set per launch`() {
+        val pins = manager()
+        served += null
+
+        pins.mayRetry(chain.mismatch())
+        pins.mayRetry(chain.mismatch())
+        pins.onMismatch(chain.mismatch())
+
+        assertEquals(1, fetches.get())
+    }
+
+    @Test
+    fun `a mismatch anchored in a listed public root queues a prompt`() {
+        served += document(2, school(fake(1)))
+        val pins = manager()
+        pins.refresh()
+        served += null
+
+        foreground = false
+        assertFalse("a background request doesn't wait", pins.mayRetry(chain.mismatch()))
+        assertEquals("ntust", pins.prompts.pending.value?.setId)
+    }
+
+    @Test
+    fun `a root the document doesn't list gets no prompt`() {
+        served += document(2, school(fake(1)), promptRoots = setOf(PinTestChain(rootName = "Other Root").root.certificate.spki))
+        val pins = manager()
+        pins.refresh()
+
+        assertFalse(pins.mayRetry(chain.mismatch()))
+        assertNull(pins.prompts.pending.value)
+    }
+
+    @Test
+    fun `with no document, a mismatch gets no prompt`() {
+        val pins = manager()
+        served += null
+
+        assertFalse(pins.mayRetry(chain.mismatch()))
+        assertNull(pins.prompts.pending.value)
+    }
+
+    @Test
+    fun `Continue trusts the leaf and the intermediate, not the root, and the waiting request goes on`() {
+        served += document(2, school(fake(1)))
+        val pins = manager()
+        pins.refresh()
+        served += null
+        val waiting = CompletableFuture.supplyAsync { pins.mayRetry(chain.mismatch()) }
+        while (pins.prompts.pending.value == null) Thread.sleep(10)
+
+        pins.prompts.continueToSite()
+
+        assertTrue(waiting.get(5, TimeUnit.SECONDS))
+        val accepted = pins.currentAcceptances.single()
+        assertEquals(setOf(chain.leaf.certificate.spki, chain.intermediate.certificate.spki), accepted.spkis)
+        assertEquals(30L, accepted.appVersion)
+        assertTrue(pins.state.policy.allows(chain.mismatch(), Instant.ofEpochMilli(now)))
+    }
+
+    @Test
+    fun `Cancel stores nothing and the request stays failed`() {
+        served += document(2, school(fake(1)))
+        val pins = manager()
+        pins.refresh()
+        served += null
+        val waiting = CompletableFuture.supplyAsync { pins.mayRetry(chain.mismatch()) }
+        while (pins.prompts.pending.value == null) Thread.sleep(10)
+
+        pins.prompts.cancel()
+
+        assertFalse(waiting.get(5, TimeUnit.SECONDS))
+        assertTrue(pins.currentAcceptances.isEmpty())
+    }
+
+    @Test
+    fun `an acceptance from another build is gone after the update`() {
+        served += document(2, school(fake(1)))
+        val pins = manager()
+        pins.refresh()
+        pins.prompts.queue(chain.mismatch())
+        pins.prompts.continueToSite()
+
+        val updated = PinManager(
+            documents = PinDocumentStore(file, PinDocumentVerifier(signer.keys) { Instant.ofEpochMilli(now) }),
+            acceptances = PinAcceptanceStore(context.getSharedPreferences(PinAcceptanceStore.FILE, Context.MODE_PRIVATE), 31),
+            client = { null },
+            verifier = PinDocumentVerifier(signer.keys) { Instant.ofEpochMilli(now) },
+            versionCode = 31,
+            clock = { now },
+            isForeground = { true },
+            executor = direct,
+        )
+
+        assertTrue(updated.currentAcceptances.isEmpty())
+        assertFalse(updated.state.policy.allows(chain.mismatch(), Instant.ofEpochMilli(now)))
+    }
+}
