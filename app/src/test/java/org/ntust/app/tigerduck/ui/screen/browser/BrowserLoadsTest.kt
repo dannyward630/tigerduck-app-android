@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.browser.BrowserSignIn
 import org.ntust.app.tigerduck.browser.BrowserSignIns
+import org.ntust.app.tigerduck.browser.MoodleBrowserSignIn
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
 
 /**
@@ -25,6 +26,7 @@ class BrowserLoadsTest {
         override fun hasSession(cookieHeader: String?) = false
         override fun isSignInPage(url: String) = url.startsWith(SIGN_IN_PAGE)
         override fun isReturnPage(url: String) = MoodleAutologin.isSignInTarget(url)
+        override fun isSignInLink(url: String) = MoodleBrowserSignIn.isMoodleSignInLink(url)
         override suspend fun signedInUrl(target: String): String? = null
         override fun msUntilRetry() = 0L
         override fun webSignInUrl(target: String): String? = null
@@ -184,6 +186,36 @@ class BrowserLoadsTest {
 
         assertEquals(BrowserError.BadCertificate("moodle2.ntust.edu.tw"), state.error)
         assertEquals(B, loads.loadingUrl)
+    }
+
+    @Test
+    fun `a sign-in link goes by the page it signs in to`() {
+        loads.signInTarget = A
+        loads.requested(SIGNED_IN)
+        // Offline, say: its error page.
+        loads.failed(SIGNED_IN, unreachable)
+        loads.started(SIGNED_IN)
+
+        assertEquals(A, loads.address(SIGNED_IN))
+        assertEquals(A, loads.loadingUrl)
+        assertEquals(B, loads.address(B))
+    }
+
+    @Test
+    fun `a sign-in link with no sign-in under way goes by its site`() {
+        // Back to its error page, long after.
+        loads.started(SIGNED_IN)
+
+        assertEquals("https://moodle2.ntust.edu.tw/", loads.address(SIGNED_IN))
+        assertEquals("https://moodle2.ntust.edu.tw/", loads.loadingUrl)
+    }
+
+    @Test
+    fun `a certificate refused for a sign-in link is still the page's`() {
+        loads.signInTarget = A
+        loads.requested(SIGNED_IN)
+
+        assertTrue(loads.certificateFailed(SIGNED_IN, "moodle2.ntust.edu.tw"))
     }
 
     private companion object {

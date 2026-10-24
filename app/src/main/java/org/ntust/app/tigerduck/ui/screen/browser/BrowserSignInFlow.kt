@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.ui.screen.browser
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.browser.BrowserSignIn
@@ -104,8 +105,12 @@ internal class BrowserSignInFlow(
         SignInState(provider.siteName, target, msLeft = 0, working = true, hasWebSignIn = provider.webSignInUrl(target) != null)
 
     // A try that fails shows the screen from within its own job, which this cancels as it returns.
+    // The job is kept before it starts: under Main.immediate a try that fails at once has shown the
+    // screen, and started its countdown, before launch would return.
     private fun restart(block: suspend () -> Unit) {
         job?.cancel()
-        job = scope.launch { block() }
+        val next = scope.launch(start = CoroutineStart.LAZY) { block() }
+        job = next
+        next.start()
     }
 }

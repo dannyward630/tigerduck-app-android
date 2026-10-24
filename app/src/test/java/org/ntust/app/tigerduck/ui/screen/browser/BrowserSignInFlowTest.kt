@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.ui.screen.browser
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -40,6 +41,7 @@ class BrowserSignInFlowTest {
         override fun hasSession(cookieHeader: String?) = false
         override fun isSignInPage(url: String) = url.startsWith(SIGN_IN_PAGE)
         override fun isReturnPage(url: String) = MoodleAutologin.isSignInTarget(url)
+        override fun isSignInLink(url: String) = url.startsWith(SIGNED_IN)
         override suspend fun signedInUrl(target: String): String? {
             asked += target
             delay(takesMs)
@@ -163,6 +165,20 @@ class BrowserSignInFlowTest {
 
         assertEquals(listOf(PAGE, OTHER_PAGE), site.asked)
         assertEquals("$SIGNED_IN$OTHER_PAGE", loaded.last())
+    }
+
+    @Test
+    fun `cancelling stops the countdown, also one a try that failed at once started`() = runTest(UnconfinedTestDispatcher()) {
+        // As the activity's Main.immediate: a launch runs at once, up to its first wait.
+        val site = Site(firstDueAtMs = 3_000)
+        val flow = flow(site)
+
+        flow.signIn(site, PAGE)
+        flow.cancel()
+        advanceTimeBy(5_000)
+        runCurrent()
+
+        assertEquals(listOf(PAGE), site.asked)
     }
 
     private companion object {

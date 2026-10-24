@@ -38,6 +38,15 @@ class BrowserSignInTest {
     }
 
     @Test
+    fun `Moodle's sign-in links are its autologin pages, not its other pages`() {
+        assertTrue(MoodleBrowserSignIn.isMoodleSignInLink("https://moodle2.ntust.edu.tw/admin/tool/mobile/autologin.php?userid=1&key=k&urltogo=x"))
+        assertTrue(MoodleBrowserSignIn.isMoodleSignInLink("https://MOODLE2.ntust.edu.tw/admin/tool/mobile/autologin.php?key=k"))
+        assertFalse(MoodleBrowserSignIn.isMoodleSignInLink("https://moodle2.ntust.edu.tw/user/edit.php"))
+        assertFalse(MoodleBrowserSignIn.isMoodleSignInLink("https://moodle2.ntust.edu.tw/login/index.php"))
+        assertFalse(MoodleBrowserSignIn.isMoodleSignInLink("https://example.com/admin/tool/mobile/autologin.php?key=k"))
+    }
+
+    @Test
     fun `the web sign-in goes through Moodle's OIDC entry, never its password form`() {
         assertEquals("https://moodle2.ntust.edu.tw/auth/oidc/?source=loginpage", MoodleBrowserSignIn.WEB_SIGN_IN_URL)
         assertFalse(MoodleBrowserSignIn.isMoodleSignInPage(MoodleBrowserSignIn.WEB_SIGN_IN_URL))
@@ -60,6 +69,7 @@ class BrowserSignInTest {
         override fun hasSession(cookieHeader: String?) = false
         override fun isSignInPage(url: String) = false
         override fun isReturnPage(url: String) = true
+        override fun isSignInLink(url: String) = false
         override suspend fun signedInUrl(target: String): String? = null
         override fun msUntilRetry() = 0L
         override fun webSignInUrl(target: String): String? = null

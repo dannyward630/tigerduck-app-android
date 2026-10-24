@@ -439,7 +439,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             pokeSettings()
         }
         loads.started(url)
-        state.url = url
+        state.url = loads.address(url)
         state.loading = true
         state.certificate = null
         state.signIn = null
@@ -450,7 +450,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private fun onPageDone(url: String) {
         loads.finished(url)
         state.loading = false
-        state.url = url
+        state.url = loads.address(url)
         state.title = webView.title
         state.certificate = webView.certificate?.let(CertificateInfo::of)
         state.signedIn = signIns.forUrl(url)?.hasSession(CookieManager.getInstance().getCookie(url)) == true
@@ -755,7 +755,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
             // A page that changes its address itself (history.pushState) lands here only.
-            if (url != null && BrowserRouting.navigation(url, allowlistStore.allowlist.value) == NavigationDecision.Load) state.url = url
+            if (url != null && BrowserRouting.navigation(url, allowlistStore.allowlist.value) == NavigationDecision.Load) state.url = loads.address(url)
             updateHistory()
         }
 

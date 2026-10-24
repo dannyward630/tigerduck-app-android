@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.ui.screen.browser
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.ntust.app.tigerduck.browser.BrowserSignIns
 
 /**
@@ -13,9 +14,11 @@ import org.ntust.app.tigerduck.browser.BrowserSignIns
  * of the page it is for, and any other start takes it down.
  */
 internal class BrowserLoads(private val state: BrowserPageState, private val signIns: BrowserSignIns) {
-    /** The page loaded, or loading, last. */
-    var loadingUrl: String? = null
-        private set
+    /** The page loaded, or loading, last, by its [address]. */
+    val loadingUrl: String? get() = current?.let(::address)
+
+    /** The page loaded, or loading, last, as the WebView names it. */
+    private var current: String? = null
 
     /** The page a sign-in under way goes on to; null once a page of its site shows. */
     var signInTarget: String? = null
@@ -27,13 +30,13 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
 
     /** A load the app chose, or a page's navigation the browser let through. */
     fun requested(url: String) {
-        loadingUrl = url
+        current = url
         failedBeforeStart = null
     }
 
     /** [url]'s page started. */
     fun started(url: String) {
-        loadingUrl = url
+        current = url
         if (failedBeforeStart != url) state.error = null
         failedBeforeStart = null
         startedUrl = url
@@ -52,16 +55,25 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
      * all the same, it leaves the page as it is.
      */
     fun certificateFailed(url: String?, host: String?): Boolean {
-        if (url == null || (url != loadingUrl && url != state.url)) return false
+        if (url == null || (url != current && url != state.url)) return false
         failed(url, BrowserError.BadCertificate(host))
         return true
+    }
+
+    /**
+     * The address [url] goes by in the bars, the address sheet, Retry and "Open in browser": a
+     * site's sign-in link stands for the page it signs in to, or the site itself.
+     */
+    fun address(url: String): String {
+        if (signIns.forUrl(url)?.isSignInLink(url) != true) return url
+        return signInTarget ?: url.toHttpUrlOrNull()?.resolve("/")?.toString() ?: url
     }
 
     /** The main-frame load of [url] failed with [error]. */
     fun failed(url: String?, error: BrowserError) {
         state.error = error
         if (url == null) return
-        loadingUrl = url
+        current = url
         failedBeforeStart = if (url == startedUrl) null else url
     }
 
@@ -73,6 +85,6 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
     fun signInReturn(url: String): String {
         val provider = signIns.forUrl(url)
         val returnable = { page: String? -> page?.takeIf { provider?.isReturnPage(it) == true } }
-        return signInTarget ?: returnable(loadingUrl) ?: returnable(state.url) ?: url
+        return signInTarget ?: returnable(current) ?: returnable(state.url) ?: url
     }
 }
