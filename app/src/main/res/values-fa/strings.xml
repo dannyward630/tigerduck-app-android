@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">برای خروج دوباره دکمه بازگشت را بزنید</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">شما اکنون خارج از منطقه زمانی تایوان هستید. این برنامه به‌صورت خودکار از زمان تایوان استفاده می‌کند.\nلطفاً تاریخ‌ها و زمان‌ها را دوباره بررسی کنید. سفر خوشی داشته باشید!</string>
+    <string name="app_processing_keep_open">در حال پردازش…\nلطفاً برنامه را نبندید.</string>
     <string name="app_reset_required_action">بازنشانی</string>
     <string name="app_reset_required_message">وضعیت ورود و تنظیمات شما دیگر قابل خواندن نیست؛ احتمالاً به‌دلیل ارتقای سیستم‌عامل، بازیابی پشتیبان یا مشکل فضای ذخیره‌سازی.\n\nبرای پاک کردن داده‌های قدیمی روی «بازنشانی» بزنید، سپس دوباره وارد شوید و تنظیماتتان را انجام دهید.</string>
     <string name="app_reset_required_title">نیاز به بازنشانی</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">تعداد دروس</string>
     <string name="class_table_import_enter_link">وارد کردن پیوند</string>
     <string name="class_table_import_failed">وارد کردن برنامه کلاس‌ها ممکن نشد</string>
+    <string name="class_table_import_flashlight">چراغ‌قوه</string>
     <string name="class_table_import_invalid_message">کد اشتراک‌گذاری آسیب دیده یا تغییر کرده است.</string>
     <string name="class_table_import_link_placeholder">پیوند اشتراک‌گذاری</string>
     <string name="class_table_import_lookup_failed">بارگذاری جزئیات دروس ممکن نشد</string>

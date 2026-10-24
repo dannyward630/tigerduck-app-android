@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Apasă înapoi din nou pentru a ieși</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Ești în afara fusului orar al Taiwanului. Această aplicație folosește automat fusul orar al Taiwanului.\nVerifică de două ori datele și orele. Călătorie plăcută!</string>
+    <string name="app_processing_keep_open">Se procesează…\nNu închide aplicația.</string>
     <string name="app_reset_required_action">Resetare</string>
     <string name="app_reset_required_message">Starea de autentificare și preferințele tale nu mai pot fi citite, posibil din cauza unei actualizări de SO, restaurări din backup sau probleme de stocare.\n\nApasă „Resetare“ pentru a șterge datele vechi, apoi autentifică-te și reconfigurează preferințele.</string>
     <string name="app_reset_required_title">Resetare necesară</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Cursuri</string>
     <string name="class_table_import_enter_link">Introdu linkul</string>
     <string name="class_table_import_failed">Orarul nu a putut fi importat</string>
+    <string name="class_table_import_flashlight">Lanternă</string>
     <string name="class_table_import_invalid_message">Codul de distribuire este deteriorat sau a fost modificat.</string>
     <string name="class_table_import_link_placeholder">Link de distribuire</string>
     <string name="class_table_import_lookup_failed">Detaliile cursurilor nu au putut fi încărcate</string>

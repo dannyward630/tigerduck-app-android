@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Erneut zurück drücken, um zu beenden</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Sie befinden sich derzeit außerhalb der taiwanesischen Zeitzone. Diese App verwendet automatisch die taiwanesische Zeit.\nBitte überprüfen Sie Datum und Uhrzeit. Gute Reise!</string>
+    <string name="app_processing_keep_open">Wird verarbeitet…\nBitte schließen Sie die App nicht.</string>
     <string name="app_reset_required_action">Zurücksetzen</string>
     <string name="app_reset_required_message">Ihr Anmeldestatus und Ihre Einstellungen können nicht mehr gelesen werden, möglicherweise aufgrund eines Betriebssystem-Updates, einer Wiederherstellung aus einem Backup oder eines Speicherproblems.\n\nTippen Sie auf „Zurücksetzen“, um alte Daten zu löschen, sich erneut anzumelden und Ihre Einstellungen neu zu konfigurieren.</string>
     <string name="app_reset_required_title">Zurücksetzen erforderlich</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Kurse</string>
     <string name="class_table_import_enter_link">Link eingeben</string>
     <string name="class_table_import_failed">Stundenplan konnte nicht importiert werden</string>
+    <string name="class_table_import_flashlight">Taschenlampe</string>
     <string name="class_table_import_invalid_message">Der Freigabecode ist beschädigt oder wurde verändert.</string>
     <string name="class_table_import_link_placeholder">Freigabelink</string>
     <string name="class_table_import_lookup_failed">Kursdetails konnten nicht geladen werden</string>

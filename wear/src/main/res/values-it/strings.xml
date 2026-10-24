@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Premi di nuovo indietro per uscire</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Attualmente sei al di fuori del fuso orario di Taiwan. Quest\'app sta utilizzando automaticamente l\'ora di Taiwan.\nControlla bene date e orari. Buon viaggio!</string>
+    <string name="app_processing_keep_open">Elaborazione in corso…\nNon chiudere l\'app.</string>
     <string name="app_reset_required_action">Ripristina</string>
     <string name="app_reset_required_message">Lo stato di accesso e le preferenze non possono più essere letti, possibilmente a causa di un aggiornamento del sistema operativo, di un ripristino da backup o di un problema di archiviazione.\n\nTocca \"Ripristina\" per cancellare i vecchi dati, quindi accedi e riconfigura le tue preferenze.</string>
     <string name="app_reset_required_title">Ripristino necessario</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Corsi</string>
     <string name="class_table_import_enter_link">Inserisci link</string>
     <string name="class_table_import_failed">Impossibile importare l\'orario</string>
+    <string name="class_table_import_flashlight">Torcia</string>
     <string name="class_table_import_invalid_message">Il codice di condivisione è danneggiato o è stato modificato.</string>
     <string name="class_table_import_link_placeholder">Link di condivisione</string>
     <string name="class_table_import_lookup_failed">Impossibile caricare i dettagli dei corsi</string>

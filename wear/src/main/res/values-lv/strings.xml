@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Nospiediet atpakaļ vēlreiz, lai izietu</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Jūs pašlaik atrodaties ārpus Taivānas laika joslas. Šī lietotne automātiski izmanto Taivānas laiku.\nLūdzu, pārbaudiet datumus un laikus. Laimīgu ceļu!</string>
+    <string name="app_processing_keep_open">Notiek apstrāde…\nLūdzu, neaizveriet lietotni.</string>
     <string name="app_reset_required_action">Atiestatīt</string>
     <string name="app_reset_required_message">Jūsu pieteikšanās stāvokli un preferences vairs nevar nolasīt, iespējams, OS jauninājuma, dublējuma atjaunošanas vai glabāšanas problēmas dēļ.\n\nPieskarieties \"Atiestatīt\", lai notīrītu vecos datus, pēc tam piesakieties un pārkonfigurējiet preferences.</string>
     <string name="app_reset_required_title">Nepieciešama atiestatīšana</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Kursi</string>
     <string name="class_table_import_enter_link">Ievadīt saiti</string>
     <string name="class_table_import_failed">Neizdevās importēt stundu plānu</string>
+    <string name="class_table_import_flashlight">Lukturītis</string>
     <string name="class_table_import_invalid_message">Kopīgošanas kods ir bojāts vai mainīts.</string>
     <string name="class_table_import_link_placeholder">Kopīgošanas saite</string>
     <string name="class_table_import_lookup_failed">Neizdevās ielādēt kursu informāciju</string>

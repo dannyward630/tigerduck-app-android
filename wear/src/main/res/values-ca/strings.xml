@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Premeu enrere de nou per sortir</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Actualment esteu fora del fus horari de Taiwan. Aquesta aplicació usa l\'hora de Taiwan automàticament.\nVerifiqueu les dates i les hores. Bon viatge!</string>
+    <string name="app_processing_keep_open">S\'està processant…\nNo tanqueu l\'aplicació.</string>
     <string name="app_reset_required_action">Restableix</string>
     <string name="app_reset_required_message">El vostre estat d\'inici de sessió i les preferències ja no es poden llegir, possiblement a causa d\'una actualització del sistema operatiu, una restauració de còpia de seguretat o un problema d\'emmagatzematge.\n\nToqueu «Restableix» per esborrar les dades antigues, i després inicieu la sessió i reconfigureu les preferències.</string>
     <string name="app_reset_required_title">Cal restablir</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Cursos</string>
     <string name="class_table_import_enter_link">Introdueix l\'enllaç</string>
     <string name="class_table_import_failed">No s\'ha pogut importar l\'horari</string>
+    <string name="class_table_import_flashlight">Llanterna</string>
     <string name="class_table_import_invalid_message">El codi per compartir està malmès o s\'ha modificat.</string>
     <string name="class_table_import_link_placeholder">Enllaç per compartir</string>
     <string name="class_table_import_lookup_failed">No s\'han pogut carregar els detalls dels cursos</string>

@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Pressione voltar novamente para sair</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Você está atualmente fora do horário de Taiwan. Este app está usando o horário de Taiwan automaticamente.\nVerifique as datas e horários com cuidado. Boa viagem!</string>
+    <string name="app_processing_keep_open">Processando…\nNão feche o app.</string>
     <string name="app_reset_required_action">Redefinir</string>
     <string name="app_reset_required_message">Seu estado de login e suas preferências não podem mais ser lidos, possivelmente devido a uma atualização do sistema, restauração de backup ou problema de armazenamento.\n\nToque em \"Redefinir\" para limpar os dados antigos, depois entre novamente e reconfigure suas preferências.</string>
     <string name="app_reset_required_title">Redefinição necessária</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Disciplinas</string>
     <string name="class_table_import_enter_link">Inserir link</string>
     <string name="class_table_import_failed">Não foi possível importar a grade horária</string>
+    <string name="class_table_import_flashlight">Lanterna</string>
     <string name="class_table_import_invalid_message">O código de compartilhamento está danificado ou foi alterado.</string>
     <string name="class_table_import_link_placeholder">Link de compartilhamento</string>
     <string name="class_table_import_lookup_failed">Não foi possível carregar os detalhes das disciplinas</string>

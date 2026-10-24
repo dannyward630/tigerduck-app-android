@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Çıkmak için tekrar geri tuşuna basın</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Şu anda Tayvan saat dilimi dışındasınız. Bu uygulama otomatik olarak Tayvan saatini kullanıyor.\nLütfen tarihleri ve saatleri tekrar kontrol edin. İyi yolculuklar!</string>
+    <string name="app_processing_keep_open">İşleniyor…\nLütfen uygulamayı kapatmayın.</string>
     <string name="app_reset_required_action">Sıfırla</string>
     <string name="app_reset_required_message">Giriş durumunuz ve tercihleriniz artık okunamıyor; bunun nedeni işletim sistemi yükseltmesi, yedekten geri yükleme veya depolama sorunu olabilir.\n\nEski verileri temizlemek için \"Sıfırla\"ya dokunun, ardından giriş yapıp tercihlerinizi yeniden yapılandırın.</string>
     <string name="app_reset_required_title">Sıfırlama gerekli</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Dersler</string>
     <string name="class_table_import_enter_link">Bağlantıyı gir</string>
     <string name="class_table_import_failed">Ders programı içe aktarılamadı</string>
+    <string name="class_table_import_flashlight">El feneri</string>
     <string name="class_table_import_invalid_message">Paylaşım kodu bozuk veya değiştirilmiş.</string>
     <string name="class_table_import_link_placeholder">Paylaşım bağlantısı</string>
     <string name="class_table_import_lookup_failed">Ders ayrıntıları yüklenemedi</string>

@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Nyomjon vissza még egyszer a kilépéshez</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Jelenleg nem tajvani időzónában van. Az alkalmazás automatikusan tajvani időt használ.\nKérjük, ellenőrizze a dátumokat és időpontokat. Jó utat!</string>
+    <string name="app_processing_keep_open">Feldolgozás…\nKérjük, ne zárja be az alkalmazást.</string>
     <string name="app_reset_required_action">Visszaállítás</string>
     <string name="app_reset_required_message">A bejelentkezési állapot és a beállítások nem olvashatók, valószínűleg operációs rendszer frissítés, biztonsági mentés visszaállítása vagy tárolási hiba miatt.\n\nKoppintson a \"Visszaállítás\" gombra a régi adatok törléséhez, majd jelentkezzen be újra és konfigurálja újra a beállításokat.</string>
     <string name="app_reset_required_title">Visszaállítás szükséges</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Kurzusok</string>
     <string name="class_table_import_enter_link">Hivatkozás megadása</string>
     <string name="class_table_import_failed">Az órarend importálása nem sikerült</string>
+    <string name="class_table_import_flashlight">Zseblámpa</string>
     <string name="class_table_import_invalid_message">A megosztási kód sérült, vagy módosították.</string>
     <string name="class_table_import_link_placeholder">Megosztási hivatkozás</string>
     <string name="class_table_import_lookup_failed">Nem sikerült betölteni a kurzusok részleteit</string>

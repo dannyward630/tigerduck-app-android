@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Pro ukončení stiskněte zpět znovu</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Aktuálně se nacházíte mimo tchajwanský čas. Tato aplikace automaticky používá tchajwanský čas.\nZkontrolujte si prosím data a časy. Šťastnou cestu!</string>
+    <string name="app_processing_keep_open">Zpracovává se…\nAplikaci prosím nezavírejte.</string>
     <string name="app_reset_required_action">Obnovit</string>
     <string name="app_reset_required_message">Vaše přihlášení a předvolby již nelze načíst, pravděpodobně kvůli aktualizaci OS, obnovení ze zálohy nebo problému s úložištěm.\n\nKlepnutím na „Obnovit“ vymažete stará data a poté se znovu přihlásíte a nakonfigurujete své předvolby.</string>
     <string name="app_reset_required_title">Vyžadováno obnovení</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Kurzy</string>
     <string name="class_table_import_enter_link">Zadat odkaz</string>
     <string name="class_table_import_failed">Rozvrh se nepodařilo importovat</string>
+    <string name="class_table_import_flashlight">Svítilna</string>
     <string name="class_table_import_invalid_message">Kód pro sdílení je poškozený nebo byl změněn.</string>
     <string name="class_table_import_link_placeholder">Odkaz ke sdílení</string>
     <string name="class_table_import_lookup_failed">Podrobnosti kurzů se nepodařilo načíst</string>

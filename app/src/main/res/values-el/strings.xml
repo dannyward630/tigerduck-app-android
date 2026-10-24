@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Πατήστε πίσω ξανά για έξοδο</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Βρίσκεστε εκτός ζώνης ώρας Ταϊβάν. Αυτή η εφαρμογή χρησιμοποιεί αυτόματα την ώρα Ταϊβάν.\nΕλέγξτε διπλά ημερομηνίες και ώρες. Καλό ταξίδι!</string>
+    <string name="app_processing_keep_open">Γίνεται επεξεργασία…\nΜην κλείσετε την εφαρμογή.</string>
     <string name="app_reset_required_action">Επαναφορά</string>
     <string name="app_reset_required_message">Η κατάσταση σύνδεσης και οι προτιμήσεις σας δεν μπορούν πλέον να διαβαστούν, πιθανώς λόγω αναβάθμισης ΛΣ, επαναφοράς αντιγράφου ασφαλείας ή προβλήματος αποθήκευσης.\n\nΠατήστε «Επαναφορά» για εκκαθάριση παλιών δεδομένων, στη συνέχεια συνδεθείτε και ρυθμίστε ξανά τις προτιμήσεις σας.</string>
     <string name="app_reset_required_title">Απαιτείται επαναφορά</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Μαθήματα</string>
     <string name="class_table_import_enter_link">Εισαγωγή συνδέσμου</string>
     <string name="class_table_import_failed">Δεν ήταν δυνατή η εισαγωγή του προγράμματος μαθημάτων</string>
+    <string name="class_table_import_flashlight">Φακός</string>
     <string name="class_table_import_invalid_message">Ο κωδικός κοινής χρήσης είναι κατεστραμμένος ή έχει τροποποιηθεί.</string>
     <string name="class_table_import_link_placeholder">Σύνδεσμος κοινής χρήσης</string>
     <string name="class_table_import_lookup_failed">Δεν ήταν δυνατή η φόρτωση των στοιχείων των μαθημάτων</string>

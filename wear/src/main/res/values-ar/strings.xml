@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">اضغط رجوع مرة أخرى للخروج</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">أنت حاليًا خارج توقيت تايوان. يستخدم هذا التطبيق توقيت تايوان تلقائيًا.\nيرجى التأكد من التواريخ والأوقات. رحلة آمنة!</string>
+    <string name="app_processing_keep_open">جارٍ المعالجة…\nيُرجى عدم إغلاق التطبيق.</string>
     <string name="app_reset_required_action">إعادة الضبط</string>
     <string name="app_reset_required_message">تعذّرت قراءة حالة تسجيل الدخول وإعداداتك المفضّلة، ربما بسبب تحديث النظام أو استعادة نسخة احتياطية أو مشكلة في التخزين.\n\nاضغط على \"إعادة الضبط\" لمسح البيانات القديمة، ثم سجّل الدخول وأعد تكوين تفضيلاتك.</string>
     <string name="app_reset_required_title">إعادة الضبط مطلوبة</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">عدد المقررات</string>
     <string name="class_table_import_enter_link">إدخال الرابط</string>
     <string name="class_table_import_failed">تعذّر استيراد الجدول الدراسي</string>
+    <string name="class_table_import_flashlight">الفلاش</string>
     <string name="class_table_import_invalid_message">رمز المشاركة تالف أو تم تعديله.</string>
     <string name="class_table_import_link_placeholder">رابط المشاركة</string>
     <string name="class_table_import_lookup_failed">تعذّر تحميل تفاصيل المقررات</string>

@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Pritisnite natrag ponovo za izlaz</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Trenutno se nalazite izvan tajvanskog vremenskog pojasa. Ova aplikacija automatski koristi tajvansko vrijeme.\nMolimo provjerite datume i vremena. Sretan put!</string>
+    <string name="app_processing_keep_open">Obrada u tijeku…\nNemojte zatvarati aplikaciju.</string>
     <string name="app_reset_required_action">Resetiraj</string>
     <string name="app_reset_required_message">Vaše stanje prijave i preferencije više se ne mogu učitati, moguće zbog nadogradnje OS-a, vraćanja sigurnosne kopije ili problema s pohranom.\n\nDodirnite „Resetiraj“ za brisanje starih podataka, zatim se prijavite i ponovno konfigurirajte preferencije.</string>
     <string name="app_reset_required_title">Potrebno je resetiranje</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Kolegiji</string>
     <string name="class_table_import_enter_link">Unesi poveznicu</string>
     <string name="class_table_import_failed">Raspored nije moguće uvesti</string>
+    <string name="class_table_import_flashlight">Svjetiljka</string>
     <string name="class_table_import_invalid_message">Kod za dijeljenje oštećen je ili izmijenjen.</string>
     <string name="class_table_import_link_placeholder">Poveznica za dijeljenje</string>
     <string name="class_table_import_lookup_failed">Nije moguće učitati pojedinosti o kolegijima</string>

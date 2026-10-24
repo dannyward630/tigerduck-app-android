@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Paina takaisin uudelleen poistuaksesi</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Olet tällä hetkellä Taiwanin aikavyöhykkeen ulkopuolella. Sovellus käyttää automaattisesti Taiwanin aikaa.\nTarkista päivämäärät ja kellonajat. Hyvää matkaa!</string>
+    <string name="app_processing_keep_open">Käsitellään…\nÄlä sulje sovellusta.</string>
     <string name="app_reset_required_action">Nollaa</string>
     <string name="app_reset_required_message">Kirjautumistilasi ja asetuksiasi ei voida enää lukea, mahdollisesti käyttöjärjestelmäpäivityksen, varmuuskopiopalautuksen tai tallennusongelman vuoksi.\n\nNollaa vanhat tiedot napauttamalla \"Nollaa\", kirjaudu sitten sisään ja määritä asetukset uudelleen.</string>
     <string name="app_reset_required_title">Nollaus vaaditaan</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Kurssit</string>
     <string name="class_table_import_enter_link">Anna linkki</string>
     <string name="class_table_import_failed">Lukujärjestyksen tuonti epäonnistui</string>
+    <string name="class_table_import_flashlight">Taskulamppu</string>
     <string name="class_table_import_invalid_message">Jakokoodi on vioittunut tai sitä on muutettu.</string>
     <string name="class_table_import_link_placeholder">Jakolinkki</string>
     <string name="class_table_import_lookup_failed">Kurssitietoja ei voitu ladata</string>

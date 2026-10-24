@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Znova pritisnite nazaj za izhod</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Trenutno ste zunaj tajvanskega časovnega pasu. Ta aplikacija samodejno uporablja tajvanski čas.\nProsimo, preverite datume in čase. Srečno potovanje!</string>
+    <string name="app_processing_keep_open">Obdelava…\nNe zaprite aplikacije.</string>
     <string name="app_reset_required_action">Ponastavi</string>
     <string name="app_reset_required_message">Stanja prijave in nastavitev ni mogoče prebrati, morda zaradi nadgradnje OS, obnovitve varnostne kopije ali težave s shranjevanjem.\n\nTapnite »Ponastavi«, da počistite stare podatke, nato se prijavite in znova konfigurirajte nastavitve.</string>
     <string name="app_reset_required_title">Potrebna je ponastavitev</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Predmeti</string>
     <string name="class_table_import_enter_link">Vnesi povezavo</string>
     <string name="class_table_import_failed">Urnika ni bilo mogoče uvoziti</string>
+    <string name="class_table_import_flashlight">Svetilka</string>
     <string name="class_table_import_invalid_message">Koda za deljenje je poškodovana ali spremenjena.</string>
     <string name="class_table_import_link_placeholder">Povezava za deljenje</string>
     <string name="class_table_import_lookup_failed">Podrobnosti o predmetih ni bilo mogoče naložiti</string>

@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Нажмите «Назад» ещё раз для выхода</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Сейчас вы находитесь вне тайваньского часового пояса. Приложение автоматически использует тайваньское время.\nПожалуйста, перепроверьте даты и время. Счастливого пути!</string>
+    <string name="app_processing_keep_open">Обработка…\nНе закрывайте приложение.</string>
     <string name="app_reset_required_action">Сбросить</string>
     <string name="app_reset_required_message">Ваше состояние входа и настройки больше не могут быть прочитаны. Возможно, это связано с обновлением ОС, восстановлением из резервной копии или проблемой хранилища.\n\nНажмите «Сбросить», чтобы очистить старые данные, затем войдите и настройте предпочтения заново.</string>
     <string name="app_reset_required_title">Требуется сброс</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Курсы</string>
     <string name="class_table_import_enter_link">Ввести ссылку</string>
     <string name="class_table_import_failed">Не удалось импортировать расписание</string>
+    <string name="class_table_import_flashlight">Фонарик</string>
     <string name="class_table_import_invalid_message">Код для обмена повреждён или изменён.</string>
     <string name="class_table_import_link_placeholder">Ссылка для обмена</string>
     <string name="class_table_import_lookup_failed">Не удалось загрузить сведения о курсах</string>

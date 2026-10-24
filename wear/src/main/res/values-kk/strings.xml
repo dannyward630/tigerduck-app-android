@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Шығу үшін қайта артқа басыңыз</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Сіз қазір Тайвань уақыт белдеуінен тыс жерсіз. Бұл қолданба Тайвань уақытын автоматты пайдаланады.\nКүндер мен уақытты екі рет тексеріңіз. Қауіпсіз сапар!</string>
+    <string name="app_processing_keep_open">Өңделуде…\nҚолданбаны жаппаңыз.</string>
     <string name="app_reset_required_action">Қалпына келтіру</string>
     <string name="app_reset_required_message">Кіру күйіңіз бен параметрлеріңізді оқу мүмкін емес; мүмкін операциялық жүйе жаңартуы, сақтық көшірмеден қалпына келтіру немесе сақтау мәселесі салдарынан.\n\nЕскі деректерді тазалау үшін «Қалпына келтіру» түймесін түртіңіз, содан кейін қайта кіріп параметрлерді орнатыңыз.</string>
     <string name="app_reset_required_title">Қалпына келтіру қажет</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Курстар</string>
     <string name="class_table_import_enter_link">Сілтемені енгізу</string>
     <string name="class_table_import_failed">Сабақ кестесін импорттау мүмкін болмады</string>
+    <string name="class_table_import_flashlight">Қалта шамы</string>
     <string name="class_table_import_invalid_message">Бөлісу коды зақымдалған немесе өзгертілген.</string>
     <string name="class_table_import_link_placeholder">Бөлісу сілтемесі</string>
     <string name="class_table_import_lookup_failed">Курс мәліметтерін жүктеу мүмкін болмады</string>

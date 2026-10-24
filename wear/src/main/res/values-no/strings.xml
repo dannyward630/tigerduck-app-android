@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Trykk tilbake igjen for å avslutte</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Du er for øyeblikket utenfor Taiwans tidssone. Denne appen bruker taiwansk tid automatisk.\nDobbeltsjekk datoer og tider. God reise!</string>
+    <string name="app_processing_keep_open">Behandler…\nIkke lukk appen.</string>
     <string name="app_reset_required_action">Tilbakestill</string>
     <string name="app_reset_required_message">Påloggingstilstanden og preferansene dine kan ikke lenger leses, muligens på grunn av en OS-oppgradering, sikkerhetskopigjenoppretting eller lagringsproblem.\n\nTrykk «Tilbakestill» for å fjerne gamle data, logg deretter inn og konfigurer preferansene dine på nytt.</string>
     <string name="app_reset_required_title">Tilbakestilling nødvendig</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Emner</string>
     <string name="class_table_import_enter_link">Skriv inn lenke</string>
     <string name="class_table_import_failed">Kunne ikke importere timeplanen</string>
+    <string name="class_table_import_flashlight">Lommelykt</string>
     <string name="class_table_import_invalid_message">Delingskoden er skadet eller endret.</string>
     <string name="class_table_import_link_placeholder">Delingslenke</string>
     <string name="class_table_import_lookup_failed">Kunne ikke laste inn emnedetaljene</string>

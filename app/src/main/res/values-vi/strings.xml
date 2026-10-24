@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Nhấn quay lại lần nữa để thoát</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Bạn hiện đang ở ngoài múi giờ Đài Loan. Ứng dụng đang tự động sử dụng giờ Đài Loan.\nVui lòng kiểm tra kỹ ngày giờ. Chúc bạn đi đường bình an!</string>
+    <string name="app_processing_keep_open">Đang xử lý…\nVui lòng không đóng ứng dụng.</string>
     <string name="app_reset_required_action">Đặt lại</string>
     <string name="app_reset_required_message">Trạng thái đăng nhập và tùy chọn của bạn không còn đọc được, có thể do nâng cấp hệ điều hành, khôi phục bản sao lưu hoặc sự cố lưu trữ.\n\nNhấn \"Đặt lại\" để xóa dữ liệu cũ, sau đó đăng nhập và cài đặt lại tùy chọn.</string>
     <string name="app_reset_required_title">Cần đặt lại</string>
@@ -299,6 +300,7 @@
     <string name="class_table_import_course_count">Số môn học</string>
     <string name="class_table_import_enter_link">Nhập liên kết</string>
     <string name="class_table_import_failed">Không thể nhập thời khóa biểu</string>
+    <string name="class_table_import_flashlight">Đèn pin</string>
     <string name="class_table_import_invalid_message">Mã chia sẻ bị hỏng hoặc đã bị thay đổi.</string>
     <string name="class_table_import_link_placeholder">Liên kết chia sẻ</string>
     <string name="class_table_import_lookup_failed">Không thể tải thông tin môn học</string>
