@@ -4,11 +4,12 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportModel.ScanAnswer
 
 /**
- * A code kept in front of the camera is passed on once the import takes it, and again only after
- * it left the picture; one the import refused, as while a dialog is over the scanner, is passed
- * on again at the next frame.
+ * A code kept in front of the camera is passed on once, and again only after it left the picture,
+ * unless the import answered that it waits, as while a dialog is over the scanner: then it is
+ * passed on again at the next frame.
  */
 class RepeatedQrCodeFilterTest {
 
@@ -33,24 +34,32 @@ class RepeatedQrCodeFilterTest {
     }
 
     @Test
-    fun `a code the import refused passes again on the next frame, and once taken is held`() {
+    fun `a code released passes again on the next frame, and is held again after that`() {
         val filter = RepeatedQrCodeFilter()
 
         assertTrue(filter.isNew("A", 0))
-        filter.refused("A")
+        filter.release("A")
         assertTrue(filter.isNew("A", 33))
         assertFalse(filter.isNew("A", 66))
     }
 
+    /** Posts held until [drain] answers them, as the main thread runs them after the camera's thread. */
+    private class Queue {
+        val posted = ArrayDeque<Runnable>()
+        fun post(runnable: Runnable) { posted.addLast(runnable) }
+        fun drain() { while (posted.isNotEmpty()) posted.removeFirst().run() }
+    }
+
+    private fun handOff(answer: (String) -> ScanAnswer): Pair<QrCodeHandOff, MutableList<String>> {
+        val heard = mutableListOf<String>()
+        return QrCodeHandOff(RepeatedQrCodeFilter(), post = Runnable::run) { text -> heard += text; answer(text) } to heard
+    }
+
     @Test
     fun `a code in view while Enter link is open scans as soon as the dialog closes`() {
-        val filter = RepeatedQrCodeFilter()
         var dialogOpen = true
         val taken = mutableListOf<String>()
-        // As the camera hands codes over: on another thread, which a direct executor stands in for.
-        val handOff = QrCodeHandOff(filter, post = Runnable::run) { text ->
-            if (dialogOpen) false else true.also { taken += text }
-        }
+        val (handOff, _) = handOff { text -> if (dialogOpen) ScanAnswer.BUSY else ScanAnswer.TAKEN.also { taken += text } }
 
         for (frame in 0 until 60) handOff.read("A", frame * 33L)
         assertTrue(taken.isEmpty())
@@ -65,21 +74,77 @@ class RepeatedQrCodeFilterTest {
     }
 
     @Test
-    fun `a refusal does not let go of a code the import took, as across a gap with its confirm step open`() {
-        val filter = RepeatedQrCodeFilter()
+    fun `the code the import holds stays held, as back from the background with its confirm step open`() {
         var confirming = false
         val taken = mutableListOf<String>()
-        val handOff = QrCodeHandOff(filter, post = Runnable::run) { text ->
-            if (confirming) false else true.also { taken += text; confirming = true }
+        val (handOff, _) = handOff { text ->
+            if (confirming) ScanAnswer.HOLDING else ScanAnswer.TAKEN.also { taken += text; confirming = true }
         }
 
         handOff.read("A", 0)
-        // Back from two seconds in the background, A still in front of the camera, its step open.
+        // Two seconds in the background, then A still in front of the camera, its step open.
         for (frame in 0 until 30) handOff.read("A", 2_000 + frame * 33L)
         confirming = false
         for (frame in 30 until 60) handOff.read("A", 2_000 + frame * 33L)
 
         // Cancelling the step does not reopen it while A stays in view.
         assertEquals(listOf("A"), taken)
+    }
+
+    @Test
+    fun `a code taken before, out of view for a while, scans once a dialog that kept it waiting closes`() {
+        var dialogOpen = false
+        val taken = mutableListOf<String>()
+        val (handOff, _) = handOff { text -> if (dialogOpen) ScanAnswer.BUSY else ScanAnswer.TAKEN.also { taken += text } }
+
+        handOff.read("A", 0)
+        // Its step cancelled, A out of view for five seconds, then back while Enter link is open.
+        dialogOpen = true
+        handOff.read("A", 5_000)
+        dialogOpen = false
+        handOff.read("A", 5_033)
+
+        assertEquals(listOf("A", "A"), taken)
+    }
+
+    @Test
+    fun `another app's code is handed over once while it stays in view`() {
+        val (handOff, heard) = handOff { ScanAnswer.NOT_SHARE_CODE }
+
+        for (frame in 0 until 60) handOff.read("WIFI:S:home;;", frame * 33L)
+
+        assertEquals(listOf("WIFI:S:home;;"), heard)
+    }
+
+    @Test
+    fun `frames read before the main thread answers post once, and a code that waits posts again after`() {
+        val queue = Queue()
+        var answers = 0
+        val handOff = QrCodeHandOff(RepeatedQrCodeFilter(), post = queue::post) { answers++; ScanAnswer.BUSY }
+
+        handOff.read("A", 0)
+        handOff.read("A", 33)
+        handOff.read("A", 66)
+        assertEquals(1, queue.posted.size)
+
+        queue.drain()
+        assertEquals(1, answers)
+        handOff.read("A", 99)
+        assertEquals(1, queue.posted.size)
+    }
+
+    @Test
+    fun `nothing is handed over once the camera is let go, even what was already posted`() {
+        val queue = Queue()
+        var answers = 0
+        val handOff = QrCodeHandOff(RepeatedQrCodeFilter(), post = queue::post) { answers++; ScanAnswer.TAKEN }
+
+        handOff.read("A", 0)
+        handOff.close()
+        queue.drain()
+        handOff.read("B", 33)
+        queue.drain()
+
+        assertEquals(0, answers)
     }
 }

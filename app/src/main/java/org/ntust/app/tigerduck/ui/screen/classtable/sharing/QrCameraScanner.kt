@@ -70,7 +70,7 @@ import java.util.concurrent.Executors
  * [torch] hears of the camera bound, for the page's flashlight toggle, which this does not draw.
  */
 @Composable
-fun QrScannerCamera(onScanned: (String) -> Boolean, torch: ScannerTorch, modifier: Modifier = Modifier) {
+fun QrScannerCamera(onScanned: (String) -> ClassTableImportModel.ScanAnswer, torch: ScannerTorch, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
         LaunchedEffect(torch) { torch.unavailable() }
@@ -127,7 +127,7 @@ private fun CameraMessage(message: String?, action: String, onAction: () -> Unit
 }
 
 @Composable
-private fun CameraPreview(onScanned: (String) -> Boolean, torch: ScannerTorch, modifier: Modifier) {
+private fun CameraPreview(onScanned: (String) -> ClassTableImportModel.ScanAnswer, torch: ScannerTorch, modifier: Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val latest by rememberUpdatedState(onScanned)
@@ -161,15 +161,13 @@ private fun CameraPreview(onScanned: (String) -> Boolean, torch: ScannerTorch, m
                 val preview = Preview.Builder().build().also {
                     it.setSurfaceProvider { request -> surfaceRequest = request }
                 }
+                // Codes go to the import on the main thread, where it keeps its state; one it
+                // could not take yet, as while a dialog is over the scanner, is read again.
+                val handOff = QrCodeHandOff(RepeatedQrCodeFilter(), post = mainExecutor::execute) { text -> latest(text) }
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
-                    // Codes go to the import on the main thread, where it keeps its state; one it
-                    // refuses, as while a dialog is over the scanner, is read again.
-                    .also {
-                        val handOff = QrCodeHandOff(RepeatedQrCodeFilter(), post = mainExecutor::execute) { text -> latest(text) }
-                        it.setAnalyzer(executor, QrFrameReader(handOff))
-                    }
+                    .also { it.setAnalyzer(executor, QrFrameReader(handOff)) }
                 val camera = try {
                     cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector(cameraProvider), preview, analysis)
                 } catch (e: Exception) {
@@ -189,6 +187,8 @@ private fun CameraPreview(onScanned: (String) -> Boolean, torch: ScannerTorch, m
                     torchState?.observe(lifecycleOwner, torchObserver)
                 }
                 return@start {
+                    // A frame still being read, or a code posted, must not reach the page that left.
+                    handOff.close()
                     torchState?.removeObserver(torchObserver)
                     // Off before the camera goes, so it never stays lit after the page.
                     torch.unbinding()

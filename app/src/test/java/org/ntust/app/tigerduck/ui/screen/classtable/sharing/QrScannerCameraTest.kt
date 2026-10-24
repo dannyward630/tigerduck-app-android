@@ -42,7 +42,7 @@ class QrScannerCameraTest {
     @Test
     fun `a camera that does not start offers Retry, which tries again, and offers no flashlight`() {
         val torch = ScannerTorch()
-        composeRule.setContent { QrScannerCamera(onScanned = { false }, torch = torch) }
+        composeRule.setContent { QrScannerCamera(onScanned = { ClassTableImportModel.ScanAnswer.NOT_SHARE_CODE }, torch = torch) }
 
         composeRule.waitUntil(timeoutMillis = 10_000) {
             composeRule.onAllNodes(hasText(retry)).fetchSemanticsNodes().isNotEmpty()

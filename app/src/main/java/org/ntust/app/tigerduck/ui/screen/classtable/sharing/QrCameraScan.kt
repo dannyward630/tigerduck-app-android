@@ -1,20 +1,18 @@
 package org.ntust.app.tigerduck.ui.screen.classtable.sharing
 
 /**
- * Lets a code through once while it stays in view, once the import took it. A camera reads a code
- * on every frame that shows it, and without this a code still in front of it would open its
- * confirm step again the moment it was cancelled. The iOS app's `RepeatedCodeFilter`.
+ * Lets a code through once while it stays in view. A camera reads a code on every frame that
+ * shows it, and without this a code still in front of it would open its confirm step again the
+ * moment it was cancelled. The iOS app's `RepeatedCodeFilter`.
  *
- * A code the import [refused] passes again at the next frame: refused while something was over
- * the scanner, as the Enter link dialog, a confirm step or a prompt, it would otherwise stay
- * held for as long as it stayed in view, and scan only once moved out of it. Not one the import
- * has [taken] on this page, though: refused while its own confirm step is open, as when it comes
- * back into view, it stays held, so cancelling the step does not reopen it.
- * Called from the camera's thread and the main thread.
+ * A code [release]d passes again at the next frame: one the import answered it could not take
+ * yet, as while the Enter link dialog or another code's step was open
+ * ([ClassTableImportModel.ScanAnswer.BUSY]), which would otherwise stay held for as long as it
+ * stayed in view, and scan only once moved out of it. Called from the camera's thread and the
+ * main thread.
  */
 class RepeatedQrCodeFilter {
     private val lastSeen = mutableMapOf<String, Long>()
-    private val takenCodes = mutableSetOf<String>()
 
     /** Whether [text], read at [nowMs], is new: unseen, or out of view for longer than [GAP_MS]. */
     @Synchronized
@@ -25,16 +23,10 @@ class RepeatedQrCodeFilter {
         return seen == null || nowMs - seen > GAP_MS
     }
 
-    /** [text], passed on, was taken by the import. */
+    /** [text] is new again at the next frame that shows it. */
     @Synchronized
-    fun taken(text: String) {
-        takenCodes += text
-    }
-
-    /** [text], passed on, was not taken: unless it was before, it is new again at the next frame that shows it. */
-    @Synchronized
-    fun refused(text: String) {
-        if (text !in takenCodes) lastSeen.remove(text)
+    fun release(text: String) {
+        lastSeen.remove(text)
     }
 
     companion object {
@@ -45,17 +37,30 @@ class RepeatedQrCodeFilter {
 
 /**
  * Hands the codes the camera reads ([read], on its thread) to the import through [post], on the
- * main thread where [take] says whether it took one, and tells [filter] which it took and which
- * it refused.
+ * main thread where [take] answers, and has [filter] let go of each the import could not take
+ * yet. Nothing more is handed over once [close]d, including what was posted before.
  */
 class QrCodeHandOff(
     private val filter: RepeatedQrCodeFilter,
     private val post: (Runnable) -> Unit,
-    private val take: (String) -> Boolean,
+    private val take: (String) -> ClassTableImportModel.ScanAnswer,
 ) {
+    @Volatile
+    private var closed = false
+
     fun read(text: String, nowMs: Long) {
-        if (!filter.isNew(text, nowMs)) return
-        post(Runnable { if (take(text)) filter.taken(text) else filter.refused(text) })
+        if (closed || !filter.isNew(text, nowMs)) return
+        post(
+            Runnable {
+                if (closed) return@Runnable
+                if (take(text) == ClassTableImportModel.ScanAnswer.BUSY) filter.release(text)
+            },
+        )
+    }
+
+    /** The camera is let go: a frame still being read, or one posted, reaches no one. */
+    fun close() {
+        closed = true
     }
 }
 

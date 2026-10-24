@@ -34,7 +34,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -297,7 +296,7 @@ class ClassTableImportPageTest {
 
     @Test
     fun `the camera takes no code while a link is typed`() {
-        var onScanned: ((String) -> Boolean)? = null
+        var onScanned: ((String) -> ClassTableImportModel.ScanAnswer)? = null
         composeRule.setContent {
             ClassTableImportPage(
                 model, onClose = {}, onFinished = {}, onPickPicture = {},
@@ -305,12 +304,12 @@ class ClassTableImportPageTest {
             )
         }
         composeRule.onNodeWithContentDescription(enterLink).performClick()
-        composeRule.runOnIdle { assertFalse(onScanned!!(fakeCode)) }
+        composeRule.runOnIdle { assertEquals(ClassTableImportModel.ScanAnswer.BUSY, onScanned!!(fakeCode)) }
         assertNull(model.state.value.pending)
 
         composeRule.onNodeWithText(app.getString(R.string.action_cancel)).performClick()
         composeRule.waitForIdle()
-        composeRule.runOnIdle { assertTrue(onScanned!!(fakeCode)) }
+        composeRule.runOnIdle { assertEquals(ClassTableImportModel.ScanAnswer.TAKEN, onScanned!!(fakeCode)) }
         assertNotNull(model.state.value.pending)
     }
 

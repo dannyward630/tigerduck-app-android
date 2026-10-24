@@ -132,7 +132,7 @@ internal fun ClassTableImportPage(
     onShare: (() -> Unit)? = null,
     refreshShare: () -> Unit = {},
     shareSource: Any? = null,
-    camera: @Composable (onScanned: (String) -> Boolean, torch: ScannerTorch, modifier: Modifier) -> Unit =
+    camera: @Composable (onScanned: (String) -> ClassTableImportModel.ScanAnswer, torch: ScannerTorch, modifier: Modifier) -> Unit =
         { onScanned, torch, modifier -> QrScannerCamera(onScanned = onScanned, torch = torch, modifier = modifier) },
 ) {
     // Keyed by the import: a link's import takes the place of the one on screen, and read for a
@@ -150,7 +150,7 @@ private fun ImportPage(
     onShare: (() -> Unit)?,
     refreshShare: () -> Unit,
     shareSource: Any?,
-    camera: @Composable (onScanned: (String) -> Boolean, torch: ScannerTorch, modifier: Modifier) -> Unit,
+    camera: @Composable (onScanned: (String) -> ClassTableImportModel.ScanAnswer, torch: ScannerTorch, modifier: Modifier) -> Unit,
 ) {
     val state by model.state.collectAsStateWithLifecycle()
     // The terms the share button offers are read as the scanner opens, and again as what they are
@@ -231,7 +231,11 @@ private fun ImportPage(
                     if (!state.fromLink) {
                         // A code the camera finds while a link is typed would open its screen
                         // under the dialog, as on iOS.
-                        camera({ text -> !enteringLink && model.scanned(text) }, torch, Modifier.fillMaxSize())
+                        camera(
+                            { text -> if (enteringLink) ClassTableImportModel.ScanAnswer.BUSY else model.scan(text) },
+                            torch,
+                            Modifier.fillMaxSize(),
+                        )
                     }
                     // An update has no confirm dialog to wait in, so it waits here, as a picture does.
                     if (state.isReadingImage || (state.isLookingUp && state.pending == null)) {
