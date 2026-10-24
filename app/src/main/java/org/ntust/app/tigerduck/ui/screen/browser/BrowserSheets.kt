@@ -3,6 +3,8 @@ package org.ntust.app.tigerduck.ui.screen.browser
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -43,12 +46,14 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -70,13 +75,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.browser.BrowserAppearance
@@ -104,9 +114,9 @@ private fun BrowserSheetFrame(onDismiss: () -> Unit, skipPartial: Boolean = true
 
 /** The page's host and title at the top of a sheet that acts on it. */
 @Composable
-private fun PageHeader(state: BrowserPageState) {
+private fun PageHeader(state: BrowserPageState, onCertificate: (() -> Unit)? = null) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-        Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(36.dp)) {
+        val lock: @Composable () -> Unit = {
             Icon(
                 when {
                     state.certificateRefused -> Icons.Filled.GppBad
@@ -116,6 +126,15 @@ private fun PageHeader(state: BrowserPageState) {
                 contentDescription = null,
                 modifier = Modifier.padding(9.dp),
             )
+        }
+        val shape = RoundedCornerShape(18.dp)
+        val color = MaterialTheme.colorScheme.surfaceVariant
+        if (onCertificate != null) {
+            // The lock is the way to the certificate, as it is in a phone's browser.
+            val label = stringResource(R.string.browser_certificate)
+            Surface(onClick = onCertificate, shape = shape, color = color, modifier = Modifier.size(36.dp).semantics { contentDescription = label }) { lock() }
+        } else {
+            Surface(shape = shape, color = color, modifier = Modifier.size(36.dp)) { lock() }
         }
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
@@ -144,17 +163,25 @@ private fun QuickAction(icon: ImageVector, label: String, enabled: Boolean = tru
 }
 
 @Composable
-private fun MenuRow(icon: ImageVector, label: String, enabled: Boolean = true, showArrow: Boolean = false, onClick: () -> Unit) {
+private fun MenuRow(
+    icon: ImageVector,
+    label: String,
+    enabled: Boolean = true,
+    showArrow: Boolean = false,
+    horizontalPadding: Dp = 20.dp,
+    iconGap: Dp = 16.dp,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 20.dp),
+            .padding(horizontal = horizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, contentDescription = null)
-        Spacer(Modifier.width(16.dp))
+        Spacer(Modifier.width(iconGap))
         Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         if (showArrow) Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
@@ -178,7 +205,7 @@ internal fun BrowserMenuSheet(
         block()
     }
     BrowserSheetFrame(onDismiss) {
-        PageHeader(state)
+        PageHeader(state, onCertificate = onCertificate.takeIf { state.shownCertificate != null })
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             QuickAction(Icons.Filled.ContentCopy, stringResource(R.string.browser_copy), enabled = url != null, onClick = { act { url?.let(actions::copy) } }, modifier = Modifier.weight(1f))
             QuickAction(Icons.Filled.Share, stringResource(R.string.browser_share), enabled = url != null, onClick = { act { url?.let(actions::share) } }, modifier = Modifier.weight(1f))
@@ -197,8 +224,9 @@ internal fun BrowserMenuSheet(
             OutlinedIconButton(onClick = actions::zoomOut, enabled = BrowserZoom.canZoomOut(state.zoom)) {
                 Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.browser_zoom_out))
             }
-            TextButton(onClick = actions::zoomReset) {
-                Text(percent, modifier = Modifier.width(48.dp), maxLines = 1)
+            TextButton(onClick = actions::zoomReset, colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current)) {
+                // As wide as it is, and no narrower than 48dp, so it stays put from 50% to 200%.
+                Text(percent, modifier = Modifier.widthIn(min = 48.dp).width(IntrinsicSize.Max), maxLines = 1, textAlign = TextAlign.Center)
             }
             OutlinedIconButton(onClick = actions::zoomIn, enabled = BrowserZoom.canZoomIn(state.zoom)) {
                 Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.browser_zoom_in))
@@ -271,10 +299,14 @@ internal fun BrowserAddressSheet(
                     Text(url, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth().padding(12.dp))
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { actions.copy(url) }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.browser_copy_short), maxLines = 1) }
-                OutlinedButton(onClick = { actions.share(url) }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.browser_share_short), maxLines = 1) }
-                OutlinedButton(onClick = { onDismiss(); actions.openExternal(url) }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.browser_open_external_short), maxLines = 1) }
+            SideBySideOrStacked(spacing = 8.dp) {
+                // Less padding than a button's own, so the three fit side by side at the usual sizes.
+                val padding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
+                Button(onClick = { actions.copy(url) }, contentPadding = padding) { Text(stringResource(R.string.browser_copy_short), maxLines = 1) }
+                OutlinedButton(onClick = { actions.share(url) }, contentPadding = padding) { Text(stringResource(R.string.browser_share_short), maxLines = 1) }
+                OutlinedButton(onClick = { onDismiss(); actions.openExternal(url) }, contentPadding = padding) {
+                    Text(stringResource(R.string.browser_open_external_short), maxLines = 1)
+                }
             }
             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                 Column {
@@ -293,7 +325,45 @@ internal fun BrowserAddressSheet(
                         InfoRow(icon = Icons.Filled.Person, title = stringResource(R.string.browser_signed_in), detail = null)
                     }
                     HorizontalDivider()
-                    MenuRow(Icons.Filled.VerifiedUser, stringResource(R.string.browser_certificate), enabled = state.shownCertificate != null, showArrow = true, onClick = onCertificate)
+                    MenuRow(
+                        Icons.Filled.VerifiedUser,
+                        stringResource(R.string.browser_certificate),
+                        enabled = state.shownCertificate != null,
+                        showArrow = true,
+                        // InfoRow's, so its icon and text line up with the rows above.
+                        horizontalPadding = 16.dp,
+                        iconGap = 12.dp,
+                        onClick = onCertificate,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * [content]'s buttons side by side in equal widths when each one's label fits its share, else one
+ * under another at full width: no label is cut, whatever the language or the text size.
+ */
+@Composable
+private fun SideBySideOrStacked(spacing: Dp, content: @Composable () -> Unit) {
+    Layout(content) { measurables, constraints ->
+        val gap = spacing.roundToPx()
+        val width = constraints.maxWidth
+        val share = (width - gap * (measurables.size - 1)) / measurables.size
+        if (measurables.all { it.maxIntrinsicWidth(Constraints.Infinity) <= share }) {
+            val placeables = measurables.map { it.measure(Constraints.fixedWidth(share)) }
+            val height = placeables.maxOf { it.height }
+            layout(width, height) {
+                placeables.forEachIndexed { i, placeable -> placeable.placeRelative(i * (share + gap), (height - placeable.height) / 2) }
+            }
+        } else {
+            val placeables = measurables.map { it.measure(Constraints.fixedWidth(width)) }
+            layout(width, placeables.sumOf { it.height } + gap * (placeables.size - 1)) {
+                var y = 0
+                placeables.forEach { placeable ->
+                    placeable.placeRelative(0, y)
+                    y += placeable.height + gap
                 }
             }
         }

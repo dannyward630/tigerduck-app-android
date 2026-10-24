@@ -12,6 +12,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -94,10 +97,77 @@ class InAppBrowserScreenTest {
 
         composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertIsNotEnabled()
         composeRule.onNodeWithContentDescription(string(R.string.browser_forward)).assertIsNotEnabled()
-        composeRule.onNodeWithContentDescription(string(R.string.browser_share)).performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_share)).performClick()
         composeRule.onNodeWithContentDescription(string(R.string.browser_close)).performClick()
 
         assertEquals(listOf("share $page", "close"), calls)
+    }
+
+    @Test
+    fun `more options is last in the bottom bar, in Share's place, and the top bar has none`() {
+        show(loaded())
+
+        val more = composeRule.onNodeWithContentDescription(string(R.string.browser_more)).getBoundsInRoot()
+        val back = composeRule.onNodeWithContentDescription(string(R.string.browser_back)).getBoundsInRoot()
+        val find = composeRule.onNodeWithContentDescription(string(R.string.browser_find)).getBoundsInRoot()
+        val close = composeRule.onNodeWithContentDescription(string(R.string.browser_close)).getBoundsInRoot()
+        assertEquals("in the bottom bar", back.top.value, more.top.value, 0.5f)
+        assertTrue("after Find", more.left > find.right)
+        assertEquals("the same size as the bar's other buttons", (back.right - back.left).value, (more.right - more.left).value, 0.5f)
+        assertTrue("not in the top bar", more.top > close.bottom)
+        composeRule.onNodeWithContentDescription(string(R.string.browser_share)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the zoom percentage is the color of the text around it, not the accent`() {
+        show(loaded())
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+
+        assertEquals(layoutOf(string(R.string.browser_zoom)).layoutInput.style.color, layoutOf("100%").layoutInput.style.color)
+    }
+
+    @Test
+    fun `the zoom percentage sits midway between zoom out and zoom in`() {
+        show(loaded())
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+
+        val minus = composeRule.onNodeWithContentDescription(string(R.string.browser_zoom_out)).getBoundsInRoot()
+        val plus = composeRule.onNodeWithContentDescription(string(R.string.browser_zoom_in)).getBoundsInRoot()
+        val text = composeRule.onNodeWithText("100%", useUnmergedTree = true).getBoundsInRoot()
+        val layout = layoutOf("100%")
+        val density = composeRule.density.density
+        val inkCenter = text.left.value + (layout.getLineLeft(0) + layout.getLineRight(0)) / 2 / density
+
+        assertEquals((minus.right.value + plus.left.value) / 2, inkCenter, 1f)
+    }
+
+    @Test
+    fun `the lock in the menu opens the certificate`() {
+        show(loaded().apply { certificate = goodCertificate })
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+
+        composeRule.onNodeWithContentDescription(string(R.string.browser_certificate)).performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_certificate_title)).assertExists()
+        composeRule.onNodeWithText("Good CA").assertExists()
+    }
+
+    @Test
+    fun `View certificate lines up with the connection row above it`() {
+        show(loaded().apply { certificate = goodCertificate })
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+
+        val connection = composeRule.onNodeWithText(string(R.string.browser_connection_secure), useUnmergedTree = true).getBoundsInRoot()
+        val view = composeRule.onNodeWithText(string(R.string.browser_certificate), useUnmergedTree = true).getBoundsInRoot()
+
+        assertEquals(connection.left.value, view.left.value, 0.5f)
+    }
+
+    private fun layoutOf(text: String): TextLayoutResult {
+        val results = mutableListOf<TextLayoutResult>()
+        composeRule.onNodeWithText(text, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+        return results.first()
     }
 
     @Test

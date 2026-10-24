@@ -29,7 +29,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -105,11 +104,11 @@ open class BrowserActions {
 }
 
 /**
- * The TigerDuck browser, layout A: a top bar with Close, the address (host
- * and the page's title; a tap shows the whole address) and ⋮, a thin
+ * The TigerDuck browser, layout A: a top bar with Close and the address
+ * (host and the page's title; a tap shows the whole address), a thin
  * progress line, the page, and a bottom bar with Back, Forward, Reload or
- * Stop, Find and Share. [web] draws the page; the screen draws everything
- * around and over it.
+ * Stop, Find and ⋮, whose menu shares. [web] draws the page; the screen
+ * draws everything around and over it.
  */
 @Composable
 fun InAppBrowserScreen(
@@ -134,7 +133,7 @@ fun InAppBrowserScreen(
         if (find != null) {
             FindBar(find, actions)
         } else {
-            TopBar(state, onAddress = { sheet = BrowserSheet.ADDRESS }, onMenu = { sheet = BrowserSheet.MENU }, onClose = actions::close)
+            TopBar(state, onAddress = { sheet = BrowserSheet.ADDRESS }, onClose = actions::close)
         }
         Box(Modifier.fillMaxWidth().height(2.dp)) {
             if (state.loading) {
@@ -154,7 +153,7 @@ fun InAppBrowserScreen(
             )
         }
         HorizontalDivider(color = colors.outlineVariant)
-        BottomBar(state, actions)
+        BottomBar(state, actions, onMenu = { sheet = BrowserSheet.MENU })
     }
 
     val url = state.url
@@ -187,7 +186,7 @@ fun InAppBrowserScreen(
 internal enum class BrowserSheet { MENU, ADDRESS, CERTIFICATE, DOWNLOADS }
 
 @Composable
-private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onMenu: () -> Unit, onClose: () -> Unit) {
+private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onClose: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val host = state.host.orEmpty()
     val addressLabel = stringResource(R.string.browser_address).replaceIosArg(1, host)
@@ -235,9 +234,7 @@ private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onMenu: () ->
                 )
             }
         }
-        IconButton(onClick = onMenu) {
-            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.browser_more))
-        }
+        Spacer(Modifier.width(12.dp))
     }
 }
 
@@ -287,7 +284,7 @@ private fun FindBar(find: FindState, actions: BrowserActions) {
 }
 
 @Composable
-private fun BottomBar(state: BrowserPageState, actions: BrowserActions) {
+private fun BottomBar(state: BrowserPageState, actions: BrowserActions, onMenu: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().height(56.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -311,9 +308,9 @@ private fun BottomBar(state: BrowserPageState, actions: BrowserActions) {
         IconButton(onClick = actions::startFind, enabled = state.error == null && state.signIn == null) {
             Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.browser_find))
         }
-        val url = state.url
-        IconButton(onClick = { url?.let(actions::share) }, enabled = url != null) {
-            Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.browser_share))
+        // Share is in its menu.
+        IconButton(onClick = onMenu) {
+            Icon(Icons.Filled.MoreVert, contentDescription = stringResource(R.string.browser_more))
         }
     }
 }
