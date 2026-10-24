@@ -1,7 +1,9 @@
 package org.ntust.app.tigerduck.network.moodle
 
+import okhttp3.FormBody
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import okhttp3.Request
 
 /**
  * Where a file a Moodle answer lists downloads from, as the Moodle app fetches it: under
@@ -29,13 +31,27 @@ object MoodleFileUrls {
     }
 
     /** Whether [fileUrl] is a file the Moodle site's `pluginfile.php` serves, which takes the key. */
-    fun isMoodleFile(fileUrl: String): Boolean = downloadUrl(fileUrl, accessKey = null, token = "") != null
+    fun isMoodleFile(fileUrl: String): Boolean = downloadUrl(fileUrl, accessKey = null) != null
 
     /**
-     * [fileUrl] with the key in it, or null for a file not served by the Moodle site's
-     * `pluginfile.php`, which no key may be sent to.
+     * The request that downloads [fileUrl], or null for a file not served by the Moodle site's
+     * `pluginfile.php`, which no key may be sent to. With the account's private access key, a GET
+     * under `tokenpluginfile.php`, as the Moodle app downloads files. Without it, a POST to the
+     * web-service path with [token] in the form, never in the URL, which access logs record;
+     * Moodle reads the token from either.
      */
-    fun downloadUrl(fileUrl: String, accessKey: String?, token: String): String? {
+    fun downloadRequest(fileUrl: String, accessKey: String?, token: String): Request? {
+        val url = downloadUrl(fileUrl, accessKey) ?: return null
+        val request = Request.Builder().url(url)
+        return if (accessKey.isNullOrEmpty()) {
+            request.post(FormBody.Builder().add("token", token).build()).build()
+        } else {
+            request.get().build()
+        }
+    }
+
+    /** [fileUrl] on the path [downloadRequest] takes, with the key in it when there is one. */
+    private fun downloadUrl(fileUrl: String, accessKey: String?): String? {
         val url = fileUrl.toHttpUrlOrNull() ?: return null
         if (url.scheme != "https" || url.host.lowercase() != MoodleWebservice.SITE_HOST) return null
         val segments = url.pathSegments
@@ -57,7 +73,6 @@ object MoodleFileUrls {
             val name = url.queryParameterName(i)
             if (name != "token") builder.addQueryParameter(name, url.queryParameterValue(i))
         }
-        if (key == null) builder.addQueryParameter("token", token)
         return builder.build().toString()
     }
 }

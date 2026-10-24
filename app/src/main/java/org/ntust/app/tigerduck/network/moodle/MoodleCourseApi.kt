@@ -3,7 +3,6 @@ package org.ntust.app.tigerduck.network.moodle
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.Request
 import org.ntust.app.tigerduck.data.moodle.MoodleMaterials
 import org.ntust.app.tigerduck.network.MoodleWebserviceError
 import org.ntust.app.tigerduck.network.model.moodle.MoodleAssignmentSubmission
@@ -227,12 +226,12 @@ class LiveMoodleCourseApi internal constructor(
      */
     override suspend fun picture(url: String): ByteArray = webservice.withToken { token ->
         val key = webservice.siteInfo(token).privateAccessKey
-        val download = MoodleFileUrls.downloadUrl(url, key, token)
+        val download = MoodleFileUrls.downloadRequest(url, key, token)
         if (!MoodleJson.isOwnPicture(url) || download == null) {
             throw MoodleWebserviceError.MalformedResponse("not a member's picture")
         }
         withContext(Dispatchers.IO) {
-            webservice.download(Request.Builder().url(download).get().build()) { type ->
+            webservice.download(download) { type ->
                 type?.startsWith("image/") == true
             }
         }
@@ -259,11 +258,11 @@ class LiveMoodleCourseApi internal constructor(
      */
     override suspend fun download(file: MoodleFile, target: java.io.File, maxBytes: Long, progress: (Float) -> Unit) {
         webservice.withToken { token ->
-            val url = MoodleFileUrls.downloadUrl(file.url, webservice.siteInfo(token).privateAccessKey, token)
+            val request = MoodleFileUrls.downloadRequest(file.url, webservice.siteInfo(token).privateAccessKey, token)
                 ?: throw MoodleWebserviceError.MalformedResponse("not a Moodle file")
             val expected = file.checkableMimeType()
             webservice.downloadTo(
-                Request.Builder().url(url).get().build(),
+                request,
                 target,
                 expected,
                 maxBytes,
