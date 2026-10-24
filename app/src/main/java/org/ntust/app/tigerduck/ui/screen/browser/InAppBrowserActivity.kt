@@ -181,6 +181,9 @@ class InAppBrowserActivity : AppCompatActivity() {
     /** The session the page was loaded in, once the clearing gate let it load. */
     private var loadedSession: Int? = null
 
+    /** The page to put back after recreation, until [startPage] has started; see [SavedPage]. */
+    private var pendingPage: SavedPage? = null
+
     /** The scheme the page was last told; see [tellPage]. */
     private var toldDark: Boolean? = null
     private var schemePokePending = false
@@ -243,9 +246,8 @@ class InAppBrowserActivity : AppCompatActivity() {
             processing = processing,
         )
 
-        val savedWeb = savedInstanceState?.getBundle(KEY_WEB_STATE)
-        val savedSession = savedInstanceState?.getInt(KEY_SESSION, -1)
-        loads.signInTarget = savedInstanceState?.getString(KEY_SIGN_IN_TARGET)
+        pendingPage = SavedPage.readFrom(savedInstanceState)
+        loads.signInTarget = pendingPage?.signInTarget
         // The first WebView in a process loads the WebView provider, and making one takes the main
         // thread for a while even then. Made here, it held the window's first frame back, and the
         // opening animation waited for it: the browser felt slow to open. Made after the first
@@ -254,7 +256,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             if (isFinishing || isDestroyed) return@afterFirstFrame
             webView = createWebView()
             webReady = true
-            startPage(target, savedWeb, savedSession)
+            startPage(target)
         }
 
         onBackPressedDispatcher.addCallback(this) { handleBack() }
@@ -298,8 +300,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
     }
 
-    /** Loads [target], or the page put back from [savedWeb], once no sign-out's clearing is owed. */
-    private fun startPage(target: String, savedWeb: Bundle?, savedSession: Int?) {
+    /** Loads [target], or the page put back from [pendingPage], once no sign-out's clearing is owed. */
+    private fun startPage(target: String) {
         lifecycleScope.launch {
             // Nothing loads while a sign-out clears the browser, a page put back from saved state
             // included: the departing student's session is still there.
@@ -313,7 +315,9 @@ class InAppBrowserActivity : AppCompatActivity() {
             loadedSession = session
             launch { BrowserSession.generation.collect { if (it != session) finish() } }
             // Saved state from before a sign-out is the departing student's: started afresh instead.
-            val restored = savedWeb != null && savedSession == session && webView.restoreState(savedWeb) != null
+            val saved = pendingPage
+            pendingPage = null
+            val restored = saved != null && saved.session == session && webView.restoreState(saved.webState) != null
             if (!restored) open(target)
         }
     }
@@ -334,10 +338,14 @@ class InAppBrowserActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         val session = loadedSession
-        if (!::webView.isInitialized || session == null) return
-        outState.putInt(KEY_SESSION, session)
-        outState.putBundle(KEY_WEB_STATE, Bundle().also { webView.saveState(it) })
-        loads.signInTarget?.let { outState.putString(KEY_SIGN_IN_TARGET, it) }
+        val page = if (::webView.isInitialized && session != null) {
+            SavedPage(Bundle().also { webView.saveState(it) }, session, loads.signInTarget)
+        } else {
+            // Not started yet: the page being put back is saved again, or a later recreation would
+            // open the first address instead.
+            pendingPage
+        }
+        page?.writeTo(outState)
     }
 
     override fun onDestroy() {
@@ -903,9 +911,5 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         /** Camera shots for uploads, under the cache; cleared with the browser's data. */
         const val UPLOADS_DIR = "browser_uploads"
-
-        private const val KEY_WEB_STATE = "web_state"
-        private const val KEY_SIGN_IN_TARGET = "sign_in_target"
-        private const val KEY_SESSION = "session"
     }
 }
