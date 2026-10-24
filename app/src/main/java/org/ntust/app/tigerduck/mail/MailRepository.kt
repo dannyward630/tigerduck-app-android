@@ -166,6 +166,12 @@ interface SchoolMailRepository {
      */
     suspend fun status(folder: String, stillWanted: () -> Boolean = { true }): FolderStatus
     suspend fun refreshFlags(folder: String, uids: List<Long>): Map<Long, MailFlags>
+    /**
+     * Runs [block] with its requests ahead of every other one's, the background download's batches
+     * included: see [SessionHolder.ahead]. For what the user is waiting on, and nothing longer.
+     */
+    suspend fun <T> ahead(block: suspend () -> T): T = block()
+
     suspend fun summary(folder: String, uid: Long): MailSummary?
     suspend fun body(folder: String, uid: Long): MailBody
     suspend fun setSeen(folder: String, uid: Long, seen: Boolean)
@@ -612,6 +618,8 @@ class MailRepository @Inject constructor(
         updateCached(folder) { s -> flags[s.uid]?.let { s.copy(flags = it) } ?: s }
         return flags
     }
+
+    override suspend fun <T> ahead(block: suspend () -> T): T = holder.ahead(block)
 
     override suspend fun summary(folder: String, uid: Long): MailSummary? {
         cachedPage(folder)?.messages?.firstOrNull { it.uid == uid }?.let { return it }
