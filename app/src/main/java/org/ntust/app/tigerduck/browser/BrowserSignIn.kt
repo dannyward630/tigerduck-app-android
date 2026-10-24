@@ -30,6 +30,12 @@ interface BrowserSignIn {
      */
     fun isSignInPage(url: String): Boolean
 
+    /**
+     * Whether a sign-in can go on to [url]: a page of the site, not one of the pages it signs in
+     * through (its sign-in page, the links [signedInUrl] gives).
+     */
+    fun isReturnPage(url: String): Boolean
+
     /** A link that signs the browser in and goes on to [target], or null when none can be had now. */
     suspend fun signedInUrl(target: String): String?
 
@@ -58,6 +64,8 @@ class MoodleBrowserSignIn(private val autologin: MoodleAutologin) : BrowserSignI
     override fun hasSession(cookieHeader: String?): Boolean = hasMoodleSession(cookieHeader)
 
     override fun isSignInPage(url: String): Boolean = isMoodleSignInPage(url)
+
+    override fun isReturnPage(url: String): Boolean = MoodleAutologin.isSignInTarget(url)
 
     override suspend fun signedInUrl(target: String): String? = autologin.signedIn(target)
 

@@ -165,7 +165,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private var toldDark: Boolean? = null
     private var schemePokePending = false
 
-    private val loads = BrowserLoads(state)
+    private lateinit var loads: BrowserLoads
     private lateinit var signInFlow: BrowserSignInFlow
     private var appliedHost: String? = null
 
@@ -215,6 +215,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         pageTheme = ContextThemeWrapper(this, R.style.Theme_TigerDuck)
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
         webView = createWebView()
+        loads = BrowserLoads(state, signIns)
         signInFlow = BrowserSignInFlow(state, loads, signIns, lifecycleScope, ::load) { webView.stopLoading() }
 
         val savedWeb = savedInstanceState?.getBundle(KEY_WEB_STATE)
@@ -437,7 +438,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             schemePokePending = false
             pokeSettings()
         }
-        loads.started(url, ofSigningInSite = provider != null)
+        loads.started(url)
         state.url = url
         state.loading = true
         state.certificate = null
@@ -768,10 +769,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             // Never past a bad certificate.
             handler.cancel()
             val url = error.url
-            if (url == loads.loadingUrl || url == state.url || state.loading) {
-                state.loading = false
-                loads.failed(url, BrowserError.BadCertificate(url?.toHttpUrlOrNull()?.host ?: state.host))
-            }
+            if (loads.certificateFailed(url, url?.toHttpUrlOrNull()?.host ?: state.host)) state.loading = false
         }
 
         override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {

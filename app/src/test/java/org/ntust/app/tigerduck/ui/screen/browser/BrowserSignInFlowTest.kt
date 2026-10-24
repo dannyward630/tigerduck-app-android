@@ -12,13 +12,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.browser.BrowserSignIn
 import org.ntust.app.tigerduck.browser.BrowserSignIns
+import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
 
 /** The sign-in screen: when it signs in by itself, and which page a sign-in goes on to. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class BrowserSignInFlowTest {
 
     private val state = BrowserPageState()
-    private val loads = BrowserLoads(state)
+    private lateinit var loads: BrowserLoads
     private val loaded = mutableListOf<String>()
     private var stops = 0
 
@@ -38,6 +39,7 @@ class BrowserSignInFlowTest {
         override fun handles(url: String) = url.startsWith("https://moodle2.ntust.edu.tw/")
         override fun hasSession(cookieHeader: String?) = false
         override fun isSignInPage(url: String) = url.startsWith(SIGN_IN_PAGE)
+        override fun isReturnPage(url: String) = MoodleAutologin.isSignInTarget(url)
         override suspend fun signedInUrl(target: String): String? {
             asked += target
             delay(takesMs)
@@ -51,7 +53,9 @@ class BrowserSignInFlowTest {
 
     private fun TestScope.flow(site: Site): BrowserSignInFlow {
         site.clock = { testScheduler.currentTime }
-        return BrowserSignInFlow(state, loads, BrowserSignIns(listOf(site)), backgroundScope, load = { url ->
+        val signIns = BrowserSignIns(listOf(site))
+        loads = BrowserLoads(state, signIns)
+        return BrowserSignInFlow(state, loads, signIns, backgroundScope, load = { url ->
             // As the activity's load: the browser asks the page to go.
             loads.requested(url)
             loaded += url
@@ -113,7 +117,9 @@ class BrowserSignInFlowTest {
         flow.signIn(site, PAGE)
         runCurrent()
 
-        // Moodle did not take the link.
+        // Moodle did not take the link, which the WebView may report as a page start first.
+        loads.started(loaded.last())
+        loads.finished(loaded.last())
         flow.signInPageReached(site, SIGN_IN_PAGE)
         advanceTimeBy(60_000)
         runCurrent()
@@ -146,7 +152,7 @@ class BrowserSignInFlowTest {
         val flow = flow(site)
         flow.signIn(site, PAGE)
         runCurrent()
-        loads.started(PAGE, ofSigningInSite = true)
+        loads.started(PAGE)
         loads.finished(PAGE)
 
         // Later the student opens another page, and Moodle has signed the browser out meanwhile.

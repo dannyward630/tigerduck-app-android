@@ -59,6 +59,7 @@ class BrowserSignInTest {
         override fun handles(url: String) = url.contains(hostPart)
         override fun hasSession(cookieHeader: String?) = false
         override fun isSignInPage(url: String) = false
+        override fun isReturnPage(url: String) = true
         override suspend fun signedInUrl(target: String): String? = null
         override fun msUntilRetry() = 0L
         override fun webSignInUrl(target: String): String? = null
