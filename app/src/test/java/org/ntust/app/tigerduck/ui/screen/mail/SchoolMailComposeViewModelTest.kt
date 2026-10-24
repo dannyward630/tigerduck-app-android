@@ -4,6 +4,9 @@ package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +19,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -42,11 +46,13 @@ import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.model.MailAttachment
 import org.ntust.app.tigerduck.mail.model.MailBody
 import org.ntust.app.tigerduck.mail.smtp.SentCopy
+import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.testApplicationScope
 import org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeViewModel.ComposeError
 import org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeViewModel.RecipientSlot
 import java.io.ByteArrayInputStream
+import java.io.File
 import org.ntust.app.tigerduck.mail.schoolMailSite
 
 /** The To field as it hands [value] over once it has been typed and the field left: one bubble per recipient. */
@@ -68,6 +74,7 @@ class SchoolMailComposeViewModelTest {
     private lateinit var account: MailAccount
     private lateinit var cache: MailCache
     private lateinit var notices: SentCopyNotices
+    private lateinit var heldSends: HeldSendStore
     private val labels = ComposePrefill.Labels({ d, s -> "On $d, $s wrote:" }, "-- Forwarded --", { "From: $it" }, { "Date: $it" }, { "Subject: $it" }, { "To: $it" })
     private val noPicks = PickedAttachmentReader { null }
 
@@ -77,7 +84,10 @@ class SchoolMailComposeViewModelTest {
         account = MailAccount(InMemoryCredentialStore(), InMemoryMailStateStore(), FakeMailServer().factory(), cache,
             FakeDemoGate(), schoolMailSite(), RecordingScheduler(), RecordingNotifier(), appScope)
         notices = SentCopyNotices(account, appScope)
+        heldSends = HeldSendStore(heldRoot)
     }
+
+    private val heldRoot by lazy { File(tmp.root, "held") }
 
     // The same TestDispatcher backs both Dispatchers.Main and the injected @IoDispatcher, so a
     // withContext(io) hop stays synchronous under the test the way SchoolMailMessageViewModelTest does it.
@@ -86,11 +96,11 @@ class SchoolMailComposeViewModelTest {
 
     // With no hold before a send, as every test but the hold's own expects; see [heldVm].
     private fun vm(mode: ComposeMode, folder: String = "", uid: Long = -1, mailto: String = "") =
-        SchoolMailComposeViewModel(handle(mode, folder, uid, mailto), repo, account, cache, noPicks, notices, main.dispatcher)
+        SchoolMailComposeViewModel(handle(mode, folder, uid, mailto), repo, account, cache, noPicks, notices, main.dispatcher, heldSends)
             .also { it.sendHoldMs = 0; it.prefill(labels) }
 
     /** A new mail to one recipient, held before it goes out as on the phone. */
-    private fun heldVm() = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, main.dispatcher)
+    private fun heldVm() = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, main.dispatcher, heldSends)
         .also { it.prefill(labels); it.setTo("amy@mail.ntust.edu.tw"); it.setSubject("Hi") }
 
     @Test
@@ -98,7 +108,7 @@ class SchoolMailComposeViewModelTest {
         repo.add("INBOX", mailSummary(5, subject = "期中考"))
         repo.bodies[5] = MailBody("<p>line1</p>", null, emptyList(), emptyMap())
         val io = HeldDispatcher()
-        val vm = SchoolMailComposeViewModel(handle(ComposeMode.REPLY, "INBOX", 5), repo, account, cache, noPicks, notices, io).also { it.sendHoldMs = 0 }
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.REPLY, "INBOX", 5), repo, account, cache, noPicks, notices, io, heldSends).also { it.sendHoldMs = 0 }
         vm.prefill(labels)
         // The original is already fetched, and neither jsoup pass has run: the form is still
         // loading rather than sanitizing and flattening the sender's HTML on Main.
@@ -160,7 +170,7 @@ class SchoolMailComposeViewModelTest {
         assertNull(runBlocking { account.signIn("b10000001", "pw") })
         repo.correspondence = listOf(mailSummary(1, from = MailAddress("王大明", "wang@example.com")))
         val io = HeldDispatcher()
-        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, io).also { it.sendHoldMs = 0 }
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, io, heldSends).also { it.sendHoldMs = 0 }
         // The load gets its answer once the next student has left this one behind, and before their
         // sign-in moves the account on.
         account.onLockWait = { io.drain() }
@@ -273,7 +283,7 @@ class SchoolMailComposeViewModelTest {
     fun `a new message opened for someone starts addressed to them and is not dirty`() {
         val vm = SchoolMailComposeViewModel(
             SavedStateHandle(mapOf("mode" to "NEW", "folder" to "", "uid" to -1L, "to" to "amy@mail.ntust.edu.tw")),
-            repo, account, cache, noPicks, notices, main.dispatcher,
+            repo, account, cache, noPicks, notices, main.dispatcher, heldSends,
         ).also { it.prefill(labels) }
 
         assertEquals(listOf("amy@mail.ntust.edu.tw"), vm.state.value.to.entries)
@@ -380,7 +390,7 @@ class SchoolMailComposeViewModelTest {
     @Test
     fun `a pick that can't be measured shows the attachment error instead of vanishing silently`() {
         val unmeasurable = PickedAttachmentReader { null }
-        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, unmeasurable, notices, main.dispatcher).also { it.sendHoldMs = 0 }
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, unmeasurable, notices, main.dispatcher, heldSends).also { it.sendHoldMs = 0 }
         vm.addPicked(listOf<Uri?>(null))
         assertEquals(ComposeError.TooLarge, vm.state.value.error)
         assertTrue(vm.state.value.attachments.isEmpty())
@@ -392,7 +402,7 @@ class SchoolMailComposeViewModelTest {
     fun `a mailto link starts a new mail from its fields, and leaving it untouched asks nothing`() {
         val vm = SchoolMailComposeViewModel(
             handle(ComposeMode.NEW, mailto = "mailto:office@mail.ntust.edu.tw?cc=b@x.tw&subject=%E8%AB%8B%E5%95%8F&body=Hi"),
-            repo, account, cache, noPicks, notices, main.dispatcher,
+            repo, account, cache, noPicks, notices, main.dispatcher, heldSends,
         ).also { it.sendHoldMs = 0 }
         vm.prefill(labels)
         val s = vm.state.value
@@ -467,7 +477,7 @@ class SchoolMailComposeViewModelTest {
         repo.sentCopy = SentCopy.NotAttempted
         // Unconfined, so the sign-out's cleanup has run by the time the send comes back.
         val notices = SentCopyNotices(account, CoroutineScope(SupervisorJob() + Dispatchers.Unconfined))
-        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, main.dispatcher).also { it.sendHoldMs = 0 }
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, main.dispatcher, heldSends).also { it.sendHoldMs = 0 }
         vm.prefill(labels)
         vm.setTo("a@x.tw")
         repo.onSend = { account.signOut() }
@@ -736,7 +746,7 @@ class SchoolMailComposeViewModelTest {
         val slowReader = PickedAttachmentReader {
             ComposeAttachment("p", "p.txt", "text/plain", 3, ComposeAttachment.Source.Local { ByteArrayInputStream("hi!".toByteArray()) })
         }
-        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, slowReader, notices, pickerDispatcher).also { it.sendHoldMs = 0 }
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, slowReader, notices, pickerDispatcher, heldSends).also { it.sendHoldMs = 0 }
         vm.setTo("a@x.tw")
         vm.addPicked(listOf<Uri?>(null))
         assertTrue(vm.state.value.pendingPicks > 0)
@@ -749,6 +759,8 @@ class SchoolMailComposeViewModelTest {
         assertEquals(0, vm.state.value.pendingPicks)
         assertEquals(listOf("p.txt"), vm.state.value.attachments.map { it.fileName })
         vm.send()
+        // The send keeps the mail on the phone first, on the same dispatcher.
+        pickerDispatcher.scheduler.advanceUntilIdle()
         assertEquals(1, repo.sent.size)
     }
 
@@ -825,5 +837,239 @@ class SchoolMailComposeViewModelTest {
         vm.updateRecipients(RecipientSlot.TO) { it.typed(listOf("\"Chen"), "").typed(listOf("bob@x.tw"), "") }
         vm.send()
         assertEquals(ComposeError.InvalidRecipients(listOf("\"Chen")), vm.state.value.error)
+    }
+
+    // --- a held mail kept on the phone (tigerduck-app#555) ---------------------------
+
+    private val owner = "b10000001@mail.ntust.edu.tw"
+
+    private fun signedIn() = assertNull(runBlocking { account.signIn("b10000001", "pw") })
+
+    /** The store as the app sees it after a restart: nothing of it in use. */
+    private fun afterRestart() = HeldSendStore(heldRoot)
+
+    /** The composer the app opens after a restart for kept mail [id], as MainActivity routes to it. */
+    private fun reopened(id: String) = SchoolMailComposeViewModel(
+        SavedStateHandle(mapOf("mode" to "NEW", "folder" to "", "uid" to -1L, "mailto" to "", "held" to id)),
+        repo, account, cache, noPicks, notices, main.dispatcher, afterRestart(),
+    ).also { it.prefill(labels) }
+
+    private val keptFields = HeldSendStore.Fields(
+        "NEW", "", -1, false, null, null, listOf("amy@mail.ntust.edu.tw"), emptyList(), emptyList(), "Hi", "Hello",
+    )
+
+    private fun runOutTheHold() {
+        main.dispatcher.scheduler.advanceTimeBy(SchoolMailComposeViewModel.SEND_HOLD_MS)
+        main.dispatcher.scheduler.runCurrent()
+    }
+
+    @Test
+    fun `a held mail is kept on the phone, marked sending as it goes, and gone once it has gone out`() {
+        signedIn()
+        var whileSending: Long? = null
+        repo.onSend = { whileSending = afterRestart().orphan(owner)?.sendingSinceMs }
+        val vm = heldVm()
+
+        vm.send()
+
+        val kept = afterRestart().orphan(owner)
+        assertEquals(listOf("amy@mail.ntust.edu.tw"), kept?.fields?.to)
+        assertNull("held, its send not started", kept?.sendingSinceMs)
+        runOutTheHold()
+        assertNotNull("marked before it went to the server", whileSending)
+        assertEquals(1, repo.sent.size)
+        assertNull(afterRestart().orphan(owner))
+    }
+
+    @Test
+    fun `undo deletes the kept mail`() {
+        signedIn()
+        val vm = heldVm()
+        vm.send()
+
+        vm.undoSend()
+
+        assertNull(afterRestart().orphan(owner))
+    }
+
+    @Test
+    fun `a mail held when the system ended the app opens again in the composer, with the file picked`() {
+        signedIn()
+        val vm = heldVm()
+        vm.addAttachments(listOf(ComposeAttachment("p1", "notes.txt", "text/plain", 9, ComposeAttachment.Source.Local { "lab notes".byteInputStream() })))
+
+        vm.send()
+        val id = afterRestart().orphan(owner)!!.id
+
+        // The system ends the app during the hold, and the composer opens again for it.
+        val back = reopened(id).state.value
+
+        assertEquals(listOf("amy@mail.ntust.edu.tw"), back.to.entries)
+        assertEquals("Hi", back.subject)
+        val file = back.attachments.single()
+        assertEquals("notes.txt", file.fileName)
+        assertEquals("lab notes", (file.source as ComposeAttachment.Source.Local).open().reader().readText())
+        assertNull("nothing went out, so nothing to warn of", back.error)
+        assertTrue("leaving asks about a draft", back.dirty)
+        assertFalse(back.sending)
+        assertTrue(repo.sent.isEmpty())
+    }
+
+    @Test
+    fun `one whose send had started opens with the warning that it may have gone out, and sends nothing itself`() {
+        signedIn()
+        heldSends.save("m1", owner, keptFields, emptyList()) { true }
+        heldSends.markSending("m1")
+
+        val vm = reopened("m1")
+
+        val error = vm.state.value.error as ComposeError.SendFailed
+        assertTrue(error.error is MailError.SendUnconfirmed)
+        assertFalse("raised, not just written", vm.state.value.errorAcknowledged)
+        main.dispatcher.scheduler.advanceTimeBy(60_000)
+        main.dispatcher.scheduler.runCurrent()
+        assertTrue(repo.sent.isEmpty())
+    }
+
+    @Test
+    fun `a send that failed for sure is no longer kept, and one that may have gone out still is`() {
+        signedIn()
+        val vm = vm(ComposeMode.NEW)
+        vm.setTo("amy@mail.ntust.edu.tw")
+
+        repo.sendError = MailError.Network()
+        vm.send()
+        assertNull(afterRestart().orphan(owner))
+
+        repo.sendError = MailError.SendUnconfirmed()
+        vm.send()
+        assertNotNull(afterRestart().orphan(owner)?.sendingSinceMs)
+    }
+
+    @Test
+    fun `a reopened mail saved as a draft, or discarded, is no longer kept`() {
+        signedIn()
+        heldSends.save("m1", owner, keptFields, emptyList()) { true }
+        heldSends.save("m2", owner, keptFields, emptyList()) { true }
+
+        reopened("m1").saveDraft()
+        reopened("m2").discard()
+
+        assertEquals(1, repo.drafts.size)
+        assertNull(afterRestart().orphan(owner))
+    }
+
+    @Test
+    fun `a kept mail that cannot be read opens an empty composer`() {
+        signedIn()
+        File(heldRoot, "m1").apply { mkdirs() }.resolve("record.json").writeText("{ not json")
+
+        val state = reopened("m1").state.value
+
+        assertEquals(emptyList<String>(), state.to.entries)
+        assertNull(state.error)
+        assertFalse(state.loading)
+    }
+
+    @Test
+    fun `nothing is kept for a mail account no one is signed in to`() {
+        val vm = heldVm()
+
+        vm.send()
+
+        assertTrue(heldRoot.list().orEmpty().isEmpty())
+    }
+
+    @Test
+    fun `a composer the system rebuilt from saved state opens afresh, leaving the kept mail to the one the app opens`() {
+        signedIn()
+        heldSends.save("m1", owner, keptFields, emptyList()) { true }
+        // Its saved state, as the system hands it back after ending the app.
+        val saved = SavedStateHandle(mapOf("mode" to "NEW", "folder" to "", "uid" to -1L, "held" to "m1", "composerOpened" to true))
+
+        val rebuilt = SchoolMailComposeViewModel(saved, repo, account, cache, noPicks, notices, main.dispatcher, afterRestart())
+            .also { it.prefill(labels) }
+
+        assertEquals(emptyList<String>(), rebuilt.state.value.to.entries)
+        assertFalse("nothing to save, so it gives way at once", rebuilt.state.value.dirty)
+        assertEquals("m1", afterRestart().orphan(owner)?.id)
+    }
+
+    @Test
+    fun `a kept mail read as another student signs in is not shown`() {
+        signedIn()
+        heldSends.save("m1", owner, keptFields, emptyList()) { true }
+        val io = HeldDispatcher()
+        val vm = SchoolMailComposeViewModel(
+            SavedStateHandle(mapOf("mode" to "NEW", "folder" to "", "uid" to -1L, "mailto" to "", "held" to "m1")),
+            repo, account, cache, noPicks, notices, io, afterRestart(),
+        ).also { it.prefill(labels) }
+
+        account.signOut()
+        io.drain()
+
+        assertEquals(emptyList<String>(), vm.state.value.to.entries)
+        assertFalse(vm.state.value.loading)
+    }
+
+    @Test
+    fun `a composer closed while it reads a kept mail leaves it for the next one to open`() {
+        signedIn()
+        heldSends.save("m1", owner, keptFields, emptyList()) { true }
+        val store = afterRestart()
+        val io = HeldDispatcher()
+        val owners = ViewModelStore()
+        val vm = ViewModelProvider(owners, object : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>): T = SchoolMailComposeViewModel(
+                SavedStateHandle(mapOf("mode" to "NEW", "folder" to "", "uid" to -1L, "mailto" to "", "held" to "m1")),
+                repo, account, cache, noPicks, notices, io, store,
+            ) as T
+        })[SchoolMailComposeViewModel::class.java]
+        vm.prefill(labels)
+
+        owners.clear()
+        io.drain()
+
+        assertEquals("m1", store.orphan(owner)?.id)
+    }
+
+    @Test
+    fun `a failed send's mail is forgotten before the form can be sent again`() {
+        signedIn()
+        val io = EitherEndDispatcher()
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, io, heldSends)
+            .also { it.sendHoldMs = 0; it.prefill(labels); it.setTo("amy@mail.ntust.edu.tw") }
+        repo.sendError = MailError.Network()
+        vm.send()
+        // Until the form is usable again; whatever IO of the failed send is left then waits.
+        while (vm.state.value.sending) io.runOldest()
+
+        // Sent again at once, and held this time. Its keeping runs ahead of what the first attempt
+        // left, as a pool of threads may run them; nothing of the first attempt may take it.
+        repo.sendError = null
+        vm.sendHoldMs = SchoolMailComposeViewModel.SEND_HOLD_MS
+        vm.send()
+        io.runNewest()
+        io.drain()
+
+        assertNotNull(afterRestart().orphan(owner))
+    }
+}
+
+/** Holds what it is handed for a test to run oldest or newest first, as a pool of threads may. */
+private class EitherEndDispatcher : kotlinx.coroutines.CoroutineDispatcher() {
+    private val queued = ArrayDeque<Runnable>()
+
+    override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
+        queued.addLast(block)
+    }
+
+    fun runOldest() = queued.removeFirst().run()
+
+    fun runNewest() = queued.removeLast().run()
+
+    fun drain() {
+        while (queued.isNotEmpty()) runOldest()
     }
 }

@@ -217,7 +217,15 @@ fun AppNavigation(
  * and the app with it, and come back with the intent from Recents.
  */
 internal fun NavHostController.navigateToStartRoute(route: String): Boolean =
-    runCatching { navigate(route) { launchSingleTop = true } }
+    runCatching {
+        if (MailRoutes.reopens(route)) {
+            // In place of a composer on top, never into it: one the system rebuilt after ending the
+            // app would keep its view model under singleTop, and show nothing of the kept mail.
+            navigate(route) { popUpTo(MailRoutes.COMPOSE) { inclusive = true } }
+        } else {
+            navigate(route) { launchSingleTop = true }
+        }
+    }
         .onFailure { Log.w("StartRoute", "not opened: ${it.javaClass.simpleName}") }
         .isSuccess
 
@@ -628,6 +636,7 @@ fun MainNavigation(
                     navArgument("uid") { type = NavType.LongType; defaultValue = -1L },
                     navArgument("mailto") { type = NavType.StringType; defaultValue = "" },
                     navArgument("to") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("held") { type = NavType.StringType; defaultValue = "" },
                 ),
             ) { entry ->
                 // Not a bare pop: a send can finish after a link has opened another page over it.

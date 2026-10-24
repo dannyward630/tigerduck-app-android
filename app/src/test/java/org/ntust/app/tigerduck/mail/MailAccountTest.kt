@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.ntust.app.tigerduck.mail.model.MailAddress
+import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import java.io.File
 
@@ -33,7 +34,19 @@ class MailAccountTest {
     @After
     fun stopTheAppScope() = appScope.cancelAndJoinBlocking()
 
-    private fun account() = MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope)
+    // Apart from the cache, which a sign-out deletes whole.
+    @get:Rule val heldTmp = TemporaryFolder()
+    private val heldRoot by lazy { File(heldTmp.root, "held") }
+    private val heldSends by lazy { HeldSendStore(heldRoot) }
+
+    private fun account() =
+        MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope, heldSends)
+
+    private val heldFields = HeldSendStore.Fields(
+        "NEW", "", -1, false, null, null, listOf("amy@x.tw"), emptyList(), emptyList(), "Hi", "Hello",
+    )
+
+    private fun holdMail(owner: String) = assertTrue(heldSends.save("m1", owner, heldFields, emptyList()) { true })
 
     @Test
     fun `successful sign-in stores the account, sets the baseline and fills the display name`() = runTest {
@@ -200,5 +213,34 @@ class MailAccountTest {
         }
         assertFalse(File(cache.attachmentsDir, "a.pdf").exists())
         assertEquals(1, notifier.cancelledAll)
+    }
+
+    @Test
+    fun `sign-out deletes the mail held for Undo or being sent`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        holdMail("b10000001@mail.ntust.edu.tw")
+
+        account.signOut()
+
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (notifier.cancelledAll == 0) delay(10) }
+        }
+        assertNull(HeldSendStore(heldRoot).orphan("b10000001@mail.ntust.edu.tw"))
+        assertFalse(File(heldRoot, "m1").exists())
+    }
+
+    @Test
+    fun `another student signing in deletes the previous one's held mail, and the same one signing in again keeps it`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        holdMail("b10000001@mail.ntust.edu.tw")
+
+        assertNull(account.signIn("b10000001", "pw"))
+        assertTrue("their own, still to review", File(heldRoot, "m1").exists())
+
+        server.passwords["B10000002"] = "pw"
+        assertNull(account.signIn("b10000002", "pw"))
+        assertFalse(File(heldRoot, "m1").exists())
     }
 }

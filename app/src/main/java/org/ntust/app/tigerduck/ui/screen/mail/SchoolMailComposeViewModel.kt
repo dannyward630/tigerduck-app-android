@@ -9,6 +9,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,7 @@ import org.ntust.app.tigerduck.mail.compose.RecipientSuggestions
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.sanitize.HtmlSanitizer
 import org.ntust.app.tigerduck.mail.smtp.SentCopy
+import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import java.io.File
 import java.io.InputStream
@@ -55,7 +57,10 @@ class ComposeAttachment(
      *  already reported for the original mail's attachment (spec's BODYSTRUCTURE size) -- it must
      *  never be grown again. */
     sealed interface Source {
-        class Local(val open: () -> InputStream) : Source
+        /** [kept] is the copy [open] reads when it is one kept for a held send ([HeldSendStore]). */
+        class Local(val kept: File?, val open: () -> InputStream) : Source {
+            constructor(open: () -> InputStream) : this(null, open)
+        }
         data class Original(val folder: String, val uid: Long, val partId: String) : Source
     }
 }
@@ -68,21 +73,46 @@ class ComposeAttachment(
  * and prefill re-running on an ordinary Activity recreation and wiping picked files are all
  * failure modes a partial attempt reintroduces. Losing typed text to a process death while the
  * picker is open is accordingly an accepted, ledgered trade-off.
+ *
+ * A mail confirmed for sending is the one exception (tigerduck-app#555): from the confirmation until
+ * it has gone out or been taken back it is kept on the phone ([HeldSendStore]), and after the
+ * system ends the app it opens here again for review ([reopen]), never sent on its own.
  */
 @HiltViewModel
 class SchoolMailComposeViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: SchoolMailRepository,
     private val account: MailAccount,
     private val cache: MailCache,
     private val pickedAttachmentReader: PickedAttachmentReader,
     private val sentCopyNotices: SentCopyNotices,
     @IoDispatcher private val io: CoroutineDispatcher,
+    private val heldSends: HeldSendStore,
 ) : ViewModel() {
     val mode: ComposeMode = runCatching { ComposeMode.valueOf(savedStateHandle.get<String>("mode").orEmpty()) }
         .getOrDefault(ComposeMode.NEW)
     private val sourceFolder: String = savedStateHandle.get<String>("folder").orEmpty()
     private val sourceUid: Long = savedStateHandle.get<Long>("uid") ?: -1L
+
+    /**
+     * Whether the system rebuilt this composer from saved state after ending the app. Such a one
+     * keeps nothing, so it opens as if afresh; the app opens another for a mail kept for its send
+     * (MainActivity's reopenHeldMail), and this one, untouched, gives way to it.
+     */
+    private val rebuilt: Boolean = savedStateHandle.contains(OPENED).also { savedStateHandle[OPENED] = true }
+
+    /**
+     * A kept mail to show again rather than a form to fill in ([reopen]), named by the route the
+     * app opens for it; not for a composer rebuilt from saved state, which is not the one opened.
+     */
+    private val reopening: String? = savedStateHandle.get<String>(HELD)?.takeIf { it.isNotBlank() && !rebuilt }
+
+    /**
+     * The mail kept for this composer's send ([HeldSendStore]), from its first send on, or the one
+     * it reopened, set on the IO dispatcher the moment it is adopted: a composer closed while it
+     * read the mail still lets go of it ([onCleared]).
+     */
+    @Volatile private var heldId: String? = null
 
     /**
      * The screen this compose closes back to, which is where a missing sent copy is told: the mail
@@ -281,6 +311,10 @@ class SchoolMailComposeViewModel @Inject constructor(
     }
 
     private fun runPrefill(labels: ComposePrefill.Labels) {
+        reopening?.let { id ->
+            reopen(id)
+            return
+        }
         mailto?.let { link ->
             // Filled in once, from the link alone: nothing to load, and the fields as the link
             // left them are the baseline, so backing out untouched asks nothing.
@@ -357,6 +391,61 @@ class SchoolMailComposeViewModel @Inject constructor(
             } catch (e: MailError) {
                 if (e is MailError.AuthFailed) account.onAuthFailure(generation)
                 _state.update { it.copy(loading = false, loadError = e) }
+            }
+        }
+    }
+
+    /**
+     * Shows kept mail [id] again, as it was when its send was confirmed: the system ended the app
+     * while the send was held or under way. One whose send had started may have gone out, and
+     * says so as a send that could not be confirmed does; nothing is sent until the student sends
+     * it again. A mail that cannot be read, or is not the signed-in student's, leaves an empty
+     * form. Leaving it asks about a draft, as for anything unsent.
+     */
+    private fun reopen(id: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(loading = true, loadError = null) }
+            val generation = account.accountGeneration
+            val held = try {
+                withContext(io) { account.ownAddress?.let { heldSends.adopt(id, it) }?.also { heldId = id } }
+            } catch (e: CancellationException) {
+                // Closed while it read: an adoption that went through still lets go, or no composer
+                // could open the mail again before the next restart.
+                heldId?.let { adopted -> withContext(io + NonCancellable) { heldSends.release(adopted) } }
+                throw e
+            }
+            // Read for a student who has left since: not this one's to see.
+            if (held != null && account.accountGeneration != generation) {
+                heldId = null
+                withContext(io) { heldSends.release(id) }
+            }
+            if (held == null || account.accountGeneration != generation) {
+                _state.update { it.copy(loading = false) }
+                return@launch
+            }
+            val fields = held.fields
+            inReplyTo = fields.inReplyTo
+            references = fields.references
+            sourceLoaded = fields.sourceLoaded
+            val attachments = held.attachments.mapNotNull { a ->
+                val source = when {
+                    a.copy != null -> a.copy.let { copy -> ComposeAttachment.Source.Local(copy) { copy.inputStream() } }
+                    a.original != null -> ComposeAttachment.Source.Original(a.original.folder, a.original.uid, a.original.partId)
+                    else -> return@mapNotNull null
+                }
+                ComposeAttachment(a.id, a.fileName, a.contentType, a.sizeBytes, source)
+            }
+            val cc = RecipientField().typed(fields.cc, "")
+            val bcc = RecipientField().typed(fields.bcc, "")
+            _state.update {
+                it.copy(
+                    loading = false,
+                    to = RecipientField().typed(fields.to, ""), cc = cc, bcc = bcc,
+                    showCcBcc = cc.entries.isNotEmpty() || bcc.entries.isNotEmpty(),
+                    subject = fields.subject, body = fields.body, attachments = attachments,
+                    error = if (held.sendingSinceMs != null) ComposeError.SendFailed(MailError.SendUnconfirmed()) else null,
+                    errorAcknowledged = false,
+                )
             }
         }
     }
@@ -489,17 +578,66 @@ class SchoolMailComposeViewModel @Inject constructor(
         val confirmedUnder = account.accountGeneration
         val answer = CompletableDeferred<Boolean>()
         heldSend = answer
+        val id = heldId ?: UUID.randomUUID().toString()
+        heldId = id
         _state.update { it.copy(sending = true, holding = true, undone = false) }
         viewModelScope.launch {
+            // Kept first, so the hold never runs with the mail on screen alone. A mail that cannot
+            // be kept is still sent: keeping it is a safeguard, and sending is the point.
+            withContext(io) { keep(id, s, confirmedUnder) }
             val goes = withTimeoutOrNull(holdMs) { answer.await() } ?: true
             heldSend = null
             if (!goes || account.accountGeneration != confirmedUnder) {
+                withContext(io) { heldSends.forget(id) }
                 _state.update { it.copy(sending = false, holding = false, undone = !goes) }
                 return@launch
             }
+            // From here the mail may reach the server: after a restart it says it may have gone out.
+            // Unmarked, it is not kept at all, rather than offered again as unsent.
+            withContext(io) { if (!heldSends.markSending(id)) heldSends.forget(id) }
+            // The sign-in again, after that write: the mail is the confirming student's alone.
+            if (account.accountGeneration != confirmedUnder) {
+                withContext(io) { heldSends.forget(id) }
+                _state.update { it.copy(sending = false, holding = false) }
+                return@launch
+            }
             _state.update { it.copy(holding = false) }
-            ship(s)
+            ship(s, confirmedUnder)
         }
+    }
+
+    /**
+     * Keeps the confirmed form [s] on the phone as mail [id] of the signed-in student, unless the
+     * sign-in has moved on from [generation]. A read of the encrypted store and a copy of every
+     * file picked here: for the IO dispatcher.
+     */
+    private fun keep(id: String, s: UiState, generation: Int): Boolean {
+        val owner = account.ownAddress ?: return false
+        val fields = HeldSendStore.Fields(
+            mode.name, sourceFolder, sourceUid, sourceLoaded, inReplyTo, references,
+            s.to.entries, s.cc.entries, s.bcc.entries, s.subject, s.body,
+        )
+        val attachments = s.attachments.map { a ->
+            when (val source = a.source) {
+                is ComposeAttachment.Source.Local ->
+                    HeldSendStore.Keep(a.id, a.fileName, a.contentType, a.sizeBytes, open = source.open, stored = source.kept)
+                is ComposeAttachment.Source.Original -> HeldSendStore.Keep(
+                    a.id, a.fileName, a.contentType, a.sizeBytes,
+                    original = HeldSendStore.Original(source.folder, source.uid, source.partId),
+                )
+            }
+        }
+        return heldSends.save(id, owner, fields, attachments, generation) { account.accountGeneration == generation }
+    }
+
+    /**
+     * The kept mail goes with its copies once nothing is left to resolve: it went out, or was saved
+     * as a draft or discarded. NonCancellable: the screen closes right after.
+     */
+    private suspend fun dropHeld() {
+        val id = heldId ?: return
+        heldId = null
+        withContext(io + NonCancellable) { heldSends.delete(id) }
     }
 
     /**
@@ -522,8 +660,8 @@ class SchoolMailComposeViewModel @Inject constructor(
 
     fun acknowledgeUndone() = _state.update { it.copy(undone = false) }
 
-    /** The send itself, of the form [s] as it was confirmed. */
-    private fun ship(s: UiState) {
+    /** The send itself, of the form [s] as it was confirmed under sign-in [confirmedUnder]. */
+    private fun ship(s: UiState, confirmedUnder: Int) {
         val to = ComposeRules.parseRecipients(s.to.entries)
         val cc = ComposeRules.parseRecipients(s.cc.entries)
         val bcc = ComposeRules.parseRecipients(s.bcc.entries)
@@ -531,7 +669,15 @@ class SchoolMailComposeViewModel @Inject constructor(
         // its notice to the next one.
         val accountGeneration = sentCopyNotices.accountGeneration
         val generation = account.accountGeneration
-        withStaged(onError = { ComposeError.SendFailed(it) }) { attachments ->
+        withStaged(onError = { error ->
+            // Failed for sure, the mail is back in the editor alone, as after an Undo. One that may
+            // have gone out stays kept as sending, to say so after a restart. Before the form can
+            // be sent again: a retry keeps the mail under the same id, which this must not take.
+            if (error !is MailError.SendUnconfirmed) heldId?.let { id -> withContext(io) { heldSends.forget(id) } }
+            ComposeError.SendFailed(error)
+        }) { attachments ->
+            // Staging can take a while: a student signed in over the one who confirmed it sends none of it.
+            if (account.accountGeneration != confirmedUnder) throw MailError.Abandoned()
             val mail = OutgoingMail(repository.selfAddress(), to.addresses, cc.addresses, bcc.addresses,
                 s.subject.trim(), s.body, attachments, inReplyTo, references)
             val answered = if (sourceLoaded && (mode == ComposeMode.REPLY || mode == ComposeMode.REPLY_ALL)) sourceFolder to sourceUid else null
@@ -546,6 +692,7 @@ class SchoolMailComposeViewModel @Inject constructor(
             // user the opposite of what happened. It is reported before the screen closes, to
             // stay on the screens it goes back to until the user dismisses it.
             SentCopyNotice.of(copy)?.let { sentCopyNotices.report(it, sentCopyOrigin, accountGeneration) }
+            dropHeld()
             _state.update { it.copy(done = true) }
         }
     }
@@ -588,11 +735,25 @@ class SchoolMailComposeViewModel @Inject constructor(
             val mail = OutgoingMail(repository.selfAddress(), to.addresses, cc.addresses, bcc.addresses,
                 s.subject.trim(), s.body, attachments, inReplyTo, references)
             repository.saveDraft(mail, replacingUid = if (sourceLoaded && mode == ComposeMode.DRAFT) sourceUid else null)
+            dropHeld()
             _state.update { it.copy(done = true, savedDraft = true) }
         }
     }
 
-    fun discard() = _state.update { it.copy(done = true) }
+    fun discard() {
+        viewModelScope.launch { dropHeld() }
+        _state.update { it.copy(done = true) }
+    }
+
+    /**
+     * Lets go of the kept mail: one still to resolve stays for after a restart, as when the system
+     * closes the app mid-send; one taken back or failed goes with its copies ([HeldSendStore.release]).
+     */
+    override fun onCleared() {
+        val id = heldId ?: return
+        // The view model's own scope is gone by now; a file or two to delete.
+        CoroutineScope(io).launch { heldSends.release(id) }
+    }
 
     /** [ComposeAttachment.Source.Local] sizes are raw and still need base64 growth; [Source.Original]
      *  sizes are already the encoded octet count IMAP reported and must be added as-is. */
@@ -603,7 +764,7 @@ class SchoolMailComposeViewModel @Inject constructor(
     }
 
     /** Downloads carried-over attachments to temp files for the duration of [block], then deletes them. */
-    private fun withStaged(onError: (MailError) -> ComposeError, block: suspend (List<OutgoingAttachment>) -> Unit) {
+    private fun withStaged(onError: suspend (MailError) -> ComposeError, block: suspend (List<OutgoingAttachment>) -> Unit) {
         viewModelScope.launch {
             // As in [runPrefill]: the sign-in a rejection is for.
             val generation = account.accountGeneration
@@ -646,6 +807,12 @@ class SchoolMailComposeViewModel @Inject constructor(
     companion object {
         /** How long a confirmed send waits for an Undo before it goes out (tigerduck-app#555). */
         const val SEND_HOLD_MS = 5_000L
+
+        /** The route argument naming a kept mail to show again; see [reopening]. */
+        private const val HELD = "held"
+
+        /** Set in a composer's saved state once it has opened; see [rebuilt]. */
+        private const val OPENED = "composerOpened"
     }
 }
 
