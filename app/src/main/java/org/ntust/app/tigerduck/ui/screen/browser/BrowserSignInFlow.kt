@@ -7,11 +7,17 @@ import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.browser.BrowserSignIn
 import org.ntust.app.tigerduck.browser.BrowserSignIns
 import org.ntust.app.tigerduck.browser.watchSignInRetry
+import org.ntust.app.tigerduck.ui.AppProcessing
 
 /**
  * The browser's sign-in screen and the sign-ins it runs, apart from the activity so a test can
  * run it. [load] loads a page the app chose, on the page's own terms; [stopLoading] stops the
  * one under way.
+ *
+ * A link the site signs the browser in with comes first. Where none can be had, the app signs in
+ * itself ([BrowserSignIn.signInWithoutLink]) behind [processing]'s spinner, as often as the site's
+ * provider allows by itself ([BrowserSignIn.maySignInWithoutLink]), so a site that will not keep
+ * the session shows the screen rather than loop; "Sign in again" by hand may try it at once.
  */
 internal class BrowserSignInFlow(
     private val state: BrowserPageState,
@@ -20,8 +26,12 @@ internal class BrowserSignInFlow(
     private val scope: CoroutineScope,
     private val load: (String) -> Unit,
     private val stopLoading: () -> Unit,
+    private val processing: AppProcessing = AppProcessing(),
 ) {
     private var job: Job? = null
+
+    /** The page "Sign in again" was tapped for, whose next try is the student's own. */
+    private var byHandFor: String? = null
 
     /** Signs the browser in to [target]'s site through [provider] and loads [target]; the screen when it cannot now. */
     fun signIn(provider: BrowserSignIn, target: String) {
@@ -50,13 +60,15 @@ internal class BrowserSignInFlow(
                 return
             }
         }
-        if (provider.msUntilRetry() == 0L) signIn(provider, target) else show(provider, target)
+        if (provider.msUntilRetry() == 0L || provider.maySignInWithoutLink()) signIn(provider, target) else show(provider, target)
     }
 
     /** "Sign in again" on the screen. */
     fun signInAgain() {
         val target = state.signIn?.target ?: return
         val provider = signIns.forUrl(target) ?: return
+        // Asked for by hand: the app may sign in itself again at once.
+        byHandFor = target
         signIn(provider, target)
     }
 
@@ -88,15 +100,28 @@ internal class BrowserSignInFlow(
     }
 
     private suspend fun attempt(provider: BrowserSignIn, target: String) {
+        val byHand = byHandFor == target
+        byHandFor = null
         val signedIn = provider.signedInUrl(target)
         if (signedIn != null) {
             state.signIn = null
             load(signedIn)
+        } else if (provider.maySignInWithoutLink(byHand) && signInByApp(provider, byHand)) {
+            state.signIn = null
+            load(target)
         } else {
-            // TODO(#483): with no key due (one went to another open in the last 6 minutes) and no
-            //  session kept, this screen is all there is; see
-            //  https://github.com/tigerduck-app/tigerduck-app-android/issues/483 for the options.
             show(provider, target, failed = provider.msUntilRetry() == 0L)
+        }
+    }
+
+    /** The app's own sign-in, behind the spinner, which lets go however it ends. */
+    private suspend fun signInByApp(provider: BrowserSignIn, byHand: Boolean): Boolean {
+        val hold = processing.newHold()
+        hold.start()
+        return try {
+            provider.signInWithoutLink(byHand)
+        } finally {
+            hold.stop()
         }
     }
 

@@ -2,8 +2,16 @@ package org.ntust.app.tigerduck.network
 
 import android.util.Base64
 import android.util.Log
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
+import okhttp3.Call
+import okhttp3.Cookie
+import okhttp3.EventListener
 import okhttp3.FormBody
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -53,6 +61,10 @@ class MoodleTokenService internal constructor(
     tokenStore: MoodleTokenPairStore,
     passwordLatch: StoredPasswordLatch,
     scope: CoroutineScope,
+    /** A jar for one sign-in to Moodle's website, its own; see [signInToWebsite]. */
+    private val newCookieJar: () -> SignInCookieJar = { SignInCookieJar() },
+    /** How long a sign-in to Moodle's website may take; see [MoodleTokenCoordinator]. */
+    websiteDeadlineMs: Long = WEBSITE_DEADLINE_MS,
     now: () -> Long,
 ) {
     @Inject
@@ -152,6 +164,8 @@ class MoodleTokenService internal constructor(
         now = now,
         pauseMs = SIGN_IN_PAUSE_MS,
         passwordLatch = passwordLatch,
+        websiteLogin = { studentId, password, posting -> performWebsiteSignIn(studentId, password, posting) },
+        websiteDeadlineMs = websiteDeadlineMs,
     )
 
     /**
@@ -162,6 +176,16 @@ class MoodleTokenService internal constructor(
      * refused are not sent again until they change; see [MoodleTokenRenewal].
      */
     suspend fun renewToken(rejected: String?): String = coordinator.renew(rejected)
+
+    /**
+     * Signs in to Moodle's website with the stored account, through the school's SSO as the
+     * website's own sign-in does, and hands back the session's cookies: Moodle's alone, for the
+     * TigerDuck browser when Moodle has no autologin key for it. Never fills a password into a
+     * page: the app posts it, as it does for a token, under every rule a renewal keeps (one at a
+     * time, the pause after a failure, nothing while the stored password is refused). Throws when
+     * no session can be had; a sign-out meanwhile leaves none of it.
+     */
+    suspend fun signInToWebsite(): List<Cookie> = coordinator.website()
 
     /**
      * Fetch a fresh token using the supplied credentials (first-time login). It is stored only
@@ -201,38 +225,135 @@ class MoodleTokenService internal constructor(
         // `launchUrl` carries the `passport` HMAC key in its query; never log the
         // full URL. Emit a redacted hint instead.
         Log.i("MoodleTokenService", "launch GET ${launchUrl.redactForLog()}")
-        val (html, finalUrl) = getPage(launchUrl)
-        resolveTokenTriple(
+        val (html, finalUrl) = getPage(tokenClient, launchUrl)
+        // Terminal state: the mobile launch confirmation page embeds a
+        // custom-scheme URL `moodlemobile://token=BASE64`. That's our token.
+        walkOidc(
+            client = tokenClient,
             html = html,
             responseUrl = finalUrl,
-            moodleBaseUrl = moodleBaseUrl,
             studentId = studentId,
             password = password,
-            passport = passport,
             posting = posting,
             remainingSteps = 6,
+            arrived = { page, _ -> extractMoodleMobileToken(page)?.let(::decodeTokenTriple) },
         )
     }
 
-    private suspend fun resolveTokenTriple(
-        html: String,
-        responseUrl: HttpUrl,
-        moodleBaseUrl: HttpUrl,
+    /**
+     * Signs in to Moodle's website: Moodle's OIDC entry, the school's SSO, the bridge back to
+     * Moodle, all in a jar of this run's own ([newCookieJar]). Done once it lands on a Moodle page
+     * past its sign-in, and only once a page no one signed out gets ([SIGNED_IN_CHECK]) opens there
+     * rather than sending it back to sign in: a second factor or a challenge SSO asks for is never
+     * taken for a session. Moodle's session cookies are what it hands back.
+     */
+    private suspend fun performWebsiteSignIn(
         studentId: String,
         password: String,
-        passport: String,
+        posting: PasswordPosting,
+    ): List<Cookie> = withContext(Dispatchers.IO) {
+        walkWebsiteSignIn(studentId, password, posting, RunningCalls())
+    }
+
+    private suspend fun walkWebsiteSignIn(
+        studentId: String,
+        password: String,
+        posting: PasswordPosting,
+        calls: RunningCalls,
+    ): List<Cookie> {
+        val jar = newCookieJar()
+        val client = tokenClient.newBuilder()
+            .cookieJar(jar)
+            // Each call as it starts, whatever its interceptors do with it.
+            .eventListener(calls)
+            .build()
+        val entry = moodleBaseUrl.resolve(WEBSITE_SIGN_IN_ENTRY)!!
+        Log.i("MoodleTokenService", "website sign-in GET ${entry.redactForLog()}")
+        val (html, finalUrl) = awaitApart(calls::cancelAll) { getPage(client, entry) }
+        walkOidc(
+            client = client,
+            html = html,
+            responseUrl = finalUrl,
+            studentId = studentId,
+            password = password,
+            posting = posting,
+            remainingSteps = 6,
+            arrived = { _, url -> url.takeIf(::isPastMoodleSignIn) },
+            io = { call -> awaitApart(calls::cancelAll, call = call) },
+        )
+        val (editor, checked) = awaitApart(calls::cancelAll) { getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!) }
+        if (!checked.host.equals(moodleBaseUrl.host, ignoreCase = true) ||
+            checked.encodedPath != SIGNED_IN_CHECK ||
+            !isSignedInEditor(editor)
+        ) {
+            throw MoodleWebserviceError.MalformedResponse("Moodle's website did not keep the session")
+        }
+        return jar.loadForRequest(moodleBaseUrl)
+            .filter { it.name.startsWith(MOODLE_SESSION_COOKIE) || it.name.startsWith(MOODLE_ID_COOKIE) }
+            .takeIf { cookies -> cookies.any { it.name.startsWith(MOODLE_SESSION_COOKIE) } }
+            ?: throw MoodleWebserviceError.MalformedResponse("Moodle set no session cookie")
+    }
+
+    /**
+     * The calls one sign-in has started, to cancel together; one started after [cancelAll] is
+     * cancelled as it starts. Told of each as it starts ([callStart]), once the call is whole.
+     */
+    private class RunningCalls : EventListener() {
+        private val calls = mutableListOf<Call>()
+        private var cancelled = false
+
+        @Synchronized
+        override fun callStart(call: Call) {
+            if (cancelled) call.cancel() else calls += call
+        }
+
+        @Synchronized
+        fun cancelAll() {
+            cancelled = true
+            calls.forEach(Call::cancel)
+        }
+    }
+
+    /**
+     * Whether [html] is Moodle's profile editor as a signed-in student gets it: the page Moodle names
+     * `page-user-edit`, with its form back to the editor carrying the session key, and not marked
+     * signed out. Anything else at the editor's address (a challenge, a gateway's page) is not.
+     */
+    private fun isSignedInEditor(html: String): Boolean =
+        EDITOR_BODY.containsMatchIn(html) &&
+            EDITOR_FORM.containsMatchIn(html) &&
+            html.contains("name=\"sesskey\"") &&
+            !NOT_LOGGED_IN_BODY.containsMatchIn(html)
+
+    /** A page on Moodle past its sign-in: not under `/login/`, nor its sign-in entries under `/auth/`. */
+    private fun isPastMoodleSignIn(url: HttpUrl): Boolean {
+        if (!url.host.equals(moodleBaseUrl.host, ignoreCase = true)) return false
+        val path = url.encodedPath.lowercase()
+        return !path.startsWith("/login/") && !path.startsWith("/auth/")
+    }
+
+    /**
+     * Walks the school's OIDC sign-in from the page [html] at [responseUrl] with [client]: posts the
+     * SSO form under [posting], then the bridge back to Moodle, till [arrived] says a page is the
+     * end, whose answer it returns.
+     */
+    private suspend fun <T> walkOidc(
+        client: OkHttpClient,
+        html: String,
+        responseUrl: HttpUrl,
+        studentId: String,
+        password: String,
         posting: PasswordPosting,
         remainingSteps: Int,
-    ): TokenTriple {
+        arrived: (html: String, url: HttpUrl) -> T?,
+        /** How each of its calls is run: as it is, or apart from a caller that may be cancelled. */
+        io: suspend (() -> Pair<String, HttpUrl>) -> Pair<String, HttpUrl> = { it() },
+    ): T {
         if (remainingSteps <= 0) {
             throw MoodleWebserviceError.MalformedResponse("OIDC flow exceeded maximum step count")
         }
 
-        // Terminal state: the mobile launch confirmation page embeds a
-        // custom-scheme URL `moodlemobile://token=BASE64`. That's our token.
-        extractMoodleMobileToken(html)?.let { base64 ->
-            return decodeTokenTriple(base64)
-        }
+        arrived(html, responseUrl)?.let { return it }
 
         // Step hop: Moodle's /auth/oidc/ bridge form carrying (code, state, iss)
         // from the OIDC IdP back to Moodle.
@@ -246,21 +367,15 @@ class MoodleTokenService internal constructor(
                     ?: throw MoodleWebserviceError.MalformedResponse("Invalid bridge action: ${bridge.action}")
             }
             Log.i("MoodleTokenService", "posting OIDC bridge → ${url.redactForLog()}")
-            val (nextHtml, nextUrl) = postForm(
-                url,
-                bridge.payload,
-                referer = responseUrl.toString()
-            )
-            return resolveTokenTriple(
-                html = nextHtml,
-                responseUrl = nextUrl,
-                moodleBaseUrl = moodleBaseUrl,
-                studentId = studentId,
-                password = password,
-                passport = passport,
-                posting = posting,
-                remainingSteps = remainingSteps - 1,
-            )
+            val (nextHtml, nextUrl) = io {
+                postForm(
+                    client,
+                    url,
+                    bridge.payload,
+                    referer = responseUrl.toString()
+                )
+            }
+            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived, io)
         }
 
         // SSO login step: we landed on ssoam2.ntust.edu.tw with a form.
@@ -296,12 +411,15 @@ class MoodleTokenService internal constructor(
             // lets go.
             val (nextHtml, nextUrl) = posting.post {
                 Log.i("MoodleTokenService", "posting SSO login → ${postUrl.redactForLog()}")
-                val answer = postLoginForm(
-                    url = postUrl,
-                    fields = payload,
-                    referer = responseUrl.toString(),
-                    origin = "https://ssoam2.ntust.edu.tw",
-                )
+                val answer = io {
+                    postLoginForm(
+                        client = client,
+                        url = postUrl,
+                        fields = payload,
+                        referer = responseUrl.toString(),
+                        origin = "https://ssoam2.ntust.edu.tw",
+                    )
+                }
                 // If we're still at /account/login and neither a token nor an OIDC
                 // bridge is in sight, the credentials were rejected.
                 if (answer.second.encodedPath.contains("/account/login") &&
@@ -312,16 +430,7 @@ class MoodleTokenService internal constructor(
                 }
                 answer
             }
-            return resolveTokenTriple(
-                html = nextHtml,
-                responseUrl = nextUrl,
-                moodleBaseUrl = moodleBaseUrl,
-                studentId = studentId,
-                password = password,
-                passport = passport,
-                posting = posting,
-                remainingSteps = remainingSteps - 1,
-            )
+            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived, io)
         }
 
         // Redact secrets before they hit logs/crash reports: the URL goes
@@ -340,12 +449,13 @@ class MoodleTokenService internal constructor(
 
     // --- HTTP helpers ---
 
-    private fun getPage(url: HttpUrl): Pair<String, HttpUrl> {
+    private fun getPage(client: OkHttpClient, url: HttpUrl): Pair<String, HttpUrl> {
         val req = Request.Builder().url(url).get().build()
-        return executeAndReadBody(req)
+        return executeAndReadBody(client, req)
     }
 
     private fun postForm(
+        client: OkHttpClient,
         url: HttpUrl,
         fields: Map<String, String>,
         referer: String? = null,
@@ -357,7 +467,7 @@ class MoodleTokenService internal constructor(
         val reqBuilder = Request.Builder().url(url).post(body)
         if (referer != null) reqBuilder.header("Referer", referer)
         if (origin != null) reqBuilder.header("Origin", origin)
-        return executeAndReadBody(reqBuilder.build())
+        return executeAndReadBody(client, reqBuilder.build())
     }
 
     /**
@@ -365,6 +475,7 @@ class MoodleTokenService internal constructor(
      * another address, and one that would ends the sign-in ([executeCredentialPost]).
      */
     private fun postLoginForm(
+        client: OkHttpClient,
         url: HttpUrl,
         fields: Map<String, String>,
         referer: String,
@@ -378,13 +489,13 @@ class MoodleTokenService internal constructor(
             .header("Origin", origin)
             .build()
         return readBody(
-            execute { tokenClient.executeCredentialPost(request) }
+            execute { client.executeCredentialPost(request) }
                 ?: throw MoodleWebserviceError.MalformedResponse("SSO sign-in redirect not followed"),
         )
     }
 
-    private fun executeAndReadBody(request: Request): Pair<String, HttpUrl> =
-        readBody(execute { tokenClient.newCall(request).execute() })
+    private fun executeAndReadBody(client: OkHttpClient, request: Request): Pair<String, HttpUrl> =
+        readBody(execute { client.newCall(request).execute() })
 
     private fun <T> execute(call: () -> T): T = try {
         call()
@@ -530,4 +641,45 @@ class MoodleTokenService internal constructor(
         .replace("&#x2F;", "/")
         .replace("&#x27;", "'")
         .replace("&#39;", "'")
+
+    private companion object {
+        /** Moodle's OIDC entry, where its website sends a student to the school's SSO. */
+        const val WEBSITE_SIGN_IN_ENTRY = "/auth/oidc/?source=loginpage"
+
+        /** A page Moodle shows only a signed-in student, and sends anyone else to sign in from. */
+        const val SIGNED_IN_CHECK = "/user/edit.php"
+
+        /** Moodle's session cookie, with the site's suffix if it sets one, and its remembered username. */
+        const val MOODLE_SESSION_COOKIE = "MoodleSession"
+        const val MOODLE_ID_COOKIE = "MOODLEID1_"
+
+        val EDITOR_BODY = Regex("""<body[^>]*\bid="page-user-edit"""", RegexOption.IGNORE_CASE)
+        val EDITOR_FORM = Regex("""<form[^>]*\baction="https://moodle2\.ntust\.edu\.tw/user/edit\.php"""", RegexOption.IGNORE_CASE)
+        val NOT_LOGGED_IN_BODY = Regex("""<body[^>]*\bclass="[^"]*\bnotloggedin\b""", RegexOption.IGNORE_CASE)
+    }
+}
+
+/**
+ * Runs [call], a blocking one, apart from its caller on [dispatcher], and hands its answer over
+ * only while the caller is still there for it. Cancelled (at a deadline, say), the caller stops
+ * waiting at once and lets its locks go then, a password post's among them: a blocking call does
+ * not stop for a cancelled coroutine, and one stuck where Call.cancel cannot reach (an address
+ * lookup) would hold them. Then [onCancel] cancels what the call is doing, and its answer is
+ * never read, even one that came in just as the caller was cancelled: no refusal counted, no
+ * password taken.
+ */
+internal suspend fun <T> awaitApart(
+    onCancel: () -> Unit,
+    dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    call: () -> T,
+): T {
+    currentCoroutineContext().ensureActive()
+    val running = CoroutineScope(dispatcher).async { call() }
+    return try {
+        running.await().also { currentCoroutineContext().ensureActive() }
+    } catch (e: CancellationException) {
+        onCancel()
+        running.cancel()
+        throw e
+    }
 }

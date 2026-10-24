@@ -1,8 +1,12 @@
 package org.ntust.app.tigerduck.network
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import okhttp3.Cookie
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.ntust.app.tigerduck.auth.PasswordPosting
 import org.ntust.app.tigerduck.auth.StoredPasswordLatch
 import org.ntust.app.tigerduck.auth.guardAutomaticHarvest
@@ -18,10 +22,12 @@ import org.ntust.app.tigerduck.auth.guardAutomaticHarvest
  * the password goes out under the lock every automatic post takes, and a refusal counted for the
  * whole app. The sign-in the user makes ([obtain]) posts what they typed.
  *
- * One sign-in at a time: the sign-in a user makes and a renewal both take [mutex]. A renewal goes
- * through [MoodleTokenRenewal], so it keeps its pause and its wait after a refused password, and
- * checks the stored token again once it holds the lock: one that waited behind a sign-in takes the
- * token that sign-in got rather than signing in a second time.
+ * One sign-in at a time: the sign-in a user makes, a renewal and a sign-in to Moodle's website
+ * ([website]) all take [mutex]. A renewal goes through [MoodleTokenRenewal], so it keeps its pause
+ * and its wait after a refused password, and checks the stored token again once it holds the
+ * lock: one that waited behind a sign-in takes the token that sign-in got rather than signing in
+ * a second time. A sign-in to the website keeps the same rules, through its own
+ * [MoodleSignInGate], under the same latch.
  */
 internal class MoodleTokenCoordinator(
     private val tokens: Tokens,
@@ -34,6 +40,17 @@ internal class MoodleTokenCoordinator(
     now: () -> Long,
     pauseMs: Long,
     private val passwordLatch: StoredPasswordLatch,
+    /**
+     * Signs in to Moodle's website, a student ID and password in, the session's cookies out,
+     * posting the password through the [PasswordPosting] it is handed.
+     */
+    private val websiteLogin: suspend (studentId: String, password: String, posting: PasswordPosting) -> List<Cookie> =
+        { _, _, _ -> throw MoodleWebserviceError.MalformedResponse("no website sign-in") },
+    /**
+     * How long a sign-in to Moodle's website may take, the wait for [mutex] included: the browser
+     * that asked has given up by then, and a renewal must not wait behind it.
+     */
+    private val websiteDeadlineMs: Long = WEBSITE_DEADLINE_MS,
 ) {
     /** Where the token and the account it is harvested with are stored. */
     interface Tokens {
@@ -72,6 +89,33 @@ internal class MoodleTokenCoordinator(
     /** A token in place of [rejected]; see [MoodleTokenRenewal]. */
     suspend fun renew(rejected: String?): String = renewal.renew(rejected)
 
+    private val websiteGate = MoodleSignInGate<List<Cookie>>(
+        // A session is the browser's to keep: every caller here has none.
+        kept = { null },
+        credentials = {
+            val id = tokens.studentId
+            val password = tokens.password
+            if (id == null || password == null) null else id to password
+        },
+        // Cut off at its deadline, which stops its calls (performWebsiteSignIn) and lets the lock go.
+        signIn = {
+            // Timed on the clock, wherever the gate's scope dispatches.
+            withContext(Dispatchers.IO) { withTimeoutOrNull(websiteDeadlineMs) { mutex.withLock { websiteUnlocked() } } }
+                ?: throw MoodleWebserviceError.TransientNetwork("website sign-in took longer than $websiteDeadlineMs ms")
+        },
+        now = now,
+        scope = scope,
+        pauseMs = pauseMs,
+        refusal = HeldRefusal(passwordLatch),
+    )
+
+    /**
+     * A session on Moodle's website, signed in with the stored account: its cookies, for the
+     * TigerDuck browser when Moodle has no autologin key for it. Posts the stored password, so it
+     * keeps every rule a renewal keeps.
+     */
+    suspend fun website(): List<Cookie> = websiteGate.take(null)
+
     /**
      * A token with credentials the user just entered, which clears what held renewals back. It is
      * stored only while [studentId] is still the stored account, as one step with a sign-out's
@@ -81,8 +125,27 @@ internal class MoodleTokenCoordinator(
         val normalized = studentId.trim().uppercase()
         login(normalized, password, PasswordPosting.Typed).also {
             renewal.reset()
+            websiteGate.reset()
             if (!tokens.storeIfSignedIn(normalized, it)) throw MoodleWebserviceError.MissingStoredCredentials()
         }
+    }
+
+    private suspend fun websiteUnlocked(): List<Cookie> {
+        val sid = tokens.studentId ?: throw MoodleWebserviceError.MissingStoredCredentials()
+        val pwd = tokens.password ?: throw MoodleWebserviceError.MissingStoredCredentials()
+        val cookies = passwordLatch.guardAutomaticHarvest(sid, pwd) { posting ->
+            websiteLogin(sid.trim().uppercase(), pwd, object : PasswordPosting {
+                override suspend fun <R> post(send: suspend () -> R): R = posting.post {
+                    // Under the lock every automatic post takes: a refusal another sign-in counted
+                    // while this one was on its way stops it, whatever wait the count has served.
+                    if (passwordLatch.isRejected) throw StoredPasswordHeldBack()
+                    send()
+                }
+            })
+        }
+        // Signed out, or signed in as another student, while it ran: the session is the departing one's.
+        if (tokens.studentId != sid) throw MoodleWebserviceError.MissingStoredCredentials()
+        return cookies
     }
 
     private suspend fun harvestUnlocked(): String {
@@ -109,3 +172,28 @@ internal class LatchedRefusal(private val latch: StoredPasswordLatch) : StoredPa
     override fun markRefused(fingerprint: String) = Unit
     override fun clear() = latch.clear()
 }
+
+/**
+ * Refused while the app-wide count holds any refusal of the stored password, whatever wait it has
+ * served since. The count lets a first refusal be tried again after a short wait; a sign-in to
+ * Moodle's website, which only spares the student a sign-in screen, never posts a password SSO
+ * refused until SSO takes it again (a renewal the count lets through) or the student signs in by
+ * hand, which clears the count. Kept on disk with the count, so a new process keeps it too.
+ */
+internal class HeldRefusal(private val latch: StoredPasswordLatch) : StoredPasswordRefusal {
+    override fun isRefused(fingerprint: String): Boolean = latch.isRejected || latch.postMustWait()
+
+    // The count is what keeps it: guardAutomaticHarvest has counted the refusal.
+    override fun markRefused(fingerprint: String) = Unit
+
+    override fun clear() = latch.clear()
+}
+
+/**
+ * A sign-in to Moodle's website that did not post the stored password, as the app-wide count holds
+ * a refusal of it ([HeldRefusal]): no answer of SSO's, so nothing more is counted.
+ */
+internal class StoredPasswordHeldBack : Exception("the stored password was refused; not posted again")
+
+/** As long as the TigerDuck browser waits on a sign-in to Moodle's website (MoodleWebSessionSignIn). */
+internal const val WEBSITE_DEADLINE_MS = 15_000L
