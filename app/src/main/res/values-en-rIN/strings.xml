@@ -638,7 +638,7 @@
     <string name="home_pending_assignments">Pending assignments</string>
     <string name="home_section_add_quick_features">Add quick actions</string>
     <string name="home_section_all_widgets_added">All quick actions have been added</string>
-    <string name="home_section_drag_hint">Long press to drag and reorder</string>
+    <string name="home_section_drag_hint">Drag to reorder</string>
     <string name="home_section_name">Section name</string>
     <string name="home_section_quick_widgets">Quick widgets</string>
     <string name="home_section_today_courses">Today\'s courses</string>

@@ -300,7 +300,7 @@
     <string name="class_table_import_course_count">Cours</string>
     <string name="class_table_import_enter_link">Saisir le lien</string>
     <string name="class_table_import_failed">Impossible d\'importer l\'emploi du temps</string>
-    <string name="class_table_import_flashlight">Lampe de poche</string>
+    <string name="class_table_import_flashlight">Lampe torche</string>
     <string name="class_table_import_invalid_message">Le code de partage est endommagé ou a été modifié.</string>
     <string name="class_table_import_link_placeholder">Lien de partage</string>
     <string name="class_table_import_lookup_failed">Impossible de charger les détails des cours</string>

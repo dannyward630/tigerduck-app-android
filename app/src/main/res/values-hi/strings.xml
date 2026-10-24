@@ -300,7 +300,7 @@
     <string name="class_table_import_course_count">कोर्स की संख्या</string>
     <string name="class_table_import_enter_link">लिंक दर्ज करें</string>
     <string name="class_table_import_failed">कक्षा सारणी आयात नहीं की जा सकी</string>
-    <string name="class_table_import_flashlight">फ़्लैशलाइट</string>
+    <string name="class_table_import_flashlight">टॉर्च</string>
     <string name="class_table_import_invalid_message">शेयर कोड खराब है या उसमें बदलाव किया गया है।</string>
     <string name="class_table_import_link_placeholder">शेयर लिंक</string>
     <string name="class_table_import_lookup_failed">कोर्स की जानकारी लोड नहीं हो सकी</string>

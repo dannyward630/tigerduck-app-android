@@ -300,7 +300,7 @@
     <string name="class_table_import_course_count">عدد المقررات</string>
     <string name="class_table_import_enter_link">إدخال الرابط</string>
     <string name="class_table_import_failed">تعذّر استيراد الجدول الدراسي</string>
-    <string name="class_table_import_flashlight">الفلاش</string>
+    <string name="class_table_import_flashlight">المصباح</string>
     <string name="class_table_import_invalid_message">رمز المشاركة تالف أو تم تعديله.</string>
     <string name="class_table_import_link_placeholder">رابط المشاركة</string>
     <string name="class_table_import_lookup_failed">تعذّر تحميل تفاصيل المقررات</string>

@@ -300,7 +300,7 @@
     <string name="class_table_import_course_count">ಕೋರ್ಸ್‌ಗಳ ಸಂಖ್ಯೆ</string>
     <string name="class_table_import_enter_link">ಲಿಂಕ್ ನಮೂದಿಸಿ</string>
     <string name="class_table_import_failed">ತರಗತಿ ವೇಳಾಪಟ್ಟಿಯನ್ನು ಆಮದು ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
-    <string name="class_table_import_flashlight">ಫ್ಲ್ಯಾಶ್‌ಲೈಟ್</string>
+    <string name="class_table_import_flashlight">ಟಾರ್ಚ್</string>
     <string name="class_table_import_invalid_message">ಹಂಚಿಕೆ ಕೋಡ್ ಹಾನಿಗೊಳಗಾಗಿದೆ ಅಥವಾ ಬದಲಾಯಿಸಲಾಗಿದೆ.</string>
     <string name="class_table_import_link_placeholder">ಹಂಚಿಕೆ ಲಿಂಕ್</string>
     <string name="class_table_import_lookup_failed">ಕೋರ್ಸ್ ವಿವರಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
