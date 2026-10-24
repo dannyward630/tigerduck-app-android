@@ -33,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,6 +48,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleStartEffect
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.network.tls.PinMismatchPrompts
 import org.ntust.app.tigerduck.shared.tls.PinMismatch
@@ -93,8 +93,12 @@ data class PinCertificateRow(
 @Composable
 fun PinMismatchHost(prompts: PinMismatchPrompts) {
     val mismatch by prompts.pending.collectAsState()
-    // Checked again on its way in: one queued in the background may have lapsed meanwhile.
-    LaunchedEffect(mismatch) { prompts.revalidate() }
+    // Checked again on its way in, and each time the app comes back: one queued or left up in
+    // the background may have lapsed meanwhile.
+    LifecycleStartEffect(mismatch) {
+        prompts.revalidate()
+        onStopOrDispose {}
+    }
     val shown = mismatch ?: return
     val locale = Locale.getDefault()
     val domains = ListFormatter.getInstance(locale).format(shown.domains.map { it.name })
