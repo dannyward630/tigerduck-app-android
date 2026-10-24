@@ -84,7 +84,10 @@ class MoodlePictureStoreTest {
         override suspend fun save(value: Any, fetchedAtMs: Long, name: String) = Unit
     }
 
-    private fun store() = MoodleCourseStore(5, emptyList(), emptyList(), api, MoodleCacheContext("B1", cache, { true }), scope)
+    // Encoding and decoding on the test's dispatcher too, so its clock covers them.
+    private fun store() = MoodleCourseStore(
+        5, emptyList(), emptyList(), api, MoodleCacheContext("B1", cache, { true }), scope, background = dispatcher,
+    )
 
     @Test
     fun `a picture Moodle takes is fetched with the members again`() = runTest(dispatcher) {

@@ -109,8 +109,17 @@ fun MoodleMemberScreen(
     val changingPicture = current?.changingPicture?.collectAsStateWithLifecycle()?.value == true
     var cropping by remember { mutableStateOf<Bitmap?>(null) }
     val snackbar = remember { SnackbarHostState() }
+    val unreadable = stringResource(R.string.course_member_picture_unreadable)
     val pickPicture = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        if (uri != null) scope.launch { cropping = decodePickedPicture(context, uri) }
+        if (uri != null) {
+            scope.launch {
+                openPickedPicture(
+                    decode = { decodePickedPicture(context, uri) },
+                    crop = { cropping = it },
+                    unreadable = { snackbar.showSnackbar(unreadable) },
+                )
+            }
+        }
     }
     // Opened with no members cached, as after the system ended the app: fetched, or its failure
     // shown with Retry; a member no longer in the course closes the page.
@@ -189,6 +198,16 @@ fun MoodleMemberScreen(
             },
         )
     }
+}
+
+/** A picked photo to [crop], once [decode] reads it, else the message that it cannot be read ([unreadable]). */
+internal suspend fun openPickedPicture(
+    decode: suspend () -> Bitmap?,
+    crop: (Bitmap) -> Unit,
+    unreadable: suspend () -> Unit,
+) {
+    val picture = decode()
+    if (picture != null) crop(picture) else unreadable()
 }
 
 /** Whether [member]'s page is the signed-in student's own, by [ownId], their Moodle user; none without it. */

@@ -159,6 +159,19 @@ class MoodleMembersMeTest {
     }
 
     @Test
+    fun `a picked photo that cannot be read says so, and one that can opens the crop`() = kotlinx.coroutines.test.runTest {
+        var cropped = 0
+        var told = 0
+
+        openPickedPicture(decode = { null }, crop = { cropped++ }, unreadable = { told++ })
+        assertEquals(0 to 1, cropped to told)
+
+        val photo = android.graphics.Bitmap.createBitmap(4, 4, android.graphics.Bitmap.Config.ARGB_8888)
+        openPickedPicture(decode = { photo }, crop = { cropped++ }, unreadable = { told++ })
+        assertEquals(1 to 1, cropped to told)
+    }
+
+    @Test
     fun `another member's page has no pencil`() {
         composeRule.setContent {
             MemberPage(member = classmate, picture = null, onOpenPicture = null, openingPicture = false, onWrite = {}, onEditOnMoodle = null)

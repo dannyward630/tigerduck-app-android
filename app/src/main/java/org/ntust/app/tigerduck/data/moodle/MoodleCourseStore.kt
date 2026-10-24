@@ -438,7 +438,7 @@ class MoodleCourseStore(
     suspend fun changePicture(encode: () -> ByteArray): Throwable? = scope.async {
         _changingPicture.value = true
         try {
-            val jpeg = withContext(Dispatchers.Default) { encode() }
+            val jpeg = withContext(background) { encode() }
             api.changePicture(jpeg)
             onOwnPictureChanged()
             refreshMembers(joinRunning = false)
