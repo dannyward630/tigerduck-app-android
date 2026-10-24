@@ -87,10 +87,11 @@ class BrowserColorsTest {
     }
 
     @Test
-    fun `an appearance code that is not one reads as auto`() {
+    fun `an appearance code that is not one reads as light`() {
         assertEquals(BrowserAppearance.DARK, BrowserAppearance.fromCode("dark"))
-        assertEquals(BrowserAppearance.AUTO, BrowserAppearance.fromCode(null))
-        assertEquals(BrowserAppearance.AUTO, BrowserAppearance.fromCode("sepia"))
+        assertEquals(BrowserAppearance.AUTO, BrowserAppearance.fromCode("auto"))
+        assertEquals(BrowserAppearance.LIGHT, BrowserAppearance.fromCode(null))
+        assertEquals(BrowserAppearance.LIGHT, BrowserAppearance.fromCode("sepia"))
     }
 
     @Test

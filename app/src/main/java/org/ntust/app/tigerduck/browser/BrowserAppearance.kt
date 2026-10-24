@@ -12,7 +12,10 @@ enum class BrowserAppearance(val code: String) {
     ;
 
     companion object {
-        fun fromCode(code: String?): BrowserAppearance = entries.firstOrNull { it.code == code } ?: AUTO
+        /** What the browser starts in until the student picks another, and what an unknown stored code reads as. */
+        val DEFAULT = LIGHT
+
+        fun fromCode(code: String?): BrowserAppearance = entries.firstOrNull { it.code == code } ?: DEFAULT
     }
 }
 

@@ -63,8 +63,8 @@ class BrowserSettingsTest {
     }
 
     @Test
-    fun `the appearance starts at auto`() {
-        assertEquals(BrowserAppearance.AUTO, settings.appearance)
+    fun `the appearance starts at light`() {
+        assertEquals(BrowserAppearance.LIGHT, settings.appearance)
     }
 
     @Test

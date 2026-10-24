@@ -151,7 +151,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     @Inject lateinit var signIns: BrowserSignIns
 
     private val state = BrowserPageState()
-    private var appearance by mutableStateOf(BrowserAppearance.AUTO)
+    private var appearance by mutableStateOf(BrowserAppearance.DEFAULT)
 
     private var appScale = AppScale.DEFAULT
     private var attachedConfiguration: Configuration? = null
