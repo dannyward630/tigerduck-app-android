@@ -90,12 +90,29 @@ class MoodleAutologin internal constructor(
      * the only key coming, and the reader is waiting on the page, so a failed request is not
      * retried and a key slower than [KEY_WAIT_MS] is not waited for. A key that arrives after a
      * sign-out is dropped too: it would sign the browser in to the account that left. Without a
-     * private token, one is fetched first; see [awaitPrivateToken].
+     * private token, one is fetched first; see [pendingPrivateTokenFetch].
+     *
+     * [waiting] hears true when the open starts waiting on that fetch, a whole SSO sign-in the
+     * reader may wait several seconds for, and false once the open is done, key and all, on every
+     * way out; an open that fetches nothing hears neither.
      */
-    suspend fun signedIn(url: String): String? {
+    suspend fun signedIn(url: String, waiting: (Boolean) -> Unit = {}): String? {
         if (!isSignInTarget(url)) return null
         val generation = signInGeneration()
-        if (!hasPrivateToken() && !awaitPrivateToken(generation)) return null
+        if (hasPrivateToken()) return keyedUrl(url, generation)
+        val fetch = pendingPrivateTokenFetch(generation) ?: return null
+        waiting(true)
+        try {
+            val fetched = withTimeoutOrNull(PRIVATE_TOKEN_WAIT_MS) { fetch.await() } == true
+            if (!fetched || !isStillSignedIn(generation)) return null
+            return keyedUrl(url, generation)
+        } finally {
+            waiting(false)
+        }
+    }
+
+    /** [url] behind a key asked for now, for the sign-in [generation] read, as [signedIn] says. */
+    private suspend fun keyedUrl(url: String, generation: Int): String? {
         val request = synchronized(lock) {
             if (requesting || !isKeyDue()) return null
             requesting = true
@@ -130,28 +147,28 @@ class MoodleAutologin internal constructor(
     }
 
     /**
-     * Fetches the private token missing beside the stored Moodle token, true once one is stored
-     * and no sign-out came meanwhile. Opens at once for one sign-in share one fetch, and each
-     * waits for it up to [PRIVATE_TOKEN_WAIT_MS]. It runs on in the app's scope after an open
-     * stops waiting, so the next open finds the private token stored; no key is asked for the open
-     * that gave up, as Moodle would count a key nobody uses against the next [KEY_INTERVAL_MS].
+     * The fetch of the private token missing beside the stored Moodle token, true once one is
+     * stored, or null when there is none to wait for. Opens at once for one sign-in share one
+     * fetch, and each waits for it up to [PRIVATE_TOKEN_WAIT_MS]. It runs on in the app's scope
+     * after an open stops waiting, so the next open finds the private token stored; no key is
+     * asked for the open that gave up, as Moodle would count a key nobody uses against the next
+     * [KEY_INTERVAL_MS].
      *
      * A failed fetch is tried again at the next open, which the token renewal holds back as it
      * holds back any: after a failure that was not the network's, and while the stored password
      * is refused. A pair that came without a private token is not fetched again for the same
      * sign-in, as each fetch posts the password to SSO.
      */
-    private suspend fun awaitPrivateToken(generation: Int): Boolean {
-        if (!canFetchPrivateToken()) return false
-        val fetch = synchronized(lock) {
-            if (noPrivateTokenFor == generation) return false
+    private fun pendingPrivateTokenFetch(generation: Int): Deferred<Boolean>? {
+        if (!canFetchPrivateToken()) return null
+        return synchronized(lock) {
+            if (noPrivateTokenFor == generation) return null
             privateTokenFetch?.takeIf { it.isActive && privateTokenFetchFor == generation }
                 ?: startPrivateTokenFetch(generation).also {
                     privateTokenFetch = it
                     privateTokenFetchFor = generation
                 }
         }
-        return withTimeoutOrNull(PRIVATE_TOKEN_WAIT_MS) { fetch.await() } == true && isStillSignedIn(generation)
     }
 
     private fun startPrivateTokenFetch(generation: Int): Deferred<Boolean> = scope.async {

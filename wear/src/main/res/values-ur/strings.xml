@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">باہر نکلنے کے لیے دوبارہ واپس دبائیں</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">آپ اس وقت تائیوان کے ٹائم زون سے باہر ہیں۔ یہ ایپ خودبخود تائیوان کا وقت استعمال کر رہی ہے۔\nبراہ کرم تاریخ اور وقت دوبارہ چیک کریں۔ خوشگوار سفر!</string>
+    <string name="app_processing_keep_open">کارروائی جاری ہے…\nبراہ کرم ایپ بند نہ کریں۔</string>
     <string name="app_reset_required_action">ری سیٹ</string>
     <string name="app_reset_required_message">آپ کی سائن ان حالت اور ترجیحات اب پڑھی نہیں جا سکتیں، شاید OS اپ گریڈ، بیک اپ ری اسٹور، یا اسٹوریج مسئلے کی وجہ سے۔\n\n\"ری سیٹ\" دبائیں تاکہ پرانا ڈیٹا صاف ہو، پھر سائن ان کریں اور اپنی ترجیحات دوبارہ ترتیب دیں۔</string>
     <string name="app_reset_required_title">ری سیٹ ضروری ہے</string>

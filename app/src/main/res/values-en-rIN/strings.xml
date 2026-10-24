@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Press back again to exit</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">You are currently outside Taiwan time. This app is using Taiwan time automatically.\nPlease double-check dates and times. Safe travels!</string>
+    <string name="app_processing_keep_open">Processing…\nPlease don\'t close the app.</string>
     <string name="app_reset_required_action">Reset</string>
     <string name="app_reset_required_message">Your sign-in state and preferences can no longer be read, possibly due to an OS upgrade, backup restore, or storage issue.\n\nTap \"Reset\" to clear old data, then sign in and reconfigure your preferences.</string>
     <string name="app_reset_required_title">Reset required</string>

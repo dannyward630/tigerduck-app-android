@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Ýttu aftur á til baka til að loka</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Þú ert núna utan tímabeltis Taívan. Þetta forrit notar tímasvæði Taívan sjálfkrafa.\nAthugaðu dagsetningar og tíma. Góða ferð!</string>
+    <string name="app_processing_keep_open">Vinnur…\nEkki loka forritinu.</string>
     <string name="app_reset_required_action">Endurstilla</string>
     <string name="app_reset_required_message">Innskráningarstaðan þín og kjörstillingar er ekki hægt að lesa lengur, hugsanlega vegna uppfærslu á stýrikerfi, endurheimtar öryggisafrits eða geymsluvillu.\n\nÝttu á \"Endurstilla\" til að hreinsa gömul gögn, skráðu þig síðan inn og stilltu kjörstillingar aftur.</string>
     <string name="app_reset_required_title">Endurstilling nauðsynleg</string>

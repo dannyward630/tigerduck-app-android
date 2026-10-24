@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">బయటకు వెళ్ళడానికి మళ్ళీ బ్యాక్ నొక్కండి</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">మీరు ప్రస్తుతం తైవాన్ టైమ్‌జోన్ వెలుపల ఉన్నారు. ఈ యాప్ స్వయంచాలకంగా తైవాన్ సమయం వాడుతుంది.\nతేదీలు మరియు సమయాలు తనిఖీ చేయండి. సురక్షిత ప్రయాణం!</string>
+    <string name="app_processing_keep_open">ప్రాసెస్ అవుతోంది…\nదయచేసి యాప్‌ను మూసివేయకండి.</string>
     <string name="app_reset_required_action">రీసెట్</string>
     <string name="app_reset_required_message">మీ సైన్-ఇన్ స్థితి మరియు ప్రాధాన్యతలు చదవడం సాధ్యం కాలేదు, OS అప్‌గ్రేడ్, బ్యాకప్ రీస్టోర్ లేదా స్టోరేజ్ సమస్య కారణంగా కావచ్చు.\n\nపాత డేటా క్లియర్ చేయడానికి \'రీసెట్\' నొక్కండి, తర్వాత సైన్ ఇన్ చేసి మీ ప్రాధాన్యతలు మళ్ళీ సెట్ చేయండి.</string>
     <string name="app_reset_required_title">రీసెట్ అవసరం</string>

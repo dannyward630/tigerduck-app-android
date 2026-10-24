@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">বের হতে আবার ব্যাক চাপুন</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">আপনি এখন তাইওয়ান সময় অঞ্চলের বাইরে আছেন। এই অ্যাপ স্বয়ংক্রিয়ভাবে তাইওয়ান সময় ব্যবহার করছে।\nতারিখ ও সময় দুবার যাচাই করুন। শুভ যাত্রা!</string>
+    <string name="app_processing_keep_open">প্রক্রিয়া চলছে…\nঅনুগ্রহ করে অ্যাপটি বন্ধ করবেন না।</string>
     <string name="app_reset_required_action">রিসেট</string>
     <string name="app_reset_required_message">আপনার সাইন-ইন অবস্থা ও পছন্দ আর পড়া যাচ্ছে না, সম্ভবত OS আপগ্রেড, ব্যাকআপ পুনরুদ্ধার বা স্টোরেজ সমস্যার কারণে।\n\nপুরনো ডেটা মুছতে \"রিসেট\" ট্যাপ করুন, তারপর সাইন ইন করে পছন্দ পুনরায় সেট করুন।</string>
     <string name="app_reset_required_title">রিসেট প্রয়োজন</string>

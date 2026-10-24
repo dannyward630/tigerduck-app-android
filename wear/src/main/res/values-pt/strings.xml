@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Prime novamente Voltar para sair</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Encontras-te atualmente fora da hora de Taiwan. Esta aplicação está a usar automaticamente a hora de Taiwan.\nVerifica novamente datas e horas. Boa viagem!</string>
+    <string name="app_processing_keep_open">A processar…\nNão feches a app.</string>
     <string name="app_reset_required_action">Repor</string>
     <string name="app_reset_required_message">Já não é possível ler o estado da tua sessão e as preferências, possivelmente devido a uma atualização do sistema operativo, restauro de cópia de segurança ou problema de armazenamento.\n\nToca em \"Repor\" para limpar dados antigos e, depois, inicia sessão e reconfigura as tuas preferências.</string>
     <string name="app_reset_required_title">Reinicialização necessária</string>

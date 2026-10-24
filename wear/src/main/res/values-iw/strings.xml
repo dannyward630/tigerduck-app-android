@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">לחץ חזרה שוב ליציאה</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">אתה נמצא כעת מחוץ לאזור הזמן של טייוואן. האפליקציה משתמשת אוטומטית באזור הזמן של טייוואן.\nאנא בדוק תאריכים ושעות. נסיעה טובה!</string>
+    <string name="app_processing_keep_open">מעבד…\nאל תסגור את האפליקציה.</string>
     <string name="app_reset_required_action">איפוס</string>
     <string name="app_reset_required_message">מצב הכניסה וההעדפות שלך אינם ניתנים לקריאה, אולי עקב שדרוג מערכת הפעלה, שחזור גיבוי או בעיית אחסון.\n\nהקש \"איפוס\" למחיקת נתונים ישנים, ולאחר מכן התחבר מחדש והגדר את ההעדפות שלך.</string>
     <string name="app_reset_required_title">נדרש איפוס</string>

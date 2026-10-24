@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">ನಿರ್ಗಮಿಸಲು ಮತ್ತೊಮ್ಮೆ ಹಿಂದೆ ಒತ್ತಿ</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">ನೀವು ಪ್ರಸ್ತುತ ತೈವಾನ್ ಸಮಯ ವಲಯದ ಹೊರಗಿದ್ದೀರಿ. ಈ ಅಪ್ಲಿಕೇಶನ್ ಸ್ವಯಂ ತೈವಾನ್ ಸಮಯ ಬಳಸುತ್ತಿದೆ.\nದಿನಾಂಕ ಮತ್ತು ಸಮಯಗಳನ್ನು ಮರುಪರಿಶೀಲಿಸಿ. ಶುಭ ಪ್ರಯಾಣ!</string>
+    <string name="app_processing_keep_open">ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗುತ್ತಿದೆ…\nದಯವಿಟ್ಟು ಅಪ್ಲಿಕೇಶನ್ ಮುಚ್ಚಬೇಡಿ.</string>
     <string name="app_reset_required_action">ಮರುಹೊಂದಿಕೆ</string>
     <string name="app_reset_required_message">ನಿಮ್ಮ ಸೈನ್-ಇನ್ ಸ್ಥಿತಿ ಮತ್ತು ಆದ್ಯತೆಗಳನ್ನು ಇನ್ನು ಓದಲು ಸಾಧ್ಯವಿಲ್ಲ, ಇದು OS ಅಪ್‌ಗ್ರೇಡ್, ಬ್ಯಾಕಪ್ ಮರುಸ್ಥಾಪನೆ ಅಥವಾ ಸಂಗ್ರಹ ಸಮಸ್ಯೆಯಿಂದ ಆಗಿರಬಹುದು.\n\nಹಳೆಯ ಡೇಟಾ ತೆಗೆಯಲು \"ಮರುಹೊಂದಿಕೆ\" ಟ್ಯಾಪ್ ಮಾಡಿ, ನಂತರ ಸೈನ್ ಇನ್ ಮಾಡಿ ಮತ್ತು ಆದ್ಯತೆಗಳನ್ನು ಮರಳಿ ಸಂರಚಿಸಿ.</string>
     <string name="app_reset_required_title">ಮರುಹೊಂದಿಕೆ ಅಗತ್ಯವಿದೆ</string>

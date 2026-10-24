@@ -64,6 +64,7 @@
     <string name="app_exit_confirm_toast">Appuyez à nouveau sur Retour pour quitter</string>
     <string name="app_name">TigerDuck</string>
     <string name="app_non_taipei_timezone_hint">Vous êtes actuellement en dehors du fuseau horaire de Taïwan. Cette application utilise automatiquement l\'heure de Taïwan.\nVeuillez bien vérifier les dates et heures. Bon voyage !</string>
+    <string name="app_processing_keep_open">Traitement en cours…\nVeuillez ne pas fermer l\'app.</string>
     <string name="app_reset_required_action">Réinitialiser</string>
     <string name="app_reset_required_message">Votre état de connexion et vos préférences ne peuvent plus être lus, probablement en raison d\'une mise à jour de l\'OS, d\'une restauration de sauvegarde ou d\'un problème de stockage.\n\nAppuyez sur « Réinitialiser » pour effacer les anciennes données, puis connectez-vous et reconfigurez vos préférences.</string>
     <string name="app_reset_required_title">Réinitialisation requise</string>
