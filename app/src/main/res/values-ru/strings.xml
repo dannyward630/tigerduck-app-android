@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Конфликт занятий</string>
     <string name="a11y_class_table_share_qr">QR-код для обмена расписанием</string>
     <string name="a11y_class_table_switch">Переключить расписание</string>
+    <string name="a11y_color_picker_brightness">Яркость</string>
+    <string name="a11y_color_picker_hue">Оттенок</string>
+    <string name="a11y_color_picker_saturation">Насыщенность</string>
     <string name="a11y_course_card_open_details_hint">Дважды нажмите для просмотра деталей</string>
     <string name="a11y_course_color_swatch">Цвет %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Открыть в Moodle</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Акцентный цвет</string>
     <string name="settings_accent_gradient_custom">Свой градиент</string>
     <string name="settings_accent_gradient_direction">Направление градиента</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Из левого нижнего угла в правый верхний</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Из правого нижнего угла в левый верхний</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Снизу вверх</string>
     <string name="settings_accent_gradient_direction_left_to_right">Слева направо</string>
     <string name="settings_accent_gradient_direction_right_to_left">Справа налево</string>

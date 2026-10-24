@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">ക്ലാസ് സംഘർഷം</string>
     <string name="a11y_class_table_share_qr">ക്ലാസ് ടൈംടേബിൾ പങ്കിടൽ QR കോഡ്</string>
     <string name="a11y_class_table_switch">ക്ലാസ് ടൈംടേബിൾ മാറ്റുക</string>
+    <string name="a11y_color_picker_brightness">തെളിച്ചം</string>
+    <string name="a11y_color_picker_hue">വർണ്ണഭേദം</string>
+    <string name="a11y_color_picker_saturation">പൂരിതത്വം</string>
     <string name="a11y_course_card_open_details_hint">വിശദാംശങ്ങൾക്ക് രണ്ടുതവണ ടാപ്പ് ചെയ്യുക</string>
     <string name="a11y_course_color_swatch">നിറം %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle-ൽ തുറക്കുക</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">ആക്‌സെന്റ് നിറം</string>
     <string name="settings_accent_gradient_custom">ഇഷ്ടാനുസൃത ഗ്രേഡിയന്റ്</string>
     <string name="settings_accent_gradient_direction">ഗ്രേഡിയന്റ് ദിശ</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">താഴെ ഇടത്തുനിന്ന് മുകളിൽ വലത്തേക്ക്</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">താഴെ വലത്തുനിന്ന് മുകളിൽ ഇടത്തേക്ക്</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">താഴെ നിന്ന് മുകളിലേക്ക്</string>
     <string name="settings_accent_gradient_direction_left_to_right">ഇടത്തുനിന്ന് വലത്തേക്ക്</string>
     <string name="settings_accent_gradient_direction_right_to_left">വലത്തുനിന്ന് ഇടത്തേക്ക്</string>

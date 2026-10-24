@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Конфликт часова</string>
     <string name="a11y_class_table_share_qr">QR код за дељење распореда</string>
     <string name="a11y_class_table_switch">Промени распоред</string>
+    <string name="a11y_color_picker_brightness">Осветљеност</string>
+    <string name="a11y_color_picker_hue">Нијанса</string>
+    <string name="a11y_color_picker_saturation">Засићеност</string>
     <string name="a11y_course_card_open_details_hint">Двапут тапните за детаље</string>
     <string name="a11y_course_color_swatch">Боја %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Отвори у Moodle-у</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Акцентна боја</string>
     <string name="settings_accent_gradient_custom">Прилагођени прелаз</string>
     <string name="settings_accent_gradient_direction">Смер прелаза</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Од доле лево до горе десно</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Од доле десно до горе лево</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Одоздо нагоре</string>
     <string name="settings_accent_gradient_direction_left_to_right">Слева надесно</string>
     <string name="settings_accent_gradient_direction_right_to_left">Здесна налево</string>

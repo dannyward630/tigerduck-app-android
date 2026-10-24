@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Lesconflict</string>
     <string name="a11y_class_table_share_qr">QR Code voor het delen van het rooster</string>
     <string name="a11y_class_table_switch">Rooster wisselen</string>
+    <string name="a11y_color_picker_brightness">Helderheid</string>
+    <string name="a11y_color_picker_hue">Tint</string>
+    <string name="a11y_color_picker_saturation">Verzadiging</string>
     <string name="a11y_course_card_open_details_hint">Dubbeltik voor details</string>
     <string name="a11y_course_color_swatch">Kleur %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Openen in Moodle</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Accentkleur</string>
     <string name="settings_accent_gradient_custom">Aangepast kleurverloop</string>
     <string name="settings_accent_gradient_direction">Richting van het kleurverloop</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Van linksonder naar rechtsboven</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Van rechtsonder naar linksboven</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Van onder naar boven</string>
     <string name="settings_accent_gradient_direction_left_to_right">Van links naar rechts</string>
     <string name="settings_accent_gradient_direction_right_to_left">Van rechts naar links</string>

@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">વર્ગ સંઘર્ષ</string>
     <string name="a11y_class_table_share_qr">ક્લાસ ટાઇમટેબલ શેર કરવાનો QR Code</string>
     <string name="a11y_class_table_switch">ક્લાસ ટાઇમટેબલ બદલો</string>
+    <string name="a11y_color_picker_brightness">તેજ</string>
+    <string name="a11y_color_picker_hue">રંગછટા</string>
+    <string name="a11y_color_picker_saturation">સંતૃપ્તિ</string>
     <string name="a11y_course_card_open_details_hint">વિગતો માટે ડબલ ટૅપ કરો</string>
     <string name="a11y_course_color_swatch">રંગ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle માં ખોલો</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">ઍક્સેન્ટ કલર</string>
     <string name="settings_accent_gradient_custom">કસ્ટમ ગ્રેડિયન્ટ</string>
     <string name="settings_accent_gradient_direction">ગ્રેડિયન્ટની દિશા</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">નીચે ડાબેથી ઉપર જમણે</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">નીચે જમણેથી ઉપર ડાબે</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">નીચેથી ઉપર</string>
     <string name="settings_accent_gradient_direction_left_to_right">ડાબેથી જમણે</string>
     <string name="settings_accent_gradient_direction_right_to_left">જમણેથી ડાબે</string>

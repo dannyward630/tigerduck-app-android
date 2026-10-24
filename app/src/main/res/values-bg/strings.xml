@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Конфликт на часове</string>
     <string name="a11y_class_table_share_qr">QR код за споделяне на разписанието</string>
     <string name="a11y_class_table_switch">Превключване на разписанието</string>
+    <string name="a11y_color_picker_brightness">Яркост</string>
+    <string name="a11y_color_picker_hue">Нюанс</string>
+    <string name="a11y_color_picker_saturation">Наситеност</string>
     <string name="a11y_course_card_open_details_hint">Докоснете двукратно за подробности</string>
     <string name="a11y_course_color_swatch">Цвят %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Отвори в Moodle</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Акцентен цвят</string>
     <string name="settings_accent_gradient_custom">Персонализирано преливане</string>
     <string name="settings_accent_gradient_direction">Посока на преливането</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">От долу вляво към горе вдясно</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">От долу вдясно към горе вляво</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Отдолу нагоре</string>
     <string name="settings_accent_gradient_direction_left_to_right">Отляво надясно</string>
     <string name="settings_accent_gradient_direction_right_to_left">Отдясно наляво</string>

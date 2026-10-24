@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">تعارض کلاس</string>
     <string name="a11y_class_table_share_qr">کد QR اشتراک‌گذاری برنامه کلاس‌ها</string>
     <string name="a11y_class_table_switch">تغییر برنامه کلاس‌ها</string>
+    <string name="a11y_color_picker_brightness">روشنایی</string>
+    <string name="a11y_color_picker_hue">فام</string>
+    <string name="a11y_color_picker_saturation">اشباع</string>
     <string name="a11y_course_card_open_details_hint">دو بار ضربه بزنید برای جزئیات</string>
     <string name="a11y_course_color_swatch">رنگ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">باز کردن در Moodle</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">رنگ تاکید</string>
     <string name="settings_accent_gradient_custom">گرادیان سفارشی</string>
     <string name="settings_accent_gradient_direction">جهت گرادیان</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">از پایین چپ به بالا راست</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">از پایین راست به بالا چپ</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">از پایین به بالا</string>
     <string name="settings_accent_gradient_direction_left_to_right">از چپ به راست</string>
     <string name="settings_accent_gradient_direction_right_to_left">از راست به چپ</string>

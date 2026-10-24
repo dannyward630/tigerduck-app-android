@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">ತರಗತಿ ಸಂಘರ್ಷ</string>
     <string name="a11y_class_table_share_qr">ತರಗತಿ ವೇಳಾಪಟ್ಟಿ ಹಂಚಿಕೆ QR ಕೋಡ್</string>
     <string name="a11y_class_table_switch">ತರಗತಿ ವೇಳಾಪಟ್ಟಿ ಬದಲಿಸಿ</string>
+    <string name="a11y_color_picker_brightness">ಪ್ರಕಾಶ</string>
+    <string name="a11y_color_picker_hue">ವರ್ಣ</string>
+    <string name="a11y_color_picker_saturation">ಸಂತೃಪ್ತಿ</string>
     <string name="a11y_course_card_open_details_hint">ವಿವರಗಳಿಗಾಗಿ ಎರಡು ಬಾರಿ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
     <string name="a11y_course_color_swatch">ಬಣ್ಣ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle ನಲ್ಲಿ ತೆರೆಯಿರಿ</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">ಆಕ್ಸೆಂಟ್ ಬಣ್ಣ</string>
     <string name="settings_accent_gradient_custom">ಕಸ್ಟಮ್ ಗ್ರೇಡಿಯಂಟ್</string>
     <string name="settings_accent_gradient_direction">ಗ್ರೇಡಿಯಂಟ್ ದಿಕ್ಕು</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">ಕೆಳಗಿನ ಎಡದಿಂದ ಮೇಲಿನ ಬಲಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">ಕೆಳಗಿನ ಬಲದಿಂದ ಮೇಲಿನ ಎಡಕ್ಕೆ</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">ಕೆಳಗಿನಿಂದ ಮೇಲಕ್ಕೆ</string>
     <string name="settings_accent_gradient_direction_left_to_right">ಎಡದಿಂದ ಬಲಕ್ಕೆ</string>
     <string name="settings_accent_gradient_direction_right_to_left">ಬಲದಿಂದ ಎಡಕ್ಕೆ</string>

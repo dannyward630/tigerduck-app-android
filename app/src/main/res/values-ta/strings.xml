@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">வகுப்பு மோதல்</string>
     <string name="a11y_class_table_share_qr">வகுப்பு அட்டவணைப் பகிர்வு QR Code</string>
     <string name="a11y_class_table_switch">வகுப்பு அட்டவணையை மாற்று</string>
+    <string name="a11y_color_picker_brightness">ஒளிர்வு</string>
+    <string name="a11y_color_picker_hue">சாயல்</string>
+    <string name="a11y_color_picker_saturation">செறிவு</string>
     <string name="a11y_course_card_open_details_hint">விவரங்களுக்கு இருமுறை தட்டவும்</string>
     <string name="a11y_course_color_swatch">நிறம் %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle-ல் திறக்கவும்</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">முக்கிய நிறம்</string>
     <string name="settings_accent_gradient_custom">தனிப்பயன் கிரேடியன்ட்</string>
     <string name="settings_accent_gradient_direction">கிரேடியன்ட் திசை</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">கீழ் இடமிருந்து மேல் வலமாக</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">கீழ் வலமிருந்து மேல் இடமாக</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">கீழிருந்து மேலே</string>
     <string name="settings_accent_gradient_direction_left_to_right">இடமிருந்து வலமாக</string>
     <string name="settings_accent_gradient_direction_right_to_left">வலமிருந்து இடமாக</string>

@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Stundenkonflikt</string>
     <string name="a11y_class_table_share_qr">QR Code zum Teilen des Stundenplans</string>
     <string name="a11y_class_table_switch">Stundenplan wechseln</string>
+    <string name="a11y_color_picker_brightness">Helligkeit</string>
+    <string name="a11y_color_picker_hue">Farbton</string>
+    <string name="a11y_color_picker_saturation">Sättigung</string>
     <string name="a11y_course_card_open_details_hint">Doppeltippen für Details</string>
     <string name="a11y_course_color_swatch">Farbe %1$lld</string>
     <string name="a11y_course_detail_open_moodle">In Moodle öffnen</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Akzentfarbe</string>
     <string name="settings_accent_gradient_custom">Eigener Verlauf</string>
     <string name="settings_accent_gradient_direction">Verlaufsrichtung</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Von unten links nach oben rechts</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Von unten rechts nach oben links</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Von unten nach oben</string>
     <string name="settings_accent_gradient_direction_left_to_right">Von links nach rechts</string>
     <string name="settings_accent_gradient_direction_right_to_left">Von rechts nach links</string>

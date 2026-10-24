@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Timeplankonflikt</string>
     <string name="a11y_class_table_share_qr">QR-kode for deling av timeplan</string>
     <string name="a11y_class_table_switch">Bytt timeplan</string>
+    <string name="a11y_color_picker_brightness">Lysstyrke</string>
+    <string name="a11y_color_picker_hue">Fargetone</string>
+    <string name="a11y_color_picker_saturation">Metning</string>
     <string name="a11y_course_card_open_details_hint">Dobbelttrykk for detaljer</string>
     <string name="a11y_course_color_swatch">Farge %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Åpne i Moodle</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Aksentfarge</string>
     <string name="settings_accent_gradient_custom">Egendefinert fargeovergang</string>
     <string name="settings_accent_gradient_direction">Retning for fargeovergang</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Fra nederst til venstre mot øverst til høyre</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Fra nederst til høyre mot øverst til venstre</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Nedenfra og opp</string>
     <string name="settings_accent_gradient_direction_left_to_right">Fra venstre mot høyre</string>
     <string name="settings_accent_gradient_direction_right_to_left">Fra høyre mot venstre</string>

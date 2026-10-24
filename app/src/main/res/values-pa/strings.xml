@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">ਕਲਾਸ ਟਕਰਾਅ</string>
     <string name="a11y_class_table_share_qr">ਕਲਾਸ ਸਾਰਣੀ ਸ਼ੇਅਰ ਕਰਨ ਦਾ QR ਕੋਡ</string>
     <string name="a11y_class_table_switch">ਕਲਾਸ ਸਾਰਣੀ ਬਦਲੋ</string>
+    <string name="a11y_color_picker_brightness">ਚਮਕ</string>
+    <string name="a11y_color_picker_hue">ਰੰਗਤ</string>
+    <string name="a11y_color_picker_saturation">ਸੰਤ੍ਰਿਪਤਾ</string>
     <string name="a11y_course_card_open_details_hint">ਵੇਰਵਿਆਂ ਲਈ ਦੋ ਵਾਰ ਟੈਪ ਕਰੋ</string>
     <string name="a11y_course_color_swatch">ਰੰਗ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle ਵਿੱਚ ਖੋਲ੍ਹੋ</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">ਐਕਸੈਂਟ ਰੰਗ</string>
     <string name="settings_accent_gradient_custom">ਕਸਟਮ ਗ੍ਰੇਡੀਐਂਟ</string>
     <string name="settings_accent_gradient_direction">ਗ੍ਰੇਡੀਐਂਟ ਦੀ ਦਿਸ਼ਾ</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">ਹੇਠਾਂ ਖੱਬੇ ਤੋਂ ਉੱਪਰ ਸੱਜੇ</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">ਹੇਠਾਂ ਸੱਜੇ ਤੋਂ ਉੱਪਰ ਖੱਬੇ</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">ਹੇਠਾਂ ਤੋਂ ਉੱਪਰ</string>
     <string name="settings_accent_gradient_direction_left_to_right">ਖੱਬੇ ਤੋਂ ਸੱਜੇ</string>
     <string name="settings_accent_gradient_direction_right_to_left">ਸੱਜੇ ਤੋਂ ਖੱਬੇ</string>

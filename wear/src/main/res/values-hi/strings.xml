@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">क्लास टकराव</string>
     <string name="a11y_class_table_share_qr">कक्षा सारणी शेयर करने का QR Code</string>
     <string name="a11y_class_table_switch">कक्षा सारणी बदलें</string>
+    <string name="a11y_color_picker_brightness">चमक</string>
+    <string name="a11y_color_picker_hue">रंगत</string>
+    <string name="a11y_color_picker_saturation">संतृप्ति</string>
     <string name="a11y_course_card_open_details_hint">विवरण के लिए दो बार टैप करें</string>
     <string name="a11y_course_color_swatch">रंग %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle में खोलें</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">एक्सेंट रंग</string>
     <string name="settings_accent_gradient_custom">कस्टम ग्रेडिएंट</string>
     <string name="settings_accent_gradient_direction">ग्रेडिएंट की दिशा</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">नीचे बाएँ से ऊपर दाएँ</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">नीचे दाएँ से ऊपर बाएँ</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">नीचे से ऊपर</string>
     <string name="settings_accent_gradient_direction_left_to_right">बाएँ से दाएँ</string>
     <string name="settings_accent_gradient_direction_right_to_left">दाएँ से बाएँ</string>

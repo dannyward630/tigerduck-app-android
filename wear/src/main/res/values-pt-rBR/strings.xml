@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Conflito de aula</string>
     <string name="a11y_class_table_share_qr">QR Code de compartilhamento da grade horária</string>
     <string name="a11y_class_table_switch">Trocar de grade horária</string>
+    <string name="a11y_color_picker_brightness">Brilho</string>
+    <string name="a11y_color_picker_hue">Matiz</string>
+    <string name="a11y_color_picker_saturation">Saturação</string>
     <string name="a11y_course_card_open_details_hint">Toque duas vezes para ver detalhes</string>
     <string name="a11y_course_color_swatch">Cor %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Abrir no Moodle</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Cor de destaque</string>
     <string name="settings_accent_gradient_custom">Degradê personalizado</string>
     <string name="settings_accent_gradient_direction">Direção do degradê</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Do canto inferior esquerdo ao superior direito</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Do canto inferior direito ao superior esquerdo</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">De baixo para cima</string>
     <string name="settings_accent_gradient_direction_left_to_right">Da esquerda para a direita</string>
     <string name="settings_accent_gradient_direction_right_to_left">Da direita para a esquerda</string>

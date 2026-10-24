@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">撞堂</string>
     <string name="a11y_class_table_share_qr">課表分享 QR Code</string>
     <string name="a11y_class_table_switch">切換課表</string>
+    <string name="a11y_color_picker_brightness">亮度</string>
+    <string name="a11y_color_picker_hue">色相</string>
+    <string name="a11y_color_picker_saturation">飽和度</string>
     <string name="a11y_course_card_open_details_hint">㩒兩下睇詳情</string>
     <string name="a11y_course_color_swatch">顏色 %1$lld</string>
     <string name="a11y_course_detail_open_moodle">喺 Moodle 開啟</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">主題色</string>
     <string name="settings_accent_gradient_custom">自訂漸變色</string>
     <string name="settings_accent_gradient_direction">漸變方向</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">由左下至右上</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">由右下至左上</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">由下至上</string>
     <string name="settings_accent_gradient_direction_left_to_right">由左至右</string>
     <string name="settings_accent_gradient_direction_right_to_left">由右至左</string>

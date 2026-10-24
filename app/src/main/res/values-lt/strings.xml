@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Pamokų konfliktas</string>
     <string name="a11y_class_table_share_qr">Tvarkaraščio bendrinimo QR kodas</string>
     <string name="a11y_class_table_switch">Perjungti tvarkaraštį</string>
+    <string name="a11y_color_picker_brightness">Ryškumas</string>
+    <string name="a11y_color_picker_hue">Atspalvis</string>
+    <string name="a11y_color_picker_saturation">Sodrumas</string>
     <string name="a11y_course_card_open_details_hint">Dukart bakstelėkite, kad peržiūrėtumėte išsamią informaciją</string>
     <string name="a11y_course_color_swatch">Spalva %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Atidaryti Moodle</string>
@@ -939,6 +942,8 @@
     <string name="settings_accent_color">Akcentinė spalva</string>
     <string name="settings_accent_gradient_custom">Tinkintas gradientas</string>
     <string name="settings_accent_gradient_direction">Gradiento kryptis</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Iš apatinio kairiojo į viršutinį dešinįjį kampą</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Iš apatinio dešiniojo į viršutinį kairįjį kampą</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Iš apačios į viršų</string>
     <string name="settings_accent_gradient_direction_left_to_right">Iš kairės į dešinę</string>
     <string name="settings_accent_gradient_direction_right_to_left">Iš dešinės į kairę</string>
