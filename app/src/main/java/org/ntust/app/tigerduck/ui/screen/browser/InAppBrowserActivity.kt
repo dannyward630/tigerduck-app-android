@@ -607,7 +607,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         when {
             state.find != null -> actions.endFind()
             webView.canGoBack() -> {
-                state.signIn = null
+                // Leaving a sign-in under way stops it: its result would load its page over this one.
+                if (state.signIn != null) signInFlow.leave()
                 state.error = null
                 webView.goBack()
             }
@@ -634,7 +635,11 @@ class InAppBrowserActivity : AppCompatActivity() {
     private val actions = object : BrowserActions() {
         override fun close() = finish()
         override fun back() = handleBack()
-        override fun forward() { if (webView.canGoForward()) webView.goForward() }
+        override fun forward() {
+            if (!webView.canGoForward()) return
+            if (state.signIn != null) signInFlow.leave()
+            webView.goForward()
+        }
         override fun reload() {
             if (state.error != null) retry() else webView.reload()
         }

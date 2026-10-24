@@ -75,6 +75,14 @@ internal class BrowserSignInFlow(
         load(target)
     }
 
+    /** The student left the sign-in, by Back or Forward: its try or countdown stops, and it is forgotten. */
+    fun leave() {
+        job?.cancel()
+        state.signIn = null
+        loads.signInTarget = null
+        loads.signingInOnWeb = false
+    }
+
     fun cancel() {
         job?.cancel()
     }

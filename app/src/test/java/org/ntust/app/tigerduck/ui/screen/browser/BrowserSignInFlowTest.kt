@@ -214,6 +214,40 @@ class BrowserSignInFlowTest {
     }
 
     @Test
+    fun `leaving the sign-in while its link is on its way loads nothing and forgets it`() = runTest {
+        val site = Site(takesMs = 1_000)
+        val flow = flow(site)
+        loads.requested(PAGE)
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        // Back, to the page before.
+        flow.leave()
+        advanceTimeBy(2_000)
+        runCurrent()
+
+        assertEquals(emptyList<String>(), loaded)
+        assertNull(state.signIn)
+        assertNull(loads.signInTarget)
+    }
+
+    @Test
+    fun `leaving the countdown stops it`() = runTest {
+        val site = Site(firstDueAtMs = 3_000)
+        val flow = flow(site)
+        loads.requested(PAGE)
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        flow.leave()
+        advanceTimeBy(5_000)
+        runCurrent()
+
+        assertEquals(emptyList<String>(), site.asked)
+        assertNull(state.signIn)
+    }
+
+    @Test
     fun `cancelling stops the countdown, also one a try that failed at once started`() = runTest(UnconfinedTestDispatcher()) {
         // As the activity's Main.immediate: a launch runs at once, up to its first wait.
         val site = Site(firstDueAtMs = 3_000)
