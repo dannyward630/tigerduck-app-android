@@ -86,6 +86,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -152,6 +153,15 @@ internal fun BrowserPagesSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    // Each page's own state, its scroll above all, kept while it is in the stack: back on a page,
+    // it is as it was left. A page gone from the stack starts afresh when opened again.
+    val pageStates = rememberSaveableStateHolder()
+    val keys = pages.mapIndexed { depth, sheet -> pageKey(depth + 1, sheet) }
+    var kept by remember { mutableStateOf(keys) }
+    LaunchedEffect(keys) {
+        (kept - keys.toSet()).forEach(pageStates::removeState)
+        kept = keys
+    }
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -182,20 +192,25 @@ internal fun BrowserPagesSheet(
                         BrowserSheet.DOWNLOADS -> R.string.browser_downloads
                     },
                 )
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        // A new pane in the sheet, not the sheet closing and another opening.
-                        .semantics { paneTitle = title }
-                        .verticalScroll(rememberScrollState())
-                        .padding(bottom = 16.dp),
-                ) {
-                    page(sheet, if (depth > 1) onBack else null)
+                pageStates.SaveableStateProvider(pageKey(depth, sheet)) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            // A new pane in the sheet, not the sheet closing and another opening.
+                            .semantics { paneTitle = title }
+                            .verticalScroll(rememberScrollState())
+                            .padding(bottom = 16.dp),
+                    ) {
+                        page(sheet, if (depth > 1) onBack else null)
+                    }
                 }
             }
         }
     }
 }
+
+/** A page's place in the sheet's stack: the same page at another depth is another entry. */
+private fun pageKey(depth: Int, sheet: BrowserSheet) = "$depth:${sheet.name}"
 
 /** A page's title, with the way back to the page before it when there is one; TalkBack goes to it. */
 @Composable

@@ -199,6 +199,19 @@ class InAppBrowserScreenTest {
     }
 
     @Test
+    fun `back on the menu, it is scrolled where it was`() {
+        show(loaded())
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+        val security = composeRule.onNodeWithText(string(R.string.browser_security)).performScrollTo()
+        val where = security.getBoundsInRoot().top
+
+        security.performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.action_back)).performClick()
+
+        assertEquals(where.value, composeRule.onNodeWithText(string(R.string.browser_security)).getBoundsInRoot().top.value, 1f)
+    }
+
+    @Test
     fun `a rotation keeps the sheet at its page`() {
         val restoration = StateRestorationTester(composeRule)
         val state = loaded()
