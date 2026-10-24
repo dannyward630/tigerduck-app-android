@@ -54,6 +54,9 @@ class MoodleWebSignInTest {
     /** Runs as each SSO sign-in arrives, before its answer. */
     private var onPost: () -> Unit = {}
 
+    /** Runs as Moodle's OIDC entry is asked for, before its answer. */
+    private var onEntry: () -> Unit = {}
+
     private val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain.request()) }.build()
 
     /** The time the latch and the pause read. */
@@ -202,6 +205,21 @@ class MoodleWebSignInTest {
         expectFailure(MoodleWebserviceError.MalformedResponse::class.java) { service().signInToWebsite() }
     }
 
+    @Test
+    fun `a refusal another sign-in counts while a run is on its way stops its post, however short the wait`() = runTest(UnconfinedTestDispatcher()) {
+        val service = service()
+        onEntry = {
+            latch.markRejected(latch.generation, STUDENT, PASSWORD, "Wrong account or password")
+            // Past the count's first short wait by the time the form is posted.
+            clock += 60_000L
+        }
+
+        expectFailure(Exception::class.java) { service.signInToWebsite() }
+
+        assertTrue(posts.isEmpty())
+        assertEquals("nothing posted, nothing more counted", 1, latch.refusals.value)
+    }
+
     private suspend fun expectFailure(type: Class<out Throwable>, block: suspend () -> Unit) {
         try {
             block()
@@ -230,7 +248,10 @@ class MoodleWebSignInTest {
                     "<html><body>Dashboard</body></html>",
                     listOf("MoodleSession=fake-session-000; Path=/; Secure; HttpOnly", "MOODLEID1_=made-up; Path=/; Secure"),
                 )
-            url.startsWith("$MOODLE/auth/oidc/") -> Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
+            url.startsWith("$MOODLE/auth/oidc/") -> {
+                onEntry()
+                Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
+            }
             url == "$MOODLE/user/edit.php" -> {
                 val sent = jar.loadForRequest(request.url).any { it.name == "MoodleSession" }
                 if (sent && moodleHoldsSession) Triple(url, editorPage, emptyList())

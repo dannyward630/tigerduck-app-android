@@ -121,7 +121,14 @@ internal class MoodleTokenCoordinator(
         val sid = tokens.studentId ?: throw MoodleWebserviceError.MissingStoredCredentials()
         val pwd = tokens.password ?: throw MoodleWebserviceError.MissingStoredCredentials()
         val cookies = passwordLatch.guardAutomaticHarvest(sid, pwd) { posting ->
-            websiteLogin(sid.trim().uppercase(), pwd, posting)
+            websiteLogin(sid.trim().uppercase(), pwd, object : PasswordPosting {
+                override suspend fun <R> post(send: suspend () -> R): R = posting.post {
+                    // Under the lock every automatic post takes: a refusal another sign-in counted
+                    // while this one was on its way stops it, whatever wait the count has served.
+                    if (passwordLatch.isRejected) throw StoredPasswordHeldBack()
+                    send()
+                }
+            })
         }
         // Signed out, or signed in as another student, while it ran: the session is the departing one's.
         if (tokens.studentId != sid) throw MoodleWebserviceError.MissingStoredCredentials()
@@ -168,3 +175,9 @@ internal class HeldRefusal(private val latch: StoredPasswordLatch) : StoredPassw
 
     override fun clear() = latch.clear()
 }
+
+/**
+ * A sign-in to Moodle's website that did not post the stored password, as the app-wide count holds
+ * a refusal of it ([HeldRefusal]): no answer of SSO's, so nothing more is counted.
+ */
+internal class StoredPasswordHeldBack : Exception("the stored password was refused; not posted again")
