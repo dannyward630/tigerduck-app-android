@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Pesan diteruskan ----------</string>
     <string name="school_mail_guide_load_failed">Tidak dapat memuat panduan</string>
     <string name="school_mail_guide_open_in_browser">Buka di peramban</string>
+    <string name="school_mail_held_attachments_missing">Lampiran ini tidak dapat dipertahankan dan sudah tidak ada di email: %1$@. Lampirkan lagi sebelum mengirim.</string>
     <string name="school_mail_invalid_recipients">Periksa alamat berikut: %1$@</string>
     <string name="school_mail_keep_editing">Lanjutkan mengedit</string>
     <string name="school_mail_leave_title">Simpan email ini sebagai draf?</string>

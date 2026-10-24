@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Thư đã chuyển tiếp ----------</string>
     <string name="school_mail_guide_load_failed">Không thể tải hướng dẫn</string>
     <string name="school_mail_guide_open_in_browser">Mở trong trình duyệt</string>
+    <string name="school_mail_held_attachments_missing">Không thể giữ lại các tệp đính kèm này và chúng không còn trong thư: %1$@. Hãy đính kèm lại trước khi gửi.</string>
     <string name="school_mail_invalid_recipients">Kiểm tra các địa chỉ sau: %1$@</string>
     <string name="school_mail_keep_editing">Tiếp tục chỉnh sửa</string>
     <string name="school_mail_leave_title">Lưu thư này thành thư nháp?</string>

@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Videresendt melding ----------</string>
     <string name="school_mail_guide_load_failed">Kunne ikke laste inn veiledningen</string>
     <string name="school_mail_guide_open_in_browser">Åpne i nettleser</string>
+    <string name="school_mail_held_attachments_missing">Disse vedleggene kunne ikke beholdes og er ikke lenger i e-posten: %1$@. Legg dem ved på nytt før du sender.</string>
     <string name="school_mail_invalid_recipients">Sjekk disse adressene: %1$@</string>
     <string name="school_mail_keep_editing">Fortsett å redigere</string>
     <string name="school_mail_leave_title">Lagre denne e-posten som kladd?</string>

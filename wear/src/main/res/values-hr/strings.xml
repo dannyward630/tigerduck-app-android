@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Proslijeđena poruka ----------</string>
     <string name="school_mail_guide_load_failed">Vodič nije moguće učitati</string>
     <string name="school_mail_guide_open_in_browser">Otvori u pregledniku</string>
+    <string name="school_mail_held_attachments_missing">Ove privitke nije bilo moguće zadržati i više nisu u poruci: %1$@. Ponovno ih priložite prije slanja.</string>
     <string name="school_mail_invalid_recipients">Provjerite ove adrese: %1$@</string>
     <string name="school_mail_keep_editing">Nastavi uređivanje</string>
     <string name="school_mail_leave_title">Spremiti ovu poruku kao skicu?</string>

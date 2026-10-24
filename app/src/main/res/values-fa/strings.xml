@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- پیام بازارسال‌شده ----------</string>
     <string name="school_mail_guide_load_failed">بارگذاری راهنما ممکن نشد</string>
     <string name="school_mail_guide_open_in_browser">باز کردن در مرورگر</string>
+    <string name="school_mail_held_attachments_missing">نگه‌داشتن این پیوست‌ها ممکن نشد و دیگر در ایمیل نیستند: %1$@. پیش از ارسال، دوباره آن‌ها را پیوست کنید.</string>
     <string name="school_mail_invalid_recipients">این آدرس‌ها را بررسی کنید: %1$@</string>
     <string name="school_mail_keep_editing">ادامهٔ ویرایش</string>
     <string name="school_mail_leave_title">این ایمیل به‌عنوان پیش‌نویس ذخیره شود؟</string>

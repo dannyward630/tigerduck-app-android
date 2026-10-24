@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Doorgestuurd bericht ----------</string>
     <string name="school_mail_guide_load_failed">Handleiding kon niet worden geladen</string>
     <string name="school_mail_guide_open_in_browser">Openen in browser</string>
+    <string name="school_mail_held_attachments_missing">Deze bijlagen konden niet worden bewaard en staan niet meer in de mail: %1$@. Voeg ze opnieuw toe voordat je verzendt.</string>
     <string name="school_mail_invalid_recipients">Controleer deze adressen: %1$@</string>
     <string name="school_mail_keep_editing">Verder bewerken</string>
     <string name="school_mail_leave_title">Deze mail als concept opslaan?</string>
