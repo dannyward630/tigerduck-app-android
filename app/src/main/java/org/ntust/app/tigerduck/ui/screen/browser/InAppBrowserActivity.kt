@@ -83,9 +83,11 @@ import org.ntust.app.tigerduck.browser.DownloadPlan
 import org.ntust.app.tigerduck.browser.NavigationDecision
 import org.ntust.app.tigerduck.browser.PageSchemeFollow
 import org.ntust.app.tigerduck.browser.UploadSource
+import org.ntust.app.tigerduck.ui.AppProcessing
 import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
 import org.ntust.app.tigerduck.ui.BrowserPreference
+import org.ntust.app.tigerduck.ui.component.AppProcessingHost
 import org.ntust.app.tigerduck.ui.openLink
 import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
 import org.ntust.app.tigerduck.util.fileProviderAuthority
@@ -95,9 +97,10 @@ import javax.inject.Inject
 
 /**
  * Opens pages in the TigerDuck browser, the app's own browser built on a
- * WebView, whatever "Open links with" says. Only the Moodle profile pencil
- * opens it so far; another feature opens a page in it with one call to
- * [open]. Sign-in is per site, through [BrowserSignIns].
+ * WebView, whatever "Open links with" says. Moodle's pages open in it where
+ * the Moodle app does not take them (MoodleWebPages.of), the profile pencil
+ * among them; another feature opens a page in it with one call to [open].
+ * Sign-in is per site, through [BrowserSignIns].
  */
 object InAppBrowser {
     const val EXTRA_URL = "org.ntust.app.tigerduck.browser.URL"
@@ -151,6 +154,9 @@ class InAppBrowserActivity : AppCompatActivity() {
     @Inject lateinit var signIns: BrowserSignIns
 
     private val state = BrowserPageState()
+
+    /** The spinner over the browser while the app signs it in itself; the app's own does not reach this screen. */
+    private val processing = AppProcessing()
     private var appearance by mutableStateOf(BrowserAppearance.DEFAULT)
 
     private var appScale = AppScale.DEFAULT
@@ -218,7 +224,12 @@ class InAppBrowserActivity : AppCompatActivity() {
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
         webView = createWebView()
         loads = BrowserLoads(state, signIns)
-        signInFlow = BrowserSignInFlow(state, loads, signIns, lifecycleScope, ::load) { webView.stopLoading() }
+        signInFlow = BrowserSignInFlow(
+            state, loads, signIns, lifecycleScope,
+            load = ::load,
+            stopLoading = { webView.stopLoading() },
+            processing = processing,
+        )
 
         val savedWeb = savedInstanceState?.getBundle(KEY_WEB_STATE)
         val savedSession = savedInstanceState?.getInt(KEY_SESSION, -1)
@@ -270,6 +281,8 @@ class InAppBrowserActivity : AppCompatActivity() {
                         modifier = modifier,
                     )
                 }
+                // The app's own sign-in to the site, when no link could be had.
+                AppProcessingHost(processing)
             }
         }
     }
@@ -376,6 +389,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         // this: deleting all browsing data (InAppBrowser.canClearEverything) came long after it.
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.TOUCH_PAN, BrowserPageScripts.TOUCH_PAN_ORIGINS) }
+            runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.HIDE_LOGOUT, BrowserPageScripts.HIDE_LOGOUT_ORIGINS) }
+            runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.TOUCH_FOCUS, BrowserPageScripts.TOUCH_FOCUS_ORIGINS) }
         }
     }
 

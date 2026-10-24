@@ -224,7 +224,7 @@ internal fun ownProfileEditorUrl(): String = MoodlePage.webUrl(MoodlePage.PROFIL
  */
 internal fun editOwnProfile(
     context: Context,
-    elsewhere: (Context, String) -> Unit = { c, url -> openMoodleWebPage(c, url) },
+    elsewhere: (Context, String) -> Unit = { c, url -> MoodleWebPages.of(c, inApp = false).open(c, url, null) },
 ) {
     val url = ownProfileEditorUrl()
     if (!InAppBrowser.open(context, url)) elsewhere(context, url)
