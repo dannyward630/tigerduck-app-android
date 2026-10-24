@@ -1,0 +1,241 @@
+package org.ntust.app.tigerduck.ui.screen.browser
+
+import android.app.Application
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import org.junit.Assert.assertEquals
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.browser.BrowserAppearance
+import org.ntust.app.tigerduck.browser.BrowserDownload
+import org.ntust.app.tigerduck.browser.PageSchemeFollow
+import org.ntust.app.tigerduck.browser.UploadSource
+import org.ntust.app.tigerduck.util.replaceIosArg
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/** The TigerDuck browser's screen, layout A, around a stand-in page. */
+@RunWith(RobolectricTestRunner::class)
+@Config(application = Application::class)
+class InAppBrowserScreenTest {
+
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    private val calls = mutableListOf<String>()
+
+    private val actions = object : BrowserActions() {
+        override fun close() { calls += "close" }
+        override fun back() { calls += "back" }
+        override fun reload() { calls += "reload" }
+        override fun stop() { calls += "stop" }
+        override fun share(url: String) { calls += "share $url" }
+        override fun copy(url: String) { calls += "copy $url" }
+        override fun zoomIn() { calls += "zoomIn" }
+        override fun setAppearance(appearance: BrowserAppearance) { calls += "appearance $appearance" }
+        override fun setDesktopSite(desktop: Boolean) { calls += "desktop $desktop" }
+        override fun leaveFor(url: String) { calls += "leave $url" }
+        override fun stayHere() { calls += "stay" }
+        override fun retry() { calls += "retry" }
+        override fun openCurrentExternal() { calls += "external" }
+        override fun signInAgain() { calls += "signIn" }
+        override fun signInOnWeb() { calls += "signInWeb" }
+        override fun pickUpload(source: UploadSource) { calls += "upload $source" }
+        override fun cancelUpload() { calls += "uploadCancel" }
+        override fun answerDialog(confirmed: Boolean, value: String?) { calls += "dialog $confirmed" }
+        override fun openDownload(download: BrowserDownload) { calls += "open ${download.fileName}" }
+    }
+
+    private fun string(id: Int) = composeRule.activity.getString(id)
+
+    private val page = "https://moodle2.ntust.edu.tw/user/edit.php"
+
+    private fun show(state: BrowserPageState, downloads: List<BrowserDownload> = emptyList(), appearance: BrowserAppearance = BrowserAppearance.AUTO) {
+        composeRule.setContent {
+            MaterialTheme {
+                InAppBrowserScreen(state, appearance, downloads, actions, PageSchemeFollow.LIVE) { Box(it) }
+            }
+        }
+    }
+
+    private fun loaded() = BrowserPageState().apply {
+        url = page
+        title = "Edit profile"
+    }
+
+    @Test
+    fun `the top bar shows the host and the title, and its address opens the whole address`() {
+        show(loaded())
+
+        composeRule.onNodeWithText("moodle2.ntust.edu.tw").assertExists()
+        composeRule.onNodeWithText("Edit profile").assertExists()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertExists()
+        composeRule.onNodeWithText(page).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_connection_secure)).assertExists()
+    }
+
+    @Test
+    fun `close, share and the history buttons do what they say`() {
+        show(loaded())
+
+        composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_forward)).assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_share)).performClick()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_close)).performClick()
+
+        assertEquals(listOf("share $page", "close"), calls)
+    }
+
+    @Test
+    fun `while loading, reload is stop`() {
+        show(loaded().apply { loading = true; progress = 40; canGoBack = true })
+
+        composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertIsEnabled()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_reload)).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_stop)).performClick()
+
+        assertEquals(listOf("stop"), calls)
+    }
+
+    @Test
+    fun `the menu has zoom, desktop site and appearance with its note`() {
+        show(loaded())
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+
+        composeRule.onNodeWithText("100%").assertExists()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_zoom_in)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_desktop_site)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_appearance_dark)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_appearance_note)).performScrollTo().assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_print)).performScrollTo().assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_downloads)).performScrollTo().assertExists()
+
+        assertEquals(listOf("zoomIn", "desktop true", "appearance DARK"), calls)
+    }
+
+    @Test
+    fun `find in page counts the matches, and says when there are none`() {
+        show(loaded().apply { find = FindState(query = "due", ordinal = 3, count = 7, done = true) })
+        composeRule.onNodeWithText("3/7").assertExists()
+    }
+
+    @Test
+    fun `find in page with nothing found says no matches`() {
+        show(loaded().apply { find = FindState(query = "zzz", ordinal = 0, count = 0, done = true) })
+        composeRule.onNodeWithText(string(R.string.browser_find_none)).assertExists()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_find_next)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `a link off the allowlist asks before the phone's browser takes it`() {
+        show(loaded().apply { outsideUrl = "https://example.com/x" })
+
+        composeRule.onNodeWithText(string(R.string.browser_outside_title)).assertExists()
+        composeRule.onNodeWithText("https://example.com/x").assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_open_external)).performClick()
+
+        assertEquals(listOf("leave https://example.com/x"), calls)
+    }
+
+    @Test
+    fun `a page that did not load offers a retry and the phone's browser`() {
+        show(loaded().apply { error = BrowserError.Unreachable("moodle2.ntust.edu.tw") })
+
+        composeRule.onNodeWithText(string(R.string.browser_error_message).replaceIosArg(1, "moodle2.ntust.edu.tw")).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_retry)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_open_external)).performClick()
+
+        assertEquals(listOf("retry", "external"), calls)
+    }
+
+    @Test
+    fun `a bad certificate offers no way past it`() {
+        show(loaded().apply { error = BrowserError.BadCertificate("moodle2.ntust.edu.tw") })
+
+        composeRule.onNodeWithText(string(R.string.browser_error_certificate).replaceIosArg(1, "moodle2.ntust.edu.tw")).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_retry)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.browser_open_external)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the sign-in screen counts down to the next try and offers the web sign-in`() {
+        show(loaded().apply { signIn = SignInState("Moodle", page, msLeft = 65_000) })
+
+        composeRule.onNodeWithText(string(R.string.browser_sign_in_title).replaceIosArg(1, "Moodle")).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_sign_in_wait).replaceIosArg(1, "1:05")).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_sign_in_again)).assertIsNotEnabled()
+        composeRule.onNodeWithText(string(R.string.browser_sign_in_web)).performClick()
+
+        assertEquals(listOf("signInWeb"), calls)
+    }
+
+    @Test
+    fun `when a try may go, sign in again tries`() {
+        show(loaded().apply { signIn = SignInState("Moodle", page, msLeft = 0, failed = true) })
+
+        composeRule.onNodeWithText(string(R.string.browser_sign_in_failed)).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_sign_in_again)).performClick()
+
+        assertEquals(listOf("signIn"), calls)
+    }
+
+    @Test
+    fun `an image field offers photos, the camera and files`() {
+        show(loaded().apply {
+            upload = UploadRequest("moodle2.ntust.edu.tw", listOf(UploadSource.PHOTOS, UploadSource.CAMERA, UploadSource.FILES), imagesOnly = true, acceptTypes = listOf("image/*"), multiple = false) {}
+        })
+
+        composeRule.onNodeWithText(string(R.string.browser_upload_wants_image).replaceIosArg(1, "moodle2.ntust.edu.tw")).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_upload_photos)).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_upload_files)).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_upload_camera)).performClick()
+
+        assertEquals(listOf("upload CAMERA"), calls)
+    }
+
+    @Test
+    fun `a page's confirm has cancel and its alert has not`() {
+        show(loaded().apply { dialog = PageDialog(PageDialog.Kind.CONFIRM, "moodle2.ntust.edu.tw", "Delete this?") { _, _ -> } })
+        composeRule.onNodeWithText(string(R.string.browser_dialog_title).replaceIosArg(1, "moodle2.ntust.edu.tw")).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_cancel)).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_dialog_ok)).performClick()
+        assertEquals(listOf("dialog true"), calls)
+    }
+
+    @Test
+    fun `an alert has only OK`() {
+        show(loaded().apply { dialog = PageDialog(PageDialog.Kind.ALERT, "moodle2.ntust.edu.tw", "Saved") { _, _ -> } })
+        composeRule.onNodeWithText("Saved").assertExists()
+        composeRule.onNodeWithText(string(R.string.action_cancel)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a finished download's card opens its file`() {
+        val done = BrowserDownload(1, "week3.pdf", "application/pdf", bytes = 2048, total = 2048, state = BrowserDownload.State.DONE)
+        show(loaded(), downloads = listOf(done))
+
+        composeRule.onNodeWithText("week3.pdf").assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_download_open)).performClick()
+
+        assertEquals(listOf("open week3.pdf"), calls)
+    }
+
+    @Test
+    fun `the countdown shows minutes and seconds, rounded up`() {
+        assertEquals("6:00", countdown(360_000))
+        assertEquals("1:05", countdown(64_001))
+        assertEquals("0:01", countdown(1))
+    }
+}

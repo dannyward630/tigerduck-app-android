@@ -69,6 +69,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.ui.screen.browser.InAppBrowser
 import org.ntust.app.tigerduck.data.moodle.MoodleLookup
 import org.ntust.app.tigerduck.data.moodle.MoodleMemberPlacement
 import org.ntust.app.tigerduck.data.moodle.MoodleMembers
@@ -168,7 +169,7 @@ fun MoodleMemberScreen(
                     },
                     // Moodle gives students no web service for the other profile fields.
                     onEditOnMoodle = if (ownPage) {
-                        { openMoodleWebPage(context, ownProfileEditorUrl()) }
+                        { editOwnProfile(context) }
                     } else {
                         null
                     },
@@ -215,6 +216,12 @@ internal fun isOwnPage(member: MoodleMember, ownId: Int?): Boolean = ownId != nu
 
 /** Moodle's profile editor for the signed-in account, on the website. */
 internal fun ownProfileEditorUrl(): String = MoodlePage.webUrl(MoodlePage.PROFILE_EDITOR)
+
+/**
+ * The pencil: Moodle's profile editor in the TigerDuck browser, whatever "Open links with" says,
+ * so it opens signed in and stays in the app. Moodle has no web service for these fields.
+ */
+internal fun editOwnProfile(context: Context): Boolean = InAppBrowser.open(context, ownProfileEditorUrl())
 
 private fun writeWithMailApp(context: Context, address: String) {
     runCatching {
