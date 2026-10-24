@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -237,5 +239,33 @@ class InAppBrowserScreenTest {
         assertEquals("6:00", countdown(360_000))
         assertEquals("1:05", countdown(64_001))
         assertEquals("0:01", countdown(1))
+    }
+
+    @Test
+    fun `the signed-in row in the address sheet is a title alone`() {
+        show(loaded().apply { signedIn = true })
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_signed_in)).assertExists()
+        composeRule.onNodeWithText("Signed in automatically through the site's one-time link. Your password is never given to the page.")
+            .assertDoesNotExist()
+    }
+
+    @Test
+    fun `the outside-link dialog has cancel alone on top, then copy on the left and the browser on the right`() {
+        show(loaded().apply { outsideUrl = "https://example.com/x" })
+
+        val cancel = composeRule.onNodeWithText(string(R.string.action_cancel)).getBoundsInRoot()
+        val copy = composeRule.onNodeWithText(string(R.string.browser_copy_link)).getBoundsInRoot()
+        val open = composeRule.onNodeWithText(string(R.string.browser_open_external)).getBoundsInRoot()
+
+        // Cancel has a row of its own, above the other two.
+        assertTrue("cancel above copy", cancel.bottom <= copy.top)
+        assertTrue("cancel above open", cancel.bottom <= open.top)
+        // Copy and open share the second row, copy on the left.
+        assertEquals(copy.top.value, open.top.value, 1f)
+        assertTrue("copy left of open", copy.right <= open.left)
+        // Cancel and open both sit at the right edge.
+        assertEquals(cancel.right.value, open.right.value, 2f)
     }
 }

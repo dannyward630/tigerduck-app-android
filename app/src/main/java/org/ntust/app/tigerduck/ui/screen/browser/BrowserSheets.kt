@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -38,6 +39,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ZoomIn
 import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
+import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
@@ -71,6 +74,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
@@ -280,11 +284,7 @@ internal fun BrowserAddressSheet(
                     )
                     if (state.signedIn) {
                         HorizontalDivider()
-                        InfoRow(
-                            icon = Icons.Filled.Person,
-                            title = stringResource(R.string.browser_signed_in),
-                            detail = stringResource(R.string.browser_signed_in_detail),
-                        )
+                        InfoRow(icon = Icons.Filled.Person, title = stringResource(R.string.browser_signed_in), detail = null)
                     }
                     HorizontalDivider()
                     MenuRow(Icons.Filled.VerifiedUser, stringResource(R.string.browser_certificate), enabled = state.certificate != null, showArrow = true, onClick = onCertificate)
@@ -392,7 +392,7 @@ private fun CertificateGroup(title: String, rows: List<Pair<String, String?>>, m
                         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             SelectionContainer(Modifier.weight(1f)) {
-                                Text(value ?: "—", style = MaterialTheme.typography.bodyMedium, textAlign = androidx.compose.ui.text.style.TextAlign.End, modifier = Modifier.fillMaxWidth())
+                                Text(value ?: "—", style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.End, modifier = Modifier.fillMaxWidth())
                             }
                         }
                     }
@@ -508,29 +508,59 @@ internal fun BrowserLinkSheet(url: String, actions: BrowserActions) {
     }
 }
 
-/** A link off the allowlist: open it in the phone's browser, copy it, or stay. */
+/**
+ * A link off the allowlist: open it in the phone's browser, copy it, or stay. Its buttons in two
+ * rows: Cancel alone on the right, then Copy link on the left and the phone's browser on the right.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BrowserOutsideDialog(url: String, actions: BrowserActions) {
-    AlertDialog(
-        onDismissRequest = actions::stayHere,
-        icon = { Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null) },
-        title = { Text(stringResource(R.string.browser_outside_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.browser_outside_message))
+    BasicAlertDialog(onDismissRequest = actions::stayHere) {
+        Surface(
+            shape = AlertDialogDefaults.shape,
+            color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation,
+        ) {
+            Column(Modifier.padding(24.dp)) {
+                Icon(
+                    Icons.AutoMirrored.Filled.OpenInNew,
+                    contentDescription = null,
+                    tint = AlertDialogDefaults.iconContentColor,
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    stringResource(R.string.browser_outside_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = AlertDialogDefaults.titleContentColor,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    stringResource(R.string.browser_outside_message),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AlertDialogDefaults.textContentColor,
+                )
+                Spacer(Modifier.height(12.dp))
                 Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                    Text(url, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(10.dp))
+                    Text(url, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodySmall, maxLines = 4, overflow = TextOverflow.Ellipsis, modifier = Modifier.fillMaxWidth().padding(10.dp))
+                }
+                Spacer(Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = actions::stayHere) { Text(stringResource(R.string.action_cancel)) }
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(onClick = { actions.copy(url); actions.stayHere() }) { Text(stringResource(R.string.browser_copy_link)) }
+                    Button(onClick = { actions.leaveFor(url) }) { Text(stringResource(R.string.browser_open_external)) }
                 }
             }
-        },
-        confirmButton = { Button(onClick = { actions.leaveFor(url) }) { Text(stringResource(R.string.browser_open_external)) } },
-        dismissButton = {
-            Row {
-                TextButton(onClick = { actions.copy(url); actions.stayHere() }) { Text(stringResource(R.string.browser_copy_link)) }
-                TextButton(onClick = actions::stayHere) { Text(stringResource(R.string.action_cancel)) }
-            }
-        },
-    )
+        }
+    }
 }
 
 /** A page's alert, confirm or prompt, as the app's dialog, naming the site that shows it. */
