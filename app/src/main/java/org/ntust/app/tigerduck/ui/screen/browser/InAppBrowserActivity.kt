@@ -95,9 +95,10 @@ import javax.inject.Inject
 
 /**
  * Opens pages in the TigerDuck browser, the app's own browser built on a
- * WebView, whatever "Open links with" says. Only the Moodle profile pencil
- * opens it so far; another feature opens a page in it with one call to
- * [open]. Sign-in is per site, through [BrowserSignIns].
+ * WebView, whatever "Open links with" says. Moodle's pages open in it where
+ * the Moodle app does not take them (MoodleWebPages.of), the profile pencil
+ * among them; another feature opens a page in it with one call to [open].
+ * Sign-in is per site, through [BrowserSignIns].
  */
 object InAppBrowser {
     const val EXTRA_URL = "org.ntust.app.tigerduck.browser.URL"
@@ -376,6 +377,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         // this: deleting all browsing data (InAppBrowser.canClearEverything) came long after it.
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.TOUCH_PAN, BrowserPageScripts.TOUCH_PAN_ORIGINS) }
+            runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.HIDE_LOGOUT, BrowserPageScripts.HIDE_LOGOUT_ORIGINS) }
         }
     }
 

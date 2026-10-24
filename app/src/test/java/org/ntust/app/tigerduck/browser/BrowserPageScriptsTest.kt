@@ -20,4 +20,20 @@ class BrowserPageScriptsTest {
     fun `only Moodle's pages get it, where YUI turns touch off`() {
         assertEquals(setOf("https://moodle2.ntust.edu.tw"), BrowserPageScripts.TOUCH_PAN_ORIGINS)
     }
+
+    @Test
+    fun `Moodle's logout links and forms are hidden, those drawn later too`() {
+        val script = BrowserPageScripts.HIDE_LOGOUT
+
+        assertTrue(script, script.contains("a[href*=\"logout.php\"]"))
+        assertTrue(script, script.contains("form[action*=\"logout.php\"]"))
+        assertTrue(script, script.contains("display: none !important"))
+        assertTrue("a stylesheet, which also matches the menus Moodle draws later", script.contains("createElement('style')"))
+        assertTrue("before the page has a head", script.contains("document.documentElement"))
+    }
+
+    @Test
+    fun `only Moodle's pages lose their logout`() {
+        assertEquals(setOf("https://moodle2.ntust.edu.tw"), BrowserPageScripts.HIDE_LOGOUT_ORIGINS)
+    }
 }

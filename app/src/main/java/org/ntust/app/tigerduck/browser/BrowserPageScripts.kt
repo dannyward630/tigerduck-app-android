@@ -20,4 +20,20 @@ object BrowserPageScripts {
 
     /** Where [TOUCH_PAN] goes, as WebViewCompat.addDocumentStartJavaScript's origin rules. */
     val TOUCH_PAN_ORIGINS: Set<String> = setOf(MoodleWebservice.SITE)
+
+    /**
+     * Hides Moodle's logout: every link to it, and every form that posts to it (its sign-in page's
+     * "Log out" button). Moodle's session ends when TigerDuck signs out, which clears the browser;
+     * a logout inside would only leave the student at a sign-in the next open may have no key for.
+     * A stylesheet, so the user menu Moodle draws later is matched as well. The address itself is
+     * refused besides ([BrowserRouting.isMoodleLogout]).
+     */
+    const val HIDE_LOGOUT = """(function() {
+  var style = document.createElement('style');
+  style.textContent = 'a[href*="logout.php"], form[action*="logout.php"] { display: none !important; }';
+  (document.head || document.documentElement).appendChild(style);
+})();"""
+
+    /** Where [HIDE_LOGOUT] goes, as WebViewCompat.addDocumentStartJavaScript's origin rules. */
+    val HIDE_LOGOUT_ORIGINS: Set<String> = setOf(MoodleWebservice.SITE)
 }
