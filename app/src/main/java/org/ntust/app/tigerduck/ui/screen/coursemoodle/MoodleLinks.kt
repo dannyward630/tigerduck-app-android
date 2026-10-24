@@ -47,6 +47,9 @@ object MoodlePage {
     fun participants(courseId: Int) = "/user/index.php?id=$courseId"
     fun profile(userId: Int, courseId: Int) = "/user/view.php?id=$userId&course=$courseId"
 
+    /** The signed-in account's own profile editor. */
+    const val PROFILE_EDITOR = "/user/edit.php"
+
     /**
      * The Moodle app's link to [path]. The page goes in `redirect` with `=`, `&` and `+` escaped,
      * as iOS escapes it, so a page with two parameters does not split the link's own query.
