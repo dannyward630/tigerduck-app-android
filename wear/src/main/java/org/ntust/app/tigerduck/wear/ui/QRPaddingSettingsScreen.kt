@@ -27,7 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -44,7 +47,10 @@ import org.ntust.app.tigerduck.wear.R
 import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
+import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentGradient
 import org.ntust.app.tigerduck.wear.ui.theme.LocalScreenPadding
+import org.ntust.app.tigerduck.wear.ui.theme.WearAccentGradient
+import org.ntust.app.tigerduck.wear.ui.theme.accentBrush
 
 /**
  * Standalone padding for the fullscreen library QR (page 0). Mirrors the
@@ -160,6 +166,7 @@ fun QRPaddingSettingsScreen(onBack: () -> Unit) {
 @Composable
 private fun QrCornerBrackets(currentDp: Int, modifier: Modifier = Modifier) {
     val accent = LocalAccentColor.current
+    val gradient = LocalAccentGradient.current
     val density = LocalDensity.current
     val config = LocalConfiguration.current
 
@@ -170,51 +177,40 @@ private fun QrCornerBrackets(currentDp: Int, modifier: Modifier = Modifier) {
     val legPx = with(density) { 14.dp.toPx() }
 
     Canvas(modifier = modifier) {
-        val cx = size.width / 2f
-        val cy = size.height / 2f
-        val half = sidePx / 2f
-        val left = cx - half
-        val right = cx + half
-        val top = cy - half
-        val bottom = cy + half
-        val color = accent.copy(alpha = 0.85f)
+        drawQrCornerBrackets(sidePx, legPx, strokePx, accent, gradient)
+    }
+}
 
-        // Each corner draws two short legs forming a 90° "L".
-        // Top-left
-        drawLine(color, Offset(left, top), Offset(left + legPx, top), strokePx, StrokeCap.Round)
-        drawLine(color, Offset(left, top), Offset(left, top + legPx), strokePx, StrokeCap.Round)
-        // Top-right
-        drawLine(color, Offset(right, top), Offset(right - legPx, top), strokePx, StrokeCap.Round)
-        drawLine(color, Offset(right, top), Offset(right, top + legPx), strokePx, StrokeCap.Round)
-        // Bottom-left
-        drawLine(
-            color,
-            Offset(left, bottom),
-            Offset(left + legPx, bottom),
-            strokePx,
-            StrokeCap.Round
-        )
-        drawLine(
-            color,
-            Offset(left, bottom),
-            Offset(left, bottom - legPx),
-            strokePx,
-            StrokeCap.Round
-        )
-        // Bottom-right
-        drawLine(
-            color,
-            Offset(right, bottom),
-            Offset(right - legPx, bottom),
-            strokePx,
-            StrokeCap.Round
-        )
-        drawLine(
-            color,
-            Offset(right, bottom),
-            Offset(right, bottom - legPx),
-            strokePx,
-            StrokeCap.Round
-        )
+/**
+ * [QrCornerBrackets]' marks: at each corner of the centered square of side
+ * [sidePx], two legs of [legPx] forming a 90° "L", in the accent laid across
+ * the square.
+ */
+internal fun DrawScope.drawQrCornerBrackets(
+    sidePx: Float,
+    legPx: Float,
+    strokePx: Float,
+    accent: Color,
+    gradient: WearAccentGradient?,
+) {
+    val half = sidePx / 2f
+    val square = Rect(
+        left = size.width / 2f - half,
+        top = size.height / 2f - half,
+        right = size.width / 2f + half,
+        bottom = size.height / 2f + half,
+    )
+    val brush = accentBrush(accent, gradient, square)
+    fun leg(from: Offset, to: Offset) =
+        drawLine(brush, from, to, strokeWidth = strokePx, cap = StrokeCap.Round, alpha = 0.85f)
+    with(square) {
+        leg(topLeft, Offset(left + legPx, top))
+        leg(topLeft, Offset(left, top + legPx))
+        leg(topRight, Offset(right - legPx, top))
+        leg(topRight, Offset(right, top + legPx))
+        leg(bottomLeft, Offset(left + legPx, bottom))
+        leg(bottomLeft, Offset(left, bottom - legPx))
+        leg(bottomRight, Offset(right - legPx, bottom))
+        leg(bottomRight, Offset(right, bottom - legPx))
     }
 }

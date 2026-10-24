@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
-import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 
 /** The accent gradient's six directions, as stored and as drawn. */
 class AccentBrushTest {

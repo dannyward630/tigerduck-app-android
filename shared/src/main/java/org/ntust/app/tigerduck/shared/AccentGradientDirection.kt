@@ -1,11 +1,16 @@
-package org.ntust.app.tigerduck.data.preferences
+package org.ntust.app.tigerduck.shared
 
 /**
  * The way an accent gradient runs, from its start color to its end color, as
- * picked on the accent color page, in the order the page offers them.
+ * picked on the phone's accent color page, in the order the page offers them.
+ * Here in `:shared` because the watch draws the same gradient.
  *
- * [code] is what the preference stores: fixed per direction, so reordering
- * them never changes a stored pick. The start and end sit at fractions of the
+ * [code] is what the phone's preference stores and what it sends the watch
+ * (see [WearProtocol.Schedule.KEY_ACCENT_DIRECTION]): fixed per direction, so
+ * reordering them never changes a stored pick, and a phone and a watch of
+ * different builds agree on every code both know.
+ *
+ * The start and end sit at fractions of the
  * shape's width and height. They are the screen's own sides, not the reading
  * direction's: left to right starts at the left edge in a right-to-left
  * language too, as the arrow that shows it does.
