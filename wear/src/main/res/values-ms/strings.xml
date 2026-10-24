@@ -38,6 +38,7 @@
     <string name="action_clear_text">Padam teks</string>
     <string name="action_close">Tutup</string>
     <string name="action_confirm">Sahkan</string>
+    <string name="action_continue">Teruskan</string>
     <string name="action_done">Selesai</string>
     <string name="action_go_to_settings">Pergi ke tetapan</string>
     <string name="action_got_it">Faham</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Tab semasa</string>
     <string name="tab_editor_title">Sesuaikan bar navigasi bawah</string>
     <string name="tag_server_notification">Pemberitahuan pelayan</string>
+    <string name="tls_certificate_fingerprint">Cap jari SHA-256</string>
+    <string name="tls_certificate_intermediate">Perantaraan</string>
+    <string name="tls_certificate_issuer">Pengeluar</string>
+    <string name="tls_certificate_list_title">Sijil</string>
+    <string name="tls_certificate_name">Nama</string>
+    <string name="tls_certificate_root">Akar</string>
+    <string name="tls_certificate_validity">Sah</string>
+    <string name="tls_pin_mismatch_details">Sijil %1$@ berbeza daripada yang direkodkan oleh TigerDuck, tetapi dikeluarkan oleh pihak berkuasa yang dipercayai, jadi laman web mungkin telah memperbaharui sijilnya. Jika anda meneruskan, TigerDuck akan mempercayai sijil ini sehingga kemas kini seterusnya, untuk semua laman di bawah %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Dikeluarkan oleh %@</string>
+    <string name="tls_pin_mismatch_message">Sijil laman web tidak sepadan dengan yang direkodkan, sekali gus menjejaskan keselamatan sambungan. Teruskan ke laman web ini?</string>
+    <string name="tls_pin_mismatch_show_details">Butiran</string>
+    <string name="tls_pin_mismatch_title">Sijil telah berubah</string>
+    <string name="tls_pin_mismatch_view_certificate">Lihat sijil</string>
     <string name="update_action_later">Kemudian</string>
     <string name="update_action_skip_version">Langkau versi ini</string>
     <string name="update_action_update_now">Kemas kini sekarang</string>

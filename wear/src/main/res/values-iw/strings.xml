@@ -38,6 +38,7 @@
     <string name="action_clear_text">נקה טקסט</string>
     <string name="action_close">סגור</string>
     <string name="action_confirm">אישור</string>
+    <string name="action_continue">המשך</string>
     <string name="action_done">סיום</string>
     <string name="action_go_to_settings">עבור להגדרות</string>
     <string name="action_got_it">הבנתי</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">טאבים נוכחיים</string>
     <string name="tab_editor_title">התאמה אישית של הסרגל התחתון</string>
     <string name="tag_server_notification">התראת שרת</string>
+    <string name="tls_certificate_fingerprint">טביעת אצבע SHA-256</string>
+    <string name="tls_certificate_intermediate">ביניים</string>
+    <string name="tls_certificate_issuer">מנפיק</string>
+    <string name="tls_certificate_list_title">אישורים</string>
+    <string name="tls_certificate_name">שם</string>
+    <string name="tls_certificate_root">שורש</string>
+    <string name="tls_certificate_validity">תוקף</string>
+    <string name="tls_pin_mismatch_details">האישור של %1$@ שונה מזה ש-TigerDuck רשם, אך הוא הונפק על ידי גורם מהימן, ולכן ייתכן שהאתר חידש אותו. אם תמשיך, TigerDuck יסמוך על האישור עד העדכון הבא, עבור כל האתרים תחת %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">הונפק על ידי %@</string>
+    <string name="tls_pin_mismatch_message">אישור האתר אינו תואם לאישור הרשום, מה שפוגע באבטחת החיבור. להמשיך לאתר זה?</string>
+    <string name="tls_pin_mismatch_show_details">פרטים</string>
+    <string name="tls_pin_mismatch_title">האישור השתנה</string>
+    <string name="tls_pin_mismatch_view_certificate">הצג אישור</string>
     <string name="update_action_later">מאוחר יותר</string>
     <string name="update_action_skip_version">דלג על גרסה זו</string>
     <string name="update_action_update_now">עדכן עכשיו</string>

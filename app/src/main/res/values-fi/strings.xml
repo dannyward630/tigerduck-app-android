@@ -38,6 +38,7 @@
     <string name="action_clear_text">Tyhjennä teksti</string>
     <string name="action_close">Sulje</string>
     <string name="action_confirm">Vahvista</string>
+    <string name="action_continue">Jatka</string>
     <string name="action_done">Valmis</string>
     <string name="action_go_to_settings">Siirry asetuksiin</string>
     <string name="action_got_it">Selvä</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Nykyiset välilehdet</string>
     <string name="tab_editor_title">Mukauta alapalkkia</string>
     <string name="tag_server_notification">Palvelimilmoitus</string>
+    <string name="tls_certificate_fingerprint">SHA-256-sormenjälki</string>
+    <string name="tls_certificate_intermediate">Välivarmenne</string>
+    <string name="tls_certificate_issuer">Myöntäjä</string>
+    <string name="tls_certificate_list_title">Varmenteet</string>
+    <string name="tls_certificate_name">Nimi</string>
+    <string name="tls_certificate_root">Juurivarmenne</string>
+    <string name="tls_certificate_validity">Voimassaolo</string>
+    <string name="tls_pin_mismatch_details">Sivuston %1$@ varmenne poikkeaa TigerDuckin tallentamasta, mutta sen on myöntänyt luotettu taho, joten sivusto on voinut uusia varmenteensa. Jos jatkat, TigerDuck luottaa tähän varmenteeseen seuraavaan päivitykseen asti kaikilla sivustoilla, jotka kuuluvat kohteeseen %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Myöntäjä: %@</string>
+    <string name="tls_pin_mismatch_message">Verkkosivuston varmenne ei vastaa tallennettua, mikä heikentää yhteyden turvallisuutta. Jatketaanko tälle sivustolle?</string>
+    <string name="tls_pin_mismatch_show_details">Tiedot</string>
+    <string name="tls_pin_mismatch_title">Varmenne on muuttunut</string>
+    <string name="tls_pin_mismatch_view_certificate">Näytä varmenne</string>
     <string name="update_action_later">Myöhemmin</string>
     <string name="update_action_skip_version">Ohita tämä versio</string>
     <string name="update_action_update_now">Päivitä nyt</string>

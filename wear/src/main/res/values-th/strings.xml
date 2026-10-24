@@ -38,6 +38,7 @@
     <string name="action_clear_text">ล้างข้อความ</string>
     <string name="action_close">ปิด</string>
     <string name="action_confirm">ยืนยัน</string>
+    <string name="action_continue">ดำเนินการต่อ</string>
     <string name="action_done">เสร็จสิ้น</string>
     <string name="action_go_to_settings">ไปที่การตั้งค่า</string>
     <string name="action_got_it">เข้าใจแล้ว</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">แท็บปัจจุบัน</string>
     <string name="tab_editor_title">ปรับแต่งแถบด้านล่าง</string>
     <string name="tag_server_notification">การแจ้งเตือนเซิร์ฟเวอร์</string>
+    <string name="tls_certificate_fingerprint">ลายนิ้วมือ SHA-256</string>
+    <string name="tls_certificate_intermediate">ใบรับรองระดับกลาง</string>
+    <string name="tls_certificate_issuer">ผู้ออก</string>
+    <string name="tls_certificate_list_title">ใบรับรอง</string>
+    <string name="tls_certificate_name">ชื่อ</string>
+    <string name="tls_certificate_root">ใบรับรองราก</string>
+    <string name="tls_certificate_validity">ระยะเวลาที่ใช้ได้</string>
+    <string name="tls_pin_mismatch_details">ใบรับรองของ %1$@ ต่างจากที่ TigerDuck บันทึกไว้ แต่ออกโดยหน่วยงานที่เชื่อถือได้ จึงอาจเป็นเพราะเว็บไซต์ต่ออายุใบรับรอง หากดำเนินการต่อ TigerDuck จะเชื่อถือใบรับรองนี้จนถึงการอัปเดตครั้งถัดไป สำหรับทุกเว็บไซต์ภายใต้ %2$@</string>
+    <string name="tls_pin_mismatch_issuer">ออกโดย %@</string>
+    <string name="tls_pin_mismatch_message">ใบรับรองของเว็บไซต์ไม่ตรงกับที่บันทึกไว้ ซึ่งส่งผลต่อความปลอดภัยของการเชื่อมต่อ ต้องการไปยังเว็บไซต์นี้ต่อหรือไม่</string>
+    <string name="tls_pin_mismatch_show_details">รายละเอียด</string>
+    <string name="tls_pin_mismatch_title">ใบรับรองมีการเปลี่ยนแปลง</string>
+    <string name="tls_pin_mismatch_view_certificate">ดูใบรับรอง</string>
     <string name="update_action_later">ภายหลัง</string>
     <string name="update_action_skip_version">ข้ามเวอร์ชันนี้</string>
     <string name="update_action_update_now">อัปเดตเดี๋ยวนี้</string>

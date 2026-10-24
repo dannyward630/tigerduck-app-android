@@ -38,6 +38,7 @@
     <string name="action_clear_text">I-clear ang teksto</string>
     <string name="action_close">Isara</string>
     <string name="action_confirm">Kumpirmahin</string>
+    <string name="action_continue">Magpatuloy</string>
     <string name="action_done">Tapos na</string>
     <string name="action_go_to_settings">Pumunta sa settings</string>
     <string name="action_got_it">Naintindihan ko</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Mga kasalukuyang tab</string>
     <string name="tab_editor_title">I-customize ang bottom navigation</string>
     <string name="tag_server_notification">Abiso ng server</string>
+    <string name="tls_certificate_fingerprint">SHA-256 fingerprint</string>
+    <string name="tls_certificate_intermediate">Intermediate</string>
+    <string name="tls_certificate_issuer">Nag-isyu</string>
+    <string name="tls_certificate_list_title">Mga certificate</string>
+    <string name="tls_certificate_name">Pangalan</string>
+    <string name="tls_certificate_root">Root</string>
+    <string name="tls_certificate_validity">Bisa</string>
+    <string name="tls_pin_mismatch_details">Iba ang certificate ng %1$@ sa nakatala sa TigerDuck, pero inisyu ito ng pinagkakatiwalaang awtoridad, kaya maaaring na-renew ng website ang certificate nito. Kung ipagpapatuloy mo, pagkakatiwalaan ng TigerDuck ang certificate na ito hanggang sa susunod na update, para sa lahat ng site sa ilalim ng %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Inisyu ng %@</string>
+    <string name="tls_pin_mismatch_message">Hindi tugma ang certificate ng website sa nakatalang certificate, kaya naaapektuhan ang seguridad ng koneksyon. Ituloy ang pagpunta sa website na ito?</string>
+    <string name="tls_pin_mismatch_show_details">Mga detalye</string>
+    <string name="tls_pin_mismatch_title">Nagbago ang certificate</string>
+    <string name="tls_pin_mismatch_view_certificate">Tingnan ang certificate</string>
     <string name="update_action_later">Mamaya</string>
     <string name="update_action_skip_version">Laktawan ang bersyong ito</string>
     <string name="update_action_update_now">I-update ngayon</string>
