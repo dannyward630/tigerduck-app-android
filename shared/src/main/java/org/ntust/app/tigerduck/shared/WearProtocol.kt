@@ -13,7 +13,17 @@ object WearProtocol {
     object Schedule {
         const val PATH = "/tigerduck/schedule"
         const val KEY_COURSES = "courses"
+
+        /** The accent as `#RRGGBB`; with a gradient picked, its start. */
         const val KEY_ACCENT = "accentHex"
+
+        // The end of the accent gradient as `#RRGGBB`, and its direction as an
+        // [AccentGradientDirection.code] Int, both only while a gradient is
+        // picked. Neither is sent for a single color, and a phone that
+        // predates them sends neither: the watch then draws [KEY_ACCENT]
+        // alone, and a watch that predates them draws it alone too.
+        const val KEY_ACCENT_END = "accentEndHex"
+        const val KEY_ACCENT_DIRECTION = "accentDirection"
         const val KEY_SYNCED_AT = "syncedAtMs"
         const val KEY_LOGGED_IN = "loggedIn"
         const val KEY_LANGUAGE = "languageTag"

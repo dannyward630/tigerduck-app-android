@@ -22,8 +22,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.robolectric.RobolectricTestRunner
-import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.robolectric.annotation.Config
 import kotlin.math.max
 import kotlin.math.min

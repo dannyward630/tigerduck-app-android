@@ -16,8 +16,9 @@ import kotlin.math.min
  * wallpaper's colors are picked in their place.
  *
  * Only the fills the app's own screens paint draw a gradient (see
- * [org.ntust.app.tigerduck.ui.theme.TigerDuckTheme.accentBrush]); everything
- * else draws its start, as a single color.
+ * [org.ntust.app.tigerduck.ui.theme.TigerDuckTheme.accentBrush]), and the
+ * watch's marks in the accent; everything else draws its start, as a single
+ * color.
  *
  * Only the app's own screens follow the wallpaper, and only from Android 12,
  * the first with wallpaper colors to give. Everything else is handed the

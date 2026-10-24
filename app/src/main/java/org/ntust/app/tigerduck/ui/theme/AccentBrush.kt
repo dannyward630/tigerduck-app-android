@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.luminance
-import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.ntust.app.tigerduck.data.preferences.AccentPolicy
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 
 /** The end color and direction of the accent gradient picked; its start is the accent color. */
 @Immutable

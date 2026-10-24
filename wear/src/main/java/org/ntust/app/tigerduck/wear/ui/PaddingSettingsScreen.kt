@@ -27,6 +27,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.rotary.onRotaryScrollEvent
 import androidx.compose.ui.platform.LocalContext
@@ -43,7 +46,10 @@ import org.ntust.app.tigerduck.wear.R
 import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
+import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentGradient
 import org.ntust.app.tigerduck.wear.ui.theme.LocalScreenPadding
+import org.ntust.app.tigerduck.wear.ui.theme.WearAccentGradient
+import org.ntust.app.tigerduck.wear.ui.theme.accentBrush
 
 @Composable
 fun PaddingSettingsScreen(onBack: () -> Unit) {
@@ -149,21 +155,32 @@ fun PaddingSettingsScreen(onBack: () -> Unit) {
 @Composable
 private fun PaddingEdgeRing(currentDp: Int, modifier: Modifier = Modifier) {
     val accent = LocalAccentColor.current
+    val gradient = LocalAccentGradient.current
     val density = LocalDensity.current
     val paddingPx = with(density) { currentDp.dp.toPx() }
     val strokePx = with(density) { 2.dp.toPx() }
     Canvas(modifier = modifier) {
-        val cx = size.width / 2f
-        val cy = size.height / 2f
-        val outerR = minOf(cx, cy)
-        val ringR = (outerR - paddingPx).coerceAtLeast(0f)
-        if (ringR > 0f) {
-            drawCircle(
-                color = accent.copy(alpha = 0.6f),
-                radius = ringR,
-                center = Offset(cx, cy),
-                style = Stroke(width = strokePx),
-            )
-        }
+        drawPaddingEdgeRing(paddingPx, strokePx, accent, gradient)
+    }
+}
+
+/** [PaddingEdgeRing]'s ring, [paddingPx] inside the largest circle that fits, in the accent. */
+internal fun DrawScope.drawPaddingEdgeRing(
+    paddingPx: Float,
+    strokePx: Float,
+    accent: Color,
+    gradient: WearAccentGradient?,
+) {
+    val center = Offset(size.width / 2f, size.height / 2f)
+    val outerR = minOf(center.x, center.y)
+    val ringR = (outerR - paddingPx).coerceAtLeast(0f)
+    if (ringR > 0f) {
+        drawCircle(
+            brush = accentBrush(accent, gradient, Rect(center, ringR)),
+            radius = ringR,
+            center = center,
+            alpha = 0.6f,
+            style = Stroke(width = strokePx),
+        )
     }
 }

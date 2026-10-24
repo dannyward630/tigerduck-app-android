@@ -3,23 +3,29 @@ package org.ntust.app.tigerduck.wear.data
 import android.util.Log
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMap
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.shared.WearProtocol
 
 class DataLayerListener : WearableListenerService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    // One callback's payloads at a time, as they came, so an older one's
+    // write never lands over a newer one's.
+    private val inOrder = InArrivalOrder(scope) { e ->
+        Log.e(TAG, "failed to apply a payload: ${e.javaClass.simpleName}")
+    }
+
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         // Copy events out before the buffer is closed by the platform.
         val events = dataEvents.map { it.freeze() }
-        scope.launch { handleEvents(events) }
+        inOrder.submit { handleEvents(events) }
     }
 
     private suspend fun handleEvents(events: List<DataEvent>) {
@@ -38,6 +44,7 @@ class DataLayerListener : WearableListenerService() {
         val courses = map.getByteArray(WearProtocol.Schedule.KEY_COURSES) ?: return
         val accent =
             map.getString(WearProtocol.Schedule.KEY_ACCENT) ?: SchedulePersistence.DEFAULT_ACCENT
+        val gradient = accentGradientOf(map)
         val syncedAt = map.getLong(WearProtocol.Schedule.KEY_SYNCED_AT)
         val loggedIn = map.getBoolean(WearProtocol.Schedule.KEY_LOGGED_IN)
         val language = map.getString(WearProtocol.Schedule.KEY_LANGUAGE)
@@ -49,8 +56,8 @@ class DataLayerListener : WearableListenerService() {
         val quietDays: List<String>? = map.getStringArrayList(WearProtocol.Schedule.KEY_QUIET_DAYS)
         try {
             SchedulePersistenceHolder.get(this@DataLayerListener).write(
-                courses, accent, syncedAt, loggedIn, language, disableScreenCaptureProtection,
-                quietDays,
+                courses, accent, gradient?.first, gradient?.second, syncedAt, loggedIn, language,
+                disableScreenCaptureProtection, quietDays,
             )
         } catch (e: Exception) {
             // Most likely a malformed/truncated gzip payload from the Data Layer
@@ -104,4 +111,20 @@ class DataLayerListener : WearableListenerService() {
 internal fun notifyTileAndComplication(context: android.content.Context) {
     org.ntust.app.tigerduck.wear.tile.NextClassTileService.requestUpdate(context)
     org.ntust.app.tigerduck.wear.complication.NextClassComplicationService.requestUpdate(context)
+}
+
+/**
+ * The end of the accent gradient a schedule payload carries, with its
+ * direction's code: null for a single color, and from a phone that predates
+ * them. A direction comes only with an end.
+ */
+internal fun accentGradientOf(map: DataMap): Pair<String, Int?>? {
+    val end = map.getString(WearProtocol.Schedule.KEY_ACCENT_END) ?: return null
+    // DataMap.getInt answers 0, a direction of its own, for a key it lacks.
+    val direction = if (map.containsKey(WearProtocol.Schedule.KEY_ACCENT_DIRECTION)) {
+        map.getInt(WearProtocol.Schedule.KEY_ACCENT_DIRECTION)
+    } else {
+        null
+    }
+    return end to direction
 }

@@ -22,7 +22,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.R
-import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 

@@ -23,6 +23,7 @@ import org.ntust.app.tigerduck.data.model.HomeSection
 import org.ntust.app.tigerduck.data.preferences.AppPreferences.Companion.themeColorsDark
 import org.ntust.app.tigerduck.notification.AssignmentReminderOffset
 import org.ntust.app.tigerduck.notification.ClassReminders
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.ui.haptics.HapticScenario
 import org.ntust.app.tigerduck.ui.theme.VisualPreset
 import javax.inject.Inject
@@ -389,6 +390,11 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         extraBufferCapacity = 1,
         onBufferOverflow = BufferOverflow.DROP_OLDEST,
     )
+
+    /**
+     * Fires when the accent the watch is sent changes: the swatch, the
+     * gradient (see [storeAccentPick]) or its direction.
+     */
     val accentColorChanged: SharedFlow<Unit> = _accentColorChanged.asSharedFlow()
 
     /**
@@ -435,12 +441,41 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         get() = prefs.getInt("accentGradientStartHex", AccentPolicy.NO_GRADIENT)
         set(value) = prefs.edit().putInt("accentGradientStartHex", value).apply()
 
+    /** The preferences the accent the watch is sent is read from. */
+    private fun watchAccent() =
+        listOf(accentColorHex, accentGradientStartHex, accentGradientEndHex, accentGradientDirection.code)
+
+    /**
+     * Stores a pick from the accent color page whole: the swatch [lightHex],
+     * and the gradient from [gradientStartHex] to [gradientEndHex], or
+     * [AccentPolicy.NO_GRADIENT] for both. One write, and one
+     * [accentColorChanged] when the pick changes anything: a gradient from
+     * the swatch already picked leaves [accentColorHex] as it was, and the
+     * watch, which reads all three as it hears the change, must never hear a
+     * pick half stored.
+     */
+    fun storeAccentPick(lightHex: Int, gradientStartHex: Int, gradientEndHex: Int) {
+        val changed = lightHex != accentColorHex ||
+            gradientStartHex != accentGradientStartHex ||
+            gradientEndHex != accentGradientEndHex
+        prefs.edit()
+            .putInt("accentColorHex", lightHex)
+            .putInt("accentGradientStartHex", gradientStartHex)
+            .putInt("accentGradientEndHex", gradientEndHex)
+            .apply()
+        if (changed) _accentColorChanged.tryEmit(Unit)
+    }
+
     /** The way the accent gradient runs, stored as its [AccentGradientDirection.code]. */
     var accentGradientDirection: AccentGradientDirection
         get() = AccentGradientDirection.fromCode(
             prefs.getInt("accentGradientDirection", AccentGradientDirection.DEFAULT.code),
         )
-        set(value) = prefs.edit().putInt("accentGradientDirection", value.code).apply()
+        set(value) {
+            val previous = accentGradientDirection
+            prefs.edit().putInt("accentGradientDirection", value.code).apply()
+            if (value != previous) _accentColorChanged.tryEmit(Unit)
+        }
 
     var browserPreference: String
         get() = prefs.getString("browserPreference", "system") ?: "system"
@@ -1073,7 +1108,11 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
 
     /** Wipe every pref key. Used by the full-reset flow only. */
     fun clearAllPrefs() {
+        val accentBefore = watchAccent()
         prefs.edit().clear().apply()
+        // The watch hears of the accent only through accentColorChanged, and a
+        // reset while signed out publishes nothing else.
+        if (watchAccent() != accentBefore) _accentColorChanged.tryEmit(Unit)
         forgetLegacyLastCourseSyncAt()
         // `alwaysShowAllPeriods` and the class table's display switches are
         // read from in-memory mirrors rather than the file, so clearing the
