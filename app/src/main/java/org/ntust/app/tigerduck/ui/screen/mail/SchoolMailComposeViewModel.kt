@@ -184,6 +184,11 @@ class SchoolMailComposeViewModel @Inject constructor(
         val holding: Boolean = false,
         /** An Undo took the held mail back; the screen says so once and [acknowledgeUndone]s it. */
         val undone: Boolean = false,
+        /**
+         * The files of a mail opened again after the app was ended ([reopen]) that could not be
+         * kept: told in the form until the student sends it again, so they can pick them anew.
+         */
+        val lostAttachments: List<String> = emptyList(),
         /** The people the recipient fields suggest, from the mail on the phone; see [suggestions]. */
         val contacts: List<RecipientSuggestions.Contact> = emptyList(),
         internal val baseline: Fields = Fields(),
@@ -443,6 +448,7 @@ class SchoolMailComposeViewModel @Inject constructor(
                     to = RecipientField().typed(fields.to, ""), cc = cc, bcc = bcc,
                     showCcBcc = cc.entries.isNotEmpty() || bcc.entries.isNotEmpty(),
                     subject = fields.subject, body = fields.body, attachments = attachments,
+                    lostAttachments = held.missing,
                     error = if (held.sendingSinceMs != null) ComposeError.SendFailed(MailError.SendUnconfirmed()) else null,
                     errorAcknowledged = false,
                 )
@@ -580,7 +586,7 @@ class SchoolMailComposeViewModel @Inject constructor(
         heldSend = answer
         val id = heldId ?: UUID.randomUUID().toString()
         heldId = id
-        _state.update { it.copy(sending = true, holding = true, undone = false) }
+        _state.update { it.copy(sending = true, holding = true, undone = false, lostAttachments = emptyList()) }
         viewModelScope.launch {
             // Kept first, so the hold never runs with the mail on screen alone. A mail that cannot
             // be kept is still sent: keeping it is a safeguard, and sending is the point.
