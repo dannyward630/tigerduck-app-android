@@ -11,6 +11,7 @@ import android.hardware.SensorManager
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -50,8 +51,14 @@ class FlipToLibraryEffectTest {
     private var nowNanos = 0L
     private var haptics = 0
 
-    /** Each question asked, with what its Turn on does: open Library for that flip. */
-    private val offers = mutableListOf<() -> Unit>()
+    /** Questions asked. */
+    private var offers = 0
+
+    /** Where the question's Turn on goes, the app-wide singleton in the app. */
+    private val openRequest = FlipToLibraryOpenRequest()
+
+    /** Moved on to rebuild the page with a new NavController, as an activity recreation does. */
+    private var generation by mutableStateOf(0)
 
     @Before
     fun setUp() {
@@ -71,7 +78,7 @@ class FlipToLibraryEffectTest {
         signedIn: Boolean = true,
         offerUnanswered: () -> Boolean = { false },
     ) {
-        composeRule.setContent {
+        composeRule.setContent { key(generation) {
             navController = rememberNavController()
             FlipToLibraryEffect(
                 navController = navController,
@@ -80,7 +87,8 @@ class FlipToLibraryEffectTest {
                 stillSignedInToLibrary = { signedIn },
                 onNavigated = { haptics++ },
                 offerUnanswered = offerUnanswered,
-                onOffer = { openLibrary -> offers += openLibrary },
+                onOffer = { offers++ },
+                openRequest = openRequest,
             )
             if (withGraph) {
                 NavHost(navController = navController, startDestination = "home") {
@@ -96,7 +104,19 @@ class FlipToLibraryEffectTest {
                     ) {}
                 }
             }
-        }
+        } }
+        composeRule.waitForIdle()
+    }
+
+    /** A theme, font or display size change: the activity and its NavController are made anew. */
+    private fun recreate() {
+        composeRule.runOnUiThread { generation++ }
+        composeRule.waitForIdle()
+    }
+
+    /** The question's Turn on, as FlipToLibraryPrompt gives it. */
+    private fun turnOn() {
+        composeRule.runOnUiThread { openRequest.request() }
         composeRule.waitForIdle()
     }
 
@@ -184,7 +204,7 @@ class FlipToLibraryEffectTest {
         show(enabled = false, offerUnanswered = { true })
         focusWindow(true)
         flip()
-        assertEquals(1, offers.size)
+        assertEquals(1, offers)
         assertEquals("home", route())
         assertEquals(0, haptics)
     }
@@ -194,17 +214,33 @@ class FlipToLibraryEffectTest {
         show(enabled = false, offerUnanswered = { true })
         focusWindow(true)
         flip()
-        composeRule.runOnUiThread { offers.single()() }
-        composeRule.waitForIdle()
+        turnOn()
         assertEquals(Screen.Library.route, route())
         assertEquals(1, haptics)
+    }
+
+    /**
+     * The question is the app's, not the page's: it stays up while a theme, font or display
+     * size change makes the activity anew under it, and its Turn on opens Library there.
+     */
+    @Test
+    fun `a Turn on after the activity is made anew opens Library on the new page`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(true)
+        flip()
+        val asked = navController
+        recreate()
+        turnOn()
+        assertEquals(Screen.Library.route, route())
+        assertEquals(1, haptics)
+        assertEquals("home", asked.currentDestination?.route)
     }
 
     @Test
     fun `nothing is asked before a flip`() {
         show(enabled = false, offerUnanswered = { true })
         focusWindow(true)
-        assertTrue(offers.isEmpty())
+        assertEquals(0, offers)
     }
 
     @Test
@@ -213,7 +249,7 @@ class FlipToLibraryEffectTest {
         focusWindow(true)
         assertTrue(shadowOf(sensorManager()).listeners.isEmpty())
         flip()
-        assertTrue(offers.isEmpty())
+        assertEquals(0, offers)
         assertEquals("home", route())
     }
 
@@ -233,7 +269,7 @@ class FlipToLibraryEffectTest {
         show(enabled = false, signedIn = false, offerUnanswered = { true })
         focusWindow(true)
         flip()
-        assertTrue(offers.isEmpty())
+        assertEquals(0, offers)
     }
 
     @Test
@@ -241,11 +277,11 @@ class FlipToLibraryEffectTest {
         show(enabled = false, offerUnanswered = { true })
         focusWindow(false)
         flip()
-        assertTrue(offers.isEmpty())
+        assertEquals(0, offers)
 
         focusWindow(true)
         flip()
-        assertEquals(1, offers.size)
+        assertEquals(1, offers)
     }
 
     @Test
@@ -255,7 +291,7 @@ class FlipToLibraryEffectTest {
         composeRule.runOnUiThread { navController.navigate(Screen.Library.route) }
         composeRule.waitForIdle()
         flip()
-        assertTrue(offers.isEmpty())
+        assertEquals(0, offers)
     }
 
     @Test
@@ -265,7 +301,7 @@ class FlipToLibraryEffectTest {
         composeRule.runOnUiThread { navController.navigate(Screen.SchoolMailCompose.route(ComposeMode.NEW)) }
         composeRule.waitForIdle()
         flip()
-        assertTrue(offers.isEmpty())
+        assertEquals(0, offers)
     }
 
     private companion object {
