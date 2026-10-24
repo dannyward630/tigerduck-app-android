@@ -10,7 +10,9 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import org.junit.After
@@ -21,6 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.robolectric.annotation.Config
 import kotlin.math.max
 import kotlin.math.min
@@ -203,5 +206,67 @@ class TigerDuckAppThemeTest {
         composeRule.runOnIdle { dark = true }
         composeRule.waitForIdle()
         assertEquals(Color.White, colors?.checkedThumbColor)
+    }
+
+    private val purple = Color(0xFFAF52DE)
+
+    private fun brushAndScheme(
+        accentGradient: AccentGradient? = null,
+        onAccentColor: Color? = null,
+        useDynamicColor: Boolean = false,
+    ): Pair<Brush, ColorScheme> {
+        var brush: Brush? = null
+        var seen: ColorScheme? = null
+        composeRule.setContent {
+            TigerDuckAppTheme(
+                darkTheme = false,
+                accentColor = orange,
+                onAccentColor = onAccentColor,
+                accentGradient = accentGradient,
+                useDynamicColor = useDynamicColor,
+            ) {
+                brush = TigerDuckTheme.accentBrush
+                seen = MaterialTheme.colorScheme
+            }
+        }
+        composeRule.waitForIdle()
+        return brush!! to seen!!
+    }
+
+    @Test
+    fun `a single color fills with the accent color itself`() {
+        val (brush, _) = brushAndScheme()
+        assertEquals(SolidColor(orange), brush)
+    }
+
+    @Test
+    fun `a gradient fills from the accent to its end, and the accent slots keep its start`() {
+        val (brush, scheme) = brushAndScheme(
+            accentGradient = AccentGradient(purple, AccentGradientDirection.BottomToTop),
+        )
+        assertEquals(AccentGradientBrush(orange, purple, AccentGradientDirection.BottomToTop), brush)
+        assertEquals(orange, scheme.primary)
+    }
+
+    @Config(sdk = [31])
+    @Test
+    fun `the wallpaper's colors fill with their primary, a gradient picked or not`() {
+        val (brush, _) = brushAndScheme(
+            accentGradient = AccentGradient(purple, AccentGradientDirection.BottomToTop),
+            useDynamicColor = true,
+        )
+        assertEquals(SolidColor(dynamicLightColorScheme(composeRule.activity).primary), brush)
+    }
+
+    @Test
+    fun `text on an accent of the user's own takes the color it is given`() {
+        val (_, scheme) = brushAndScheme(onAccentColor = Color(0xFF1C1C1E))
+        assertEquals(Color(0xFF1C1C1E), scheme.onPrimary)
+    }
+
+    @Test
+    fun `text on a preset keeps the theme's white`() {
+        val (_, scheme) = brushAndScheme()
+        assertEquals(Color.White, scheme.onPrimary)
     }
 }

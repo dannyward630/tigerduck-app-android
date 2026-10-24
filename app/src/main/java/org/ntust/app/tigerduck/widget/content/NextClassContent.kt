@@ -121,7 +121,7 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                             context.getString(R.string.widget_ongoing)
                         },
                         style = TextStyle(
-                            color = ColorProvider(Color.White),
+                            color = ColorProvider(colors.onHighlight),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold
                         ),
@@ -352,7 +352,7 @@ private fun OngoingCard(block: CourseBlock, state: WidgetState, colors: WidgetCo
             Text(
                 text = context.getString(R.string.widget_ongoing),
                 style = TextStyle(
-                    color = ColorProvider(Color.White),
+                    color = ColorProvider(colors.onHighlight),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold
                 ),
@@ -417,7 +417,7 @@ private fun OngoingMiniCard(block: CourseBlock, state: WidgetState, colors: Widg
             Text(
                 text = context.getString(R.string.widget_ongoing),
                 style = TextStyle(
-                    color = ColorProvider(Color.White),
+                    color = ColorProvider(colors.onHighlight),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold
                 ),

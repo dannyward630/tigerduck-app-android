@@ -54,4 +54,11 @@ class WeekCourseColorsTest {
             }
         }
     }
+
+    @Test
+    fun `a course in session is named in the text on the accent`() {
+        val dark = Color(0xFF1C1C1E)
+        assertEquals(dark, weekCourseTextColor(true, lightTheme.copy(onHighlight = dark), tigerDuck))
+        assertEquals(Color.White, weekCourseTextColor(true, lightTheme, tigerDuck))
+    }
 }

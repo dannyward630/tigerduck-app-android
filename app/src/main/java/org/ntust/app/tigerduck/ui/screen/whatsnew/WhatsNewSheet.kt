@@ -115,6 +115,7 @@ import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.model.WhatsNewSummary
 import org.ntust.app.tigerduck.data.model.WhatsNewSummaryItem
+import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 
 /**
  * The paged What's New sheet: [WhatsNewFlow.pages] one at a time, then the
@@ -765,7 +766,7 @@ private fun SummaryRow(item: WhatsNewSummaryItem) {
                     Modifier
                         .size(8.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
+                        .background(TigerDuckTheme.accentBrush),
                 )
             } else {
                 Icon(

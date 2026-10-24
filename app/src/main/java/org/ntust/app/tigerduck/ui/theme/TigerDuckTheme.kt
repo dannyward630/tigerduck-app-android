@@ -12,10 +12,13 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -90,6 +93,22 @@ object TigerDuckTheme {
     fun setDarkMode(dark: Boolean) {
         if (_isDarkMode.value != dark) _isDarkMode.value = dark
     }
+
+    /**
+     * What the accent's own fills paint with: the gradient picked on the
+     * accent color page, or the accent color itself. Only fills the app draws
+     * take it, never text, icons or Material's own components, which draw
+     * the accent color, the gradient's start.
+     */
+    val accentBrush: Brush
+        @Composable @ReadOnlyComposable get() = LocalAccentBrush.current
+
+    /**
+     * What text and marks on [accentBrush] draw in: onPrimary on a single
+     * color, and on a gradient whatever reads on its middle, where they sit.
+     */
+    val onAccentBrush: Color
+        @Composable @ReadOnlyComposable get() = LocalOnAccentBrush.current
 
     // User-tunable course-name scale (0.8…1.6, default 1.0). Mirrored here
     // from AppState so call sites in unrelated component files (CourseCard)
@@ -404,6 +423,10 @@ private val LocalUsesDynamicColor = staticCompositionLocalOf { false }
 fun TigerDuckAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     accentColor: Color = Color(0xFF007AFF),
+    /** What text and icons on [accentColor] draw in, where the theme's own would not read; null for the theme's own. */
+    onAccentColor: Color? = null,
+    /** The gradient picked, from [accentColor] to its end; null for a single color. */
+    accentGradient: AccentGradient? = null,
     /**
      * Whether the accent slots take the wallpaper's colors in place of
      * [accentColor], from Android 12. A theme nested in another follows the
@@ -418,7 +441,8 @@ fun TigerDuckAppTheme(
 ) {
     val context = LocalContext.current
     val baseScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-    val colorScheme = if (useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val followsWallpaper = useDynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val colorScheme = if (followsWallpaper) {
         val dynamic = if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         // TigerDuck keeps explicit surface / background styling (cards, outline, page background)
         // so that only the accent slots adapt to the dynamic wallpaper palette, consistent with the
@@ -432,7 +456,22 @@ fun TigerDuckAppTheme(
             surfaceTint = dynamic.surfaceTint,
         )
     } else {
-        baseScheme.copy(primary = accentColor, surfaceTint = accentColor)
+        baseScheme.copy(
+            primary = accentColor,
+            onPrimary = onAccentColor ?: baseScheme.onPrimary,
+            surfaceTint = accentColor,
+        )
+    }
+    // The wallpaper's colors draw no gradient: a gradient picked waits behind them.
+    val accentBrush: Brush = if (!followsWallpaper && accentGradient != null) {
+        AccentGradientBrush(accentColor, accentGradient.end, accentGradient.direction)
+    } else {
+        SolidColor(colorScheme.primary)
+    }
+    val onAccentBrush = if (accentBrush is AccentGradientBrush) {
+        readableOnGradient(accentBrush.start, accentBrush.end, colorScheme.onPrimary)
+    } else {
+        colorScheme.onPrimary
     }
 
     MaterialTheme(
@@ -442,6 +481,8 @@ fun TigerDuckAppTheme(
         CompositionLocalProvider(
             LocalVisualStylePolicy provides VisualStylePolicy(visualPreset),
             LocalUsesDynamicColor provides useDynamicColor,
+            LocalAccentBrush provides accentBrush,
+            LocalOnAccentBrush provides onAccentBrush,
             content = content,
         )
     }

@@ -696,7 +696,7 @@ internal fun weekCourseTextColor(
     highlighted: Boolean,
     colors: WidgetColors,
     style: VisualStylePolicy,
-): Color = if (highlighted) Color.White else style.classTableCourseTextColor(colors.isDark)
+): Color = if (highlighted) colors.onHighlight else style.classTableCourseTextColor(colors.isDark)
 
 /**
  * How many lines of a course name fit a period tile [height] high, from one up

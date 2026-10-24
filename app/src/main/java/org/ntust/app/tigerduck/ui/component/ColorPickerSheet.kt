@@ -310,7 +310,7 @@ private fun ColorSwatch(
 }
 
 @Composable
-private fun SatValSquare(
+internal fun SatValSquare(
     hue: Float,
     sat: Float,
     value: Float,
@@ -364,7 +364,7 @@ private fun SatValSquare(
 }
 
 @Composable
-private fun HueSlider(
+internal fun HueSlider(
     hue: Float,
     onHueChange: (Float) -> Unit,
     modifier: Modifier = Modifier

@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PixelMap
 import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
@@ -27,6 +28,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.ntust.app.tigerduck.data.model.CalendarEvent
 import org.ntust.app.tigerduck.data.model.EventSource
 import org.ntust.app.tigerduck.data.model.GpaTrendPoint
@@ -34,7 +36,7 @@ import org.ntust.app.tigerduck.data.model.RankingStats
 import org.ntust.app.tigerduck.ui.screen.calendar.CalendarGrid
 import org.ntust.app.tigerduck.ui.screen.score.RankingsTrendCard
 import org.ntust.app.tigerduck.ui.screen.score.ScoreViewModel
-import org.ntust.app.tigerduck.ui.screen.settings.AccentColorSwatches
+import org.ntust.app.tigerduck.ui.screen.settings.AccentColorPage
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -128,20 +130,28 @@ class OnWallpaperPrimaryTest {
 
     @Test
     fun `the wallpaper swatch's check is drawn in onPrimary, not white`() {
+        TigerDuckTheme.setDarkMode(true)
         composeRule.setContent {
-            // On black, so the corners around the round swatch are not white.
-            Box(Modifier.background(Color.Black)) {
-                AccentColorSwatches(
-                    selectedHex = 0x007AFF,
+            // The dark theme the page is drawn in, so the card around the
+            // round swatch is not white either.
+            TigerDuckAppTheme(darkTheme = true, useDynamicColor = true) {
+                AccentColorPage(
+                    fixedHex = 0x007AFF,
+                    gradientEnd = null,
+                    direction = AccentGradientDirection.DEFAULT,
                     followsWallpaper = true,
                     isDark = true,
-                    onSelect = {},
-                    onSelectWallpaper = {},
+                    onPick = {},
+                    onPickGradient = { _, _ -> },
+                    onPickDirection = {},
+                    onPickWallpaper = {},
                 )
             }
         }
 
-        val swatch = composeRule.onNodeWithContentDescription(composeRule.activity.getString(R.string.color_name_wallpaper))
+        // The swatch alone, not the row around it that reads it out.
+        val swatch = composeRule
+            .onNode(hasContentDescription(composeRule.activity.getString(R.string.color_name_wallpaper)), useUnmergedTree = true)
             .captureToImage().toPixelMap()
         assertEquals("nothing on the swatch is white", 0, swatch.count(Color.White))
         assertTrue("its check is onPrimary", swatch.count(wallpaper.onPrimary) > 0)
