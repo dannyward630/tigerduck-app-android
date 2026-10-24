@@ -67,7 +67,8 @@ import org.ntust.app.tigerduck.util.replaceIosArg
 
 /**
  * Bottom sheet that lets the user assign a tile color to a class.
- * Shows a curated preset grid plus an HSV fine-tune panel for custom colors.
+ * Shows a curated preset grid plus an HSV fine-tune panel for custom colors,
+ * with the color's code, which takes one typed in.
  *
  * @param usedByOthers maps preset colors that are currently assigned to OTHER
  *                     courses — used only to show a small indicator dot so the
@@ -98,15 +99,34 @@ fun ColorPickerSheet(
     // them into view rather than leave them under the fold.
     LaunchedEffect(showCustom) { if (showCustom) customInView.bringIntoView() }
 
-    val selectedColor = remember(hue, sat, value) {
+    // A color picked whole, as a code typed in or a swatch, is kept exactly until the square
+    // or the slider moves it: a round trip through HSV could change its code by one.
+    var pickedHex by remember { mutableStateOf<Int?>(currentColor.toArgb() and 0xFFFFFF) }
+    val code = remember { ColorCodeState(currentColor.toArgb()) }
+
+    val hsvColor = remember(hue, sat, value) {
         Color(android.graphics.Color.HSVToColor(floatArrayOf(hue, sat, value)))
     }
+    val selectedColor = pickedHex?.let { Color(it or 0xFF000000.toInt()) } ?: hsvColor
     val selectedArgb = selectedColor.toArgb() or 0xFF000000.toInt()
 
     fun setHsvFrom(color: Color) {
         val hsv = FloatArray(3)
         android.graphics.Color.colorToHSV(color.toArgb(), hsv)
         hue = hsv[0]; sat = hsv[1]; value = hsv[2]
+    }
+
+    fun pick(hex: Int) {
+        setHsvFrom(Color(hex or 0xFF000000.toInt()))
+        pickedHex = hex and 0xFFFFFF
+    }
+
+    // The square and the slider keep the first lambdas they are given, so this reads the
+    // color when it is called. The code field follows each move.
+    fun move(h: Float = hue, s: Float = sat, v: Float = value) {
+        hue = h; sat = s; value = v
+        pickedHex = null
+        code.show(android.graphics.Color.HSVToColor(floatArrayOf(h, s, v)))
     }
 
     ModalBottomSheet(
@@ -190,7 +210,7 @@ fun ColorPickerSheet(
                                 .replaceIosArg(1, index + 1L),
                             selected = presetArgb == selectedArgb,
                             usedByOther = presetArgb in usedByOthers && presetArgb != selectedArgb,
-                            onClick = { setHsvFrom(preset) }
+                            onClick = { pick(presetArgb); code.show(presetArgb) }
                         )
                     }
                 }
@@ -227,20 +247,15 @@ fun ColorPickerSheet(
                             hue = hue,
                             sat = sat,
                             value = value,
-                            onSatValChange = { s, v -> sat = s; value = v }
+                            onSatValChange = { s, v -> move(s = s, v = v) }
                         )
                         Spacer(Modifier.height(12.dp))
                         HueSlider(
                             hue = hue,
-                            onHueChange = { hue = it }
+                            onHueChange = { move(h = it) }
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "#" + String.format("%06X", selectedArgb and 0xFFFFFF),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
-                            modifier = Modifier.align(Alignment.End)
-                        )
+                        Spacer(Modifier.height(12.dp))
+                        ColorCodeField(state = code, onColor = { pick(it) })
                     }
                 }
             }
