@@ -9,11 +9,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.data.preferences.AccentGradientDirection
 import org.ntust.app.tigerduck.data.preferences.AccentPolicy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
@@ -38,6 +40,8 @@ class AccentSettingTest {
     private val blue = 0x007AFF
     private val pink = 0xFF2D55
     private val green = 0x34C759
+    private val purple = 0xAF52DE
+    private val orange = 0xFF9500
 
     private lateinit var prefs: AppPreferences
 
@@ -169,5 +173,89 @@ class AccentSettingTest {
 
         assertFalse(setting.followsWallpaper)
         assertEquals(blue, setting.lightHex)
+    }
+
+    @Test
+    fun `picking a gradient stores its start as the accent and its end beside it`() {
+        val setting = AccentSetting(prefs)
+        setting.pickWallpaper()
+        setting.pickGradient(blue, purple)
+
+        assertFalse(setting.followsWallpaper)
+        assertEquals(blue, setting.lightHex)
+        assertEquals(purple, setting.gradientEnd)
+        assertEquals(blue, prefs.accentColorHex)
+        assertEquals(purple, AccentSetting(prefs).gradientEnd)
+    }
+
+    @Test
+    fun `picking a single color after a gradient drops the gradient`() {
+        val setting = AccentSetting(prefs)
+        setting.pickGradient(blue, purple)
+        setting.pick(blue)
+
+        assertNull(setting.gradientEnd)
+        assertNull(AccentSetting(prefs).gradientEnd)
+        assertEquals(blue, prefs.accentColorHex)
+    }
+
+    @Test
+    fun `picking the wallpaper keeps the gradient's start for the surfaces that cannot follow it`() {
+        val setting = AccentSetting(prefs)
+        setting.pickGradient(pink, orange)
+        setting.pickWallpaper()
+
+        assertTrue(setting.followsWallpaper)
+        assertEquals(pink, setting.lightHex)
+        assertEquals(pink, prefs.accentColorHex)
+    }
+
+    @Test
+    fun `a gradient is announced only when its start changes the fixed accent`() {
+        var changes = 0
+        val setting = AccentSetting(prefs, onFixedChange = { changes++ })
+
+        setting.pickGradient(blue, purple)
+        assertEquals(0, changes)
+        setting.pickGradient(blue, pink)
+        assertEquals(0, changes)
+        setting.pickGradient(pink, orange)
+        assertEquals(1, changes)
+        setting.pickDirection(AccentGradientDirection.LeftToRight)
+        assertEquals(1, changes)
+    }
+
+    @Test
+    fun `a color an older build picked over the gradient reads as that color alone`() {
+        AccentSetting(prefs).pickGradient(blue, purple)
+        // An older build writes only the accent.
+        RuntimeEnvironment.getApplication().getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE)
+            .edit().putInt("accentColorHex", green).commit()
+
+        val setting = AccentSetting(prefs)
+        assertEquals(green, setting.lightHex)
+        assertNull(setting.gradientEnd)
+    }
+
+    @Test
+    fun `the direction picked is stored`() {
+        val setting = AccentSetting(prefs)
+        setting.pickGradient(blue, purple)
+        setting.pickDirection(AccentGradientDirection.BottomToTop)
+
+        assertEquals(AccentGradientDirection.BottomToTop, setting.gradientDirection)
+        assertEquals(AccentGradientDirection.BottomToTop, AccentSetting(prefs).gradientDirection)
+    }
+
+    @Test
+    fun `after a full reset the copy has no gradient and the first direction`() {
+        val setting = AccentSetting(prefs)
+        setting.pickGradient(blue, purple)
+        setting.pickDirection(AccentGradientDirection.RightToLeft)
+        prefs.clearAllPrefs()
+        setting.reload()
+
+        assertNull(setting.gradientEnd)
+        assertEquals(AccentGradientDirection.TopLeftToBottomRight, setting.gradientDirection)
     }
 }

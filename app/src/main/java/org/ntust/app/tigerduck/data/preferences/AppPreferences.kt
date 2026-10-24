@@ -416,6 +416,32 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         get() = prefs.getBoolean("useWallpaperColors", false)
         set(value) = prefs.edit().putBoolean("useWallpaperColors", value).apply()
 
+    /**
+     * The end color of the accent gradient picked, as its light palette hex,
+     * or [AccentPolicy.NO_GRADIENT] while the pick is a single color.
+     * [accentColorHex] holds its start, which every surface that draws no
+     * gradient draws alone.
+     */
+    var accentGradientEndHex: Int
+        get() = prefs.getInt("accentGradientEndHex", AccentPolicy.NO_GRADIENT)
+        set(value) = prefs.edit().putInt("accentGradientEndHex", value).apply()
+
+    /**
+     * The start color the gradient was picked with. An older build knows only
+     * [accentColorHex], and a pick made there changes it: the gradient counts
+     * only while the two still match (see [AccentPolicy.gradientEnd]).
+     */
+    var accentGradientStartHex: Int
+        get() = prefs.getInt("accentGradientStartHex", AccentPolicy.NO_GRADIENT)
+        set(value) = prefs.edit().putInt("accentGradientStartHex", value).apply()
+
+    /** The way the accent gradient runs, stored as its [AccentGradientDirection.code]. */
+    var accentGradientDirection: AccentGradientDirection
+        get() = AccentGradientDirection.fromCode(
+            prefs.getInt("accentGradientDirection", AccentGradientDirection.DEFAULT.code),
+        )
+        set(value) = prefs.edit().putInt("accentGradientDirection", value.code).apply()
+
     var browserPreference: String
         get() = prefs.getString("browserPreference", "system") ?: "system"
         set(value) = prefs.edit().putString("browserPreference", value).apply()

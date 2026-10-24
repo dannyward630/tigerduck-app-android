@@ -17,6 +17,8 @@ data class WidgetColors(
     val onSurfaceVariant: Color,
     val highlight: Color,
     val emptyCell: Color,
+    /** Text and icons on [highlight]: white, or dark on a light accent of the user's own. */
+    val onHighlight: Color = Color.White,
 )
 
 object WidgetTheme {
@@ -91,3 +93,7 @@ fun resolveWidgetIsDark(prefs: AppPreferences, context: Context): Boolean =
  */
 fun resolveWidgetAccentColor(prefs: AppPreferences, isDark: Boolean): Color =
     AccentPolicy.fixedColor(prefs.accentColorHex, isDark)
+
+/** Text and icons on [resolveWidgetAccentColor]'s accent. */
+fun resolveWidgetOnAccentColor(prefs: AppPreferences, isDark: Boolean): Color =
+    AccentPolicy.onAccent(prefs.accentColorHex, isDark) ?: Color.White

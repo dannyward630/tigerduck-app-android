@@ -65,10 +65,11 @@ class LibraryShortcutWidget(
             val tick = currentState(WidgetState.TickKey) ?: 0L
             val isDark = resolveWidgetIsDark(prefs, context)
             val accent = resolveWidgetAccentColor(prefs, isDark)
+            val onAccent = resolveWidgetOnAccentColor(prefs, isDark)
             CompositionLocalProvider(
                 androidx.glance.LocalContext provides widgetContext(context, prefs.appLanguage),
             ) {
-                LibraryShortcutContent(isDark = isDark, accent = accent, onTap = tapAction)
+                LibraryShortcutContent(isDark = isDark, accent = accent, onAccent = onAccent, onTap = tapAction)
             }
         }
     }
@@ -95,6 +96,7 @@ class LibraryShortcutWidgetReceiver : GlanceAppWidgetReceiver() {
 private fun LibraryShortcutContent(
     isDark: Boolean,
     accent: Color,
+    onAccent: Color,
     onTap: Action,
 ) {
     val background = if (isDark) Color(0xFF1C1C1E) else Color.White
@@ -131,7 +133,7 @@ private fun LibraryShortcutContent(
                         provider = ImageProvider(R.drawable.widget_library_icon),
                         contentDescription = null,
                         modifier = GlanceModifier.size(20.dp),
-                        colorFilter = ColorFilter.tint(ColorProvider(Color.White)),
+                        colorFilter = ColorFilter.tint(ColorProvider(onAccent)),
                     )
                 }
                 Box(modifier = GlanceModifier.height(4.dp)) {}

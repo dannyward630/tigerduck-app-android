@@ -80,4 +80,17 @@ class WidgetAccentColorTest {
         assertEquals(Color(0xFF007AFF), resolveWidgetAccentColor(prefs, isDark = false))
         assertEquals(Color(0xFF0A84FF), resolveWidgetAccentColor(prefs, isDark = true))
     }
+
+    @Test
+    fun `text on a preset accent stays white`() {
+        AccentSetting(prefs).pick(0xFF2D55)
+        assertEquals(Color.White, resolveWidgetOnAccentColor(prefs, isDark = false))
+        assertEquals(Color.White, resolveWidgetOnAccentColor(prefs, isDark = true))
+    }
+
+    @Test
+    fun `text on a light accent of the user's own turns dark`() {
+        AccentSetting(prefs).pick(0xFFFFFF)
+        assertEquals(Color(0xFF1C1C1E), resolveWidgetOnAccentColor(prefs, isDark = false))
+    }
 }

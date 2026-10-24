@@ -2,7 +2,10 @@ package org.ntust.app.tigerduck.wear
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,5 +48,21 @@ class WearAccentHexTest {
         context.getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE).edit()
             .putInt("accentColorHex", -1).commit()
         assertEquals("#007AFF", wearAccentHex(prefs))
+    }
+
+    // The watch draws on black: black picked as one's own would leave its
+    // rings and guides invisible there.
+    @Test
+    fun `a dark color of the user's own is sent in a tone that stands out on the watch's black`() {
+        AccentSetting(prefs).pick(0x000000)
+        val sent = Color(android.graphics.Color.parseColor(wearAccentHex(prefs)))
+        val contrast = (sent.luminance() + 0.05f) / (Color.Black.luminance() + 0.05f)
+        assertTrue("$sent stands out at $contrast:1", contrast >= 3f)
+    }
+
+    @Test
+    fun `a preset is sent as it is`() {
+        AccentSetting(prefs).pick(0x5856D6)
+        assertEquals("#5856D6", wearAccentHex(prefs))
     }
 }

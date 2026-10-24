@@ -78,6 +78,7 @@ import org.ntust.app.tigerduck.ui.component.scrollbar
 import org.ntust.app.tigerduck.ui.component.PageLeftEffect
 import org.ntust.app.tigerduck.ui.component.SectionHeader
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Calendar
@@ -423,12 +424,16 @@ internal fun CalendarGrid(
                                 .weight(1f)
                                 .height(40.dp)
                                 .clip(CircleShape)
-                                .background(
-                                    when {
-                                        isSelected -> MaterialTheme.colorScheme.primary
-                                        isToday -> MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                        else -> Color.Transparent
-                                    }
+                                // The chosen day in the accent's own fill, the
+                                // gradient picked if one is; today only tinted.
+                                .then(
+                                    if (isSelected) {
+                                        Modifier.background(TigerDuckTheme.accentBrush)
+                                    } else {
+                                        Modifier.background(
+                                            if (isToday) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else Color.Transparent,
+                                        )
+                                    },
                                 )
                                 .clickable(role = Role.Button) { onDateSelected(dayDate) }
                                 // The full date and the event count in place of the
@@ -448,7 +453,7 @@ internal fun CalendarGrid(
                                     text = "$dayNum",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = when {
-                                        isSelected -> MaterialTheme.colorScheme.onPrimary
+                                        isSelected -> TigerDuckTheme.onAccentBrush
                                         isToday -> MaterialTheme.colorScheme.primary
                                         else -> MaterialTheme.colorScheme.onSurface
                                     },
@@ -458,7 +463,7 @@ internal fun CalendarGrid(
                                     // One dot per source in its color, as on
                                     // the iPhone, so a deadline reads apart
                                     // from a holiday. On the selected day they
-                                    // take the day number's onPrimary: a source
+                                    // take the day number's color: a source
                                     // color can sit too close to the accent
                                     // fill, and the list below shows that
                                     // day's sources anyway. Not white: the
@@ -471,7 +476,7 @@ internal fun CalendarGrid(
                                                     .size(4.dp)
                                                     .clip(CircleShape)
                                                     .background(
-                                                        if (isSelected) MaterialTheme.colorScheme.onPrimary else source.color
+                                                        if (isSelected) TigerDuckTheme.onAccentBrush else source.color
                                                     )
                                             )
                                         }

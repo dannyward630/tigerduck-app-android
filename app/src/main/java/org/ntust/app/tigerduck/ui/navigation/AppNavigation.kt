@@ -91,6 +91,7 @@ import org.ntust.app.tigerduck.ui.screen.more.MoreScreen
 import org.ntust.app.tigerduck.ui.screen.onboarding.OnboardingScreen
 import org.ntust.app.tigerduck.ui.screen.score.ScoreScreen
 import org.ntust.app.tigerduck.ui.screen.settings.AboutOthersScreen
+import org.ntust.app.tigerduck.ui.screen.settings.AccentColorScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LanguagePickerScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LicenseDetailScreen
 import org.ntust.app.tigerduck.ui.screen.settings.AssignmentReminderSettingsScreen
@@ -137,6 +138,7 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object TabEditor : Screen("tabEditor")
     object LanguagePicker : Screen("languagePicker")
+    object AccentColor : Screen("accentColor")
     object LiveActivitySettings : Screen("liveActivitySettings")
     object SchoolMailNotificationSettings : Screen("schoolMailNotificationSettings")
     object NotificationPermissionSettings : Screen("notificationPermissionSettings")
@@ -656,6 +658,7 @@ fun MainNavigation(
                 SettingsScreen(
                     onNavigateToTabEditor = { navController.navigate(Screen.TabEditor.route) },
                     onNavigateToLanguagePicker = { navController.navigate(Screen.LanguagePicker.route) },
+                    onNavigateToAccentColor = { navController.navigate(Screen.AccentColor.route) },
                     onNavigateToLiveActivity = { navController.navigate(Screen.LiveActivitySettings.route) },
                     onNavigateToSchoolMailNotificationSettings = {
                         navController.navigate(Screen.SchoolMailNotificationSettings.route)
@@ -787,6 +790,9 @@ fun MainNavigation(
             }
             page(Screen.LanguagePicker.route) {
                 LanguagePickerScreen(onBack = { navController.popBackStack() })
+            }
+            page(Screen.AccentColor.route) {
+                AccentColorScreen(onBack = { navController.popBackStack() })
             }
             page(Screen.TabEditor.route) {
                 TabEditorScreen(
