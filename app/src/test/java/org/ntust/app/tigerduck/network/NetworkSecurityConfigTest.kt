@@ -161,4 +161,38 @@ class NetworkSecurityConfigTest {
             assertTrue("${root.subjectX500Principal.name} is not pinned", root.spkiSha256 in libraryPins)
         }
     }
+
+    private val ntustPins: Set<String>
+        get() = release.single { set -> set.domains.any { it.name == "ntust.edu.tw" } }.pins
+
+    /**
+     * TWCA Global Root CA, which the TWCA Secure SSL intermediate behind *.ntust.edu.tw chains to,
+     * and TWCA CYBER Root CA, which NTUST's newer certificates come from, as the system stores
+     * ship them.
+     */
+    private val twcaRoots get() = certificates("/tls/twca-roots.pem")
+
+    @Test
+    fun `the TWCA root fixture holds the roots the system stores ship`() {
+        // SHA-256 fingerprints as Android's system store lists both, and macOS's the Global Root,
+        // so a swapped fixture can't vouch for its own pins.
+        val fingerprints = twcaRoots.map { root ->
+            MessageDigest.getInstance("SHA-256").digest(root.encoded).joinToString("") { "%02X".format(it) }
+        }.toSet()
+        assertEquals(
+            setOf(
+                "59769007F7685D0FCD50872F9F95D5755A5B2B457D81F3692B610A98672F0E1B",
+                "3F63BB2814BE174EC8B6439CF08D6D56F0B7C405883A5648A334424D6B3EC558",
+            ),
+            fingerprints,
+        )
+    }
+
+    @Test
+    fun `the school pins survive a renewal from a new intermediate under either TWCA root`() {
+        // The intermediates alone would refuse a renewal through any intermediate TWCA adds.
+        twcaRoots.forEach { root ->
+            assertTrue("${root.subjectX500Principal.name} is not pinned", root.spkiSha256 in ntustPins)
+        }
+    }
 }
