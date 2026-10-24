@@ -662,6 +662,8 @@ dependencies {
     // Hand-made certificates and Ed25519 keys for the TLS pin tests.
     testImplementation(libs.okhttp.tls)
     testImplementation(libs.bouncycastle.bcprov)
+    // DebugPinDocument signs its stand-in for TigerSync's document; :shared ships it to every build already.
+    debugImplementation(libs.bouncycastle.bcprov)
     // Compose UI tests on Robolectric, for composables whose behaviour hangs
     // on permission state the JVM can fake and a device cannot: revoking a
     // runtime permission kills the instrumented process.

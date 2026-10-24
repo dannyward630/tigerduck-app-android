@@ -707,6 +707,7 @@ mono_crash.*
 !app/src/debug/java/org/ntust/app/tigerduck/debug/
 !app/src/main/java/org/ntust/app/tigerduck/ui/screen/debug/
 !app/src/test/java/org/ntust/app/tigerduck/ui/screen/debug/
+!app/src/testDebug/java/org/ntust/app/tigerduck/debug/
 !wear/src/debug/
 !wear/src/debug/java/org/ntust/app/tigerduck/wear/debug/
 !wear/src/main/java/org/ntust/app/tigerduck/wear/debug/

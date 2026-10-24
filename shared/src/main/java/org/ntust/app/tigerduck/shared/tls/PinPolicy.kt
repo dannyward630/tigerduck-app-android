@@ -37,8 +37,8 @@ class PinPolicy(
     val acceptances: Collection<PinAcceptance> = emptyList(),
     val appVersion: Long,
     /**
-     * Debug builds only: this set's pins become one no chain has, and its mismatch may be
-     * offered to the student, so the prompt can be seen.
+     * Debug builds only: this set's pins become one no chain has, so the prompt can be seen with
+     * a document that offers the chain.
      */
     val simulatedMismatch: String? = null,
 ) {
@@ -77,9 +77,7 @@ class PinPolicy(
      * `prompt_roots`, Mozilla's TLS roots, of the document in force. With none, nothing is.
      */
     fun mayPrompt(mismatch: PinMismatch, now: Instant): Boolean =
-        // A debug build's simulated mismatch is shown whatever the document says, since no
-        // document verifies until TigerSync's keys are in the app.
-        mismatch.setId == simulatedMismatch || documentAt(now)?.promptRoots?.contains(mismatch.anchorSpki) == true
+        documentAt(now)?.promptRoots?.contains(mismatch.anchorSpki) == true
 
     /** Whether these pins allow [mismatch]'s chain now, as a newer document or a Continue may. */
     fun allows(mismatch: PinMismatch, now: Instant): Boolean {

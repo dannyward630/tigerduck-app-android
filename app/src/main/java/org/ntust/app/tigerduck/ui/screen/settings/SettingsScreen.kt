@@ -627,7 +627,7 @@ fun SettingsScreen(
                             SettingsToggleRow(
                                 label = "Simulate a TLS pin mismatch",
                                 checked = simulatingPinMismatch,
-                                subtitle = "Replaces ntust.edu.tw's pins with one no chain has, and offers its mismatch whatever the TigerSync document says, until the app restarts.",
+                                subtitle = "Replaces ntust.edu.tw's pins with one no chain has, until the app restarts. The prompt needs a document offering the chain's root: adb shell am broadcast -a org.ntust.app.tigerduck.debug.INJECT_PIN_DOCUMENT",
                                 onCheckedChange = {
                                     simulatingPinMismatch = it
                                     viewModel.pinManager.simulateMismatch(if (it) "ntust" else null)

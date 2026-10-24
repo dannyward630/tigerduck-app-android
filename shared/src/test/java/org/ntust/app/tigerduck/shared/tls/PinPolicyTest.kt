@@ -141,8 +141,10 @@ class PinPolicyTest {
         assertFalse(policy(document(1, promptRoots = setOf(pin(6)))).mayPrompt(mismatch, now))
         // A leaf among the roots doesn't make its chain eligible: only the anchor counts.
         assertFalse(policy(document(1, promptRoots = setOf(leaf.certificate.spki))).mayPrompt(mismatch, now))
-        // A debug build's simulated mismatch is offered with no document.
-        assertTrue(PinPolicy(builtIn, appVersion = 30, simulatedMismatch = "ntust").mayPrompt(mismatch, now))
+        // A debug build's simulated mismatch is held to the same rule.
+        val simulated = PinPolicy(builtIn, appVersion = 30, simulatedMismatch = "ntust")
+        assertFalse(simulated.mayPrompt(mismatch, now))
+        assertTrue(simulated.with(document = document(1, promptRoots = setOf(root.certificate.spki))).mayPrompt(mismatch, now))
     }
 
     private companion object {
