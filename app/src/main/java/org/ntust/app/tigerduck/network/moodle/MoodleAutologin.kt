@@ -24,7 +24,8 @@ import javax.inject.Singleton
  * from iOS `MoodleAutologinService`.
  *
  * The private token goes only in that request's body, to the Moodle site; the link the browser is
- * handed carries the one-time key, which Moodle accepts once.
+ * handed carries the one-time key, which Moodle accepts once. A Moodle token stored without its
+ * private token, as 2.3.1 and earlier kept it, gets one at the first open that needs it.
  */
 @Singleton
 class MoodleAutologin internal constructor(
@@ -39,6 +40,13 @@ class MoodleAutologin internal constructor(
     private val signInGeneration: () -> Int,
     /** Whether a private token is stored, which a sign-out clears where it runs. */
     private val hasPrivateToken: () -> Boolean,
+    /** Whether a private token can be fetched: a Moodle token is stored to fetch one for. */
+    private val canFetchPrivateToken: () -> Boolean,
+    /**
+     * Signs in again for the private token, true once one is stored; see
+     * [MoodleTokenService.fetchPrivateToken].
+     */
+    private val fetchPrivateToken: suspend () -> Boolean,
 ) {
     @Inject
     constructor(
@@ -55,6 +63,8 @@ class MoodleAutologin internal constructor(
         scope = appScope,
         signInGeneration = { authTokenManager.signInGeneration },
         hasPrivateToken = { tokenService.currentPrivateToken() != null },
+        canFetchPrivateToken = { !demoAccount.isActive && tokenService.currentToken() != null },
+        fetchPrivateToken = tokenService::fetchPrivateToken,
     )
 
     data class Key(val userId: Int, val value: String, val autologinUrl: String)
@@ -62,6 +72,10 @@ class MoodleAutologin internal constructor(
     private val lock = Any()
     private var lastKeyAtMs: Long? = null
     private var requesting = false
+    private var privateTokenFetch: Deferred<Boolean>? = null
+
+    /** The sign-in a fetch got no private token for, which no open fetches for again. */
+    private var noPrivateTokenFor: Int? = null
 
     /** [url] behind a one-time sign-in where [signedIn] gives one, else [url]. */
     suspend fun url(url: String): String = signedIn(url) ?: url
@@ -72,11 +86,13 @@ class MoodleAutologin internal constructor(
      * refuses a key within [KEY_INTERVAL_MS] of the last one, a request already on its way gets
      * the only key coming, and the reader is waiting on the page, so a failed request is not
      * retried and a key slower than [KEY_WAIT_MS] is not waited for. A key that arrives after a
-     * sign-out is dropped too: it would sign the browser in to the account that left.
+     * sign-out is dropped too: it would sign the browser in to the account that left. Without a
+     * private token, one is fetched first; see [awaitPrivateToken].
      */
     suspend fun signedIn(url: String): String? {
         if (!isSignInTarget(url)) return null
         val generation = signInGeneration()
+        if (!hasPrivateToken() && !awaitPrivateToken(generation)) return null
         val request = synchronized(lock) {
             if (requesting || !isKeyDue()) return null
             requesting = true
@@ -110,6 +126,40 @@ class MoodleAutologin internal constructor(
         }
     }
 
+    /**
+     * Fetches the private token missing beside the stored Moodle token, true once one is stored
+     * and no sign-out came meanwhile. Opens at once share one fetch, and each waits for it up to
+     * [PRIVATE_TOKEN_WAIT_MS]. It runs on in the app's scope after an open stops waiting, so the
+     * next open finds the private token stored; no key is asked for the open that gave up, as
+     * Moodle would count a key nobody uses against the next [KEY_INTERVAL_MS].
+     *
+     * A failed fetch is tried again at the next open, which the token renewal holds back as it
+     * holds back any: after a failure that was not the network's, and while the stored password
+     * is refused. A pair that came without a private token is not fetched again for the same
+     * sign-in, as each fetch posts the password to SSO.
+     */
+    private suspend fun awaitPrivateToken(generation: Int): Boolean {
+        if (!canFetchPrivateToken()) return false
+        val fetch = synchronized(lock) {
+            if (noPrivateTokenFor == generation) return false
+            privateTokenFetch?.takeIf { it.isActive } ?: startPrivateTokenFetch(generation).also { privateTokenFetch = it }
+        }
+        return withTimeoutOrNull(PRIVATE_TOKEN_WAIT_MS) { fetch.await() } == true && isStillSignedIn(generation)
+    }
+
+    private fun startPrivateTokenFetch(generation: Int): Deferred<Boolean> = scope.async {
+        val fetched = try {
+            fetchPrivateToken()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "private token unavailable: ${e.logSummary()}")
+            return@async false
+        }
+        if (!fetched) synchronized(lock) { noPrivateTokenFor = generation }
+        fetched
+    }
+
     /** No sign-out since [generation] was read: the generation has not moved and the token is still stored. */
     private fun isStillSignedIn(generation: Int): Boolean = signInGeneration() == generation && hasPrivateToken()
 
@@ -137,6 +187,13 @@ class MoodleAutologin internal constructor(
          * nothing on screen up to the request's timeout.
          */
         const val KEY_WAIT_MS = 3_000L
+
+        /**
+         * How long an open waits, before it asks for its key, for the private token fetched when
+         * none is stored. The fetch is a whole SSO sign-in, several calls of a few seconds each,
+         * and happens once for an account; the key then has its own [KEY_WAIT_MS].
+         */
+        const val PRIVATE_TOKEN_WAIT_MS = 10_000L
 
         /**
          * Whether [url] is a page the browser may be signed in for: https on the Moodle site
