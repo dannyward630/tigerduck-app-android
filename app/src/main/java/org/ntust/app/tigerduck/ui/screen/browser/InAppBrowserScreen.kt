@@ -33,11 +33,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -121,39 +123,43 @@ fun InAppBrowserScreen(
     var sheet by rememberSaveable { mutableStateOf<BrowserSheet?>(null) }
     val colors = MaterialTheme.colorScheme
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(colors.surface)
-            .statusBarsPadding()
-            .navigationBarsPadding()
-            .imePadding(),
-    ) {
-        val find = state.find
-        if (find != null) {
-            FindBar(find, actions)
-        } else {
-            TopBar(state, onAddress = { sheet = BrowserSheet.ADDRESS }, onClose = actions::close)
-        }
-        Box(Modifier.fillMaxWidth().height(2.dp)) {
-            if (state.loading) {
-                LinearProgressIndicator(progress = { state.progress / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp))
+    // Text and icons that name no color take the bars' own: a background alone leaves them
+    // black, which dark bars hide.
+    CompositionLocalProvider(LocalContentColor provides colors.onSurface) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(colors.surface)
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .imePadding(),
+        ) {
+            val find = state.find
+            if (find != null) {
+                FindBar(find, actions)
             } else {
-                HorizontalDivider(Modifier.fillMaxWidth(), color = colors.outlineVariant)
+                TopBar(state, onAddress = { sheet = BrowserSheet.ADDRESS }, onClose = actions::close)
             }
+            Box(Modifier.fillMaxWidth().height(2.dp)) {
+                if (state.loading) {
+                    LinearProgressIndicator(progress = { state.progress / 100f }, modifier = Modifier.fillMaxWidth().height(2.dp))
+                } else {
+                    HorizontalDivider(Modifier.fillMaxWidth(), color = colors.outlineVariant)
+                }
+            }
+            Box(Modifier.weight(1f).fillMaxWidth()) {
+                web(Modifier.fillMaxSize())
+                state.error?.let { BrowserErrorPage(it, actions, Modifier.fillMaxSize()) }
+                state.signIn?.let { BrowserSignInPage(it, actions, Modifier.fillMaxSize()) }
+                DownloadCards(
+                    downloads = downloads,
+                    actions = actions,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+                )
+            }
+            HorizontalDivider(color = colors.outlineVariant)
+            BottomBar(state, actions, onMenu = { sheet = BrowserSheet.MENU })
         }
-        Box(Modifier.weight(1f).fillMaxWidth()) {
-            web(Modifier.fillMaxSize())
-            state.error?.let { BrowserErrorPage(it, actions, Modifier.fillMaxSize()) }
-            state.signIn?.let { BrowserSignInPage(it, actions, Modifier.fillMaxSize()) }
-            DownloadCards(
-                downloads = downloads,
-                actions = actions,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
-            )
-        }
-        HorizontalDivider(color = colors.outlineVariant)
-        BottomBar(state, actions, onMenu = { sheet = BrowserSheet.MENU })
     }
 
     val url = state.url

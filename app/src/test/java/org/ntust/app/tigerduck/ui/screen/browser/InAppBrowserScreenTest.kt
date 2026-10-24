@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getBoundsInRoot
@@ -168,6 +169,18 @@ class InAppBrowserScreenTest {
         val results = mutableListOf<TextLayoutResult>()
         composeRule.onNodeWithText(text, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
         return results.first()
+    }
+
+    @Test
+    fun `on dark bars the host reads in the dark scheme's text color, not black`() {
+        val dark = darkColorScheme()
+        composeRule.setContent {
+            MaterialTheme(colorScheme = dark) {
+                InAppBrowserScreen(loaded(), BrowserAppearance.DARK, emptyList(), actions) { Box(it) }
+            }
+        }
+
+        assertEquals(dark.onSurface, layoutOf("moodle2.ntust.edu.tw").layoutInput.style.color)
     }
 
     @Test
