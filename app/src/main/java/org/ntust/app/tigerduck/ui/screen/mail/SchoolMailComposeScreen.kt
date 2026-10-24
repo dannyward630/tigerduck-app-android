@@ -197,10 +197,19 @@ fun SchoolMailComposeScreen(
             }
             state.loadError?.let { LoadErrorBanner(it, onRetry = { viewModel.retryPrefill(labels) }) }
             state.error?.let { ErrorText(it) }
-            MailRecipientTokenField(stringResource(R.string.school_mail_to), state.to, { viewModel.updateRecipients(RecipientSlot.TO, it) }, enabled = fieldsEnabled)
+            MailRecipientTokenField(
+                stringResource(R.string.school_mail_to), state.to, { viewModel.updateRecipients(RecipientSlot.TO, it) },
+                enabled = fieldsEnabled, suggestions = state.suggestions(RecipientSlot.TO),
+            )
             if (state.showCcBcc) {
-                MailRecipientTokenField(stringResource(R.string.school_mail_cc), state.cc, { viewModel.updateRecipients(RecipientSlot.CC, it) }, enabled = fieldsEnabled)
-                MailRecipientTokenField(stringResource(R.string.school_mail_bcc), state.bcc, { viewModel.updateRecipients(RecipientSlot.BCC, it) }, enabled = fieldsEnabled)
+                MailRecipientTokenField(
+                    stringResource(R.string.school_mail_cc), state.cc, { viewModel.updateRecipients(RecipientSlot.CC, it) },
+                    enabled = fieldsEnabled, suggestions = state.suggestions(RecipientSlot.CC),
+                )
+                MailRecipientTokenField(
+                    stringResource(R.string.school_mail_bcc), state.bcc, { viewModel.updateRecipients(RecipientSlot.BCC, it) },
+                    enabled = fieldsEnabled, suggestions = state.suggestions(RecipientSlot.BCC),
+                )
             } else {
                 TextButton(onClick = viewModel::showCcBcc, enabled = fieldsEnabled) { Text(stringResource(R.string.school_mail_show_cc_bcc)) }
             }

@@ -210,6 +210,14 @@ interface SchoolMailRepository {
     suspend fun searchIndexBytes(): Long
 
     /**
+     * Every mail of the signed-in account on the phone: what [updateSearchIndex] downloaded, in
+     * every folder, which belongs to one account. The compose screen suggests recipients from it
+     * (`RecipientSuggestions`); none once the account has signed out, and none of an account
+     * another student signed in over.
+     */
+    suspend fun correspondence(): List<MailSummary>
+
+    /**
      * Deletes the mail downloaded for search and the list, stopping any download under way. The
      * mail screen downloads it again when it is next opened.
      */
@@ -1019,6 +1027,21 @@ class MailRepository @Inject constructor(
     @Volatile private var inAppIndexing: Job? = null
 
     override suspend fun searchIndexBytes(): Long = withContext(Dispatchers.IO) { searchIndex.sizeBytes() }
+
+    override suspend fun correspondence(): List<MailSummary> = withContext(Dispatchers.IO) {
+        if (account.isDemo) {
+            return@withContext synchronized(demoFolders) {
+                ensureDemoSeeded()
+                demoFolders.values.flatten().map { it.summary }
+            }
+        }
+        // The address with the sign-in it belongs to, read together: a sign-in moves the
+        // generation before it puts the next student's address in place.
+        val owner = indexOwnerNow() ?: return@withContext emptyList()
+        val mail = searchIndex.allMail(owner.address).map { it.summary }
+        // Read while another student signed in over this one: none of it is theirs.
+        if (stillIndexOwner(owner)) mail else emptyList()
+    }
 
     /**
      * Held while a search asks for a run, and while [deleteSearchIndex] or a sign-out cancels them:

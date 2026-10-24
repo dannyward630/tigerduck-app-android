@@ -73,6 +73,19 @@ class MailSearchIndexTest {
     }
 
     @Test
+    fun `every folder's mail comes back for its owner, and none for anyone else`() {
+        seed("INBOX", Entry(1, "a@example.com", "公告", ""), Entry(2, "b@example.com", "Hi", ""))
+        seed("寄件備份匣", Entry(1, "me@example.com", "公告回覆", ""))
+
+        assertEquals(
+            setOf("INBOX" to 1L, "INBOX" to 2L, "寄件備份匣" to 1L),
+            index.allMail(me).map { it.folder to it.uid }.toSet(),
+        )
+        assertEquals("公告回覆", index.allMail(me).single { it.folder == "寄件備份匣" }.summary.subject)
+        assertTrue(index.allMail("b10000002@example.com").isEmpty())
+    }
+
+    @Test
     fun `a search stays in its folder`() {
         seed("INBOX", Entry(1, "a@example.com", "公告", ""))
         seed("寄件備份匣", Entry(1, "me@example.com", "公告回覆", ""))

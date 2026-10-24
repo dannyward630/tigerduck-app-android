@@ -486,6 +486,11 @@ class FakeSchoolMailRepository : SchoolMailRepository {
 
     override suspend fun searchIndexBytes(): Long = searchIndexBytes
 
+    /** What [correspondence] answers. */
+    var correspondence: List<MailSummary> = emptyList()
+
+    override suspend fun correspondence(): List<MailSummary> = correspondence
+
     var searchIndexDeletes = 0
 
     override suspend fun deleteSearchIndex() {

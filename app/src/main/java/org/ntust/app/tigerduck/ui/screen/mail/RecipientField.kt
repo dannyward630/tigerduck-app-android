@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.ui.screen.mail
 
 import org.ntust.app.tigerduck.mail.compose.ComposeRules
 import org.ntust.app.tigerduck.mail.mime.AddressParser
+import org.ntust.app.tigerduck.mail.model.MailAddress
 
 /**
  * One To, Cc or Bcc field of the compose form, as its bubbles show it: the recipients already
@@ -51,6 +52,12 @@ data class RecipientField(
             nextId = nextId + added.size,
         )
     }
+
+    /**
+     * [suggestion], one the field suggested for what was being typed, becomes a bubble in its
+     * place, written as a reply writes a recipient ([ComposeRules.formatRecipients]).
+     */
+    fun pick(suggestion: MailAddress): RecipientField = typed(listOf(ComposeRules.formatRecipients(listOf(suggestion))), "")
 
     /** What was being typed becomes a bubble where it stands, and typing moves back to the end. */
     fun finishDraft(): RecipientField = typed(listOf(draft), "").let { it.copy(draftAt = it.tokens.size) }
