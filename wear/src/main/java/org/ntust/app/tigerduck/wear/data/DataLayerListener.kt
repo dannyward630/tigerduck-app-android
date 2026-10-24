@@ -10,17 +10,20 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.shared.WearProtocol
 
 class DataLayerListener : WearableListenerService() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    // One callback's payloads at a time, as they came, so an older one's
+    // write never lands over a newer one's.
+    private val inOrder = InArrivalOrder(scope)
+
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         // Copy events out before the buffer is closed by the platform.
         val events = dataEvents.map { it.freeze() }
-        scope.launch { handleEvents(events) }
+        inOrder.submit { handleEvents(events) }
     }
 
     private suspend fun handleEvents(events: List<DataEvent>) {

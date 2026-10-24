@@ -59,8 +59,9 @@ internal class AccentSetting(
      */
     fun pick(lightHex: Int) {
         leaveWallpaper()
-        storeGradient(AccentPolicy.NO_GRADIENT, AccentPolicy.NO_GRADIENT)
-        prefs.accentColorHex = lightHex
+        gradientStartState = AccentPolicy.NO_GRADIENT
+        gradientEndState = AccentPolicy.NO_GRADIENT
+        prefs.storeAccentPick(lightHex, AccentPolicy.NO_GRADIENT, AccentPolicy.NO_GRADIENT)
         if (lightHexState == lightHex) return
         lightHexState = lightHex
         onFixedChange()
@@ -69,19 +70,20 @@ internal class AccentSetting(
     /**
      * Picks the gradient from [startHex] to [endHex], light palette hexes, in
      * place of the wallpaper too. Its start becomes the fixed accent, which
-     * everything that draws no gradient draws alone. The ends are stored
-     * first, so whatever hears the accent change reads the whole gradient.
+     * everything that draws no gradient draws alone. Stored whole, in one
+     * write, so whatever hears the accent change reads the whole gradient.
      */
     fun pickGradient(startHex: Int, endHex: Int) {
         leaveWallpaper()
-        storeGradient(startHex, endHex)
-        prefs.accentColorHex = startHex
+        gradientStartState = startHex
+        gradientEndState = endHex
+        prefs.storeAccentPick(startHex, startHex, endHex)
         if (lightHexState == startHex) return
         lightHexState = startHex
         onFixedChange()
     }
 
-    /** Picks the way the gradient runs. Nothing outside the app's screens draws it. */
+    /** Picks the way the gradient runs, which the app's screens and the watch draw. */
     fun pickDirection(direction: AccentGradientDirection) {
         if (directionState == direction) return
         directionState = direction
@@ -92,14 +94,6 @@ internal class AccentSetting(
         if (!followsWallpaperState) return
         followsWallpaperState = false
         prefs.useWallpaperColors = false
-    }
-
-    private fun storeGradient(startHex: Int, endHex: Int) {
-        if (gradientStartState == startHex && gradientEndState == endHex) return
-        gradientStartState = startHex
-        gradientEndState = endHex
-        prefs.accentGradientStartHex = startHex
-        prefs.accentGradientEndHex = endHex
     }
 
     /** Picks the wallpaper's colors, keeping the swatch for what cannot follow them. */

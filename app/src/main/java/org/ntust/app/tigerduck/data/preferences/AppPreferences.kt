@@ -392,9 +392,8 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
     )
 
     /**
-     * Fires when the accent the watch is sent changes: the swatch, or the
-     * gradient's start, end or direction. A gradient from the swatch already
-     * picked leaves [accentColorHex] as it was.
+     * Fires when the accent the watch is sent changes: the swatch, the
+     * gradient (see [storeAccentPick]) or its direction.
      */
     val accentColorChanged: SharedFlow<Unit> = _accentColorChanged.asSharedFlow()
 
@@ -431,11 +430,7 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
      */
     var accentGradientEndHex: Int
         get() = prefs.getInt("accentGradientEndHex", AccentPolicy.NO_GRADIENT)
-        set(value) {
-            val previous = accentGradientEndHex
-            prefs.edit().putInt("accentGradientEndHex", value).apply()
-            if (value != previous) _accentColorChanged.tryEmit(Unit)
-        }
+        set(value) = prefs.edit().putInt("accentGradientEndHex", value).apply()
 
     /**
      * The start color the gradient was picked with. An older build knows only
@@ -444,11 +439,28 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
      */
     var accentGradientStartHex: Int
         get() = prefs.getInt("accentGradientStartHex", AccentPolicy.NO_GRADIENT)
-        set(value) {
-            val previous = accentGradientStartHex
-            prefs.edit().putInt("accentGradientStartHex", value).apply()
-            if (value != previous) _accentColorChanged.tryEmit(Unit)
-        }
+        set(value) = prefs.edit().putInt("accentGradientStartHex", value).apply()
+
+    /**
+     * Stores a pick from the accent color page whole: the swatch [lightHex],
+     * and the gradient from [gradientStartHex] to [gradientEndHex], or
+     * [AccentPolicy.NO_GRADIENT] for both. One write, and one
+     * [accentColorChanged] when the pick changes anything: a gradient from
+     * the swatch already picked leaves [accentColorHex] as it was, and the
+     * watch, which reads all three as it hears the change, must never hear a
+     * pick half stored.
+     */
+    fun storeAccentPick(lightHex: Int, gradientStartHex: Int, gradientEndHex: Int) {
+        val changed = lightHex != accentColorHex ||
+            gradientStartHex != accentGradientStartHex ||
+            gradientEndHex != accentGradientEndHex
+        prefs.edit()
+            .putInt("accentColorHex", lightHex)
+            .putInt("accentGradientStartHex", gradientStartHex)
+            .putInt("accentGradientEndHex", gradientEndHex)
+            .apply()
+        if (changed) _accentColorChanged.tryEmit(Unit)
+    }
 
     /** The way the accent gradient runs, stored as its [AccentGradientDirection.code]. */
     var accentGradientDirection: AccentGradientDirection

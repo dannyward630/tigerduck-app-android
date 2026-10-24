@@ -46,6 +46,8 @@ class AccentMarksDrawingTest {
         return pixel.blue / (pixel.red + pixel.blue)
     }
 
+    private fun Bitmap.alpha(x: Int, y: Int): Float = Color(getPixel(x, y)).alpha
+
     @Test
     fun `the countdown ring runs from the start on its left to the end on its right`() {
         val ring = render(100, 100) {
@@ -62,31 +64,51 @@ class AccentMarksDrawingTest {
         assertEquals(0f, ring.towardBlue(97, 50), 0.01f)
     }
 
+    // A quarter left: the arc from the top round to the right, over a faint
+    // track of the gradient the rest of the way.
+    @Test
+    fun `a quarter of the countdown is drawn solid over a faint track`() {
+        val ring = render(100, 100) {
+            drawCountdownRing(0.25f, red, WearAccentGradient(blue, AccentGradientDirection.LeftToRight), strokePx = 10f)
+        }
+        // Up and to the right, on the arc.
+        assertEquals(1f, ring.alpha(84, 16), 0.05f)
+        assertTrue(ring.towardBlue(84, 16) > 0.7f)
+        // Left and bottom, on the track alone.
+        assertEquals(0.18f, ring.alpha(2, 50), 0.05f)
+        assertTrue(ring.towardBlue(2, 50) < 0.15f)
+        assertEquals(0.18f, ring.alpha(50, 97), 0.05f)
+    }
+
+    // Across the ring, not the whole screen, which is wider than the ring here.
     @Test
     fun `the padding ring runs from the start on its left to the end on its right`() {
-        val ring = render(200, 200) {
+        val ring = render(300, 200) {
             drawPaddingEdgeRing(
                 paddingPx = 20f, strokePx = 4f, accent = red,
                 gradient = WearAccentGradient(blue, AccentGradientDirection.LeftToRight),
             )
         }
-        // A ring of radius 80 round the middle.
-        assertTrue(ring.towardBlue(20, 100) < 0.1f)
-        assertTrue(ring.towardBlue(180, 100) > 0.9f)
+        // A ring of radius 80 round the middle, 150, 100.
+        assertTrue(ring.towardBlue(70, 100) < 0.1f)
+        assertTrue(ring.towardBlue(230, 100) > 0.9f)
+        assertEquals(0.6f, ring.alpha(70, 100), 0.05f)
     }
 
     // Across the QR square the corners mark, not the whole screen: the
     // corners are then as far apart in color as the gradient goes.
     @Test
     fun `the QR corners run from the start at the top left to the end at the bottom right`() {
-        val corners = render(200, 200) {
+        val corners = render(300, 200) {
             drawQrCornerBrackets(
                 sidePx = 100f, legPx = 20f, strokePx = 4f, accent = red,
                 gradient = WearAccentGradient(blue, AccentGradientDirection.TopLeftToBottomRight),
             )
         }
-        // The square spans 50 to 150; each corner's top or bottom leg.
-        assertTrue(corners.towardBlue(54, 50) < 0.1f)
-        assertTrue(corners.towardBlue(146, 150) > 0.9f)
+        // The square spans 100 to 200 across and 50 to 150 down; each
+        // corner's top or bottom leg.
+        assertTrue(corners.towardBlue(104, 50) < 0.1f)
+        assertTrue(corners.towardBlue(196, 150) > 0.9f)
+        assertEquals(0.85f, corners.alpha(104, 50), 0.05f)
     }
 }

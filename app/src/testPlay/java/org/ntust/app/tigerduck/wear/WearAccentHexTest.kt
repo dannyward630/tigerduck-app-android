@@ -139,6 +139,30 @@ class WearAccentHexTest {
         listening.cancel()
     }
 
+    // The watch bridge reads the preferences each time it hears a change. A
+    // pick heard half stored would publish an accent nobody picked, which a
+    // watch that applies payloads out of order could keep.
+    @Test
+    fun `each change the watch hears is a whole pick`() = runTest {
+        val setting = AccentSetting(prefs).apply { pick(0x007AFF) }
+        val sent = mutableListOf<Pair<String, WearAccentGradient?>>()
+        val listening = launch(UnconfinedTestDispatcher(testScheduler)) {
+            prefs.accentColorChanged.collect { sent += wearAccentHex(prefs) to wearAccentGradient(prefs) }
+        }
+
+        setting.pickGradient(0xFF2D55, 0xFF9500)
+        setting.pick(0x34C759)
+
+        assertEquals(
+            listOf(
+                "#FF2D55" to WearAccentGradient("#FF9500", 5),
+                "#34C759" to null,
+            ),
+            sent,
+        )
+        listening.cancel()
+    }
+
     @Test
     fun `with the wallpaper picked the watch is sent the gradient last picked`() {
         AccentSetting(prefs).apply {
