@@ -123,6 +123,17 @@ class ClassTableImportViewModel @Inject constructor(
         _session.value = null
     }
 
+    /**
+     * A link opens another page over the import: it ends, as its Close does, unless the person is
+     * being written ([ClassTableImportModel.staysForLink]). A share link still waiting goes either
+     * way, as the link that came after it wins.
+     */
+    fun closeForLink() {
+        if (_session.value?.staysForLink() != true) return end()
+        pendingLink?.cancel()
+        pendingLink = null
+    }
+
     /** Reads the QR codes in the picture the photo picker returned. */
     fun readPicture(uri: Uri) {
         _session.value?.readImage {

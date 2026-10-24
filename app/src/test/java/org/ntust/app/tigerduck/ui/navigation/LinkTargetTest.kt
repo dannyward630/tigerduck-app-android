@@ -53,6 +53,17 @@ class LinkTargetTest {
             NavHost(navController = navController, startDestination = Screen.ClassTable.route) {
                 composable(Screen.ClassTable.route) {}
                 composable(
+                    Screen.AnnouncementDetail.route,
+                    arguments = listOf(navArgument("id") { type = NavType.IntType }),
+                ) {}
+                composable(
+                    Screen.SchoolMailMessage.route,
+                    arguments = listOf(
+                        navArgument("folder") { type = NavType.StringType },
+                        navArgument("uid") { type = NavType.LongType },
+                    ),
+                ) {}
+                composable(
                     Screen.Assignment.route,
                     arguments = listOf(navArgument(MoodleRoutes.ARG_ASSIGNMENT_ID) { type = NavType.StringType }),
                 ) {}
@@ -83,6 +94,25 @@ class LinkTargetTest {
     fun `a link to the page on screen names it`() {
         assertTrue(showsPage(Screen.ClassTable.route))
         assertFalse(showsPage(Screen.Home.route))
+    }
+
+    /** A link to the bulletin on screen leaves it, and what is over it, as they are. */
+    @Test
+    fun `a bulletin link names the bulletin on screen`() {
+        open(Screen.AnnouncementDetail.route(7))
+
+        assertTrue(showsPage(Screen.AnnouncementDetail.route(7)))
+        assertFalse("another bulletin is another page", showsPage(Screen.AnnouncementDetail.route(8)))
+    }
+
+    /** As School Mail's notification writes it, with the folder's name encoded. */
+    @Test
+    fun `a mail link names the mail on screen`() {
+        open(Screen.SchoolMailMessage.route("Sent Items", 42))
+
+        assertTrue(showsPage(Screen.SchoolMailMessage.route("Sent Items", 42)))
+        assertFalse("another mail is another page", showsPage(Screen.SchoolMailMessage.route("Sent Items", 43)))
+        assertFalse("so is one in another folder", showsPage(Screen.SchoolMailMessage.route("INBOX", 42)))
     }
 
     @Test

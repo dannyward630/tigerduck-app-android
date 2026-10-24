@@ -291,6 +291,65 @@ class ClassTableImportModelTest {
         assertEquals(listOf("B11300001"), saved.people.map { it.nickname })
         assertEquals(saved.people.single().id, saved.shownPersonId)
     }
+
+    /**
+     * A link from a reminder, a bulletin or School Mail opens another page while the person is
+     * being written, which nothing stops: the import stays until it ends saved, and then leaves the
+     * link's page on screen rather than show the class table over it.
+     */
+    @Test
+    fun `a link while the person is being written leaves the import to end saved, off the class table`() = runTest {
+        val storeThread = HeldDispatcher()
+        val slowStore = ImportedClassTableStore({ storeFile }, { account }, storeThread)
+        val model = ClassTableImportModel(slowStore, { account }, { current }, { _, _ -> listOf(calculus) }, this)
+        model.imageRead(listOf(mingCode))
+        model.importPending()
+        advanceUntilIdle()
+        assertTrue(model.state.value.isSaving)
+
+        // Read before the write is let go, and checked after: a write held for good would hold
+        // the test with it.
+        val stays = model.staysForLink()
+        storeThread.release()
+        advanceUntilIdle()
+
+        assertTrue(stays)
+        assertTrue(model.state.value.isFinished)
+        assertTrue(model.state.value.leftForLink)
+        assertEquals(listOf("B11300001"), slowStore.tables.value.people.map { it.nickname })
+    }
+
+    /** The import stays over the link's page then, so a write that fails still says so, with a retry. */
+    @Test
+    fun `a write that fails after a link says so`() = runTest {
+        val obstacle = File(context.noBackupFilesDir, "obstacle").apply { parentFile!!.mkdirs(); writeText("") }
+        storeFile = File(obstacle, "imported_class_tables.json")
+        val storeThread = HeldDispatcher()
+        val slowStore = ImportedClassTableStore({ storeFile }, { account }, storeThread)
+        val model = ClassTableImportModel(slowStore, { account }, { current }, { _, _ -> listOf(calculus) }, this)
+        model.imageRead(listOf(mingCode))
+        model.importPending()
+        advanceUntilIdle()
+
+        val stays = model.staysForLink()
+        storeThread.release()
+        advanceUntilIdle()
+
+        assertTrue(stays)
+        assertTrue(model.state.value.prompt is Prompt.SaveFailed)
+        assertFalse(model.state.value.isFinished)
+        obstacle.delete()
+    }
+
+    /** Before the write, a link calls the import off as its Close does. */
+    @Test
+    fun `a link before the person is being written does not keep the import`() = runTest {
+        val model = model()
+        model.imageRead(listOf(mingCode))
+
+        assertFalse(model.staysForLink())
+        assertFalse(model.state.value.leftForLink)
+    }
 }
 
 /** Holds what is dispatched to it until [release] runs it, as a busy I/O thread would. */
