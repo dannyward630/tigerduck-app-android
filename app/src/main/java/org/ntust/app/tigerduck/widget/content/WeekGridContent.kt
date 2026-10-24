@@ -471,6 +471,8 @@ private fun ConflictCell(
 ) {
     val context = LocalContext.current
     val density = context.resources.displayMetrics.density
+    // The L-shapes' corners, at the widget display size as the other tiles' are.
+    val shapeDensity = density * LocalWidgetScale.current.ui
     val widthPx = ((blockWidth - 2.dp.scaled).value * density).toInt().coerceAtLeast(1)
     val heightPx = (blockHeight.value * density).toInt().coerceAtLeast(1)
 
@@ -490,21 +492,21 @@ private fun ConflictCell(
     // and inflate the RemoteViews payload toward the Binder 1 MB limit.
     val fillA = weekCourseFill(cell.courseA, highlightA, colors, style, courseColors)
     val fillB = weekCourseFill(cell.courseB, highlightB, colors, style, courseColors)
-    val bitmapA = remember(cell, widthPx, heightPx, density, fillA) {
+    val bitmapA = remember(cell, widthPx, heightPx, shapeDensity, fillA) {
         renderConflictLayer(
             clusterWidthPx = widthPx,
             clusterHeightPx = heightPx,
-            densityFactor = density,
+            densityFactor = shapeDensity,
             cell = cell,
             course = LayerCourse.A,
             fillColor = fillA,
         )
     }
-    val bitmapB = remember(cell, widthPx, heightPx, density, fillB) {
+    val bitmapB = remember(cell, widthPx, heightPx, shapeDensity, fillB) {
         renderConflictLayer(
             clusterWidthPx = widthPx,
             clusterHeightPx = heightPx,
-            densityFactor = density,
+            densityFactor = shapeDensity,
             cell = cell,
             course = LayerCourse.B,
             fillColor = fillB,

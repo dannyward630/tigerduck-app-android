@@ -2,12 +2,18 @@ package org.ntust.app.tigerduck.widget
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.RemoteViews
 import android.widget.TextView
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.glance.ExperimentalGlanceApi
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.SizeMode
@@ -22,9 +28,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.DisplayScale
+import org.ntust.app.tigerduck.shared.Course
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * The widgets at the display size and text size picked for them: their type
@@ -131,6 +139,69 @@ class WidgetScaleTest {
         val after = textSize(draw(LibraryShortcutWidget(preferencesOf = { prefs })), "Library")
 
         assertEquals(before * 0.8f, after, 0.01f)
+    }
+
+    private fun weekWidget(courses: List<Course>) = object : BaseClassTableWidget(
+        WidgetLayout.Week,
+        preferencesOf = { prefs },
+        loadState = {
+            WidgetState(
+                courses = courses,
+                activeWeekdays = listOf(1),
+                activePeriodIds = listOf("1", "2", "3"),
+                currentWeekday = 3,
+                currentMinuteOfDay = 7 * 60,
+                isLoggedIn = true,
+                isQuietToday = false,
+                ongoingBlocks = emptyList(),
+                nextTodayBlock = null,
+                tomorrowFirstCourseNo = null,
+                tomorrowFirstCourseWeekday = null,
+                tomorrowFirstCoursePeriodId = null,
+                courseColors = emptyMap(),
+                courseNameScale = 1f,
+            )
+        },
+    ) {}
+
+    /** The first conflict layer's top left corner: how many of its pixels are left clear by the rounding. */
+    @OptIn(ExperimentalGlanceApi::class)
+    private fun conflictCornerClearPixels(): Int = runBlocking {
+        val widget = weekWidget(
+            listOf(
+                Course.fromSchedule("CS1001301", "Calculus", schedule = mapOf(1 to listOf("1", "2"))),
+                Course.fromSchedule("CS1002301", "Physics", schedule = mapOf(1 to listOf("2", "3"))),
+            ),
+        )
+        val views: RemoteViews = withTimeout(10_000) {
+            widget.runComposition(app, sizes = listOf(DpSize(240.dp, 240.dp)))
+                .first { layers(it.apply(app, FrameLayout(app))).isNotEmpty() }
+        }
+        val layer = layers(views.apply(app, FrameLayout(app))).first()
+        (0 until 12).sumOf { x -> (0 until 12).count { y -> Color.alpha(layer.getPixel(x, y)) < 128 } }
+    }
+
+    private fun layers(view: View): List<Bitmap> {
+        val out = mutableListOf<Bitmap>()
+        fun walk(v: View) {
+            ((v as? ImageView)?.drawable as? BitmapDrawable)?.bitmap?.let { out += it }
+            if (v is ViewGroup) for (i in 0 until v.childCount) walk(v.getChildAt(i))
+        }
+        walk(view)
+        return out
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Config(qualifiers = "xhdpi")
+    fun `a conflict's corners round at the widget display size, as the other tiles' do`() {
+        val before = conflictCornerClearPixels()
+
+        prefs.setDisplayScale(DisplayScale.WidgetUi, 1.3f)
+        val after = conflictCornerClearPixels()
+
+        assertTrue("$before -> $after", before > 0)
+        assertTrue("$before -> $after", after > before * 1.4)
     }
 
     @Test

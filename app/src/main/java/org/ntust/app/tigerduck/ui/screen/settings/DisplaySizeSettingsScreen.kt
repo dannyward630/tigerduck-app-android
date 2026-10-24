@@ -51,6 +51,7 @@ import java.util.Locale
 import kotlin.math.roundToInt
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.preferences.DisplayScale
+import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.component.ContentCard
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
 import org.ntust.app.tigerduck.ui.component.SectionHeader
@@ -100,7 +101,6 @@ internal fun DisplaySizeContent(
     // it is let go, which for the app's makes a new Activity.
     val dragged = remember(picked) { mutableStateMapOf<DisplayScale, Float>().apply { putAll(picked) } }
     fun current(scale: DisplayScale) = dragged[scale] ?: DisplayScale.DEFAULT
-    fun stored(scale: DisplayScale) = picked[scale] ?: DisplayScale.DEFAULT
 
     @Composable
     fun slider(scale: DisplayScale, label: String) = ScaleSlider(
@@ -140,15 +140,17 @@ internal fun DisplaySizeContent(
         ) {
             item { SectionHeader(stringResource(R.string.settings_font_size_preview_section)) }
             item {
-                // The Activity already draws at the stored sizes, so the
-                // preview draws at the dragged ones relative to them.
-                val density = LocalDensity.current
-                val previewDensity = Density(
-                    density = density.density * current(DisplayScale.AppUi) / stored(DisplayScale.AppUi),
-                    fontScale = density.fontScale * current(DisplayScale.AppText) / stored(DisplayScale.AppText),
+                // The application's context keeps the phone's own sizes, which
+                // the Activity's are laid over.
+                val phone = LocalContext.current.applicationContext.resources
+                val preview = previewDensity(
+                    systemDensity = phone.displayMetrics.density,
+                    systemFontScale = phone.configuration.fontScale,
+                    ui = current(DisplayScale.AppUi),
+                    text = current(DisplayScale.AppText),
                 )
                 ContentCard {
-                    CompositionLocalProvider(LocalDensity provides previewDensity) {
+                    CompositionLocalProvider(LocalDensity provides preview) {
                         DisplaySizePreview()
                     }
                 }
@@ -320,3 +322,12 @@ private fun Footnote(text: String) {
 /** [scale] as a percentage in [locale]'s way of writing one: 100%, 100 %, %100. */
 internal fun percentLabel(scale: Float, locale: Locale): String =
     NumberFormat.getPercentInstance(locale).format(scale.toDouble())
+
+/**
+ * The density the preview draws at for the [ui] and [text] sizes a slider is
+ * on: over the phone's own, [systemDensity] and [systemFontScale], as the
+ * app's configuration will be, the font scale capped as [AppScale.fontScale]
+ * caps it.
+ */
+internal fun previewDensity(systemDensity: Float, systemFontScale: Float, ui: Float, text: Float): Density =
+    Density(systemDensity * ui, AppScale(ui, text).fontScale(systemFontScale))

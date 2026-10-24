@@ -17,6 +17,7 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.ui.screen.settings.previewDensity
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -105,6 +106,45 @@ class AppScaleTest {
         assertFalse(AppScale(1.2f, 1f).isStale(attached, phone()))
         // The text size alone lays no screen size over the phone's.
         assertFalse(AppScale(1f, 1.3f).isStale(attached, rotated))
+    }
+
+    /**
+     * On a phone AppCompat wraps the base context to apply its own night mode
+     * and locales, carrying over what a wrapped base changed as a delta of its
+     * configuration. Robolectric skips that branch, so the delta is taken here
+     * as AppCompat takes it.
+     */
+    @Test
+    fun `AppCompat's delta of a wrapped base carries the sizes over`() {
+        val base = AppScale(1.2f, 1.3f).wrap(context)
+        val reference = base.createConfigurationContext(
+            Configuration().apply {
+                uiMode = -1
+                fontScale = 0f
+            },
+        ).resources.configuration
+        val baseConfig = base.resources.configuration
+        reference.uiMode = baseConfig.uiMode
+        val generateConfigDelta = Class.forName("androidx.appcompat.app.AppCompatDelegateImpl")
+            .getDeclaredMethod("generateConfigDelta", Configuration::class.java, Configuration::class.java)
+            .apply { isAccessible = true }
+
+        val delta = generateConfigDelta.invoke(null, reference, baseConfig) as Configuration
+
+        assertEquals(504, delta.densityDpi)
+        assertEquals(1.3f, delta.fontScale, 0.0001f)
+        assertEquals(342, delta.screenWidthDp)
+        assertEquals(742, delta.screenHeightDp)
+        assertEquals(342, delta.smallestScreenWidthDp)
+    }
+
+    @Test
+    fun `the preview draws at the dragged sizes over the phone's, capped as the app is`() {
+        val preview = previewDensity(systemDensity = 2.625f, systemFontScale = 1.8f, ui = 1.2f, text = 1.5f)
+
+        assertEquals(3.15f, preview.density, 0.0001f)
+        assertEquals(2f, preview.fontScale, 0.0001f)
+        assertEquals(1.8f, previewDensity(2.625f, 1.8f, ui = 1f, text = 1f).fontScale, 0.0001f)
     }
 
     @Test
