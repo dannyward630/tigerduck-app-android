@@ -216,6 +216,31 @@ class AccountSessionEffectsTest {
     }
 
     @Test
+    fun `a sign-out before the watcher first runs is not taken for where it started`() {
+        val scheduler = kotlinx.coroutines.test.TestCoroutineScheduler()
+        val late = CoroutineScope(kotlinx.coroutines.test.StandardTestDispatcher(scheduler))
+        signedIn.flow.value = AccountState(true, changes = 0)
+        AccountSessionEffects(
+            context = context,
+            accountState = signedIn.flow,
+            signIns = signIns,
+            assignmentReminders = assignmentReminders,
+            refreshLiveUpdates = { liveUpdates += "refresh" },
+            stopLiveUpdates = { liveUpdates += "stop" },
+            clearBrowser = { browserClears += signedIn.value },
+            browserClearingOwed = { false },
+        ).start(late)
+
+        // Signed out as the app starts, before the watcher has run once.
+        signedIn.value = false
+        scheduler.runCurrent()
+
+        assertEquals(listOf("stop"), liveUpdates)
+        assertEquals(listOf(false), browserClears)
+        late.cancel()
+    }
+
+    @Test
     fun `a sign-out stops the Live Update and a sign-in brings it back`() {
         effects(startSignedIn = true)
 

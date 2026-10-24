@@ -99,20 +99,13 @@ class AuthService @Inject constructor(
      * Update on one made it vanish after each reboot or background kill until
      * the user signed in by hand.
      */
-    private val _authState = MutableStateFlow(demoMode || credentials.ntustStudentId != null)
-    val authState: StateFlow<Boolean> = _authState
-
-    private val _accountState = MutableStateFlow(AccountState(_authState.value, changes = 0))
+    private val signedInState = SignedInState(demoMode || credentials.ntustStudentId != null)
+    val authState: StateFlow<Boolean> = signedInState.signedIn
 
     /** [authState] with its changes counted, for what must follow every one of them; see [AccountState]. */
-    val accountState: StateFlow<AccountState> = _accountState
+    val accountState: StateFlow<AccountState> = signedInState.counted
 
-    /** The one way [authState] changes, counted in [accountState]. */
-    private fun setSignedIn(signedIn: Boolean) = synchronized(_accountState) {
-        if (_authState.value == signedIn) return@synchronized
-        _accountState.value = AccountState(signedIn, _accountState.value.changes + 1)
-        _authState.value = signedIn
-    }
+    private fun setSignedIn(signedIn: Boolean) = signedInState.set(signedIn)
 
     private val loginMutex = Mutex()
 

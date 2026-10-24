@@ -61,12 +61,13 @@ class AccountSessionEffects internal constructor(
 
     /** Follows the sign-in state on [scope] for the life of the process. */
     fun start(scope: CoroutineScope) {
+        // Where it starts is read now, not when the watcher first runs: a sign-out in between is a change.
+        var seen = accountState.value
         scope.launch {
-            var seen: AccountState? = null
             accountState.collect { now ->
                 val before = seen
                 seen = now
-                if (before == null || now.changes == before.changes) return@collect
+                if (now.changes == before.changes) return@collect
                 // Seen late, a sign-out and a sign-in in between are two changes to the same value.
                 if (before.signedIn || now.changes - before.changes > 1) onSignedOut(scope)
                 if (now.signedIn) onSignedIn(scope)
