@@ -3,6 +3,11 @@ package org.ntust.app.tigerduck.network.tls
 import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.robolectric.annotation.Config
 
 /** The phone's pin manager: the document (A5), a mismatch's outcome (A4) and Continue (A6). */
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
 class PinManagerTest {
@@ -44,6 +50,7 @@ class PinManagerTest {
     private fun manager(
         client: PinDocumentSource = PinDocumentSource { _ -> fetches.incrementAndGet(); served.removeFirstOrNull() },
         executor: Executor = direct,
+        clock: () -> Long = { now },
     ): PinManager {
         val verifier = PinDocumentVerifier(signer.keys) { Instant.ofEpochMilli(now) }
         return PinManager(
@@ -52,7 +59,7 @@ class PinManagerTest {
             client = client,
             verifier = verifier,
             versionCode = 30,
-            clock = { now },
+            clock = clock,
             isForeground = { foreground },
             executor = executor,
         )
@@ -255,4 +262,46 @@ class PinManagerTest {
             stalled.countDown()
         }
     }
+
+    @Test
+    fun `while the app stays in use, the document is fetched every 6 hours, and not once it leaves`() = runTest {
+        val start = now
+        val pins = manager(clock = { start + testScheduler.currentTime })
+        val inUse = launch { pins.keepFresh() }
+        runCurrent()
+        assertEquals("on coming to the foreground", 1, fetches.get())
+
+        advanceTimeBy(6 * HOUR_MS - 60_000)
+        runCurrent()
+        assertEquals(1, fetches.get())
+        advanceTimeBy(120_000)
+        runCurrent()
+        assertEquals("6 hours on, still in use", 2, fetches.get())
+        advanceTimeBy(6 * HOUR_MS)
+        runCurrent()
+        assertEquals(3, fetches.get())
+
+        inUse.cancel()
+        advanceTimeBy(24 * HOUR_MS)
+        runCurrent()
+        assertEquals("in the background", 3, fetches.get())
+    }
+
+    @Test
+    fun `coming back within 6 hours of the last fetch waits out the rest of them`() = runTest {
+        val start = now
+        val pins = manager(clock = { start + testScheduler.currentTime })
+        launch { pins.keepFresh() }.also { runCurrent() }.cancel()
+        advanceTimeBy(HOUR_MS)
+
+        val inUse = launch { pins.keepFresh() }
+        runCurrent()
+        assertEquals(1, fetches.get())
+        advanceTimeBy(5 * HOUR_MS + 60_000)
+        runCurrent()
+        assertEquals(2, fetches.get())
+        inUse.cancel()
+    }
 }
+
+private const val HOUR_MS = 60L * 60 * 1000

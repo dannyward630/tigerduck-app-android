@@ -2,9 +2,9 @@ package org.ntust.app.tigerduck
 
 import android.app.Application
 import androidx.hilt.work.HiltWorkerFactory
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.work.Configuration
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
@@ -141,14 +141,12 @@ class TigerDuckApp : Application(), Configuration.Provider {
         fcmBootstrap.start()
         warnIfPinsNearExpiry()
 
-        // TLS pins (TLS pins spec, A5, A6 and A8): TigerSync's document at each start to the
-        // foreground, at most every 6 hours; the watch told of every new document and
-        // acceptance; and after a Continue, a sync, as after a network error.
-        ProcessLifecycleOwner.get().lifecycle.addObserver(
-            object : DefaultLifecycleObserver {
-                override fun onStart(owner: LifecycleOwner) = pinManager.refreshIfDue()
-            },
-        )
+        // TLS pins (TLS pins spec, A5, A6 and A8): TigerSync's document on coming to the
+        // foreground and every 6 hours while the app stays there; the watch told of every new
+        // document and acceptance; and after a Continue, a sync, as after a network error.
+        appScope.launch(Dispatchers.Main) {
+            ProcessLifecycleOwner.get().lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { pinManager.keepFresh() }
+        }
         appScope.launch { wearBridge.publishTlsPins() }
         appScope.launch { pinManager.changes.collect { wearBridge.publishTlsPins() } }
         appScope.launch {

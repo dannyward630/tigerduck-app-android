@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ProcessLifecycleOwner
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -122,7 +123,21 @@ class PinManager internal constructor(
     fun refreshIfDue() {
         val last = lastFetchAt.get()
         if (last != 0L && clock() - last in 0 until REFRESH_INTERVAL_MS) return
+        // Marked at once, so a check meanwhile starts no second fetch.
+        if (!lastFetchAt.compareAndSet(last, clock())) return
         executor.execute { refresh() }
+    }
+
+    /**
+     * While the app is in use (A5): the document fetched on coming to the foreground if it is
+     * due, then each time it falls due, every 6 hours, until leaving the foreground cancels this.
+     */
+    suspend fun keepFresh() {
+        while (true) {
+            refreshIfDue()
+            val since = clock() - lastFetchAt.get()
+            delay((REFRESH_INTERVAL_MS - since).coerceIn(MIN_RECHECK_MS, REFRESH_INTERVAL_MS))
+        }
     }
 
     /** What [org.ntust.app.tigerduck.shared.tls.PinnedTrustManager] reports, from the handshake's thread. */
@@ -201,6 +216,9 @@ class PinManager internal constructor(
     private companion object {
         const val TAG = "TlsPins"
         const val REFRESH_INTERVAL_MS = 6L * 60 * 60 * 1000
+
+        /** The least a wait for the next fetch lasts, should the clock jump. */
+        const val MIN_RECHECK_MS = 60_000L
 
         /** The fetch's own timeout is 10 s. */
         const val REFRESH_WAIT_MS = 12_000L
