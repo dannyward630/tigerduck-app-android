@@ -61,6 +61,15 @@ object BrowserRouting {
         return LOGOUT_PATHS.any { path -> segments.size >= path.size && segments.subList(0, path.size) == path }
     }
 
+    /**
+     * Whether a frame's navigation must not go: one to Moodle's logout, the redirect a frame is sent
+     * on included, which `shouldOverrideUrlLoading` is asked about where `shouldInterceptRequest`
+     * is not. A script's fetch that a server redirects there is seen by neither; it would need the
+     * session's own key (`sesskey`, or SSO's session ID for auth_oidc's), which only Moodle's pages
+     * hold, and they send their logout as a page's navigation.
+     */
+    fun blocksFrameNavigation(url: String): Boolean = isMoodleLogout(url)
+
     private val LOGOUT_PATHS = listOf(listOf("login", "logout.php"), listOf("auth", "oidc", "logout.php"))
 
     private fun scheme(url: String): String? = url.substringBefore(':', "").takeIf { it.isNotEmpty() }?.lowercase()

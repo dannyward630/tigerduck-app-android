@@ -23,14 +23,20 @@ object BrowserPageScripts {
 
     /**
      * Hides Moodle's logout: every link to it, and every form that posts to it (its sign-in page's
-     * "Log out" button). Moodle's session ends when TigerDuck signs out, which clears the browser;
-     * a logout inside would only leave the student at a sign-in the next open may have no key for.
-     * A stylesheet, so the user menu Moodle draws later is matched as well. The address itself is
-     * refused besides ([BrowserRouting.isMoodleLogout]).
+     * "Log out" button), by where the link goes, so a link that only names the logout in its query
+     * stays; Moodle writes its own links in full. Moodle's session ends when TigerDuck signs out,
+     * which clears the browser; a logout inside would only leave the student at a sign-in the next
+     * open may have no key for. A stylesheet, so the user menu Moodle draws later is matched as
+     * well. The address itself is refused besides ([BrowserRouting.isMoodleLogout]).
      */
     const val HIDE_LOGOUT = """(function() {
   var style = document.createElement('style');
-  style.textContent = 'a[href*="logout.php"], form[action*="logout.php"] { display: none !important; }';
+  style.textContent =
+    'a[href^="https://moodle2.ntust.edu.tw/login/logout.php"], a[href^="/login/logout.php"], ' +
+    'a[href^="https://moodle2.ntust.edu.tw/auth/oidc/logout.php"], a[href^="/auth/oidc/logout.php"], ' +
+    'form[action^="https://moodle2.ntust.edu.tw/login/logout.php"], form[action^="/login/logout.php"], ' +
+    'form[action^="https://moodle2.ntust.edu.tw/auth/oidc/logout.php"], form[action^="/auth/oidc/logout.php"] ' +
+    '{ display: none !important; }';
   (document.head || document.documentElement).appendChild(style);
 })();"""
 
