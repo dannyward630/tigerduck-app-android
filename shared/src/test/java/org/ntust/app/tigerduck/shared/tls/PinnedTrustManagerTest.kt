@@ -7,103 +7,73 @@ import okhttp3.tls.HeldCertificate
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import java.io.IOException
-import java.net.InetAddress
-import java.net.Socket
-import java.security.MessageDigest
-import java.security.cert.CertificateException
-import java.security.cert.X509Certificate
-import java.util.Base64
+import java.time.Instant
 import java.util.Collections
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
-import javax.net.ssl.SSLEngine
-import javax.net.ssl.SSLServerSocket
-import javax.net.ssl.SSLSocket
 import javax.net.ssl.X509ExtendedTrustManager
-import kotlin.concurrent.thread
 
 /**
- * [PinnedTrustManager] over a real handshake with a local TLS server and hand-made certificates.
- * A test root stands in for the system's certificate authorities, and [platform] for the
- * platform's network_security_config.xml check: the root's trust, plus pins on the hosts a
- * pin-set covers.
+ * [PinnedTrustManager] over real handshakes with a local TLS server and hand-made certificates
+ * (A12, enforcement). A test root stands in for the system's certificate authorities; the
+ * platform's check is that root's trust, and [AnchoringValidator] builds the chain up to it as
+ * the platform does.
  */
 class PinnedTrustManagerTest {
 
-    private val root = HeldCertificate.Builder().certificateAuthority(0).commonName("Test Root").build()
+    private val root = HeldCertificate.Builder().certificateAuthority(1).commonName("Test Root").build()
+    private val intermediate = HeldCertificate.Builder().certificateAuthority(0).commonName("Test CA").signedBy(root).build()
 
-    /** The certificate the pins were made from. */
-    private val pinnedLeaf = leafSignedBy(root)
+    /** The intermediate the pins name, which the server doesn't serve. */
+    private val pinnedCa = HeldCertificate.Builder().certificateAuthority(0).commonName("Pinned CA").signedBy(root).build()
 
-    /** The school's renewal: the same name, a new key, from the same trusted root. */
-    private val renewedLeaf = leafSignedBy(root)
+    /** A later renewal through yet another intermediate under the same root. */
+    private val renewalCa = HeldCertificate.Builder().certificateAuthority(0).commonName("Renewal CA").signedBy(root).build()
 
-    /** No system authority vouches for this one. */
+    private val leaf = leafSignedBy(intermediate)
     private val selfSigned = HeldCertificate.Builder().addSubjectAlternativeName(HOST).build()
 
-    private val systemOnly: X509ExtendedTrustManager =
-        HandshakeCertificates.Builder().addTrustedCertificate(root.certificate).build().trustManager
-            as X509ExtendedTrustManager
+    private val systemTrust: X509ExtendedTrustManager =
+        HandshakeCertificates.Builder().addTrustedCertificate(root.certificate).build().trustManager as X509ExtendedTrustManager
 
-    private val pins = setOf(pinnedLeaf.certificate.spki)
-
-    private val platform = object : X509ExtendedTrustManager() {
-        private fun pinned(chain: Array<X509Certificate>) {
-            if (chain.none { it.spki in pins }) throw CertificateException("Pin verification failed")
-        }
-
-        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String, socket: Socket?) {
-            systemOnly.checkServerTrusted(chain, authType, socket)
-            pinned(chain)
-        }
-
-        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String, engine: SSLEngine?) {
-            systemOnly.checkServerTrusted(chain, authType, engine)
-            pinned(chain)
-        }
-
-        override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
-            systemOnly.checkServerTrusted(chain, authType)
-            pinned(chain)
-        }
-
-        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String, socket: Socket?) = Unit
-        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String, engine: SSLEngine?) = Unit
-        override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) = Unit
-        override fun getAcceptedIssuers(): Array<X509Certificate> = systemOnly.acceptedIssuers
-    }
-
-    private val overridden = Collections.synchronizedSet(mutableSetOf<String>())
-    private val mismatches = Collections.synchronizedList(mutableListOf<Pair<String, String>>())
+    private val now = Instant.parse("2026-10-25T00:00:00Z")
+    private val mismatches = Collections.synchronizedList(mutableListOf<PinMismatch>())
     private val servers = mutableListOf<LocalTlsServer>()
 
     @After
     fun closeServers() = servers.forEach { it.close() }
 
-    private fun client(domains: List<PinnedDomains.Domain> = listOf(PinnedDomains.Domain(HOST, false))): OkHttpClient {
+    private fun set(pins: Set<String>, expiresAt: Instant = Instant.parse("2027-01-01T00:00:00Z")) =
+        PinSet("test", listOf(PinDomain(HOST, includeSubdomains = false)), pins, expiresAt)
+
+    private fun client(policy: PinPolicy): OkHttpClient {
         val tls = PinnedTls(
             PinnedTrustManager(
-                platform = platform,
-                systemOnly = { systemOnly },
-                overrides = { it in overridden },
-                onMismatch = { domain, host -> mismatches += domain to host },
-                domains = domains,
+                platform = systemTrust,
+                validator = AnchoringValidator(systemTrust),
+                policy = { policy },
+                onMismatch = { mismatches += it },
+                now = { now },
             ),
         )
-        return OkHttpClient.Builder()
-            .sslSocketFactory(tls.socketFactory, tls.trustManager)
+        return pinnedClientBuilder(tls)
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
             .retryOnConnectionFailure(false)
             .build()
     }
 
-    private fun serve(leaf: HeldCertificate, chain: List<X509Certificate> = emptyList()) =
-        LocalTlsServer(leaf, chain).also { servers += it }
+    private fun policy(set: PinSet, acceptances: List<PinAcceptance> = emptyList(), version: Long = 30) =
+        PinPolicy(builtIn = listOf(set), document = null, acceptances = acceptances, appVersion = version)
+
+    /** A server that leaves the root out of its chain, as most do. */
+    private fun serve(served: HeldCertificate = leaf, chain: HeldCertificate? = intermediate) =
+        LocalTlsServer(served, listOfNotNull(chain?.certificate)).also { servers += it }
 
     private fun OkHttpClient.get(server: LocalTlsServer): String =
         newCall(Request.Builder().url("https://$HOST:${server.port}/code").build()).execute().use { it.body.string() }
@@ -118,122 +88,99 @@ class PinnedTrustManagerTest {
         }
 
     @Test
-    fun `the pinned certificate is trusted`() {
-        val server = serve(pinnedLeaf)
+    fun `a chain with a pinned intermediate is allowed`() {
+        val server = serve()
 
-        assertEquals("ok", client().get(server))
+        assertEquals("ok", client(policy(set(setOf(intermediate.certificate.spki)))).get(server))
         assertTrue(mismatches.isEmpty())
     }
 
     @Test
-    fun `a renewal a system authority vouches for fails as a pin mismatch, before the request is written`() {
-        val server = serve(renewedLeaf)
+    fun `a root pin matches though the server doesn't send the root`() {
+        val server = serve()
 
-        val failure = client().failure(server)
+        assertEquals("ok", client(policy(set(setOf(root.certificate.spki)))).get(server))
+    }
 
-        assertTrue("not a pin mismatch: $failure", failure.isPinMismatch())
-        assertEquals(listOf(HOST to HOST), mismatches.toList())
+    @Test
+    fun `a system-valid chain sharing no pin fails as a mismatch, before the request is written`() {
+        val server = serve()
+
+        val failure = client(policy(set(setOf(pinnedCa.certificate.spki)))).failure(server)
+
+        val mismatch = checkNotNull(failure.pinMismatch()) { "not a pin mismatch: $failure" }
+        assertEquals("test", mismatch.setId)
+        assertEquals(HOST, mismatch.host)
+        // Validated up to the anchor the server left out.
+        assertEquals(listOf(leaf.certificate, intermediate.certificate, root.certificate), mismatch.chain)
+        assertEquals(root.certificate.spki, mismatch.anchorSpki)
+        assertEquals(1, mismatches.size)
         assertEquals(0, server.requestBytes.get())
     }
 
     @Test
-    fun `a certificate no system authority vouches for fails as the platform's own failure`() {
-        val server = serve(selfSigned)
+    fun `a chain system trust refuses fails as the platform failed, never as a mismatch`() {
+        val server = serve(selfSigned, chain = null)
 
-        val failure = client().failure(server)
+        val failure = client(policy(set(setOf(pinnedCa.certificate.spki)))).failure(server)
 
-        assertFalse("offered as a pin mismatch: $failure", failure.isPinMismatch())
+        assertNull(failure.pinMismatch())
         assertTrue(mismatches.isEmpty())
         assertEquals(0, server.requestBytes.get())
     }
 
     @Test
-    fun `a domain the student continued to takes the renewal`() {
-        overridden += HOST
-        val server = serve(renewedLeaf)
+    fun `a set past its expiry no longer enforces`() {
+        val server = serve()
 
-        assertEquals("ok", client().get(server))
-        assertTrue(mismatches.isEmpty())
+        val expired = set(setOf(pinnedCa.certificate.spki), expiresAt = now.minusSeconds(1))
+
+        assertEquals("ok", client(policy(expired)).get(server))
     }
 
     @Test
-    fun `continuing never lets in a certificate no system authority vouches for`() {
-        overridden += HOST
-        val server = serve(selfSigned)
+    fun `an accepted chain passes, and its acceptance holds no root`() {
+        val pins = set(setOf(pinnedCa.certificate.spki))
+        val mismatch = client(policy(pins)).failure(serve()).pinMismatch()!!
+        val acceptance = PinAcceptance("test", mismatch.acceptableSpkis, appVersion = 30, acceptedAt = 1L)
 
-        val failure = client().failure(server)
-
-        assertFalse(failure.isPinMismatch())
-        assertEquals(0, server.requestBytes.get())
+        assertEquals(setOf(leaf.certificate.spki, intermediate.certificate.spki), acceptance.spkis)
+        assertFalse(root.certificate.spki in acceptance.spkis)
+        assertEquals("ok", client(policy(pins, listOf(acceptance))).get(serve()))
     }
 
     @Test
-    fun `a host no pin-set covers is never offered a way past a failure`() {
-        val server = serve(renewedLeaf)
+    fun `an acceptance doesn't trust another intermediate under the same root`() {
+        val pins = set(setOf(pinnedCa.certificate.spki))
+        val mismatch = client(policy(pins)).failure(serve()).pinMismatch()!!
+        val acceptance = PinAcceptance("test", mismatch.acceptableSpkis, appVersion = 30, acceptedAt = 1L)
+        // A further CA change, under the root the acceptance never stored.
+        val renewed = serve(leafSignedBy(renewalCa), chain = renewalCa)
 
-        val failure = client(domains = listOf(PinnedDomains.Domain("other.test", false))).failure(server)
-
-        assertFalse(failure.isPinMismatch())
-        assertTrue(mismatches.isEmpty())
+        assertNotNull(client(policy(pins, listOf(acceptance))).failure(renewed).pinMismatch())
     }
 
     @Test
-    fun `a continued domain doesn't cover another`() {
-        overridden += "other.test"
-        val server = serve(renewedLeaf)
+    fun `an acceptance made under another build number is dropped`() {
+        val pins = set(setOf(pinnedCa.certificate.spki))
+        val mismatch = client(policy(pins)).failure(serve()).pinMismatch()!!
+        val acceptance = PinAcceptance("test", mismatch.acceptableSpkis, appVersion = 29, acceptedAt = 1L)
 
-        assertTrue(client().failure(server).isPinMismatch())
+        assertNotNull(client(policy(pins, listOf(acceptance), version = 30)).failure(serve()).pinMismatch())
     }
 
-    private class LocalTlsServer(leaf: HeldCertificate, chain: List<X509Certificate>) : AutoCloseable {
-        private val socket = HandshakeCertificates.Builder()
-            .heldCertificate(leaf, *chain.toTypedArray())
-            .build()
-            .sslContext()
-            .serverSocketFactory
-            .createServerSocket(0, 1, InetAddress.getLoopbackAddress()) as SSLServerSocket
+    @Test
+    fun `a host no set covers gets system trust alone`() {
+        val server = serve()
+        val elsewhere = PinSet("other", listOf(PinDomain("other.test", false)), setOf(pinnedCa.certificate.spki), now.plusSeconds(3600))
 
-        val port: Int = socket.localPort
-
-        /** The bytes of request a client sent once its handshake was through. */
-        val requestBytes = AtomicInteger()
-
-        init {
-            thread(isDaemon = true) {
-                while (!socket.isClosed) {
-                    val client = runCatching { socket.accept() as SSLSocket }.getOrNull() ?: break
-                    runCatching {
-                        client.use {
-                            it.soTimeout = 5_000
-                            it.startHandshake()
-                            val input = it.inputStream
-                            val head = StringBuilder()
-                            while (!head.endsWith("\r\n\r\n")) {
-                                val b = input.read()
-                                if (b < 0) break
-                                requestBytes.incrementAndGet()
-                                head.append(b.toChar())
-                            }
-                            it.outputStream.write(
-                                "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".toByteArray(),
-                            )
-                            it.outputStream.flush()
-                        }
-                    }
-                }
-            }
-        }
-
-        override fun close() = socket.close()
+        assertEquals("ok", client(policy(elsewhere)).get(server))
     }
 
     private companion object {
         const val HOST = "localhost"
 
-        fun leafSignedBy(root: HeldCertificate): HeldCertificate =
-            HeldCertificate.Builder().addSubjectAlternativeName(HOST).signedBy(root).build()
-
-        val X509Certificate.spki: String
-            get() = Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(publicKey.encoded))
+        fun leafSignedBy(issuer: HeldCertificate): HeldCertificate =
+            HeldCertificate.Builder().addSubjectAlternativeName(HOST).signedBy(issuer).build()
     }
 }

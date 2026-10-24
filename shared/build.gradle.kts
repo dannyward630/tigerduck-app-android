@@ -24,6 +24,10 @@ android {
 
 dependencies {
     implementation(libs.gson)
+    // Ed25519 for the TLS pin document's signature (PinDocumentVerifier). Conscrypt has no
+    // Ed25519 on every Android version minSdk 29 covers; the lightweight API is used directly,
+    // with no JCA provider installed.
+    implementation(libs.bouncycastle.bcprov)
     // Library QR client is shared so the watch can call api.lib.ntust.edu.tw
     // directly without duplicating the request/response wire schema.
     implementation(libs.okhttp)

@@ -86,19 +86,18 @@ object WearProtocol {
     }
 
     /**
-     * The pinned domains the student chose on the phone to continue to past a certificate
-     * that stopped matching its pins, phone → watch, so the watch's library calls follow. Each
-     * domain comes with the moment the student chose it, so the watch can tell a choice it
-     * already acted on from a new one; one the phone no longer sends is over.
+     * TLS pins phone → watch (TLS pins spec, A8): the pin document the phone verified, as
+     * the envelope bytes it received, for the watch to verify again with its own keys, and the
+     * student's acceptances. The watch applies an acceptance until its own app version changes.
      */
-    object PinOverrides {
-        const val PATH = "/tigerduck/pin_overrides"
+    object TlsPins {
+        const val PATH = "/tigerduck/tls_pins"
 
-        /** The domains, as `PinnedDomains` names them. */
-        const val KEY_DOMAINS = "domains"
+        /** The verified envelope's exact bytes; absent while the phone holds no document. */
+        const val KEY_ENVELOPE = "envelope"
 
-        /** Wall-clock ms the student chose each of [KEY_DOMAINS], in the same order. */
-        const val KEY_ACCEPTED_AT = "acceptedAtMs"
+        /** The acceptances, as [org.ntust.app.tigerduck.shared.tls.PinAcceptances] encodes them. */
+        const val KEY_ACCEPTANCES = "acceptances"
     }
 
     /** Debug-clock override pushed phone → watch (debug builds only). */

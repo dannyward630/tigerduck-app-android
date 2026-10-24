@@ -1,0 +1,99 @@
+package org.ntust.app.tigerduck.shared.tls
+
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicReference
+
+/**
+ * A student's Continue on a pin set (TLS pins spec, A6): the SPKIs of the leaf and the
+ * intermediates of the validated chain then served, never the root's (D17), kept for that set
+ * while [appVersion], the build number (versionCode) it was made under, is the running one.
+ */
+data class PinAcceptance(
+    val setId: String,
+    val spkis: Set<String>,
+    val appVersion: Long,
+    val acceptedAt: Long,
+)
+
+/** What enforcement made of a pinned host's validated chain. */
+sealed interface PinDecision {
+    /** The chain matches the set's effective pins, or the set has expired. */
+    data object Allowed : PinDecision
+
+    /** The chain shares no SPKI with the set's effective pins. */
+    data class Mismatch(val set: PinSet) : PinDecision
+}
+
+/**
+ * The pins in force (A4): per set, a valid TigerSync document's pins when its serial is above the
+ * built-in table's [baselineSerial] and it lists the set, the built-in pins otherwise, joined by
+ * the SPKIs the student accepted for that set under [appVersion]. A set's expiry is the later of
+ * its built-in and remote ones (D18). Sets only the document lists come from the document.
+ */
+class PinPolicy(
+    private val builtIn: List<PinSet> = BuiltInPins.sets,
+    private val baselineSerial: Long = BuiltInPins.BASELINE_SERIAL,
+    val document: PinDocument? = null,
+    val acceptances: Collection<PinAcceptance> = emptyList(),
+    val appVersion: Long,
+    /** Debug builds only: this set's pins become one no chain has, so a mismatch can be shown. */
+    val simulatedMismatch: String? = null,
+) {
+
+    /** Every set in force, with its effective pins and expiry. */
+    val sets: List<PinSet> = run {
+        val remote = document?.takeIf { it.serial > baselineSerial }?.sets.orEmpty().associateBy { it.id }
+        val builtInIds = builtIn.map { it.id }.toSet()
+        val merged = builtIn.map { own ->
+            val newer = remote[own.id] ?: return@map own
+            newer.copy(expiresAt = maxOf(own.expiresAt, newer.expiresAt))
+        } + remote.values.filter { it.id !in builtInIds }
+        val accepted = acceptances.filter { it.appVersion == appVersion }.groupBy { it.setId }
+        merged.map { set ->
+            val base = if (set.id == simulatedMismatch) setOf(SIMULATED_PIN) else set.pins
+            set.copy(pins = base + accepted[set.id].orEmpty().flatMap { it.spkis })
+        }
+    }
+
+    /** The set [host] falls under, or null for an unpinned host. */
+    fun setFor(host: String): PinSet? = sets.matching(host)
+
+    /**
+     * Whether [mismatch] may be offered to the student (D18): its chain's anchor is one of the
+     * held document's `prompt_roots`, Mozilla's TLS roots. With no document, none is.
+     */
+    fun mayPrompt(mismatch: PinMismatch): Boolean = document?.promptRoots?.contains(mismatch.anchorSpki) == true
+
+    /** Whether these pins allow [mismatch]'s chain now, as a newer document or a Continue may. */
+    fun allows(mismatch: PinMismatch, now: Instant): Boolean {
+        val set = setFor(mismatch.host) ?: return true
+        return decide(set, mismatch.spkis, now) == PinDecision.Allowed
+    }
+
+    /** What the pinned [set] makes of a validated chain with [spkis], at [now]. */
+    fun decide(set: PinSet, spkis: Set<String>, now: Instant): PinDecision = when {
+        !now.isBefore(set.expiresAt) -> PinDecision.Allowed
+        spkis.any { it in set.pins } -> PinDecision.Allowed
+        else -> PinDecision.Mismatch(set)
+    }
+
+    fun with(
+        document: PinDocument? = this.document,
+        acceptances: Collection<PinAcceptance> = this.acceptances,
+        simulatedMismatch: String? = this.simulatedMismatch,
+    ) = PinPolicy(builtIn, baselineSerial, document, acceptances, appVersion, simulatedMismatch)
+
+    companion object {
+        /** A pin no certificate has: base64 of 32 zero bytes. */
+        const val SIMULATED_PIN = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="
+    }
+}
+
+/** The [PinPolicy] every connection reads, replaced whole as documents and acceptances change. */
+class PinState(initial: PinPolicy) {
+    private val current = AtomicReference(initial)
+
+    val policy: PinPolicy get() = current.get()
+
+    fun update(change: (PinPolicy) -> PinPolicy): PinPolicy = current.updateAndGet(change)
+}
