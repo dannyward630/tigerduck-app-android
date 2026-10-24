@@ -45,6 +45,8 @@ class MoodlePictureStoreTest {
     /** Holds the next members fetch, with the members as they were when it was asked, until completed. */
     private var heldFetch: CompletableDeferred<Unit>? = null
 
+    private var encoded = 0
+
     /** Holds the upload until completed. */
     private var heldUpload: CompletableDeferred<Unit>? = null
 
@@ -90,7 +92,7 @@ class MoodlePictureStoreTest {
         store.refreshMembers()
         val jpeg = byteArrayOf(1, 2, 3)
 
-        val failure = store.changePicture(jpeg)
+        val failure = store.changePicture { jpeg }
 
         assertNull(failure)
         assertEquals(listOf(jpeg.toList()), uploads.map { it.toList() })
@@ -104,7 +106,7 @@ class MoodlePictureStoreTest {
         store.refreshMembers()
         refusal = MoodleWebserviceError.MalformedResponse("upload_error_ini_size")
 
-        val failure = store.changePicture(byteArrayOf(1, 2, 3))
+        val failure = store.changePicture { byteArrayOf(1, 2, 3) }
 
         assertEquals(refusal, failure)
         assertTrue(store.members.value!!.members.single().pictureUrl!!.endsWith("rev=1"))
@@ -119,7 +121,7 @@ class MoodlePictureStoreTest {
         launch { store.refreshMembers() }
         runCurrent()
 
-        val change = async { store.changePicture(byteArrayOf(1)) }
+        val change = async { store.changePicture { byteArrayOf(1) } }
         runCurrent()
         hold.complete(Unit)
         advanceUntilIdle()
@@ -133,13 +135,15 @@ class MoodlePictureStoreTest {
         val store = store()
         store.refreshMembers()
         heldUpload = CompletableDeferred()
-        val page = launch { store.changePicture(byteArrayOf(1)) }
+        // Left before the photo was even encoded: that goes in the account's scope too.
+        val page = launch { store.changePicture { encoded++; byteArrayOf(1) } }
         runCurrent()
 
         page.cancel()
         heldUpload!!.complete(Unit)
         advanceUntilIdle()
 
+        assertEquals(1, encoded)
         assertTrue(store.members.value!!.members.single().pictureUrl!!.endsWith("rev=2"))
         assertFalse(store.changingPicture.value)
     }

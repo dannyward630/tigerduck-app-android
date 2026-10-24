@@ -63,6 +63,11 @@ class MoodleCourseStore(
     /** Where this course's downloaded files are kept for the account; null downloads nothing. */
     private val filesDir: File? = null,
     private val decodePicture: (ByteArray) -> ImageBitmap? = { null },
+    /**
+     * Told when the account's picture has changed here, for the account's other courses, whose
+     * members show it too; see [changePicture].
+     */
+    private val onOwnPictureChanged: () -> Unit = {},
     /** Where pictures are decoded, off the main thread. */
     private val background: CoroutineDispatcher = Dispatchers.Default,
     /** The term the course is of, such as "1151", which its forums copy is kept under; see [term]. */
@@ -420,18 +425,22 @@ class MoodleCourseStore(
     val changingPicture: StateFlow<Boolean> = _changingPicture.asStateFlow()
 
     /**
-     * Makes [jpeg] the account's profile picture, then fetches the members again, so the list and
-     * the account's page show it. Null once Moodle took it, else what Moodle refused it with; the
-     * old picture shows meanwhile, and stays after a refusal.
+     * Makes the JPEG [encode] makes the account's profile picture, then fetches the members again,
+     * so the list and the account's page show it, and has the account's other courses fetch
+     * theirs ([onOwnPictureChanged]). Null once Moodle took it, else what Moodle refused it with;
+     * the old picture shows meanwhile, and stays after a refusal.
      *
-     * In the account's scope, not the caller's: a page left meanwhile does not stop a change
-     * Moodle may already have made from reaching the members, and a sign-out ends it. The fetch
-     * after it is a new one, never one already running, which would bring back the old picture.
+     * In the account's scope, not the caller's, the encoding too: a page left meanwhile does not
+     * stop a change confirmed there, or one Moodle may already have made, from reaching the
+     * members, and a sign-out ends it. The fetch after it is a new one, never one already running,
+     * which would bring back the old picture.
      */
-    suspend fun changePicture(jpeg: ByteArray): Throwable? = scope.async {
+    suspend fun changePicture(encode: () -> ByteArray): Throwable? = scope.async {
         _changingPicture.value = true
         try {
+            val jpeg = withContext(Dispatchers.Default) { encode() }
             api.changePicture(jpeg)
+            onOwnPictureChanged()
             refreshMembers(joinRunning = false)
             null
         } catch (e: CancellationException) {

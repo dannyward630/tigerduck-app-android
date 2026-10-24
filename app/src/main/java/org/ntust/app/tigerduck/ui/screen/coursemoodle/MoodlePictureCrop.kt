@@ -97,6 +97,14 @@ internal object PictureCrop {
     }
 
     /**
+     * The square the circle shows of [image] at [zoom] and [offset], with [offset] held to the
+     * photo for the circle as it is now: one that fit a larger circle, before the window shrank,
+     * would show past the photo's edge.
+     */
+    fun crop(image: Size, diameter: Float, zoom: Float, offset: Offset): Rect =
+        source(image, diameter, zoom, clamp(image, diameter, zoom, offset))
+
+    /**
      * [source] of [picture] as an [OUTPUT_PX] square JPEG, on white: a JPEG has no transparency,
      * which would otherwise come out black.
      */
@@ -170,7 +178,9 @@ internal fun PictureCropDialog(picture: Bitmap, onCancel: () -> Unit, onDone: (s
                 ) {
                     val scale = PictureCrop.coverScale(size, diameter) * zoom
                     val drawn = Size(size.width * scale, size.height * scale)
-                    val topLeft = center + offset - Offset(drawn.width / 2, drawn.height / 2)
+                    // Held to the photo for the circle as it is now, as Done takes it.
+                    val shown = PictureCrop.clamp(size, diameter, zoom, offset)
+                    val topLeft = center + shown - Offset(drawn.width / 2, drawn.height / 2)
                     drawImage(
                         image,
                         dstOffset = IntOffset(topLeft.x.roundToInt(), topLeft.y.roundToInt()),
@@ -195,7 +205,7 @@ internal fun PictureCropDialog(picture: Bitmap, onCancel: () -> Unit, onDone: (s
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     TextButton(onClick = onCancel) { Text(stringResource(R.string.action_cancel), color = Color.White) }
-                    TextButton(onClick = { onDone(PictureCrop.source(size, diameter, zoom, offset)) }) {
+                    TextButton(onClick = { onDone(PictureCrop.crop(size, diameter, zoom, offset)) }) {
                         Text(stringResource(R.string.action_done), color = Color.White)
                     }
                 }

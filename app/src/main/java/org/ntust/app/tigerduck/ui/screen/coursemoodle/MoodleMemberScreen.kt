@@ -67,9 +67,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.moodle.MoodleLookup
 import org.ntust.app.tigerduck.data.moodle.MoodleMemberPlacement
@@ -183,9 +181,10 @@ fun MoodleMemberScreen(
                 cropping = null
                 val store = current ?: return@PictureCropDialog
                 scope.launch {
-                    val jpeg = withContext(Dispatchers.Default) { PictureCrop.jpeg(picked, source) }
-                    // The old picture stays; Moodle's own error says why.
-                    store.changePicture(jpeg)?.let { snackbar.showSnackbar(moodleErrorText(context.resources, it)) }
+                    // Encoded in the account's scope with the upload, so leaving the page cannot drop it.
+                    // The old picture stays on a refusal; Moodle's own error says why.
+                    store.changePicture { PictureCrop.jpeg(picked, source) }
+                        ?.let { snackbar.showSnackbar(moodleErrorText(context.resources, it)) }
                 }
             },
         )

@@ -47,6 +47,16 @@ class PictureCropTest {
     }
 
     @Test
+    fun `a circle that shrinks under a drag held at the edge still shows only the photo`() {
+        val held = PictureCrop.clamp(wide, diameter = 250f, zoom = 1f, offset = Offset(1000f, 0f))
+
+        // The window shrinks, as on a rotation, and the circle with it.
+        val crop = PictureCrop.crop(wide, diameter = 200f, zoom = 1f, offset = held)
+
+        assertTrue("$crop", crop.left >= 0f && crop.top >= 0f && crop.right <= 1000f && crop.bottom <= 500f)
+    }
+
+    @Test
     fun `a picked photo is decoded no larger than the crop needs, however long it is`() {
         // A phone photo: halved, still twice the upload across its shorter side.
         assertEquals(2, PictureCrop.decodeSampleSize(4000, 3000))
