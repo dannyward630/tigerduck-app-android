@@ -243,6 +243,14 @@ fun SchoolMailComposeScreen(
             }
             state.loadError?.let { LoadErrorBanner(it, onRetry = { viewModel.retryPrefill(labels) }) }
             state.error?.let { ErrorText(it) }
+            if (state.lostAttachments.isNotEmpty()) {
+                // Inline only: a mail opened again for review, which nothing failed on just now.
+                Text(
+                    stringResource(R.string.school_mail_held_attachments_missing).replaceIosArg(1, state.lostAttachments.joinToString(", ")),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             MailRecipientTokenField(
                 stringResource(R.string.school_mail_to), state.to, { viewModel.updateRecipients(RecipientSlot.TO, it) },
                 enabled = fieldsEnabled, suggestions = state.suggestions(RecipientSlot.TO),

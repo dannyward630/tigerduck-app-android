@@ -46,6 +46,18 @@ class HeldSendStoreTest {
     }
 
     @Test
+    fun `a picked file whose copy is gone comes back named as missing, the rest as they were`() {
+        assertTrue(store().save("m1", me, fields, listOf(picked, carried)) { true })
+        val copy = store().orphan(me)!!.attachments[0].copy!!
+        copy.delete()
+
+        val back = store().orphan(me)!!
+
+        assertEquals(listOf("slides.pdf"), back.attachments.map { it.fileName })
+        assertEquals(listOf("report.pdf"), back.missing)
+    }
+
+    @Test
     fun `one whose send had started comes back saying since when`() {
         val store = store()
         store.save("m1", me, fields, emptyList()) { true }

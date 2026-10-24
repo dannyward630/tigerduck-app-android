@@ -1055,6 +1055,21 @@ class SchoolMailComposeViewModelTest {
 
         assertNotNull(afterRestart().orphan(owner))
     }
+
+    @Test
+    fun `a reopened mail names the files it could not keep, and shows the rest`() {
+        signedIn()
+        val picked = HeldSendStore.Keep("p1", "notes.txt", "text/plain", 9, open = { "lab notes".byteInputStream() })
+        val carried = HeldSendStore.Keep("orig-2", "slides.pdf", "application/pdf", 900, original = HeldSendStore.Original("INBOX", 42, "2"))
+        heldSends.save("m1", owner, keptFields, listOf(picked, carried)) { true }
+        afterRestart().orphan(owner)!!.attachments[0].copy!!.delete()
+
+        val state = reopened("m1").state.value
+
+        assertEquals(listOf("slides.pdf"), state.attachments.map { it.fileName })
+        assertEquals(listOf("notes.txt"), state.lostAttachments)
+        assertNull("not a failure of the form's", state.error)
+    }
 }
 
 /** Holds what it is handed for a test to run oldest or newest first, as a pool of threads may. */

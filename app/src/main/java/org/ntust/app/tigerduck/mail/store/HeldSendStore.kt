@@ -59,7 +59,11 @@ class HeldSendStore(
         val original: Original?,
     )
 
-    /** A kept mail. [sendingSinceMs] is when its send started, null while it was only held. */
+    /**
+     * A kept mail. [sendingSinceMs] is when its send started, null while it was only held.
+     * [missing] names the files picked for it whose copy is gone, which only damage to the app's
+     * storage does: left out of [attachments], for the composer to say so.
+     */
     data class Held(
         val id: String,
         val owner: String,
@@ -67,6 +71,7 @@ class HeldSendStore(
         val sendingSinceMs: Long?,
         val fields: Fields,
         val attachments: List<Attachment>,
+        val missing: List<String> = emptyList(),
     )
 
     /**
@@ -264,15 +269,19 @@ class HeldSendStore(
         return dto.takeIf { it.version == VERSION && !it.owner.isNullOrBlank() }
     }
 
-    /** [dto] of the mail in directory [id], its copies checked; a copy gone is left out. */
+    /** [dto] of the mail in directory [id], its copies checked; a copy gone is left out, and named in [Held.missing]. */
     private fun held(id: String, dto: HeldSendDto): Held {
         val dir = File(root, id)
+        val missing = mutableListOf<String>()
         val attachments = dto.attachments.orEmpty().filterNotNull().mapNotNull { a ->
             val fileName = a.fileName ?: return@mapNotNull null
             val contentType = a.contentType ?: return@mapNotNull null
             val copy = a.copy?.takeIf { '/' !in it && it != ".." && it != "." }?.let { File(dir, it) }?.takeIf { it.isFile }
             val original = if (a.folder != null && a.partId != null && a.uid >= 0) Original(a.folder, a.uid, a.partId) else null
-            if (copy == null && original == null) return@mapNotNull null
+            if (copy == null && original == null) {
+                missing += fileName
+                return@mapNotNull null
+            }
             Attachment(a.id ?: UUID.randomUUID().toString(), fileName, contentType, a.sizeBytes, copy, original)
         }
         return Held(
@@ -294,6 +303,7 @@ class HeldSendStore(
                 body = dto.body.orEmpty(),
             ),
             attachments = attachments,
+            missing = missing,
         )
     }
 
