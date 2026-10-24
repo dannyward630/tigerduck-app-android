@@ -6,6 +6,7 @@
 package org.ntust.app.tigerduck.ui.screen.more
 
 import android.app.Application
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.requiredWidth
@@ -100,6 +101,27 @@ class FeatureGridTest {
         assertEquals(2, layout.lineCount)
         // At its hyphenation point, "Announce-" / "ments", not where the line ran out.
         assertEquals("Announce", input.text.text.substring(0, layout.getLineEnd(0)))
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.S_V2], qualifiers = "+en")
+    fun `an English app on a Chinese phone hyphenates in English below API 33`() {
+        // Below API 33 the app's own language changes its resources, not the default locale, which
+        // stays the phone's: hyphenation must follow the language the names are in.
+        val phone = java.util.Locale.getDefault()
+        java.util.Locale.setDefault(java.util.Locale.TAIWAN)
+        try {
+            show(width = 360.dp, fontScale = 1f)
+
+            val layout = labels().getValue("Announcements").layout
+            val input = layout.layoutInput
+            assertEquals("en", input.style.localeList?.first()?.language)
+            assertEquals(Hyphens.Auto, input.style.hyphens)
+            assertEquals(2, layout.lineCount)
+            assertEquals("Announce", input.text.text.substring(0, layout.getLineEnd(0)))
+        } finally {
+            java.util.Locale.setDefault(phone)
+        }
     }
 
     @Test
