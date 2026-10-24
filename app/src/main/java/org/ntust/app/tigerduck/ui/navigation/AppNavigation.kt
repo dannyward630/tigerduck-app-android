@@ -65,6 +65,7 @@ import org.ntust.app.tigerduck.ui.screen.announcements.AnnouncementDetailScreen
 import org.ntust.app.tigerduck.ui.screen.announcements.AnnouncementsScreen
 import org.ntust.app.tigerduck.ui.screen.announcements.SubscriptionSettingsScreen
 import org.ntust.app.tigerduck.data.model.AppFeature
+import org.ntust.app.tigerduck.data.sharing.ClassTableShare
 import org.ntust.app.tigerduck.mail.ComposeMode
 import org.ntust.app.tigerduck.mail.MailRoutes
 import org.ntust.app.tigerduck.shared.clock.AppClock
@@ -78,6 +79,7 @@ import org.ntust.app.tigerduck.ui.screen.calendar.CalendarViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableScreen
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportHost
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableShareSheet
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherEntry
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherMenuItems
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportViewModel
@@ -851,6 +853,14 @@ fun MainNavigation(
         }
     }
 
+    // The user's own share sheet, which the scanner's QR button opens in its place, as iOS's
+    // root presents both: shown once the scanner is gone. The class table's ⋯ menu keeps its own.
+    val signedIn by classTableViewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val shareTerms by classTableViewModel.shareTerms.collectAsStateWithLifecycle()
+    val ownStudentId = classTableViewModel.studentId
+        ?.takeIf { signedIn && shareTerms.isNotEmpty() && ClassTableShare.canName(it) }
+    var shareFromScanner by remember { mutableStateOf<ClassTableShare?>(null) }
+
     // Over every page: the tab's menu can start an import from any of them.
     ClassTableImportHost(
         viewModel = classTableImportViewModel,
@@ -860,7 +870,23 @@ fun MainNavigation(
                 openTab(Screen.ClassTable.route)
             }
         },
+        onShare = ownStudentId?.let { studentId ->
+            {
+                shareFromScanner = ClassTableShare(studentId, shareTerms)
+                classTableImportViewModel.end()
+            }
+        },
     )
+    shareFromScanner?.let { share ->
+        ClassTableShareSheet(
+            share = share,
+            labelFor = classTableViewModel::displayLabel,
+            onDismiss = { shareFromScanner = null },
+            onScan = classTableImportViewModel::start,
+        )
+    }
+    // A sign-out closes the sheet: the code names the account that left.
+    LaunchedEffect(signedIn) { if (!signedIn) shareFromScanner = null }
 }
 
 /** The tab the bottom bar shows selected on [route]: a page's own tab, or the one it was opened from. */
