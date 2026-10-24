@@ -1,14 +1,20 @@
 package org.ntust.app.tigerduck.ui.screen.classtable.sharing
 
 /**
- * Lets a code through once while it stays in view. A camera reads a code on every frame that
- * shows it, and without this a code still in front of it would open its confirm step again the
- * moment it was cancelled. The iOS app's `RepeatedCodeFilter`.
+ * Lets a code through once while it stays in view, once the import took it. A camera reads a code
+ * on every frame that shows it, and without this a code still in front of it would open its
+ * confirm step again the moment it was cancelled. The iOS app's `RepeatedCodeFilter`.
+ *
+ * A code the import [refused] passes again at the next frame: refused while something was over
+ * the scanner, as the Enter link dialog, a confirm step or a prompt, it would otherwise stay
+ * held for as long as it stayed in view, and scan only once moved out of it.
+ * Called from the camera's thread and the main thread.
  */
 class RepeatedQrCodeFilter {
     private val lastSeen = mutableMapOf<String, Long>()
 
     /** Whether [text], read at [nowMs], is new: unseen, or out of view for longer than [GAP_MS]. */
+    @Synchronized
     fun isNew(text: String, nowMs: Long): Boolean {
         val seen = lastSeen[text]
         lastSeen.entries.removeAll { nowMs - it.value > GAP_MS }
@@ -16,9 +22,30 @@ class RepeatedQrCodeFilter {
         return seen == null || nowMs - seen > GAP_MS
     }
 
+    /** [text], passed on, was not taken: it is new again at the next frame that shows it. */
+    @Synchronized
+    fun refused(text: String) {
+        lastSeen.remove(text)
+    }
+
     companion object {
         /** Longer than the time between two frames that show the same code. */
         const val GAP_MS = 1_000L
+    }
+}
+
+/**
+ * Hands the codes the camera reads ([read], on its thread) to the import through [post], on the
+ * main thread where [take] says whether it took one, and tells [filter] of each it refused.
+ */
+class QrCodeHandOff(
+    private val filter: RepeatedQrCodeFilter,
+    private val post: (Runnable) -> Unit,
+    private val take: (String) -> Boolean,
+) {
+    fun read(text: String, nowMs: Long) {
+        if (!filter.isNew(text, nowMs)) return
+        post(Runnable { if (!take(text)) filter.refused(text) })
     }
 }
 

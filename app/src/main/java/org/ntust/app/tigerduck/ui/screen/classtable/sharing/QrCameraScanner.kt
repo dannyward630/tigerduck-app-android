@@ -164,8 +164,12 @@ private fun CameraPreview(onScanned: (String) -> Boolean, torch: ScannerTorch, m
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
-                    // Codes go to the import on the main thread, where it keeps its state.
-                    .also { it.setAnalyzer(executor, QrFrameReader { text -> mainExecutor.execute { latest(text) } }) }
+                    // Codes go to the import on the main thread, where it keeps its state; one it
+                    // refuses, as while a dialog is over the scanner, is read again.
+                    .also {
+                        val handOff = QrCodeHandOff(RepeatedQrCodeFilter(), post = mainExecutor::execute) { text -> latest(text) }
+                        it.setAnalyzer(executor, QrFrameReader(handOff))
+                    }
                 val camera = try {
                     cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector(cameraProvider), preview, analysis)
                 } catch (e: Exception) {
@@ -227,14 +231,13 @@ private fun cameraSelector(provider: ProcessCameraProvider): CameraSelector = li
     }
 } ?: provider.availableCameraInfos.firstOrNull()?.cameraSelector ?: CameraSelector.DEFAULT_BACK_CAMERA
 
-/** Reads each frame's brightness with ZXing; see [RepeatedQrCodeFilter] for a code kept in view. */
-private class QrFrameReader(private val onCode: (String) -> Unit) : ImageAnalysis.Analyzer {
+/** Reads each frame's brightness with ZXing, and hands each code to [handOff]; see [RepeatedQrCodeFilter] for a code kept in view. */
+private class QrFrameReader(private val handOff: QrCodeHandOff) : ImageAnalysis.Analyzer {
     private val reader = QRCodeReader()
     private val hints = mapOf(
         DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE),
         DecodeHintType.TRY_HARDER to true,
     )
-    private val filter = RepeatedQrCodeFilter()
 
     override fun analyze(image: ImageProxy) {
         image.use {
@@ -254,7 +257,7 @@ private class QrFrameReader(private val onCode: (String) -> Unit) : ImageAnalysi
             } finally {
                 reader.reset()
             }
-            if (text != null && filter.isNew(text, System.currentTimeMillis())) onCode(text)
+            if (text != null) handOff.read(text, System.currentTimeMillis())
         }
     }
 }
