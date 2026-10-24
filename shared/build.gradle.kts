@@ -33,4 +33,6 @@ dependencies {
     // LibraryService uses Mutex / Dispatchers / withContext.
     implementation(libs.kotlinx.coroutines.android)
     testImplementation(libs.junit)
+    // Hand-made certificates for PinnedTrustManagerTest's local TLS server.
+    testImplementation(libs.okhttp.tls)
 }

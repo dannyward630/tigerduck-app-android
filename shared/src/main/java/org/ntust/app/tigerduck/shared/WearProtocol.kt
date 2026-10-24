@@ -85,6 +85,22 @@ object WearProtocol {
         const val KEY_ISSUED_AT_MS = "issuedAtMs"
     }
 
+    /**
+     * The pinned domains the student chose on the phone to continue to past a certificate
+     * that stopped matching its pins, phone → watch, so the watch's library calls follow. Each
+     * domain comes with the moment the student chose it, so the watch can tell a choice it
+     * already acted on from a new one; one the phone no longer sends is over.
+     */
+    object PinOverrides {
+        const val PATH = "/tigerduck/pin_overrides"
+
+        /** The domains, as `PinnedDomains` names them. */
+        const val KEY_DOMAINS = "domains"
+
+        /** Wall-clock ms the student chose each of [KEY_DOMAINS], in the same order. */
+        const val KEY_ACCEPTED_AT = "acceptedAtMs"
+    }
+
     /** Debug-clock override pushed phone → watch (debug builds only). */
     object DebugClock {
         const val PATH = "/tigerduck/debug-clock"

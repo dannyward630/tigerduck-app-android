@@ -12,9 +12,12 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
 import org.ntust.app.tigerduck.network.ApiVersionInterceptor
+import org.ntust.app.tigerduck.network.tls.PinMismatchPrompts
+import org.ntust.app.tigerduck.network.tls.PinOverrideStore
 import org.ntust.app.tigerduck.push.OwedUnregister
 import org.ntust.app.tigerduck.push.PushIdentity
 import org.ntust.app.tigerduck.shared.LibraryService
+import org.ntust.app.tigerduck.shared.tls.PinnedTls
 import org.ntust.app.tigerduck.ui.component.ServerFailureInterceptor
 import org.ntust.app.tigerduck.ui.component.ServerKind
 import java.util.concurrent.TimeUnit
@@ -30,13 +33,25 @@ object NetworkModule {
      * the NTUST / Moodle / library traffic that shares this client is
      * unaffected.
      */
+    /**
+     * The trust every HTTPS client of the app's uses, the library's and School Mail's among
+     * them: network_security_config.xml's pins, except on a pinned domain the student chose to
+     * continue to after its certificate stopped matching them.
+     */
+    @Provides
+    @Singleton
+    fun providePinnedTls(overrides: PinOverrideStore, prompts: PinMismatchPrompts): PinnedTls =
+        PinnedTls.forPlatform(overrides, prompts::report)
+
     @Provides
     @Singleton
     fun provideOkHttpClient(
         prefs: AppPreferences,
         demoMode: DemoModeInterceptor,
+        tls: PinnedTls,
     ): OkHttpClient =
         OkHttpClient.Builder()
+            .sslSocketFactory(tls.socketFactory, tls.trustManager)
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
@@ -58,10 +73,12 @@ object NetworkModule {
     fun provideLibraryService(
         credentials: CredentialManager,
         demoMode: DemoModeInterceptor,
+        tls: PinnedTls,
     ): LibraryService = LibraryService(
         credentials,
         isDebugBuild = BuildConfig.DEBUG,
         extraInterceptors = libraryInterceptors(demoMode, debug = BuildConfig.DEBUG),
+        tls = tls,
     )
 
     /**

@@ -100,6 +100,8 @@ data class MailProbeCredentials(val username: String, val password: String) {
 class SocketMailConnectionProbe(
     private val credentials: MailCredentialStore,
     private val site: MailSite,
+    /** The app's TLS, so the AUTH stage stays the app's own connection; see [MailProperties]. */
+    private val tls: SSLSocketFactory? = null,
 ) : MailConnectionProbe {
 
     override suspend fun test(draft: MailDevServerSettings, typed: MailProbeCredentials): String {
@@ -329,8 +331,8 @@ class SocketMailConnectionProbe(
             Leg.SMTP -> MailProperties.smtpProtocol(config)
         }
         val properties = when (leg) {
-            Leg.IMAP -> MailProperties.imap(config)
-            Leg.SMTP -> MailProperties.smtp(config)
+            Leg.IMAP -> MailProperties.imap(config, tls)
+            Leg.SMTP -> MailProperties.smtp(config, tls)
         }.impatient(protocol)
         val session = Session.getInstance(properties)
         val service = when (leg) {
