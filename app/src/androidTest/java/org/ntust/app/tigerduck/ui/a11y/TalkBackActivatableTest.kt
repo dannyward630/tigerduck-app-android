@@ -4,11 +4,15 @@ import android.view.accessibility.AccessibilityNodeInfo
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -146,10 +150,13 @@ class TalkBackActivatableTest {
 
     @Test
     fun theColorPickersSquareAndHueBarCanBeAdjusted() {
+        var hue by mutableFloatStateOf(120f)
+        var sat by mutableFloatStateOf(0.5f)
+        var value by mutableFloatStateOf(0.5f)
         rule.setContent {
             Column {
-                SatValSquare(hue = 120f, sat = 0.5f, value = 0.5f, onSatValChange = { _, _ -> })
-                HueSlider(hue = 120f, onHueChange = {})
+                SatValSquare(hue = hue, sat = sat, value = value, onSatValChange = { s, v -> sat = s; value = v })
+                HueSlider(hue = hue, onHueChange = { hue = it })
             }
         }
 
@@ -171,5 +178,13 @@ class TalkBackActivatableTest {
                 AccessibilityNodeInfo.AccessibilityAction.ACTION_SET_PROGRESS in info.actionList,
             )
         }
+
+        // A swipe up, as TalkBack sends it, moves each value a twentieth of its range.
+        assertTrue(node(context.getString(R.string.a11y_color_picker_hue)).performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD))
+        assertTrue(node(context.getString(R.string.a11y_color_picker_brightness)).performAction(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD))
+        rule.waitForIdle()
+        assertEquals(138f, hue, 0.01f)
+        assertEquals(0.45f, value, 0.001f)
+        assertEquals(0.5f, sat, 0.001f)
     }
 }

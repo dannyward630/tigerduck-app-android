@@ -42,10 +42,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.Key
@@ -358,6 +361,7 @@ internal fun SatValSquare(
                         state = percent.format(sat),
                         current = sat,
                         range = 0f..1f,
+                        shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
                         onChange = { onSatValChange(it, value) },
                     )
             )
@@ -370,6 +374,7 @@ internal fun SatValSquare(
                         state = percent.format(value),
                         current = value,
                         range = 0f..1f,
+                        shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp),
                         onChange = { onSatValChange(sat, it) },
                     )
             )
@@ -454,6 +459,7 @@ internal fun HueSlider(
                 state = degrees.format(hue.roundToInt()) + "°",
                 current = hue,
                 range = 0f..360f,
+                shape = RoundedCornerShape(14.dp),
                 onChange = onHueChange,
             )
             .pointerInput(Unit) {
@@ -493,40 +499,51 @@ internal fun HueSlider(
  * control called [name], read as [state], holding [current] in [range]. A
  * swipe up or down moves it a twentieth of the range (Compose's step for a
  * range with no steps of its own), TalkBack's set-progress sets it, and the
- * arrow keys step it as the swipes do. Each value reaches [onChange] within
- * [range].
+ * left and right arrow keys step it as the swipes do. Up and down, and an
+ * arrow that would push past either end, are left to move the focus on, so
+ * a keyboard never gets stuck in a control. While it has the keyboard's
+ * focus a ring in [shape] shows which one the arrows move: the square's two
+ * share its drawing. Each value reaches [onChange] within [range].
  */
 private fun Modifier.adjustable(
     name: String,
     state: String,
     current: Float,
     range: ClosedFloatingPointRange<Float>,
+    shape: Shape,
     onChange: (Float) -> Unit,
-): Modifier {
+): Modifier = composed {
+    var focused by remember { mutableStateOf(false) }
+    val ring = MaterialTheme.colorScheme.primary
     val step = (range.endInclusive - range.start) / ADJUSTABLE_STEPS
-    return semantics {
-        contentDescription = name
-        stateDescription = state
-        progressBarRangeInfo = ProgressBarRangeInfo(current.coerceIn(range), range)
-        setProgress { target ->
-            onChange(target.coerceIn(range))
-            true
+    this
+        .then(if (focused) Modifier.border(2.dp, ring, shape) else Modifier)
+        .semantics {
+            contentDescription = name
+            stateDescription = state
+            progressBarRangeInfo = ProgressBarRangeInfo(current.coerceIn(range), range)
+            setProgress { target ->
+                onChange(target.coerceIn(range))
+                true
+            }
         }
-    }
+        .onFocusChanged { focused = it.isFocused }
         .onKeyEvent { event ->
             if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
             val delta = when (event.key) {
-                Key.DirectionRight, Key.DirectionUp -> step
-                Key.DirectionLeft, Key.DirectionDown -> -step
+                Key.DirectionRight -> step
+                Key.DirectionLeft -> -step
                 else -> return@onKeyEvent false
             }
-            onChange((current + delta).coerceIn(range))
+            val next = (current + delta).coerceIn(range)
+            if (next == current) return@onKeyEvent false
+            onChange(next)
             true
         }
         .focusable()
 }
 
-/** How many steps a swipe or an arrow key takes across a value's whole range, as Compose steps a range with none. */
+/** How many steps a swipe or an arrow key takes across a value's whole range, as Compose steps a range with none of its own. */
 private const val ADJUSTABLE_STEPS = 20
 
 /**

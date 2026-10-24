@@ -7,14 +7,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.requestFocus
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -146,6 +153,91 @@ class HsvControlsA11yTest {
         control(R.string.a11y_color_picker_hue).performTouchInput { click(center) }
         composeRule.waitForIdle()
         assertEquals(180f, hue, 2f)
+    }
+
+    @Test
+    fun `a drag that starts in the square's top half follows the finger into the bottom half`() {
+        showControls(startHue = 0f, startSat = 0f, startValue = 1f)
+
+        control(R.string.a11y_color_picker_saturation).performTouchInput {
+            down(center)
+            // The saturation control is the top half, so twice its height is the square's bottom edge.
+            moveTo(Offset(center.x, height * 2f - 1f))
+            up()
+        }
+        composeRule.waitForIdle()
+        assertEquals(0.5f, sat, 0.02f)
+        assertEquals(0f, value, 0.02f)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun `left and right step a focused control, and stop at its ends`() {
+        showControls(startHue = 342f, startSat = 0.5f, startValue = 0.5f)
+        val hueBar = control(R.string.a11y_color_picker_hue)
+        hueBar.requestFocus()
+
+        hueBar.performKeyInput { pressKey(Key.DirectionRight) }
+        composeRule.waitForIdle()
+        assertEquals(360f, hue, 0.001f)
+        hueBar.performKeyInput { pressKey(Key.DirectionRight) }
+        composeRule.waitForIdle()
+        assertEquals(360f, hue, 0.001f)
+        hueBar.performKeyInput { pressKey(Key.DirectionLeft) }
+        composeRule.waitForIdle()
+        assertEquals(342f, hue, 0.001f)
+
+        val saturation = control(R.string.a11y_color_picker_saturation)
+        saturation.requestFocus()
+        saturation.performKeyInput { pressKey(Key.DirectionRight) }
+        composeRule.waitForIdle()
+        assertEquals(0.55f, sat, 0.001f)
+        assertEquals(0.5f, value, 0.001f)
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    @Test
+    fun `up and down move the keyboard focus on instead of changing a value`() {
+        showControls(startHue = 30f, startSat = 0.5f, startValue = 0.5f)
+        val saturation = control(R.string.a11y_color_picker_saturation)
+        saturation.requestFocus()
+
+        saturation.performKeyInput { pressKey(Key.DirectionDown) }
+        composeRule.waitForIdle()
+
+        assertEquals(0.5f, sat, 0.001f)
+        assertEquals(0.5f, value, 0.001f)
+        control(R.string.a11y_color_picker_brightness).assertIsFocused()
+    }
+
+    @Test
+    fun `in the accent picker, each end of a gradient is adjusted on its own`() {
+        composeRule.setContent {
+            AccentPickerSheet(
+                initialStart = 0xFF0000,
+                initialEnd = 0x0000FF,
+                direction = AccentGradientDirection.DEFAULT,
+                isDark = false,
+                onApply = { _, _ -> },
+                onDismiss = {},
+            )
+        }
+        composeRule.waitForIdle()
+
+        control(R.string.a11y_color_picker_brightness).setTo(0.5f)
+        composeRule.waitForIdle()
+        composeRule.onNode(hasText("#800000")).assertExists()
+
+        composeRule.onNodeWithText(text(R.string.settings_accent_gradient_end)).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasText("#0000FF")).assertExists()
+        control(R.string.a11y_color_picker_hue).setTo(120f)
+        composeRule.waitForIdle()
+        composeRule.onNode(hasText("#00FF00")).assertExists()
+
+        composeRule.onNodeWithText(text(R.string.settings_accent_gradient_start)).performClick()
+        composeRule.waitForIdle()
+        composeRule.onNode(hasText("#800000")).assertExists()
     }
 
     @Test
