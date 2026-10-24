@@ -3,14 +3,21 @@ package org.ntust.app.tigerduck.mail
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.mail.imap.MailSession
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 
 /**
  * The one IMAP connection the mail screens share (spec §8.2). Closed
@@ -34,6 +41,9 @@ class SessionHolder(
 
     /** True once [releaseLater] has run and no [hold]/[closeNow] has happened since: every later [use] (e.g. a background retry after the page closed) keeps re-arming the idle close instead of leaving the connection open forever. */
     private val released = AtomicBoolean(false)
+
+    /** How many [ahead] blocks run now. */
+    private val aheadBlocks = MutableStateFlow(0)
 
     /**
      * Runs right before a [use] waits for the connection. A test's way of knowing a caller has
@@ -65,8 +75,8 @@ class SessionHolder(
         onRefused: () -> Unit = {},
         block: (MailSession) -> T,
     ): T {
-        onWait?.invoke()
-        return mutex.withLock {
+        lock()
+        return try {
             if (!stillWanted()) throw MailError.Abandoned()
             cancelCloseJob()
         if (owner != credentials.loginName) closeLocked()
@@ -96,6 +106,40 @@ class SessionHolder(
             // releaseLater again.
             if (released.get() && session != null) armCloseJob()
         }
+        } finally {
+            mutex.unlock()
+        }
+    }
+
+    /**
+     * Runs [block] with its calls ahead of everyone else's: from the moment it starts until it
+     * ends, a [use] from outside it waits to so much as get in line for the connection, so the
+     * mail the user just opened goes out next rather than after the background download's next
+     * batch -- and that batch does not get in between two of [block]'s calls either. A call
+     * already holding the connection is let finish.
+     */
+    suspend fun <T> ahead(block: suspend () -> T): T {
+        aheadBlocks.update { it + 1 }
+        try {
+            return withContext(Ahead(this)) { block() }
+        } finally {
+            aheadBlocks.update { it - 1 }
+        }
+    }
+
+    /**
+     * Takes the connection's lock: in turn for a call in an [ahead] block, and for any other once
+     * no [ahead] block runs. One that started while this one was already in line goes first: this
+     * one lets go of the lock and waits for it to end.
+     */
+    private suspend fun lock() {
+        val ahead = currentCoroutineContext()[Ahead]?.holder === this
+        while (true) {
+            if (!ahead) aheadBlocks.first { it == 0 }
+            onWait?.invoke()
+            mutex.lock()
+            if (ahead || aheadBlocks.value == 0) return
+            mutex.unlock()
         }
     }
 
@@ -155,5 +199,10 @@ class SessionHolder(
         session?.let { runCatching { it.close() } }
         session = null
         owner = null
+    }
+
+    /** Marks a coroutine as running in one of [holder]'s [ahead] blocks. */
+    private class Ahead(val holder: SessionHolder) : AbstractCoroutineContextElement(Key) {
+        companion object Key : CoroutineContext.Key<Ahead>
     }
 }

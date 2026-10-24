@@ -186,6 +186,20 @@ class SchoolMailMessageViewModelTest {
         assertEquals(0, ready(vm).html!!.blockedRemoteImages)
     }
 
+    /**
+     * The mail goes out ahead of the background download: its summary and its body are asked for
+     * in one ahead block, so the download's next batch does not get in between the two.
+     */
+    @Test
+    fun `a mail's summary and body are asked for ahead of the background download`() {
+        repo.add("INBOX", mailSummary(5, seen = true))
+        repo.bodies[5] = MailBody(null, "hello", emptyList(), emptyMap())
+        val vm = vm()
+        vm.load()
+        assertTrue(vm.state.value.content is Content.Ready)
+        assertEquals(listOf("summary", "body"), repo.askedAhead)
+    }
+
     @Test
     fun `a plain-text mail opens as text and a read mail is not marked again`() {
         repo.add("INBOX", mailSummary(5, seen = true))
