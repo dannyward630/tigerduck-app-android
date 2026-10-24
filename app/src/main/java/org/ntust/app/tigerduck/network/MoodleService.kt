@@ -348,9 +348,7 @@ class MoodleService @Inject constructor(
     }
 
     private fun callEnrolledCourses(token: String, userId: Int): List<MoodleEnrolledCourse> {
-        val url = MoodleWebservice.url("core_enrol_get_users_courses", token)
-        val form = FormBody.Builder().add("userid", userId.toString()).build()
-        val req = Request.Builder().url(url).post(form).build()
+        val req = MoodleWebservice.request("core_enrol_get_users_courses", token, listOf("userid" to userId.toString()))
         val body = MoodleWebservice.execute(client, req)
         return try {
             decodeEnrolledCourses(body)
@@ -360,18 +358,14 @@ class MoodleService @Inject constructor(
     }
 
     private fun callGetAssignments(token: String, courseIds: List<Int>): List<MoodleAssignmentsCourse> =
-        requestAssignments(
-            client,
-            MoodleWebservice.url("mod_assign_get_assignments", token),
-            courseIds,
-        )
+        requestAssignments(client, token, courseIds)
 
     private fun callGetSubmissionStatus(
         token: String,
         assignId: Int,
         userId: Int,
     ): MoodleSubmissionStatusEnvelope =
-        requestSubmissionStatus(client, submissionStatusUrl(token), assignId, userId)
+        requestSubmissionStatus(client, token, assignId, userId)
 
     /**
      * The order of the status answers the cached assignments take, a round's and the pages';
@@ -450,32 +444,26 @@ class MoodleService @Inject constructor(
                 }
             }
 
-        /** The `mod_assign_get_submission_status` endpoint under [token]. */
-        internal fun submissionStatusUrl(token: String): String =
-            MoodleWebservice.url("mod_assign_get_submission_status", token)
-
         /**
          * The `mod_assign_get_assignments` form for [courseIds]. It asks only
          * for the courses where the user can submit, so Moodle leaves out a
          * course they are a TA in, whose assignments they grade (issue #160).
          */
-        internal fun assignmentsForm(courseIds: List<Int>): FormBody = FormBody.Builder().apply {
-            courseIds.forEachIndexed { i, id -> add("courseids[$i]", id.toString()) }
-            add("capabilities[0]", "mod/assign:submit")
-        }.build()
+        internal fun assignmentsParams(courseIds: List<Int>): List<Pair<String, String>> =
+            courseIds.mapIndexed { i, id -> "courseids[$i]" to id.toString() } + ("capabilities[0]" to "mod/assign:submit")
 
         /**
-         * `mod_assign_get_assignments` for [courseIds] at [url], through
+         * `mod_assign_get_assignments` for [courseIds] under [token], through
          * [client]: the courses of Moodle's answer, which can be none. Every
          * other outcome throws, and the callers keep the assignments they
          * have when it does; see [decodeAssignments].
          */
         internal fun requestAssignments(
             client: OkHttpClient,
-            url: String,
+            token: String,
             courseIds: List<Int>,
         ): List<MoodleAssignmentsCourse> {
-            val req = Request.Builder().url(url).post(assignmentsForm(courseIds)).build()
+            val req = MoodleWebservice.request("mod_assign_get_assignments", token, assignmentsParams(courseIds))
             return decodeAssignments(MoodleWebservice.execute(client, req))
         }
 
@@ -625,20 +613,17 @@ class MoodleService @Inject constructor(
         }
 
         /**
-         * `mod_assign_get_submission_status` for [assignId] at [url], through
+         * `mod_assign_get_submission_status` for [assignId] under [token], through
          * [client]: for [userId], or without one for the token's own account.
          */
         internal fun requestSubmissionStatus(
             client: OkHttpClient,
-            url: String,
+            token: String,
             assignId: Int,
             userId: Int?,
         ): MoodleSubmissionStatusEnvelope {
-            val form = FormBody.Builder()
-                .add("assignid", assignId.toString())
-                .apply { if (userId != null) add("userid", userId.toString()) }
-                .build()
-            val req = Request.Builder().url(url).post(form).build()
+            val params = listOf("assignid" to assignId.toString()) + listOfNotNull(userId?.let { "userid" to it.toString() })
+            val req = MoodleWebservice.request("mod_assign_get_submission_status", token, params)
             return decodeSubmissionStatus(MoodleWebservice.execute(client, req))
         }
 

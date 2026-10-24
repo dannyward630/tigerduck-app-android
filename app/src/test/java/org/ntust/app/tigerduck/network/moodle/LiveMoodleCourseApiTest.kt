@@ -120,7 +120,7 @@ class LiveMoodleCourseApiTest {
 
         assertEquals(1, api.posts(40).single().id)
         val body = calls.single { it.function == "mod_forum_get_discussion_posts" }.body
-        assertEquals("discussionid=40&sortby=created&sortdirection=ASC&moodlewssettingfilter=true", body)
+        assertEquals("wstoken=t1&discussionid=40&sortby=created&sortdirection=ASC&moodlewssettingfilter=true", body)
     }
 
     @Test
@@ -139,9 +139,9 @@ class LiveMoodleCourseApiTest {
 
         assertEquals(
             listOf(
-                "mod_resource_view_resource" to "resourceid=7",
-                "mod_folder_view_folder" to "folderid=7",
-                "mod_url_view_url" to "urlid=7",
+                "mod_resource_view_resource" to "wstoken=t1&resourceid=7",
+                "mod_folder_view_folder" to "wstoken=t1&folderid=7",
+                "mod_url_view_url" to "wstoken=t1&urlid=7",
             ),
             calls.map { it.function to it.body },
         )

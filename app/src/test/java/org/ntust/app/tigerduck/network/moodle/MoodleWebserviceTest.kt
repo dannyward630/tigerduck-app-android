@@ -83,9 +83,14 @@ class MoodleWebserviceTest {
         val request = sent.single()
         assertEquals("POST", request.method)
         assertEquals("mod_forum_view_forum_discussion", request.url.queryParameter("wsfunction"))
-        assertEquals("t1", request.url.queryParameter("wstoken"))
+        // The token in the form only: a URL ends up in access logs.
+        assertEquals(null, request.url.queryParameter("wstoken"))
+        assertEquals(false, "t1" in request.url.toString())
         val form = request.body as FormBody
-        assertEquals("discussionid" to "42", form.name(0) to form.value(0))
+        assertEquals(
+            listOf("wstoken" to "t1", "discussionid" to "42"),
+            (0 until form.size).map { form.name(it) to form.value(it) },
+        )
     }
 
     @Test

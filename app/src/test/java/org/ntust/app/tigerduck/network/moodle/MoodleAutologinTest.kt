@@ -187,7 +187,7 @@ class MoodleAutologinTest {
         val got = MoodleAutologin.requestKey(MoodleWebservice({ client }, tokens)) { "private" }
 
         assertEquals(key, got)
-        assertEquals("privatetoken=private", sentBody)
+        assertEquals("wstoken=t1&privatetoken=private", sentBody)
         assertFalse(sentUrl.toString().contains("private"))
     }
 

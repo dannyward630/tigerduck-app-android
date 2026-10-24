@@ -37,7 +37,7 @@ class SubmissionStatusProbe internal constructor(
     suspend fun status(assignId: Int): MoodleSubmissionStatusEnvelope? = withContext(Dispatchers.IO) {
         val token = storedToken()?.takeIf { it.isNotEmpty() } ?: return@withContext null
         val status = MoodleService.requestSubmissionStatus(
-            client, MoodleService.submissionStatusUrl(token), assignId, userId = null,
+            client, token, assignId, userId = null,
         )
         status.takeIf { storedToken() == token }
     }
