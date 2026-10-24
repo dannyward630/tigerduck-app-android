@@ -10,7 +10,8 @@
 // the same MailStateStore, so the toggle keeps exactly the scheduling side
 // effects it had before the move (MailBackgroundScheduler schedule/cancel).
 //
-// iOS carries the same page with the same contents in the same order.
+// iOS carries the same page with the same contents in the same order, quiet
+// hours and mute rules included (SchoolMailMuteSettings.kt).
 
 package org.ntust.app.tigerduck.ui.screen.mail
 
@@ -42,6 +43,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -72,6 +74,8 @@ fun SchoolMailNotificationSettingsScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val toggleEnabled by viewModel.notificationsToggleEnabled.collectAsStateWithLifecycle()
+    val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
+    val muteActions = remember(viewModel) { viewModel.muteActions() }
     val context = LocalContext.current
     // The runtime prompt while the system will still show it, the settings page after that; the
     // page reads the grant again once the prompt answers or the user comes back.
@@ -151,6 +155,8 @@ fun SchoolMailNotificationSettingsScreen(
                     }
                 }
             }
+            // Only while new mail notifies at all: muting is a question of which of it does.
+            mailMuteItems(ui.muteSettings, enabled = signedIn && ui.notificationsEnabled, actions = muteActions)
             item { SectionHeader(stringResource(R.string.school_mail_settings_diagnostics), Modifier.padding(top = 12.dp)) }
             item {
                 ContentCard {

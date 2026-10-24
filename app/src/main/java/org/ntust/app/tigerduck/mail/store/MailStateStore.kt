@@ -2,6 +2,8 @@ package org.ntust.app.tigerduck.mail.store
 
 import android.content.Context
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
+import org.ntust.app.tigerduck.mail.notify.MailMuteSettings
+import org.ntust.app.tigerduck.mail.notify.MailMuteSettingsCodec
 
 /** Non-secret mail state. Its own file, so no AppPreferences migration ever touches it. */
 interface MailStateStore {
@@ -14,6 +16,8 @@ interface MailStateStore {
     /** The seen marker: the INBOX UID from which new mail counts as new. 0 = no baseline yet. */
     var inboxSeenUidNext: Long
     var lastForegroundCheckAt: Long
+    /** Which new mail is not notified: quiet hours and mute rules, the student's own like [notificationsEnabled]. */
+    var muteSettings: MailMuteSettings
     /**
      * When [folder] (a server name) last answered, epoch ms; 0 = never. Per folder, so the list
      * page can date the folder on screen. See [org.ntust.app.tigerduck.mail.sync.MailChecker.fetchedAt].
@@ -52,8 +56,8 @@ interface MailStateStore {
 
     /**
      * [clear], but for the same student signing in again: what is theirs rather than the
-     * sign-in's stays -- the display name, whether new mail notifies, and the mail this app
-     * flagged `\Deleted` and has still to expunge.
+     * sign-in's stays -- the display name, whether new mail notifies and which mail it mutes,
+     * and the mail this app flagged `\Deleted` and has still to expunge.
      */
     fun clearSignIn()
 }
@@ -108,6 +112,10 @@ class SharedPrefsMailStateStore(context: Context) : MailStateStore {
         get() = prefs.getLong(K_FOREGROUND, 0L)
         set(value) = prefs.edit().putLong(K_FOREGROUND, value).apply()
 
+    override var muteSettings: MailMuteSettings
+        get() = MailMuteSettingsCodec.decode(prefs.getString(K_MUTE, null))
+        set(value) = prefs.edit().putString(K_MUTE, MailMuteSettingsCodec.encode(value)).apply()
+
     override fun fetchedAt(folder: String): Long = prefs.getLong(fetchedKey(folder), 0L)
 
     @Synchronized
@@ -161,10 +169,12 @@ class SharedPrefsMailStateStore(context: Context) : MailStateStore {
     override fun clearSignIn() {
         val name = prefs.getString(K_NAME, null)
         val notify = prefs.getBoolean(K_NOTIFY, true)
+        val mute = prefs.getString(K_MUTE, null)
         val owned = prefs.getStringSet(K_OWNED, emptySet()).orEmpty().toSet()
         prefs.edit().clear().apply {
             name?.let { putString(K_NAME, it) }
             putBoolean(K_NOTIFY, notify)
+            mute?.let { putString(K_MUTE, it) }
             if (owned.isNotEmpty()) putStringSet(K_OWNED, owned)
         }.apply()
     }
@@ -177,6 +187,7 @@ class SharedPrefsMailStateStore(context: Context) : MailStateStore {
         const val K_VALIDITY = "inbox_uid_validity"
         const val K_MARKER = "inbox_seen_uid_next"
         const val K_FOREGROUND = "last_foreground_check_at"
+        const val K_MUTE = "mute_settings"
         const val K_FETCHED = "inbox_fetched_at"
         const val K_FETCHED_PREFIX = "fetched_at:"
         const val K_DIAG = "diagnostics"
