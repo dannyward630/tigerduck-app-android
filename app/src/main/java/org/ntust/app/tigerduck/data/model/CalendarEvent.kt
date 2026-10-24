@@ -32,6 +32,21 @@ data class CalendarEvent(
             EventSource.SCHOOL -> date.toInstant().atZone(AppConstants.TAIPEI_ZONE).toLocalTime() == LocalTime.MIDNIGHT
             EventSource.MOODLE, EventSource.EXAM -> false
         }
+
+    /**
+     * The id of the Moodle assignment this row is the deadline of, which a tap
+     * on the row opens, or null for any other row. A getter, as [isAllDay].
+     */
+    val moodleAssignmentId: String?
+        get() = eventId.removePrefix(MOODLE_ID_PREFIX)
+            .takeIf { source == EventSource.MOODLE && eventId.startsWith(MOODLE_ID_PREFIX) && it.isNotEmpty() }
+
+    companion object {
+        private const val MOODLE_ID_PREFIX = "moodle-"
+
+        /** The id of the row for the deadline of the Moodle assignment [assignmentId]. */
+        fun moodleEventId(assignmentId: String) = "$MOODLE_ID_PREFIX$assignmentId"
+    }
 }
 
 enum class EventSource(val raw: String) {

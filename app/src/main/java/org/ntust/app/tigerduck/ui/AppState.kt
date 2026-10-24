@@ -660,7 +660,7 @@ class AppState @Inject constructor(
             if (assignmentsResult.isSuccess) {
                 val moodleEvents = dataCache.loadAssignments().map { assignment ->
                     CalendarEvent(
-                        eventId = "moodle-${assignment.assignmentId}",
+                        eventId = CalendarEvent.moodleEventId(assignment.assignmentId),
                         title = assignment.title,
                         date = assignment.studentDueDate,
                         sourceRaw = EventSource.MOODLE.raw

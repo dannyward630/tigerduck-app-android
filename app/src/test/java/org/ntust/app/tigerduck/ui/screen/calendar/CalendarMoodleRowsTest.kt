@@ -32,6 +32,15 @@ class CalendarMoodleRowsTest {
     }
 
     @Test
+    fun `only a Moodle row names the assignment it is the deadline of`() {
+        assertEquals("2", withMoodleRows(emptyList(), listOf(assignment("2"))).single().moodleAssignmentId)
+        assertEquals(null, school.moodleAssignmentId)
+        // A school row whose feed id happens to look like a Moodle one, and a Moodle row with no id.
+        assertEquals(null, CalendarEvent("moodle-3", "Fair", Date(0), EventSource.SCHOOL.raw).moodleAssignmentId)
+        assertEquals(null, moodleRow("").moodleAssignmentId)
+    }
+
+    @Test
     fun `an empty assignment cache takes the Moodle rows off`() {
         // A TA account's rows once Moodle answers with none of the courses it TAs.
         assertEquals(
