@@ -8,6 +8,7 @@ import android.webkit.WebView
 import android.webkit.WebViewDatabase
 import androidx.webkit.WebStorageCompat
 import androidx.webkit.WebViewFeature
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,10 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import kotlin.coroutines.resume
 
 /**
  * Moves on whenever the browser's data is cleared, so a browser screen open
@@ -32,11 +31,38 @@ object BrowserSession {
     private val clearingState = MutableStateFlow(false)
     val clearing: StateFlow<Boolean> = clearingState.asStateFlow()
 
+    private val pendingDeletions = MutableStateFlow(0)
+
+    /**
+     * False while a deletion the WebView has not confirmed is still under
+     * way, however long after its clearing gave up waiting: the browser
+     * does not open until it has.
+     */
+    val usable: Boolean get() = pendingDeletions.value == 0
+
     fun end() = state.update { it + 1 }
 
     internal fun setClearing(clearing: Boolean) {
         clearingState.value = clearing
     }
+
+    internal fun deletionStarted() = pendingDeletions.update { it + 1 }
+
+    internal fun deletionDone() = pendingDeletions.update { (it - 1).coerceAtLeast(0) }
+}
+
+/**
+ * Starts [delete], which calls back once its deletion is done, and waits up
+ * to [timeoutMs] for it. A deletion that has not reported by then keeps the
+ * browser closed ([BrowserSession.usable]) until it does, however late; the
+ * clearing goes on meanwhile. False when it timed out.
+ */
+suspend fun awaitDeletion(timeoutMs: Long, delete: (onDone: () -> Unit) -> Unit): Boolean {
+    val done = CompletableDeferred<Unit>()
+    BrowserSession.deletionStarted()
+    done.invokeOnCompletion { BrowserSession.deletionDone() }
+    delete { done.complete(Unit) }
+    return withTimeoutOrNull(timeoutMs) { done.await() } != null
 }
 
 /** The WebView's own stores: cookies, web storage, saved HTTP auth and the HTTP cache. */
@@ -90,20 +116,16 @@ class BrowserDataCleaner(
 class AndroidWebViewStorage(private val context: Context) : WebViewStorage {
     override suspend fun clear(): Unit = withContext(Dispatchers.Main) {
         val cookies = CookieManager.getInstance()
-        val removed = withTimeoutOrNull(CLEAR_TIMEOUT_MS) {
-            suspendCancellableCoroutine { cont -> cookies.removeAllCookies { cont.resume(Unit) } }
+        if (!awaitDeletion(CLEAR_TIMEOUT_MS) { done -> cookies.removeAllCookies { done() } }) {
+            Log.w(TAG, "cookie removal did not report back yet")
         }
-        if (removed == null) Log.w(TAG, "cookie removal did not report back")
         cookies.flush()
         // Everything a site can keep, service workers and Cache Storage too, where the WebView
-        // can; deleteAllData below leaves those.
+        // can; deleteAllData below leaves those. The browser opens only where it can.
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DELETE_BROWSING_DATA)) {
-            val deleted = withTimeoutOrNull(CLEAR_TIMEOUT_MS) {
-                suspendCancellableCoroutine { cont ->
-                    WebStorageCompat.deleteBrowsingData(WebStorage.getInstance()) { cont.resume(Unit) }
-                }
+            if (!awaitDeletion(CLEAR_TIMEOUT_MS) { done -> WebStorageCompat.deleteBrowsingData(WebStorage.getInstance()) { done() } }) {
+                Log.w(TAG, "browsing data deletion did not report back yet")
             }
-            if (deleted == null) Log.w(TAG, "browsing data deletion did not report back")
         } else {
             Log.w(TAG, "this WebView cannot delete service workers and Cache Storage")
         }

@@ -92,7 +92,7 @@ class BrowserDownloadsTest {
         val never = CompletableDeferred<Uri>()
         val downloads = BrowserDownloads(this) { plan, _ -> if (plan.fileName == "bad.pdf") throw IOException("x") else never.await() }
         downloads.start(save.copy(fileName = "bad.pdf"))
-        val running = downloads.start(save)
+        val running = downloads.start(save)!!
         advanceUntilIdle()
 
         downloads.cancel(running)
@@ -286,5 +286,18 @@ class BrowserDownloadsTest {
 
         assertTrue(call!!.isCanceled())
         assertTrue("cleared in time", System.nanoTime() - started < 5_000_000_000L)
+    }
+
+    @Test
+    fun `nothing is downloaded while the browser is cleared`() = runTest {
+        val downloads = BrowserDownloads(this) { _, _ -> error("must not run") }
+        BrowserSession.setClearing(true)
+        try {
+            assertNull(downloads.start(save))
+        } finally {
+            BrowserSession.setClearing(false)
+        }
+        advanceUntilIdle()
+        assertTrue(downloads.items.value.isEmpty())
     }
 }

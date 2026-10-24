@@ -7,6 +7,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -102,10 +103,17 @@ class BrowserDownloads(
     /** Newest first. */
     val items: StateFlow<List<BrowserDownload>> = state.asStateFlow()
 
-    fun start(plan: DownloadPlan.Save): Long {
+    /**
+     * Starts saving [plan]'s file; null, saving nothing, while the browser is
+     * cleared ([BrowserSession.clearing]): a page of the departing student's,
+     * not yet closed, may still ask. The download is registered before it
+     * runs, so a clearing stops it whenever it began.
+     */
+    fun start(plan: DownloadPlan.Save): Long? = synchronized(jobs) {
+        if (BrowserSession.clearing.value) return null
         val id = ids.incrementAndGet()
         state.update { listOf(BrowserDownload(id, plan.fileName, plan.mimeType)) + it }
-        val job = scope.launch {
+        val job = scope.launch(start = CoroutineStart.LAZY) {
             try {
                 val uri = transfer.download(plan) { bytes, total ->
                     change(id) { if (it.state == BrowserDownload.State.RUNNING) it.copy(bytes = bytes, total = total) else it }
@@ -120,8 +128,9 @@ class BrowserDownloads(
                 synchronized(jobs) { jobs.remove(id) }
             }
         }
-        synchronized(jobs) { if (job.isActive) jobs[id] = job }
-        return id
+        jobs[id] = job
+        job.start()
+        id
     }
 
     fun cancel(id: Long) {

@@ -119,7 +119,7 @@ object InAppBrowser {
      */
     fun open(context: Context, url: String): Boolean {
         if (url.toHttpUrlOrNull()?.isHttps != true) return false
-        if (!canClearEverything()) return false
+        if (!canClearEverything() || !BrowserSession.usable) return false
         val intent = Intent(context, InAppBrowserActivity::class.java).putExtra(EXTRA_URL, url)
         if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return runCatching { context.startActivity(intent) }.isSuccess
@@ -157,6 +157,9 @@ class InAppBrowserActivity : AppCompatActivity() {
     private lateinit var pageTheme: ContextThemeWrapper
     private lateinit var webView: WebView
     private lateinit var mobileUserAgent: String
+
+    /** The session the page was loaded in, once the clearing gate let it load. */
+    private var loadedSession: Int? = null
 
     /** The scheme the page was last told; see [tellPage]. */
     private var toldDark: Boolean? = null
@@ -217,14 +220,23 @@ class InAppBrowserActivity : AppCompatActivity() {
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
         webView = createWebView()
 
-        val restored = savedInstanceState?.getBundle(KEY_WEB_STATE)?.let { webView.restoreState(it) != null } == true
+        val savedWeb = savedInstanceState?.getBundle(KEY_WEB_STATE)
+        val savedSession = savedInstanceState?.getInt(KEY_SESSION, -1)
         signInTarget = savedInstanceState?.getString(KEY_SIGN_IN_TARGET)
         lifecycleScope.launch {
-            // Not while a sign-out clears the browser: the departing student's session is still there.
+            // Nothing loads while a sign-out clears the browser, a page put back from saved state
+            // included: the departing student's session is still there.
             BrowserSession.clearing.first { !it }
+            if (!BrowserSession.usable) {
+                finish()
+                return@launch
+            }
             // A sign-out from here on clears the browser; the pages shown are the departing student's.
             val session = BrowserSession.generation.value
+            loadedSession = session
             launch { BrowserSession.generation.collect { if (it != session) finish() } }
+            // Saved state from before a sign-out is the departing student's: started afresh instead.
+            val restored = savedWeb != null && savedSession == session && webView.restoreState(savedWeb) != null
             if (!restored) open(target)
         }
 
@@ -271,7 +283,9 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (!::webView.isInitialized) return
+        val session = loadedSession
+        if (!::webView.isInitialized || session == null) return
+        outState.putInt(KEY_SESSION, session)
         outState.putBundle(KEY_WEB_STATE, Bundle().also { webView.saveState(it) })
         signInTarget?.let { outState.putString(KEY_SIGN_IN_TARGET, it) }
     }
@@ -558,7 +572,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             mimeOfExtension = { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) },
         )
         when (plan) {
-            is DownloadPlan.Save -> downloads.start(plan)
+            is DownloadPlan.Save -> if (downloads.start(plan) == null) return
             DownloadPlan.Refused -> Toast.makeText(this, R.string.browser_download_refused, Toast.LENGTH_SHORT).show()
         }
     }
@@ -879,5 +893,6 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         private const val KEY_WEB_STATE = "web_state"
         private const val KEY_SIGN_IN_TARGET = "sign_in_target"
+        private const val KEY_SESSION = "session"
     }
 }

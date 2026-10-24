@@ -83,4 +83,23 @@ class BrowserDataCleanerTest {
         assertEquals(before + 2, BrowserSession.generation.value)
         assertEquals(false, BrowserSession.clearing.value)
     }
+
+    @Test
+    fun `a deletion that has not reported keeps the browser closed until it does`() = runTest {
+        var report: (() -> Unit)? = null
+        assertTrue(BrowserSession.usable)
+
+        val inTime = awaitDeletion(timeoutMs = 5_000) { done -> report = done }
+
+        assertEquals(false, inTime)
+        assertEquals(false, BrowserSession.usable)
+        report!!()
+        assertTrue(BrowserSession.usable)
+    }
+
+    @Test
+    fun `a deletion that reports in time leaves the browser usable`() = runTest {
+        assertTrue(awaitDeletion(timeoutMs = 5_000) { done -> done() })
+        assertTrue(BrowserSession.usable)
+    }
 }
