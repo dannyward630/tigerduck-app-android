@@ -22,6 +22,7 @@ import org.ntust.app.tigerduck.data.sharing.ImportedClassTableStore
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportModel.ImportJob
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportModel.Prompt
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportModel.ScanAnswer
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
@@ -350,6 +351,51 @@ class ClassTableImportModelTest {
         assertFalse(model.staysForLink())
         assertFalse(model.state.value.leftForLink)
     }
+
+    // --- What the camera hears of a code it read (#493) ---
+
+    /** Codes of fake students, of year 000. */
+    private val fakeA = ClassTableShareCode.encode(
+        "B00015001", sharedAt, listOf(ClassTableShareCode.Term("1151", listOf("CS1010001"))),
+    )!!
+    private val fakeB = ClassTableShareCode.encode(
+        "B00015002", sharedAt, listOf(ClassTableShareCode.Term("1151", listOf("MA1010001"))),
+    )!!
+
+    @Test
+    fun `the camera hears whether a code was taken, is not a share code, waits, or is the one the import holds`() = runTest {
+        val model = model()
+
+        assertEquals(ScanAnswer.NOT_SHARE_CODE, model.scan("https://example.com"))
+        assertEquals(ScanAnswer.TAKEN, model.scan(fakeA))
+        // A's confirm step is open: A, in any form, is the code it holds, and B waits for it.
+        assertEquals(ScanAnswer.HOLDING, model.scan(fakeA))
+        assertEquals(ScanAnswer.HOLDING, model.scan(" ${fakeA.removePrefix("HTTPS://").lowercase()}?x=1"))
+        assertEquals(ScanAnswer.BUSY, model.scan(fakeB))
+        assertEquals(ScanAnswer.NOT_SHARE_CODE, model.scan("https://example.com"))
+
+        // Called off, the import holds A no more: it is taken again.
+        model.cancel()
+        assertEquals(ScanAnswer.TAKEN, model.scan(fakeA))
+    }
+
+    @Test
+    fun `a damaged code's prompt holds that code, and a picture's code is the one held after it`() = runTest {
+        val model = model()
+        val damaged = fakeA.dropLast(1) + if (fakeA.last() == '0') '1' else '0'
+
+        assertEquals(ScanAnswer.TAKEN, model.scan(damaged))
+        assertEquals(ScanAnswer.HOLDING, model.scan(damaged))
+        assertEquals(ScanAnswer.BUSY, model.scan(fakeA))
+        model.dismissPrompt()
+
+        assertEquals(ScanAnswer.TAKEN, model.scan(fakeA))
+        model.cancel()
+        // A picture's code opens: it is the one held, not A, which the camera took before.
+        model.imageRead(listOf(fakeB))
+        assertEquals(ScanAnswer.BUSY, model.scan(fakeA))
+        assertEquals(ScanAnswer.HOLDING, model.scan(fakeB))
+    }
 }
 
 /** Holds what is dispatched to it until [release] runs it, as a busy I/O thread would. */
@@ -364,4 +410,3 @@ private class HeldDispatcher : CoroutineDispatcher() {
         while (held.isNotEmpty()) held.removeFirst().run()
     }
 }
-

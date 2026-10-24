@@ -220,6 +220,16 @@ class DataCacheTest {
     }
 
     @Test
+    fun `writing a term's courses tells readers of other terms to look again`() = runTest {
+        val before = cache.coursesVersion.value
+
+        cache.saveCourses(listOf(Course(courseNo = "CS1010001", courseName = "A")), "1151")
+        cache.updateCourses("1142") { courses, _ -> courses }
+
+        assertEquals(before + 2, cache.coursesVersion.value)
+    }
+
+    @Test
     fun `writing the ignored or marked-done set tells readers to look again`() = runTest {
         val before = cache.assignmentMarksVersion.value
 

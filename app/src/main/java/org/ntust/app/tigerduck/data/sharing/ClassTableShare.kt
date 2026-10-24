@@ -66,6 +66,33 @@ class ClassTableShare(studentId: String, val terms: List<Term>) {
     }
 
     companion object {
+        /**
+         * [code] to paste as a link, as the share sheet's Copy link hands it over. The upper case
+         * that keeps the QR code small reads oddly in a scheme and host, so those are lower case,
+         * and the path is percent-encoded as a URL path: a pasted link would end at the spaces TAT
+         * pads a short student ID with. The decoder reads it back as the code (iOS's
+         * `ClassTableShareModel.link`).
+         */
+        fun link(code: String): String {
+            val address = code.substringAfter("://")
+            val host = address.substringBefore('/')
+            return "https://" + host.lowercase(java.util.Locale.ROOT) + encodedPath(address.substring(host.length))
+        }
+
+        /** [path] with what a URL path may not hold written as `%XX`, as Foundation's `urlPathAllowed` keeps it. */
+        private fun encodedPath(path: String): String = buildString {
+            for (byte in path.toByteArray(Charsets.UTF_8)) {
+                val char = (byte.toInt() and 0xFF).toChar()
+                if (char.isLetterOrDigit() && char < '\u0080' || char in URL_PATH_ALLOWED) {
+                    append(char)
+                } else {
+                    append('%').append("%02X".format(java.util.Locale.ROOT, byte.toInt() and 0xFF))
+                }
+            }
+        }
+
+        private const val URL_PATH_ALLOWED = "!$&'()*+,-./:;=@_~"
+
         /** Whether a share code can name [studentId], which it writes in upper case. */
         fun canName(studentId: String?): Boolean =
             studentId != null && ClassTableShareCode.isUpperAlphanumerics(studentId.uppercase())

@@ -31,6 +31,27 @@ class ClassTableShareTest {
     private val share = ClassTableShare("b11300000", listOf(fall, spring, longCodes))
 
     @Test
+    fun `the copied link is the code shown, with the scheme and host in lower case and TAT's padding encoded`() {
+        val ours = share.code(share.initialState, sharedAt)!!
+        assertEquals(
+            "https://share.tigerduck.app/CLASSTABLE/" + ours.removePrefix(ClassTableShareCode.PREFIX),
+            ClassTableShare.link(ours),
+        )
+
+        val tat = share.code(share.setTatCompatible(share.initialState, true), sharedAt)!!
+        assertEquals("https://ntust-tat.web.app/S/TAT21151B11300000CS1010001.134-MA1010001.25", ClassTableShare.link(tat))
+
+        // A student ID shorter than TAT's nine characters is padded with spaces, which a pasted
+        // link would end at.
+        val short = ClassTableShare("b000", listOf(fall))
+        val padded = short.code(short.setTatCompatible(short.initialState, true), sharedAt)!!
+        val link = ClassTableShare.link(padded)
+        assertEquals("https://ntust-tat.web.app/S/TAT21151B000%20%20%20%20%20CS1010001.134-MA1010001.25", link)
+        assertEquals(ClassTableShareCode.decode(padded), ClassTableShareCode.decode(link))
+        assertEquals(ClassTableShareCode.decode(ours), ClassTableShareCode.decode(ClassTableShare.link(ours)))
+    }
+
+    @Test
     fun `the sheet opens on the latest term with the switch off`() {
         assertEquals(ClassTableShare.State(Selection.Semester("1151"), false), share.initialState)
         assertEquals("B11300000", share.studentId)

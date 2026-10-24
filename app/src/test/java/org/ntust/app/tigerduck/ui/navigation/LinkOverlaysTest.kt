@@ -40,6 +40,7 @@ class LinkOverlaysTest {
         closeTabMenu = { events += TAB_MENU },
         closeSignInSheet = { events += SIGN_IN_SHEET },
         closeImport = { events += IMPORT },
+        closeShareSheet = { events += SHARE_SHEET },
     )
 
     /** What the page on screen does when a link asks it to let go; a mail being written asks. */
@@ -83,18 +84,21 @@ class LinkOverlaysTest {
 
         follow(Screen.AnnouncementDetail.route(7))
 
-        assertEquals(listOf(COURSE_SHEET, TAB_MENU, SIGN_IN_SHEET, IMPORT, OPENED), events)
+        assertEquals(listOf(COURSE_SHEET, TAB_MENU, SIGN_IN_SHEET, SHARE_SHEET, IMPORT, OPENED), events)
         assertEquals(Screen.AnnouncementDetail.route, route())
     }
 
-    /** The import is the class table's, and a share link has just opened one over it. */
+    /**
+     * The import is the class table's, and a share link has just opened one over it. The share
+     * sheet the scanner handed over to is no page's, and would cover it.
+     */
     @Test
-    fun `a link to the class table leaves its import`() {
+    fun `a link to the class table leaves its import, and closes the scanner's share sheet`() {
         showNavigation()
 
         follow(Screen.ClassTable.route)
 
-        assertEquals(listOf(COURSE_SHEET, TAB_MENU, SIGN_IN_SHEET, OPENED), events)
+        assertEquals(listOf(COURSE_SHEET, TAB_MENU, SIGN_IN_SHEET, SHARE_SHEET, OPENED), events)
     }
 
     @Test
@@ -129,7 +133,7 @@ class LinkOverlaysTest {
         assertNotNull(held)
         composeRule.runOnIdle { held!!() }
         composeRule.waitForIdle()
-        assertEquals(listOf(COURSE_SHEET, TAB_MENU, SIGN_IN_SHEET, IMPORT, OPENED), events)
+        assertEquals(listOf(COURSE_SHEET, TAB_MENU, SIGN_IN_SHEET, SHARE_SHEET, IMPORT, OPENED), events)
     }
 
     private companion object {
@@ -137,6 +141,7 @@ class LinkOverlaysTest {
         const val TAB_MENU = "tab menu"
         const val SIGN_IN_SHEET = "sign-in sheet"
         const val IMPORT = "import"
+        const val SHARE_SHEET = "scanner's share sheet"
         const val OPENED = "opened"
     }
 }

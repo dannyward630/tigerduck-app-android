@@ -18,7 +18,9 @@ import androidx.navigation.NavController
  *   nothing, as when a share link takes the place of an import. A person already being written,
  *   which Close cannot stop either, keeps it up until saved, or until it says the write failed,
  *   and then leaves the link's page on screen rather than show the class table
- *   ([org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportModel.staysForLink]).
+ *   ([org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportModel.staysForLink]);
+ * - the user's share sheet the import scanner handed over to, which is no page's and would
+ *   cover the link's page, or a share link's import.
  *
  * The app's own prompts stay, as they are no page's: What's New, an update, a first-use question,
  * an operator's message, a permission warning, a build too old for the server and the reset. A
@@ -29,11 +31,13 @@ internal class LinkOverlays(
     private val closeTabMenu: () -> Unit,
     private val closeSignInSheet: () -> Unit,
     private val closeImport: () -> Unit,
+    private val closeShareSheet: () -> Unit,
 ) {
     fun closeFor(target: String) {
         closeCourseSheet()
         closeTabMenu()
         closeSignInSheet()
+        closeShareSheet()
         if (target != Screen.ClassTable.route) closeImport()
     }
 }
