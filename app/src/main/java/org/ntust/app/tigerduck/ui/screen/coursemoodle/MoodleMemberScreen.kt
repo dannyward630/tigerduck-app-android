@@ -4,6 +4,10 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -26,12 +30,15 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -60,7 +67,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.moodle.MoodleLookup
 import org.ntust.app.tigerduck.data.moodle.MoodleMemberPlacement
@@ -95,6 +104,16 @@ fun MoodleMemberScreen(
     val scope = rememberCoroutineScope()
     val member = members?.members?.firstOrNull { it.id == memberId }
     LaunchedEffect(member?.pictureUrl) { if (member != null) current.loadPicture(member) }
+    // One's own picture can be changed where the site allows it: picked, cropped here, uploaded.
+    val ownPage = member != null && isOwnPage(member, members?.ownId)
+    var canChangePicture by remember { mutableStateOf(false) }
+    LaunchedEffect(current, ownPage) { canChangePicture = ownPage && current?.canChangePicture() == true }
+    val changingPicture = current?.changingPicture?.collectAsStateWithLifecycle()?.value == true
+    var cropping by remember { mutableStateOf<Bitmap?>(null) }
+    val snackbar = remember { SnackbarHostState() }
+    val pickPicture = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) scope.launch { cropping = decodePickedPicture(context, uri) }
+    }
     // Opened with no members cached, as after the system ended the app: fetched, or its failure
     // shown with Retry; a member no longer in the course closes the page.
     var lookup by remember { mutableStateOf<MoodleLookup?>(null) }
@@ -114,6 +133,7 @@ fun MoodleMemberScreen(
                 moodlePath = current?.let { MoodlePage.profile(memberId, it.courseId) },
             )
         },
+        snackbarHost = { SnackbarHost(snackbar) },
         containerColor = MaterialTheme.colorScheme.background,
     ) { padding ->
         Box(
@@ -140,14 +160,35 @@ fun MoodleMemberScreen(
                         if (schoolMail) onComposeSchoolMail(address) else writeWithMailApp(context, address)
                     },
                     // Moodle gives students no web service for the other profile fields.
-                    onEditOnMoodle = if (isOwnPage(member, members?.ownId)) {
+                    onEditOnMoodle = if (ownPage) {
                         { openMoodleWebPage(context, ownProfileEditorUrl()) }
                     } else {
                         null
                     },
+                    onChangePicture = if (canChangePicture) {
+                        { pickPicture.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+                    } else {
+                        null
+                    },
+                    changingPicture = changingPicture,
                 )
             }
         }
+    }
+    cropping?.let { picked ->
+        PictureCropDialog(
+            picture = picked,
+            onCancel = { cropping = null },
+            onDone = { source ->
+                cropping = null
+                val store = current ?: return@PictureCropDialog
+                scope.launch {
+                    val jpeg = withContext(Dispatchers.Default) { PictureCrop.jpeg(picked, source) }
+                    // The old picture stays; Moodle's own error says why.
+                    store.changePicture(jpeg)?.let { snackbar.showSnackbar(moodleErrorText(context.resources, it)) }
+                }
+            },
+        )
     }
 }
 
@@ -199,10 +240,15 @@ internal fun MemberPage(
     openingPicture: Boolean,
     onWrite: (String) -> Unit,
     onEditOnMoodle: (() -> Unit)?,
+    onChangePicture: (() -> Unit)? = null,
+    changingPicture: Boolean = false,
 ) {
     Box(Modifier.fillMaxSize()) {
         // Room below the profile for the pencil, so it covers none of it at the end of the scroll.
-        MemberProfile(member, picture, onOpenPicture, openingPicture, onWrite, bottom = if (onEditOnMoodle != null) 96.dp else 32.dp)
+        MemberProfile(
+            member, picture, onOpenPicture, openingPicture, onWrite, onChangePicture, changingPicture,
+            bottom = if (onEditOnMoodle != null) 96.dp else 32.dp,
+        )
         if (onEditOnMoodle != null) {
             FloatingActionButton(
                 onClick = onEditOnMoodle,
@@ -225,6 +271,8 @@ private fun MemberProfile(
     onOpenPicture: (() -> Unit)?,
     openingPicture: Boolean,
     onWrite: (String) -> Unit,
+    onChangePicture: (() -> Unit)?,
+    changingPicture: Boolean,
     bottom: Dp,
 ) {
     val rows = memberRows(member)
@@ -238,7 +286,7 @@ private fun MemberProfile(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            MemberPicture(member.name, picture, onOpenPicture, openingPicture)
+            MemberPicture(member.name, picture, onOpenPicture, openingPicture, onChangePicture, changingPicture)
             Spacer(Modifier.width(4.dp))
             SelectionContainer {
                 Text(
@@ -352,20 +400,53 @@ private fun copyAddress(context: Context, address: String) {
  * screen ([onOpen]; `MoodleCourseStore.fullPicture`), labelled for TalkBack, with a spinner while
  * it gets ready ([opening]), which takes no second tap; with [onOpen] null, as for Moodle's
  * default picture, it is a plain picture. As the iPhone's (tigerduck-app/tigerduck-app#741).
+ *
+ * On the signed-in student's own page, where the site allows it, a camera badge ([onChange])
+ * picks a new picture (#446, as the iPhone's tigerduck-app#802); while it goes up ([changing])
+ * the picture spins and neither takes a tap.
  */
 @Composable
-internal fun MemberPicture(name: String, picture: ImageBitmap?, onOpen: (() -> Unit)?, opening: Boolean) {
+internal fun MemberPicture(
+    name: String,
+    picture: ImageBitmap?,
+    onOpen: (() -> Unit)?,
+    opening: Boolean,
+    onChange: (() -> Unit)? = null,
+    changing: Boolean = false,
+) {
     val label = stringResource(R.string.course_member_profile_picture)
+    val changeLabel = stringResource(R.string.course_member_change_picture)
     val button = if (onOpen == null) {
         Modifier
     } else {
         Modifier
             .clip(CircleShape)
-            .clickable(enabled = !opening, role = Role.Button, onClick = onOpen)
+            .clickable(enabled = !opening && !changing, role = Role.Button, onClick = onOpen)
             .semantics { contentDescription = label }
     }
-    Box(button, contentAlignment = Alignment.Center) {
-        MoodleAvatar(name, picture, 88.dp)
-        if (opening) CircularProgressIndicator(Modifier.size(32.dp))
+    Box {
+        Box(button, contentAlignment = Alignment.Center) {
+            MoodleAvatar(name, picture, 88.dp)
+            if (opening || changing) CircularProgressIndicator(Modifier.size(32.dp))
+        }
+        if (onChange != null) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .clickable(enabled = !changing, role = Role.Button, onClick = onChange)
+                    .semantics { contentDescription = changeLabel },
+            ) {
+                Icon(
+                    Icons.Filled.PhotoCamera,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.padding(6.dp),
+                )
+            }
+        }
     }
 }

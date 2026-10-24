@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -391,8 +392,8 @@ class MoodleCourseStore(
      * participants from the account, answers as if the course had no members, which hides their
      * row for good rather than failing on every refresh.
      */
-    suspend fun refreshMembers() {
-        members.refresh {
+    suspend fun refreshMembers(joinRunning: Boolean = true) {
+        members.refresh(joinRunning) {
             if (MoodleCourseApi.MEMBERS_FUNCTION !in api.functions()) return@refresh MoodleMemberList(null, emptyList())
             try {
                 api.members(courseId)
@@ -401,6 +402,47 @@ class MoodleCourseStore(
             }
         }
     }
+
+    // --- The account's own picture ---
+
+    /** Whether the site lets the account change its profile picture (#446), as the iPhone asks. */
+    suspend fun canChangePicture(): Boolean = try {
+        MoodleCourseApi.UPDATE_PICTURE_FUNCTION in api.functions()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        false
+    }
+
+    private val _changingPicture = MutableStateFlow(false)
+
+    /** True from a picture change's upload until the members show its result; see [changePicture]. */
+    val changingPicture: StateFlow<Boolean> = _changingPicture.asStateFlow()
+
+    /**
+     * Makes [jpeg] the account's profile picture, then fetches the members again, so the list and
+     * the account's page show it. Null once Moodle took it, else what Moodle refused it with; the
+     * old picture shows meanwhile, and stays after a refusal.
+     *
+     * In the account's scope, not the caller's: a page left meanwhile does not stop a change
+     * Moodle may already have made from reaching the members, and a sign-out ends it. The fetch
+     * after it is a new one, never one already running, which would bring back the old picture.
+     */
+    suspend fun changePicture(jpeg: ByteArray): Throwable? = scope.async {
+        _changingPicture.value = true
+        try {
+            api.changePicture(jpeg)
+            refreshMembers(joinRunning = false)
+            null
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "profile picture not changed: ${e.logSummary()}")
+            e
+        } finally {
+            _changingPicture.value = false
+        }
+    }.await()
 
     // --- Summary ---
 
