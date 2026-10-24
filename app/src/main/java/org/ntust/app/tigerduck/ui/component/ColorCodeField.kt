@@ -34,10 +34,13 @@ class ColorCodeState(hex: Int) {
         text = code(hex)
     }
 
-    /** Takes [typed] as the field shows it, and returns the color it stands for, or null while it is none. */
+    /**
+     * Takes [typed], cut to what the field holds, and returns the color the field then
+     * shows, or null while it shows none: a longer paste is read as what is left of it.
+     */
     fun type(typed: String): Int? {
         text = typed.take(7)
-        return parse(typed)
+        return parse(text)
     }
 
     companion object {

@@ -81,6 +81,30 @@ class ColorPickerSheetCodeTest {
     }
 
     @Test
+    fun `a code pasted longer than the field takes is the color the field shows`() {
+        show()
+        field().performTextReplacement("#12AB345")
+
+        assertEquals("#12AB34", fieldText())
+        assertEquals(Color(0xFF12AB34), apply())
+    }
+
+    @Test
+    fun `a code typed after the square and the slider were used still moves them`() {
+        show()
+        // Each starts its gesture handling on first use; a typed code must reach it after that.
+        tapSquare(x = 1f / 4, y = 1f / 4)
+        tapSlider(x = 2f / 3)
+        field().performTextReplacement("#800000")
+        tapSlider(x = 1f / 3)
+
+        val (hue, sat, value) = hsv(apply())
+        assertEquals(120f, hue, 3f)
+        assertEquals("the saturation is not the typed code's", 1f, sat, 0.01f)
+        assertEquals("the brightness is not the typed code's", 0.5f, value, 0.01f)
+    }
+
+    @Test
     fun `a typed code moves the slider, so the square then picks from its hue`() {
         show()
         field().performTextReplacement("#FF0000")
