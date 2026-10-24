@@ -114,8 +114,6 @@
     <string name="browser_appearance">表示</string>
     <string name="browser_appearance_dark">ダーク</string>
     <string name="browser_appearance_light">ライト</string>
-    <string name="browser_appearance_note">「自動」ではページの明るさに合わせてブラウザの色が変わります。ダークモードに対応したページは、再読み込みせずにすぐ切り替わります。</string>
-    <string name="browser_appearance_note_next_load">「自動」ではページの明るさに合わせてブラウザの色が変わります。ダークモードに対応したページは、次に開くページから切り替わります。</string>
     <string name="browser_back">前のページ</string>
     <string name="browser_certificate">証明書を表示</string>
     <string name="browser_certificate_common_name">一般名</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">ダウンロードしたファイル</string>
     <string name="browser_downloads_empty">まだ何もダウンロードしていません。</string>
     <string name="browser_error_certificate">%1$@ の証明書が有効ではないため、TigerDuck はこのページを開きません。</string>
-    <string name="browser_error_message">%1$@ が応答していません。接続を確認して、もう一度お試しください。</string>
+    <string name="browser_error_message">%1$@ が応答していません。\n接続を確認して、もう一度お試しください。</string>
     <string name="browser_error_title">このページを読み込めません</string>
     <string name="browser_find">ページ内を検索</string>
     <string name="browser_find_done">検索を終了</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">ファイル</string>
     <string name="browser_upload_photos">写真</string>
     <string name="browser_upload_title">アップロードするファイルを選択</string>
-    <string name="browser_upload_wants_image">%1$@ は画像を求めています。</string>
     <string name="browser_zoom">ページのズーム</string>
     <string name="browser_zoom_in">拡大</string>
     <string name="browser_zoom_out">縮小</string>

@@ -114,8 +114,6 @@
     <string name="browser_appearance">Wygląd</string>
     <string name="browser_appearance_dark">Ciemny</string>
     <string name="browser_appearance_light">Jasny</string>
-    <string name="browser_appearance_note">„Automatycznie” dopasowuje kolory przeglądarki do strony. Strony z trybem ciemnym przełączają się od razu, bez ponownego wczytywania.</string>
-    <string name="browser_appearance_note_next_load">„Automatycznie” dopasowuje kolory przeglądarki do strony. Strony z trybem ciemnym przełączają się od następnej otwartej strony.</string>
     <string name="browser_back">Poprzednia strona</string>
     <string name="browser_certificate">Pokaż certyfikat</string>
     <string name="browser_certificate_common_name">Nazwa pospolita</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Pobrane pliki</string>
     <string name="browser_downloads_empty">Jeszcze nic nie pobrano.</string>
     <string name="browser_error_certificate">Certyfikat %1$@ jest nieważny, więc TigerDuck nie otworzy tej strony.</string>
-    <string name="browser_error_message">%1$@ nie odpowiada. Sprawdź połączenie i spróbuj ponownie.</string>
+    <string name="browser_error_message">%1$@ nie odpowiada.\nSprawdź połączenie i spróbuj ponownie.</string>
     <string name="browser_error_title">Nie można wczytać tej strony</string>
     <string name="browser_find">Znajdź na stronie</string>
     <string name="browser_find_done">Zakończ wyszukiwanie</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Pliki</string>
     <string name="browser_upload_photos">Zdjęcia</string>
     <string name="browser_upload_title">Wybierz plik do przesłania</string>
-    <string name="browser_upload_wants_image">%1$@ prosi o obraz.</string>
     <string name="browser_zoom">Powiększenie strony</string>
     <string name="browser_zoom_in">Powiększ</string>
     <string name="browser_zoom_out">Pomniejsz</string>

@@ -114,8 +114,6 @@
     <string name="browser_appearance">Darstellung</string>
     <string name="browser_appearance_dark">Dunkel</string>
     <string name="browser_appearance_light">Hell</string>
-    <string name="browser_appearance_note">„Automatisch“ passt die Farben des Browsers an die Seite an. Seiten mit dunklem Modus wechseln sofort, ohne neu zu laden.</string>
-    <string name="browser_appearance_note_next_load">„Automatisch“ passt die Farben des Browsers an die Seite an. Seiten mit dunklem Modus wechseln ab der nächsten Seite, die du öffnest.</string>
     <string name="browser_back">Vorherige Seite</string>
     <string name="browser_certificate">Zertifikat ansehen</string>
     <string name="browser_certificate_common_name">Allgemeiner Name</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Heruntergeladene Dateien</string>
     <string name="browser_downloads_empty">Noch nichts heruntergeladen.</string>
     <string name="browser_error_certificate">Das Zertifikat von %1$@ ist ungültig, daher öffnet TigerDuck diese Seite nicht.</string>
-    <string name="browser_error_message">%1$@ antwortet nicht. Prüfe deine Verbindung und versuche es noch einmal.</string>
+    <string name="browser_error_message">%1$@ antwortet nicht.\nPrüfe deine Verbindung und versuche es noch einmal.</string>
     <string name="browser_error_title">Diese Seite kann nicht geladen werden</string>
     <string name="browser_find">Auf Seite suchen</string>
     <string name="browser_find_done">Suche beenden</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Dateien</string>
     <string name="browser_upload_photos">Fotos</string>
     <string name="browser_upload_title">Datei zum Hochladen auswählen</string>
-    <string name="browser_upload_wants_image">%1$@ möchte ein Bild.</string>
     <string name="browser_zoom">Seitenzoom</string>
     <string name="browser_zoom_in">Vergrößern</string>
     <string name="browser_zoom_out">Verkleinern</string>

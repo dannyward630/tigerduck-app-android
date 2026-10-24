@@ -114,8 +114,6 @@
     <string name="browser_appearance">દેખાવ</string>
     <string name="browser_appearance_dark">ઘેરો</string>
     <string name="browser_appearance_light">આછો</string>
-    <string name="browser_appearance_note">\"ઑટોમેટિક\" બ્રાઉઝરના રંગ પેજ મુજબ કરે છે. ડાર્ક મોડવાળાં પેજ ફરી લોડ કર્યા વગર તરત બદલાઈ જાય છે.</string>
-    <string name="browser_appearance_note_next_load">\"ઑટોમેટિક\" બ્રાઉઝરના રંગ પેજ મુજબ કરે છે. ડાર્ક મોડવાળાં પેજ તમે ખોલો તે આગલા પેજથી બદલાય છે.</string>
     <string name="browser_back">પાછલું પેજ</string>
     <string name="browser_certificate">પ્રમાણપત્ર જુઓ</string>
     <string name="browser_certificate_common_name">સામાન્ય નામ</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">ડાઉનલોડ કરેલી ફાઇલો</string>
     <string name="browser_downloads_empty">હજી સુધી કંઈ ડાઉનલોડ થયું નથી.</string>
     <string name="browser_error_certificate">%1$@નું પ્રમાણપત્ર માન્ય નથી, તેથી TigerDuck આ પેજ ખોલશે નહીં.</string>
-    <string name="browser_error_message">%1$@ જવાબ આપતું નથી. તમારું કનેક્શન તપાસો અને ફરી પ્રયાસ કરો.</string>
+    <string name="browser_error_message">%1$@ જવાબ આપતું નથી.\nતમારું કનેક્શન તપાસો અને ફરી પ્રયાસ કરો.</string>
     <string name="browser_error_title">આ પેજ લોડ થઈ શકતું નથી</string>
     <string name="browser_find">પેજમાં શોધો</string>
     <string name="browser_find_done">શોધવાનું બંધ કરો</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">ફાઇલો</string>
     <string name="browser_upload_photos">ફોટા</string>
     <string name="browser_upload_title">અપલોડ કરવા માટે ફાઇલ પસંદ કરો</string>
-    <string name="browser_upload_wants_image">%1$@ એક છબી માંગે છે.</string>
     <string name="browser_zoom">પેજ ઝૂમ</string>
     <string name="browser_zoom_in">ઝૂમ ઇન</string>
     <string name="browser_zoom_out">ઝૂમ આઉટ</string>

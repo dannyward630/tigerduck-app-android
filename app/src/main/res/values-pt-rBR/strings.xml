@@ -114,8 +114,6 @@
     <string name="browser_appearance">Aparência</string>
     <string name="browser_appearance_dark">Escuro</string>
     <string name="browser_appearance_light">Claro</string>
-    <string name="browser_appearance_note">\"Automático\" ajusta as cores do navegador à página. Páginas com modo escuro mudam na hora, sem recarregar.</string>
-    <string name="browser_appearance_note_next_load">\"Automático\" ajusta as cores do navegador à página. Páginas com modo escuro mudam a partir da próxima página que você abrir.</string>
     <string name="browser_back">Página anterior</string>
     <string name="browser_certificate">Ver certificado</string>
     <string name="browser_certificate_common_name">Nome comum</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Arquivos baixados</string>
     <string name="browser_downloads_empty">Nada baixado ainda.</string>
     <string name="browser_error_certificate">O certificado de %1$@ não é válido, por isso o TigerDuck não vai abrir esta página.</string>
-    <string name="browser_error_message">%1$@ não está respondendo. Verifique sua conexão e tente de novo.</string>
+    <string name="browser_error_message">%1$@ não está respondendo.\nVerifique sua conexão e tente de novo.</string>
     <string name="browser_error_title">Não foi possível carregar esta página</string>
     <string name="browser_find">Localizar na página</string>
     <string name="browser_find_done">Parar de localizar</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Arquivos</string>
     <string name="browser_upload_photos">Fotos</string>
     <string name="browser_upload_title">Escolha um arquivo para enviar</string>
-    <string name="browser_upload_wants_image">%1$@ pede uma imagem.</string>
     <string name="browser_zoom">Zoom da página</string>
     <string name="browser_zoom_in">Aumentar</string>
     <string name="browser_zoom_out">Diminuir</string>

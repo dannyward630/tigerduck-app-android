@@ -114,8 +114,6 @@
     <string name="browser_appearance">Aspect</string>
     <string name="browser_appearance_dark">Întunecat</string>
     <string name="browser_appearance_light">Luminos</string>
-    <string name="browser_appearance_note">„Automat” potrivește culorile browserului cu pagina. Paginile cu mod întunecat se schimbă imediat, fără reîncărcare.</string>
-    <string name="browser_appearance_note_next_load">„Automat” potrivește culorile browserului cu pagina. Paginile cu mod întunecat se schimbă de la următoarea pagină pe care o deschideți.</string>
     <string name="browser_back">Pagina anterioară</string>
     <string name="browser_certificate">Vedeți certificatul</string>
     <string name="browser_certificate_common_name">Nume comun</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Fișiere descărcate</string>
     <string name="browser_downloads_empty">Nimic descărcat încă.</string>
     <string name="browser_error_certificate">Certificatul pentru %1$@ nu este valid, așa că TigerDuck nu va deschide această pagină.</string>
-    <string name="browser_error_message">%1$@ nu răspunde. Verificați conexiunea și încercați din nou.</string>
+    <string name="browser_error_message">%1$@ nu răspunde.\nVerificați conexiunea și încercați din nou.</string>
     <string name="browser_error_title">Această pagină nu se poate încărca</string>
     <string name="browser_find">Căutați în pagină</string>
     <string name="browser_find_done">Opriți căutarea</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Fișiere</string>
     <string name="browser_upload_photos">Fotografii</string>
     <string name="browser_upload_title">Alegeți un fișier de încărcat</string>
-    <string name="browser_upload_wants_image">%1$@ cere o imagine.</string>
     <string name="browser_zoom">Zoom pagină</string>
     <string name="browser_zoom_in">Măriți</string>
     <string name="browser_zoom_out">Micșorați</string>

@@ -114,8 +114,6 @@
     <string name="browser_appearance">स्वरूप</string>
     <string name="browser_appearance_dark">गडद</string>
     <string name="browser_appearance_light">फिकट</string>
-    <string name="browser_appearance_note">\"स्वयंचलित\" ब्राउझरचे रंग पेजनुसार करते. डार्क मोडला सपोर्ट करणारी पेजेस पुन्हा लोड न करता लगेच बदलतात.</string>
-    <string name="browser_appearance_note_next_load">\"स्वयंचलित\" ब्राउझरचे रंग पेजनुसार करते. डार्क मोडला सपोर्ट करणारी पेजेस तुम्ही उघडलेल्या पुढील पेजपासून बदलतात.</string>
     <string name="browser_back">मागील पेज</string>
     <string name="browser_certificate">प्रमाणपत्र पहा</string>
     <string name="browser_certificate_common_name">सामान्य नाव</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">डाउनलोड केलेल्या फाइल</string>
     <string name="browser_downloads_empty">अद्याप काहीही डाउनलोड केलेले नाही.</string>
     <string name="browser_error_certificate">%1$@ चे प्रमाणपत्र वैध नाही, त्यामुळे TigerDuck हे पेज उघडणार नाही.</string>
-    <string name="browser_error_message">%1$@ प्रतिसाद देत नाही. तुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.</string>
+    <string name="browser_error_message">%1$@ प्रतिसाद देत नाही.\nतुमचे कनेक्शन तपासा आणि पुन्हा प्रयत्न करा.</string>
     <string name="browser_error_title">हे पेज लोड होऊ शकत नाही</string>
     <string name="browser_find">पेजमध्ये शोधा</string>
     <string name="browser_find_done">शोधणे थांबवा</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">फाइल</string>
     <string name="browser_upload_photos">फोटो</string>
     <string name="browser_upload_title">अपलोड करण्यासाठी फाइल निवडा</string>
-    <string name="browser_upload_wants_image">%1$@ एक इमेज मागत आहे.</string>
     <string name="browser_zoom">पेज झूम</string>
     <string name="browser_zoom_in">झूम इन करा</string>
     <string name="browser_zoom_out">झूम आउट करा</string>

@@ -114,8 +114,6 @@
     <string name="browser_appearance">চেহারা</string>
     <string name="browser_appearance_dark">গাঢ়</string>
     <string name="browser_appearance_light">হালকা</string>
-    <string name="browser_appearance_note">\"স্বয়ংক্রিয়\" ব্রাউজারের রং পেজের সঙ্গে মিলিয়ে দেয়। ডার্ক মোড সমর্থন করে এমন পেজ রিলোড ছাড়াই সঙ্গে সঙ্গে বদলে যায়।</string>
-    <string name="browser_appearance_note_next_load">\"স্বয়ংক্রিয়\" ব্রাউজারের রং পেজের সঙ্গে মিলিয়ে দেয়। ডার্ক মোড সমর্থন করে এমন পেজ আপনার খোলা পরের পেজ থেকে বদলায়।</string>
     <string name="browser_back">আগের পেজ</string>
     <string name="browser_certificate">সার্টিফিকেট দেখুন</string>
     <string name="browser_certificate_common_name">সাধারণ নাম</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">ডাউনলোড করা ফাইল</string>
     <string name="browser_downloads_empty">এখনও কিছু ডাউনলোড হয়নি।</string>
     <string name="browser_error_certificate">%1$@-এর সার্টিফিকেট বৈধ নয়, তাই TigerDuck এই পেজ খুলবে না।</string>
-    <string name="browser_error_message">%1$@ সাড়া দিচ্ছে না। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="browser_error_message">%1$@ সাড়া দিচ্ছে না।\nসংযোগ দেখে আবার চেষ্টা করুন।</string>
     <string name="browser_error_title">এই পেজ লোড করা যাচ্ছে না</string>
     <string name="browser_find">পেজে খুঁজুন</string>
     <string name="browser_find_done">খোঁজা বন্ধ করুন</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">ফাইল</string>
     <string name="browser_upload_photos">ছবি</string>
     <string name="browser_upload_title">আপলোড করার জন্য একটি ফাইল বাছুন</string>
-    <string name="browser_upload_wants_image">%1$@ একটি ছবি চাইছে।</string>
     <string name="browser_zoom">পেজ জুম</string>
     <string name="browser_zoom_in">জুম ইন</string>
     <string name="browser_zoom_out">জুম আউট</string>

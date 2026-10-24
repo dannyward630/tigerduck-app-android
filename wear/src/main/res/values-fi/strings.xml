@@ -114,8 +114,6 @@
     <string name="browser_appearance">Ulkoasu</string>
     <string name="browser_appearance_dark">Tumma</string>
     <string name="browser_appearance_light">Vaalea</string>
-    <string name="browser_appearance_note">”Automaattinen” sovittaa selaimen värit sivuun. Tummaa tilaa tukevat sivut vaihtuvat heti ilman uudelleenlatausta.</string>
-    <string name="browser_appearance_note_next_load">”Automaattinen” sovittaa selaimen värit sivuun. Tummaa tilaa tukevat sivut vaihtuvat seuraavasta avaamastasi sivusta alkaen.</string>
     <string name="browser_back">Edellinen sivu</string>
     <string name="browser_certificate">Näytä varmenne</string>
     <string name="browser_certificate_common_name">Yleinen nimi</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Ladatut tiedostot</string>
     <string name="browser_downloads_empty">Mitään ei ole vielä ladattu.</string>
     <string name="browser_error_certificate">Kohteen %1$@ varmenne ei ole kelvollinen, joten TigerDuck ei avaa tätä sivua.</string>
-    <string name="browser_error_message">%1$@ ei vastaa. Tarkista yhteys ja yritä uudelleen.</string>
+    <string name="browser_error_message">%1$@ ei vastaa.\nTarkista yhteys ja yritä uudelleen.</string>
     <string name="browser_error_title">Sivua ei voi ladata</string>
     <string name="browser_find">Etsi sivulta</string>
     <string name="browser_find_done">Lopeta haku</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Tiedostot</string>
     <string name="browser_upload_photos">Kuvat</string>
     <string name="browser_upload_title">Valitse ladattava tiedosto</string>
-    <string name="browser_upload_wants_image">%1$@ pyytää kuvaa.</string>
     <string name="browser_zoom">Sivun zoomaus</string>
     <string name="browser_zoom_in">Lähennä</string>
     <string name="browser_zoom_out">Loitonna</string>

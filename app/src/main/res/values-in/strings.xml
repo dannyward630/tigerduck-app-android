@@ -114,8 +114,6 @@
     <string name="browser_appearance">Tampilan</string>
     <string name="browser_appearance_dark">Gelap</string>
     <string name="browser_appearance_light">Terang</string>
-    <string name="browser_appearance_note">\"Otomatis\" menyesuaikan warna browser dengan halaman. Halaman yang mendukung mode gelap langsung berganti tanpa dimuat ulang.</string>
-    <string name="browser_appearance_note_next_load">\"Otomatis\" menyesuaikan warna browser dengan halaman. Halaman yang mendukung mode gelap berganti mulai halaman berikutnya yang Anda buka.</string>
     <string name="browser_back">Halaman sebelumnya</string>
     <string name="browser_certificate">Lihat sertifikat</string>
     <string name="browser_certificate_common_name">Nama umum</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">File yang didownload</string>
     <string name="browser_downloads_empty">Belum ada yang didownload.</string>
     <string name="browser_error_certificate">Sertifikat %1$@ tidak valid, jadi TigerDuck tidak akan membuka halaman ini.</string>
-    <string name="browser_error_message">%1$@ tidak merespons. Periksa koneksi Anda, lalu coba lagi.</string>
+    <string name="browser_error_message">%1$@ tidak merespons.\nPeriksa koneksi Anda, lalu coba lagi.</string>
     <string name="browser_error_title">Halaman ini tidak dapat dimuat</string>
     <string name="browser_find">Cari di halaman</string>
     <string name="browser_find_done">Selesai mencari</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">File</string>
     <string name="browser_upload_photos">Foto</string>
     <string name="browser_upload_title">Pilih file untuk diupload</string>
-    <string name="browser_upload_wants_image">%1$@ meminta gambar.</string>
     <string name="browser_zoom">Zoom halaman</string>
     <string name="browser_zoom_in">Perbesar</string>
     <string name="browser_zoom_out">Perkecil</string>

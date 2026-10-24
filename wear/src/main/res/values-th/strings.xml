@@ -114,8 +114,6 @@
     <string name="browser_appearance">ลักษณะที่ปรากฏ</string>
     <string name="browser_appearance_dark">มืด</string>
     <string name="browser_appearance_light">สว่าง</string>
-    <string name="browser_appearance_note">\"อัตโนมัติ\" จะปรับสีของเบราว์เซอร์ให้เข้ากับหน้าเว็บ หน้าเว็บที่รองรับโหมดมืดจะเปลี่ยนทันทีโดยไม่ต้องโหลดใหม่</string>
-    <string name="browser_appearance_note_next_load">\"อัตโนมัติ\" จะปรับสีของเบราว์เซอร์ให้เข้ากับหน้าเว็บ หน้าเว็บที่รองรับโหมดมืดจะเปลี่ยนตั้งแต่หน้าถัดไปที่คุณเปิด</string>
     <string name="browser_back">หน้าก่อนหน้า</string>
     <string name="browser_certificate">ดูใบรับรอง</string>
     <string name="browser_certificate_common_name">ชื่อทั่วไป</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">ไฟล์ที่ดาวน์โหลด</string>
     <string name="browser_downloads_empty">ยังไม่ได้ดาวน์โหลดอะไร</string>
     <string name="browser_error_certificate">ใบรับรองของ %1$@ ใช้ไม่ได้ TigerDuck จึงจะไม่เปิดหน้านี้</string>
-    <string name="browser_error_message">%1$@ ไม่ตอบสนอง โปรดตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</string>
+    <string name="browser_error_message">%1$@ ไม่ตอบสนอง\nโปรดตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง</string>
     <string name="browser_error_title">โหลดหน้านี้ไม่ได้</string>
     <string name="browser_find">ค้นหาในหน้า</string>
     <string name="browser_find_done">หยุดค้นหา</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">ไฟล์</string>
     <string name="browser_upload_photos">รูปภาพ</string>
     <string name="browser_upload_title">เลือกไฟล์ที่จะอัปโหลด</string>
-    <string name="browser_upload_wants_image">%1$@ ขอรูปภาพ</string>
     <string name="browser_zoom">ซูมหน้า</string>
     <string name="browser_zoom_in">ซูมเข้า</string>
     <string name="browser_zoom_out">ซูมออก</string>

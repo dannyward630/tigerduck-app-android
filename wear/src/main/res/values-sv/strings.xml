@@ -114,8 +114,6 @@
     <string name="browser_appearance">Utseende</string>
     <string name="browser_appearance_dark">Mörkt</string>
     <string name="browser_appearance_light">Ljust</string>
-    <string name="browser_appearance_note">”Automatiskt” anpassar webbläsarens färger efter sidan. Sidor med mörkt läge byter direkt, utan att laddas om.</string>
-    <string name="browser_appearance_note_next_load">”Automatiskt” anpassar webbläsarens färger efter sidan. Sidor med mörkt läge byter från nästa sida du öppnar.</string>
     <string name="browser_back">Föregående sida</string>
     <string name="browser_certificate">Visa certifikat</string>
     <string name="browser_certificate_common_name">Namn</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Hämtade filer</string>
     <string name="browser_downloads_empty">Inget hämtat än.</string>
     <string name="browser_error_certificate">Certifikatet för %1$@ är inte giltigt, så TigerDuck öppnar inte sidan.</string>
-    <string name="browser_error_message">%1$@ svarar inte. Kontrollera anslutningen och försök igen.</string>
+    <string name="browser_error_message">%1$@ svarar inte.\nKontrollera anslutningen och försök igen.</string>
     <string name="browser_error_title">Sidan kan inte läsas in</string>
     <string name="browser_find">Sök på sidan</string>
     <string name="browser_find_done">Sluta söka</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Filer</string>
     <string name="browser_upload_photos">Foton</string>
     <string name="browser_upload_title">Välj en fil att ladda upp</string>
-    <string name="browser_upload_wants_image">%1$@ vill ha en bild.</string>
     <string name="browser_zoom">Sidzoom</string>
     <string name="browser_zoom_in">Zooma in</string>
     <string name="browser_zoom_out">Zooma ut</string>

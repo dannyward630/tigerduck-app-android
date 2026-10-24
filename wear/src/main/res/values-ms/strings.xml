@@ -114,8 +114,6 @@
     <string name="browser_appearance">Penampilan</string>
     <string name="browser_appearance_dark">Gelap</string>
     <string name="browser_appearance_light">Cerah</string>
-    <string name="browser_appearance_note">\"Automatik\" menyesuaikan warna penyemak imbas dengan halaman. Halaman yang menyokong mod gelap bertukar serta-merta, tanpa dimuat semula.</string>
-    <string name="browser_appearance_note_next_load">\"Automatik\" menyesuaikan warna penyemak imbas dengan halaman. Halaman yang menyokong mod gelap bertukar mulai halaman seterusnya yang anda buka.</string>
     <string name="browser_back">Halaman sebelumnya</string>
     <string name="browser_certificate">Lihat sijil</string>
     <string name="browser_certificate_common_name">Nama umum</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Fail yang dimuat turun</string>
     <string name="browser_downloads_empty">Belum ada apa-apa dimuat turun.</string>
     <string name="browser_error_certificate">Sijil %1$@ tidak sah, jadi TigerDuck tidak akan membuka halaman ini.</string>
-    <string name="browser_error_message">%1$@ tidak bertindak balas. Semak sambungan anda dan cuba lagi.</string>
+    <string name="browser_error_message">%1$@ tidak bertindak balas.\nSemak sambungan anda dan cuba lagi.</string>
     <string name="browser_error_title">Halaman ini tidak dapat dimuatkan</string>
     <string name="browser_find">Cari dalam halaman</string>
     <string name="browser_find_done">Berhenti mencari</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Fail</string>
     <string name="browser_upload_photos">Foto</string>
     <string name="browser_upload_title">Pilih fail untuk dimuat naik</string>
-    <string name="browser_upload_wants_image">%1$@ meminta imej.</string>
     <string name="browser_zoom">Zum halaman</string>
     <string name="browser_zoom_in">Zum masuk</string>
     <string name="browser_zoom_out">Zum keluar</string>

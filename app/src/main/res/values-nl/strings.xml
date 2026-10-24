@@ -114,8 +114,6 @@
     <string name="browser_appearance">Weergave</string>
     <string name="browser_appearance_dark">Donker</string>
     <string name="browser_appearance_light">Licht</string>
-    <string name="browser_appearance_note">\'Automatisch\' stemt de kleuren van de browser af op de pagina. Pagina\'s met een donkere modus wisselen meteen, zonder opnieuw te laden.</string>
-    <string name="browser_appearance_note_next_load">\'Automatisch\' stemt de kleuren van de browser af op de pagina. Pagina\'s met een donkere modus wisselen vanaf de volgende pagina die je opent.</string>
     <string name="browser_back">Vorige pagina</string>
     <string name="browser_certificate">Certificaat bekijken</string>
     <string name="browser_certificate_common_name">Algemene naam</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Gedownloade bestanden</string>
     <string name="browser_downloads_empty">Nog niets gedownload.</string>
     <string name="browser_error_certificate">Het certificaat van %1$@ is niet geldig, dus TigerDuck opent deze pagina niet.</string>
-    <string name="browser_error_message">%1$@ reageert niet. Controleer je verbinding en probeer het opnieuw.</string>
+    <string name="browser_error_message">%1$@ reageert niet.\nControleer je verbinding en probeer het opnieuw.</string>
     <string name="browser_error_title">Deze pagina kan niet worden geladen</string>
     <string name="browser_find">Zoeken op pagina</string>
     <string name="browser_find_done">Stoppen met zoeken</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Bestanden</string>
     <string name="browser_upload_photos">Foto\'s</string>
     <string name="browser_upload_title">Kies een bestand om te uploaden</string>
-    <string name="browser_upload_wants_image">%1$@ vraagt om een afbeelding.</string>
     <string name="browser_zoom">Paginazoom</string>
     <string name="browser_zoom_in">Inzoomen</string>
     <string name="browser_zoom_out">Uitzoomen</string>

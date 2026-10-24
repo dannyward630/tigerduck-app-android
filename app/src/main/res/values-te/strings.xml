@@ -114,8 +114,6 @@
     <string name="browser_appearance">రూపం</string>
     <string name="browser_appearance_dark">ముదురు</string>
     <string name="browser_appearance_light">లేత</string>
-    <string name="browser_appearance_note">\"ఆటోమేటిక్\" బ్రౌజర్ రంగులను పేజీకి తగ్గట్టు మారుస్తుంది. డార్క్ మోడ్‌ను సపోర్ట్ చేసే పేజీలు మళ్లీ లోడ్ చేయకుండానే వెంటనే మారతాయి.</string>
-    <string name="browser_appearance_note_next_load">\"ఆటోమేటిక్\" బ్రౌజర్ రంగులను పేజీకి తగ్గట్టు మారుస్తుంది. డార్క్ మోడ్‌ను సపోర్ట్ చేసే పేజీలు మీరు తెరిచే తర్వాతి పేజీ నుంచి మారతాయి.</string>
     <string name="browser_back">మునుపటి పేజీ</string>
     <string name="browser_certificate">సర్టిఫికెట్ చూడండి</string>
     <string name="browser_certificate_common_name">సాధారణ పేరు</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">డౌన్‌లోడ్ చేసిన ఫైల్‌లు</string>
     <string name="browser_downloads_empty">ఇంకా ఏదీ డౌన్‌లోడ్ చేయలేదు.</string>
     <string name="browser_error_certificate">%1$@ సర్టిఫికెట్ చెల్లుబాటు కాదు, కాబట్టి TigerDuck ఈ పేజీని తెరవదు.</string>
-    <string name="browser_error_message">%1$@ స్పందించడం లేదు. మీ కనెక్షన్‌ను చెక్ చేసి మళ్లీ ప్రయత్నించండి.</string>
+    <string name="browser_error_message">%1$@ స్పందించడం లేదు.\nమీ కనెక్షన్‌ను చెక్ చేసి మళ్లీ ప్రయత్నించండి.</string>
     <string name="browser_error_title">ఈ పేజీని లోడ్ చేయడం సాధ్యం కాదు</string>
     <string name="browser_find">పేజీలో కనుగొనండి</string>
     <string name="browser_find_done">వెతకడం ఆపండి</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">ఫైల్‌లు</string>
     <string name="browser_upload_photos">ఫోటోలు</string>
     <string name="browser_upload_title">అప్‌లోడ్ చేయడానికి ఫైల్‌ను ఎంచుకోండి</string>
-    <string name="browser_upload_wants_image">%1$@ ఒక చిత్రాన్ని అడుగుతోంది.</string>
     <string name="browser_zoom">పేజీ జూమ్</string>
     <string name="browser_zoom_in">జూమ్ ఇన్</string>
     <string name="browser_zoom_out">జూమ్ అవుట్</string>

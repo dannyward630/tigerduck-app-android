@@ -114,8 +114,6 @@
     <string name="browser_appearance">Megjelenés</string>
     <string name="browser_appearance_dark">Sötét</string>
     <string name="browser_appearance_light">Világos</string>
-    <string name="browser_appearance_note">Az „Automatikus” az oldalhoz igazítja a böngésző színeit. A sötét módot támogató oldalak azonnal váltanak, újratöltés nélkül.</string>
-    <string name="browser_appearance_note_next_load">Az „Automatikus” az oldalhoz igazítja a böngésző színeit. A sötét módot támogató oldalak a következő megnyitott oldaltól váltanak.</string>
     <string name="browser_back">Előző oldal</string>
     <string name="browser_certificate">Tanúsítvány megtekintése</string>
     <string name="browser_certificate_common_name">Köznapi név</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Letöltött fájlok</string>
     <string name="browser_downloads_empty">Még nincs letöltés.</string>
     <string name="browser_error_certificate">%1$@ tanúsítványa érvénytelen, ezért a TigerDuck nem nyitja meg ezt az oldalt.</string>
-    <string name="browser_error_message">%1$@ nem válaszol. Ellenőrizd a kapcsolatot, és próbáld újra.</string>
+    <string name="browser_error_message">%1$@ nem válaszol.\nEllenőrizd a kapcsolatot, és próbáld újra.</string>
     <string name="browser_error_title">Az oldal nem tölthető be</string>
     <string name="browser_find">Keresés az oldalon</string>
     <string name="browser_find_done">Keresés befejezése</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Fájlok</string>
     <string name="browser_upload_photos">Fotók</string>
     <string name="browser_upload_title">Válassz feltöltendő fájlt</string>
-    <string name="browser_upload_wants_image">%1$@ képet kér.</string>
     <string name="browser_zoom">Oldal nagyítása</string>
     <string name="browser_zoom_in">Nagyítás</string>
     <string name="browser_zoom_out">Kicsinyítés</string>

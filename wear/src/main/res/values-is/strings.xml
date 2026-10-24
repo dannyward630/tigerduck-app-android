@@ -114,8 +114,6 @@
     <string name="browser_appearance">Útlit</string>
     <string name="browser_appearance_dark">Dökkt</string>
     <string name="browser_appearance_light">Ljóst</string>
-    <string name="browser_appearance_note">„Sjálfvirkt“ lagar liti vafrans að síðunni. Síður sem styðja dökka stillingu skipta strax, án þess að endurhlaða.</string>
-    <string name="browser_appearance_note_next_load">„Sjálfvirkt“ lagar liti vafrans að síðunni. Síður sem styðja dökka stillingu skipta frá næstu síðu sem þú opnar.</string>
     <string name="browser_back">Fyrri síða</string>
     <string name="browser_certificate">Skoða skilríki</string>
     <string name="browser_certificate_common_name">Almennt heiti</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Sóttar skrár</string>
     <string name="browser_downloads_empty">Ekkert sótt enn.</string>
     <string name="browser_error_certificate">Skilríki %1$@ eru ekki gild og því opnar TigerDuck ekki þessa síðu.</string>
-    <string name="browser_error_message">%1$@ svarar ekki. Athugaðu tenginguna og reyndu aftur.</string>
+    <string name="browser_error_message">%1$@ svarar ekki.\nAthugaðu tenginguna og reyndu aftur.</string>
     <string name="browser_error_title">Ekki er hægt að hlaða síðunni</string>
     <string name="browser_find">Finna á síðu</string>
     <string name="browser_find_done">Hætta leit</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Skrár</string>
     <string name="browser_upload_photos">Myndir</string>
     <string name="browser_upload_title">Veldu skrá til að hlaða upp</string>
-    <string name="browser_upload_wants_image">%1$@ biður um mynd.</string>
     <string name="browser_zoom">Aðdráttur síðu</string>
     <string name="browser_zoom_in">Auka aðdrátt</string>
     <string name="browser_zoom_out">Minnka aðdrátt</string>

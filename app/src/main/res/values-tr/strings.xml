@@ -114,8 +114,6 @@
     <string name="browser_appearance">Görünüm</string>
     <string name="browser_appearance_dark">Koyu</string>
     <string name="browser_appearance_light">Açık</string>
-    <string name="browser_appearance_note">\"Otomatik\", tarayıcının renklerini sayfaya uydurur. Koyu modu destekleyen sayfalar yeniden yüklenmeden hemen geçiş yapar.</string>
-    <string name="browser_appearance_note_next_load">\"Otomatik\", tarayıcının renklerini sayfaya uydurur. Koyu modu destekleyen sayfalar açtığın bir sonraki sayfadan itibaren geçiş yapar.</string>
     <string name="browser_back">Önceki sayfa</string>
     <string name="browser_certificate">Sertifikayı görüntüle</string>
     <string name="browser_certificate_common_name">Ortak ad</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">İndirilen dosyalar</string>
     <string name="browser_downloads_empty">Henüz bir şey indirilmedi.</string>
     <string name="browser_error_certificate">%1$@ sertifikası geçerli değil; bu yüzden TigerDuck bu sayfayı açmayacak.</string>
-    <string name="browser_error_message">%1$@ yanıt vermiyor. Bağlantını kontrol edip tekrar dene.</string>
+    <string name="browser_error_message">%1$@ yanıt vermiyor.\nBağlantını kontrol edip tekrar dene.</string>
     <string name="browser_error_title">Bu sayfa yüklenemiyor</string>
     <string name="browser_find">Sayfada bul</string>
     <string name="browser_find_done">Aramayı bitir</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Dosyalar</string>
     <string name="browser_upload_photos">Fotoğraflar</string>
     <string name="browser_upload_title">Yüklenecek bir dosya seç</string>
-    <string name="browser_upload_wants_image">%1$@ bir görsel istiyor.</string>
     <string name="browser_zoom">Sayfa yakınlaştırma</string>
     <string name="browser_zoom_in">Yakınlaştır</string>
     <string name="browser_zoom_out">Uzaklaştır</string>

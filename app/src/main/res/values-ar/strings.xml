@@ -114,8 +114,6 @@
     <string name="browser_appearance">المظهر</string>
     <string name="browser_appearance_dark">داكن</string>
     <string name="browser_appearance_light">فاتح</string>
-    <string name="browser_appearance_note">«تلقائي» يجعل ألوان المتصفح تطابق الصفحة. الصفحات التي تدعم الوضع الداكن تتبدّل فورًا دون إعادة تحميل.</string>
-    <string name="browser_appearance_note_next_load">«تلقائي» يجعل ألوان المتصفح تطابق الصفحة. الصفحات التي تدعم الوضع الداكن تتبدّل بدءًا من الصفحة التالية التي تفتحها.</string>
     <string name="browser_back">الصفحة السابقة</string>
     <string name="browser_certificate">عرض الشهادة</string>
     <string name="browser_certificate_common_name">الاسم الشائع</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">الملفات المنزّلة</string>
     <string name="browser_downloads_empty">لم يُنزَّل أي شيء بعد.</string>
     <string name="browser_error_certificate">شهادة %1$@ غير صالحة، لذا لن يفتح TigerDuck هذه الصفحة.</string>
-    <string name="browser_error_message">%1$@ لا يستجيب. تحقّق من اتصالك ثم حاول مرة أخرى.</string>
+    <string name="browser_error_message">%1$@ لا يستجيب.\nتحقّق من اتصالك ثم حاول مرة أخرى.</string>
     <string name="browser_error_title">يتعذّر تحميل هذه الصفحة</string>
     <string name="browser_find">البحث في الصفحة</string>
     <string name="browser_find_done">إنهاء البحث</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">الملفات</string>
     <string name="browser_upload_photos">الصور</string>
     <string name="browser_upload_title">اختر ملفًا لتحميله</string>
-    <string name="browser_upload_wants_image">يطلب %1$@ صورة.</string>
     <string name="browser_zoom">تكبير الصفحة</string>
     <string name="browser_zoom_in">تكبير</string>
     <string name="browser_zoom_out">تصغير</string>

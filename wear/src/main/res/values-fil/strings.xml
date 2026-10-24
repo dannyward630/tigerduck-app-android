@@ -114,8 +114,6 @@
     <string name="browser_appearance">Itsura</string>
     <string name="browser_appearance_dark">Madilim</string>
     <string name="browser_appearance_light">Maliwanag</string>
-    <string name="browser_appearance_note">Itinutugma ng \"Awtomatiko\" ang mga kulay ng browser sa page. Agad nagpapalit ang mga page na may dark mode, nang hindi nire-reload.</string>
-    <string name="browser_appearance_note_next_load">Itinutugma ng \"Awtomatiko\" ang mga kulay ng browser sa page. Nagpapalit ang mga page na may dark mode simula sa susunod na page na bubuksan mo.</string>
     <string name="browser_back">Nakaraang page</string>
     <string name="browser_certificate">Tingnan ang certificate</string>
     <string name="browser_certificate_common_name">Karaniwang pangalan</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Mga na-download na file</string>
     <string name="browser_downloads_empty">Wala pang na-download.</string>
     <string name="browser_error_certificate">Hindi valid ang certificate ng %1$@, kaya hindi bubuksan ng TigerDuck ang page na ito.</string>
-    <string name="browser_error_message">Hindi sumasagot ang %1$@. Tingnan ang koneksyon mo at subukan ulit.</string>
+    <string name="browser_error_message">Hindi sumasagot ang %1$@.\nTingnan ang koneksyon mo at subukan ulit.</string>
     <string name="browser_error_title">Hindi ma-load ang page na ito</string>
     <string name="browser_find">Hanapin sa page</string>
     <string name="browser_find_done">Itigil ang paghahanap</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Mga file</string>
     <string name="browser_upload_photos">Mga litrato</string>
     <string name="browser_upload_title">Pumili ng file na ia-upload</string>
-    <string name="browser_upload_wants_image">Humihingi ng larawan ang %1$@.</string>
     <string name="browser_zoom">Zoom ng page</string>
     <string name="browser_zoom_in">Mag-zoom in</string>
     <string name="browser_zoom_out">Mag-zoom out</string>

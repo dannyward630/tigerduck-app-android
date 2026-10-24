@@ -114,8 +114,6 @@
     <string name="browser_appearance">ظاہری شکل</string>
     <string name="browser_appearance_dark">گہرا</string>
     <string name="browser_appearance_light">ہلکا</string>
-    <string name="browser_appearance_note">\"خودکار\" براؤزر کے رنگ صفحے کے مطابق کر دیتا ہے۔ ڈارک موڈ والے صفحات دوبارہ لوڈ کیے بغیر فوراً بدل جاتے ہیں۔</string>
-    <string name="browser_appearance_note_next_load">\"خودکار\" براؤزر کے رنگ صفحے کے مطابق کر دیتا ہے۔ ڈارک موڈ والے صفحات اگلے کھولے گئے صفحے سے بدلتے ہیں۔</string>
     <string name="browser_back">پچھلا صفحہ</string>
     <string name="browser_certificate">سرٹیفکیٹ دیکھیں</string>
     <string name="browser_certificate_common_name">عام نام</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">ڈاؤن لوڈ کی گئی فائلیں</string>
     <string name="browser_downloads_empty">ابھی تک کچھ ڈاؤن لوڈ نہیں ہوا۔</string>
     <string name="browser_error_certificate">%1$@ کا سرٹیفکیٹ درست نہیں، اس لیے TigerDuck یہ صفحہ نہیں کھولے گا۔</string>
-    <string name="browser_error_message">%1$@ جواب نہیں دے رہا۔ اپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔</string>
+    <string name="browser_error_message">%1$@ جواب نہیں دے رہا۔\nاپنا کنکشن چیک کریں اور دوبارہ کوشش کریں۔</string>
     <string name="browser_error_title">یہ صفحہ لوڈ نہیں ہو سکتا</string>
     <string name="browser_find">صفحے میں تلاش کریں</string>
     <string name="browser_find_done">تلاش ختم کریں</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">فائلیں</string>
     <string name="browser_upload_photos">تصاویر</string>
     <string name="browser_upload_title">اپ لوڈ کرنے کے لیے فائل منتخب کریں</string>
-    <string name="browser_upload_wants_image">%1$@ ایک تصویر مانگ رہا ہے۔</string>
     <string name="browser_zoom">صفحے کا زوم</string>
     <string name="browser_zoom_in">زوم ان</string>
     <string name="browser_zoom_out">زوم آؤٹ</string>

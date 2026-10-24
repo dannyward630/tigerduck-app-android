@@ -114,8 +114,6 @@
     <string name="browser_appearance">מראה</string>
     <string name="browser_appearance_dark">כהה</string>
     <string name="browser_appearance_light">בהיר</string>
-    <string name="browser_appearance_note">„אוטומטי” מתאים את צבעי הדפדפן לדף. דפים שתומכים במצב כהה מתחלפים מיד, בלי טעינה מחדש.</string>
-    <string name="browser_appearance_note_next_load">„אוטומטי” מתאים את צבעי הדפדפן לדף. דפים שתומכים במצב כהה מתחלפים החל מהדף הבא שתפתחו.</string>
     <string name="browser_back">הדף הקודם</string>
     <string name="browser_certificate">הצגת האישור</string>
     <string name="browser_certificate_common_name">שם נפוץ</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">קבצים שהורדו</string>
     <string name="browser_downloads_empty">עדיין לא הורד דבר.</string>
     <string name="browser_error_certificate">האישור של %1$@ אינו תקף, ולכן TigerDuck לא יפתח את הדף הזה.</string>
-    <string name="browser_error_message">%1$@ לא מגיב. כדאי לבדוק את החיבור ולנסות שוב.</string>
+    <string name="browser_error_message">%1$@ לא מגיב.\nכדאי לבדוק את החיבור ולנסות שוב.</string>
     <string name="browser_error_title">אי אפשר לטעון את הדף הזה</string>
     <string name="browser_find">חיפוש בדף</string>
     <string name="browser_find_done">סיום החיפוש</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">קבצים</string>
     <string name="browser_upload_photos">תמונות</string>
     <string name="browser_upload_title">בחירת קובץ להעלאה</string>
-    <string name="browser_upload_wants_image">%1$@ מבקש תמונה.</string>
     <string name="browser_zoom">זום הדף</string>
     <string name="browser_zoom_in">הגדלה</string>
     <string name="browser_zoom_out">הקטנה</string>

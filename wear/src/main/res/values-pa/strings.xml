@@ -114,8 +114,6 @@
     <string name="browser_appearance">ਦਿੱਖ</string>
     <string name="browser_appearance_dark">ਗੂੜ੍ਹਾ</string>
     <string name="browser_appearance_light">ਹਲਕਾ</string>
-    <string name="browser_appearance_note">\"ਆਪਣੇ-ਆਪ\" ਬ੍ਰਾਊਜ਼ਰ ਦੇ ਰੰਗ ਪੰਨੇ ਮੁਤਾਬਕ ਕਰ ਦਿੰਦਾ ਹੈ। ਡਾਰਕ ਮੋਡ ਵਾਲੇ ਪੰਨੇ ਮੁੜ ਲੋਡ ਕੀਤੇ ਬਿਨਾਂ ਤੁਰੰਤ ਬਦਲ ਜਾਂਦੇ ਹਨ।</string>
-    <string name="browser_appearance_note_next_load">\"ਆਪਣੇ-ਆਪ\" ਬ੍ਰਾਊਜ਼ਰ ਦੇ ਰੰਗ ਪੰਨੇ ਮੁਤਾਬਕ ਕਰ ਦਿੰਦਾ ਹੈ। ਡਾਰਕ ਮੋਡ ਵਾਲੇ ਪੰਨੇ ਤੁਹਾਡੇ ਖੋਲ੍ਹੇ ਅਗਲੇ ਪੰਨੇ ਤੋਂ ਬਦਲਦੇ ਹਨ।</string>
     <string name="browser_back">ਪਿਛਲਾ ਪੰਨਾ</string>
     <string name="browser_certificate">ਸਰਟੀਫ਼ਿਕੇਟ ਦੇਖੋ</string>
     <string name="browser_certificate_common_name">ਆਮ ਨਾਮ</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">ਡਾਊਨਲੋਡ ਕੀਤੀਆਂ ਫ਼ਾਈਲਾਂ</string>
     <string name="browser_downloads_empty">ਹਾਲੇ ਕੁਝ ਵੀ ਡਾਊਨਲੋਡ ਨਹੀਂ ਹੋਇਆ।</string>
     <string name="browser_error_certificate">%1$@ ਦਾ ਸਰਟੀਫ਼ਿਕੇਟ ਵੈਧ ਨਹੀਂ ਹੈ, ਇਸ ਲਈ TigerDuck ਇਹ ਪੰਨਾ ਨਹੀਂ ਖੋਲ੍ਹੇਗਾ।</string>
-    <string name="browser_error_message">%1$@ ਜਵਾਬ ਨਹੀਂ ਦੇ ਰਿਹਾ। ਆਪਣਾ ਕਨੈਕਸ਼ਨ ਜਾਂਚੋ ਅਤੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
+    <string name="browser_error_message">%1$@ ਜਵਾਬ ਨਹੀਂ ਦੇ ਰਿਹਾ।\nਆਪਣਾ ਕਨੈਕਸ਼ਨ ਜਾਂਚੋ ਅਤੇ ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।</string>
     <string name="browser_error_title">ਇਹ ਪੰਨਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਦਾ</string>
     <string name="browser_find">ਪੰਨੇ ਵਿੱਚ ਲੱਭੋ</string>
     <string name="browser_find_done">ਲੱਭਣਾ ਬੰਦ ਕਰੋ</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">ਫ਼ਾਈਲਾਂ</string>
     <string name="browser_upload_photos">ਫ਼ੋਟੋਆਂ</string>
     <string name="browser_upload_title">ਅੱਪਲੋਡ ਕਰਨ ਲਈ ਫ਼ਾਈਲ ਚੁਣੋ</string>
-    <string name="browser_upload_wants_image">%1$@ ਇੱਕ ਚਿੱਤਰ ਮੰਗ ਰਿਹਾ ਹੈ।</string>
     <string name="browser_zoom">ਪੰਨਾ ਜ਼ੂਮ</string>
     <string name="browser_zoom_in">ਜ਼ੂਮ ਇਨ ਕਰੋ</string>
     <string name="browser_zoom_out">ਜ਼ੂਮ ਆਊਟ ਕਰੋ</string>

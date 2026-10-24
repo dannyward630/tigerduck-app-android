@@ -114,8 +114,6 @@
     <string name="browser_appearance">Išvaizda</string>
     <string name="browser_appearance_dark">Tamsi</string>
     <string name="browser_appearance_light">Šviesi</string>
-    <string name="browser_appearance_note">„Automatinė“ pritaiko naršyklės spalvas prie puslapio. Puslapiai su tamsiuoju režimu persijungia iš karto, neperkraunant.</string>
-    <string name="browser_appearance_note_next_load">„Automatinė“ pritaiko naršyklės spalvas prie puslapio. Puslapiai su tamsiuoju režimu persijungia nuo kito atidaryto puslapio.</string>
     <string name="browser_back">Ankstesnis puslapis</string>
     <string name="browser_certificate">Peržiūrėti sertifikatą</string>
     <string name="browser_certificate_common_name">Bendrasis vardas</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Atsisiųsti failai</string>
     <string name="browser_downloads_empty">Kol kas nieko neatsisiųsta.</string>
     <string name="browser_error_certificate">%1$@ sertifikatas negalioja, todėl TigerDuck šio puslapio neatidarys.</string>
-    <string name="browser_error_message">%1$@ neatsako. Patikrinkite ryšį ir bandykite dar kartą.</string>
+    <string name="browser_error_message">%1$@ neatsako.\nPatikrinkite ryšį ir bandykite dar kartą.</string>
     <string name="browser_error_title">Šio puslapio įkelti nepavyko</string>
     <string name="browser_find">Ieškoti puslapyje</string>
     <string name="browser_find_done">Baigti paiešką</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Failai</string>
     <string name="browser_upload_photos">Nuotraukos</string>
     <string name="browser_upload_title">Pasirinkite failą įkelti</string>
-    <string name="browser_upload_wants_image">%1$@ prašo paveikslėlio.</string>
     <string name="browser_zoom">Puslapio mastelis</string>
     <string name="browser_zoom_in">Didinti</string>
     <string name="browser_zoom_out">Mažinti</string>

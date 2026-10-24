@@ -114,8 +114,6 @@
     <string name="browser_appearance">Vzhled</string>
     <string name="browser_appearance_dark">Tmavý</string>
     <string name="browser_appearance_light">Světlý</string>
-    <string name="browser_appearance_note">„Automaticky“ přizpůsobí barvy prohlížeče stránce. Stránky s tmavým režimem se přepnou hned, bez načtení znovu.</string>
-    <string name="browser_appearance_note_next_load">„Automaticky“ přizpůsobí barvy prohlížeče stránce. Stránky s tmavým režimem se přepnou od další stránky, kterou otevřete.</string>
     <string name="browser_back">Předchozí stránka</string>
     <string name="browser_certificate">Zobrazit certifikát</string>
     <string name="browser_certificate_common_name">Obecný název</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Stažené soubory</string>
     <string name="browser_downloads_empty">Zatím nic staženo.</string>
     <string name="browser_error_certificate">Certifikát %1$@ není platný, proto TigerDuck tuto stránku neotevře.</string>
-    <string name="browser_error_message">%1$@ neodpovídá. Zkontrolujte připojení a zkuste to znovu.</string>
+    <string name="browser_error_message">%1$@ neodpovídá.\nZkontrolujte připojení a zkuste to znovu.</string>
     <string name="browser_error_title">Tuto stránku nelze načíst</string>
     <string name="browser_find">Najít na stránce</string>
     <string name="browser_find_done">Ukončit hledání</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Soubory</string>
     <string name="browser_upload_photos">Fotky</string>
     <string name="browser_upload_title">Vyberte soubor k nahrání</string>
-    <string name="browser_upload_wants_image">%1$@ žádá o obrázek.</string>
     <string name="browser_zoom">Přiblížení stránky</string>
     <string name="browser_zoom_in">Přiblížit</string>
     <string name="browser_zoom_out">Oddálit</string>

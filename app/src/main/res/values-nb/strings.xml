@@ -114,8 +114,6 @@
     <string name="browser_appearance">Utseende</string>
     <string name="browser_appearance_dark">Mørk</string>
     <string name="browser_appearance_light">Lys</string>
-    <string name="browser_appearance_note">«Automatisk» tilpasser fargene i nettleseren til siden. Sider med mørk modus bytter med en gang, uten å lastes inn på nytt.</string>
-    <string name="browser_appearance_note_next_load">«Automatisk» tilpasser fargene i nettleseren til siden. Sider med mørk modus bytter fra neste side du åpner.</string>
     <string name="browser_back">Forrige side</string>
     <string name="browser_certificate">Se sertifikat</string>
     <string name="browser_certificate_common_name">Vanlig navn</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Nedlastede filer</string>
     <string name="browser_downloads_empty">Ingenting lastet ned ennå.</string>
     <string name="browser_error_certificate">Sertifikatet for %1$@ er ikke gyldig, så TigerDuck åpner ikke denne siden.</string>
-    <string name="browser_error_message">%1$@ svarer ikke. Sjekk tilkoblingen og prøv igjen.</string>
+    <string name="browser_error_message">%1$@ svarer ikke.\nSjekk tilkoblingen og prøv igjen.</string>
     <string name="browser_error_title">Siden kan ikke lastes inn</string>
     <string name="browser_find">Finn på siden</string>
     <string name="browser_find_done">Avslutt søk</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Filer</string>
     <string name="browser_upload_photos">Bilder</string>
     <string name="browser_upload_title">Velg en fil å laste opp</string>
-    <string name="browser_upload_wants_image">%1$@ ber om et bilde.</string>
     <string name="browser_zoom">Sidezoom</string>
     <string name="browser_zoom_in">Zoom inn</string>
     <string name="browser_zoom_out">Zoom ut</string>

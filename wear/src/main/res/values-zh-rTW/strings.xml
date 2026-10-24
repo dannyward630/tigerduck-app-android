@@ -114,8 +114,6 @@
     <string name="browser_appearance">外觀</string>
     <string name="browser_appearance_dark">暗色</string>
     <string name="browser_appearance_light">亮色</string>
-    <string name="browser_appearance_note">「自動」會依網頁本身的深淺，切換瀏覽器的顏色。網頁有支援深色時，切換會馬上套用到網頁，不用重新載入。</string>
-    <string name="browser_appearance_note_next_load">「自動」會依網頁本身的深淺，切換瀏覽器的顏色。網頁有支援深色時，會從下一個開啟的網頁開始套用。</string>
     <string name="browser_back">上一頁</string>
     <string name="browser_certificate">查看憑證</string>
     <string name="browser_certificate_common_name">一般名稱</string>
@@ -128,7 +126,7 @@
     <string name="browser_certificate_not_before">核發日期</string>
     <string name="browser_certificate_organization">組織</string>
     <string name="browser_certificate_title">憑證</string>
-    <string name="browser_certificate_valid">此憑證有效，連線已加密。</string>
+    <string name="browser_certificate_valid">憑證有效，連線已加密</string>
     <string name="browser_certificate_validity">有效期間</string>
     <string name="browser_close">關閉瀏覽器</string>
     <string name="browser_connection_insecure">連線未加密</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">下載的檔案</string>
     <string name="browser_downloads_empty">還沒有下載任何檔案。</string>
     <string name="browser_error_certificate">%1$@ 的憑證有問題，為了安全，TigerDuck 不會開啟此網頁。</string>
-    <string name="browser_error_message">%1$@ 沒有回應。請檢查網路連線後再試一次。</string>
+    <string name="browser_error_message">%1$@ 沒有回應\n請檢查網路連線後再試一次。</string>
     <string name="browser_error_title">無法載入此網頁</string>
     <string name="browser_find">在頁面中尋找</string>
     <string name="browser_find_done">結束尋找</string>
@@ -186,8 +184,7 @@
     <string name="browser_upload_camera_denied">沒有相機權限，TigerDuck 無法使用相機。</string>
     <string name="browser_upload_files">檔案</string>
     <string name="browser_upload_photos">相片</string>
-    <string name="browser_upload_title">選擇要上傳的檔案</string>
-    <string name="browser_upload_wants_image">%1$@ 要一個圖片檔。</string>
+    <string name="browser_upload_title">選擇上傳的檔案</string>
     <string name="browser_zoom">頁面縮放</string>
     <string name="browser_zoom_in">放大</string>
     <string name="browser_zoom_out">縮小</string>

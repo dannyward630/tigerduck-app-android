@@ -114,8 +114,6 @@
     <string name="browser_appearance">Appearance</string>
     <string name="browser_appearance_dark">Dark</string>
     <string name="browser_appearance_light">Light</string>
-    <string name="browser_appearance_note">Auto matches the browser\'s colours to the page. Pages that support dark mode switch straight away, without reloading.</string>
-    <string name="browser_appearance_note_next_load">Auto matches the browser\'s colours to the page. Pages that support dark mode switch from the next page you open.</string>
     <string name="browser_back">Previous page</string>
     <string name="browser_certificate">View certificate</string>
     <string name="browser_certificate_common_name">Common name</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Downloaded files</string>
     <string name="browser_downloads_empty">Nothing downloaded yet.</string>
     <string name="browser_error_certificate">The certificate for %1$@ isn\'t valid, so TigerDuck won\'t open this page.</string>
-    <string name="browser_error_message">%1$@ isn\'t responding. Check your connection and try again.</string>
+    <string name="browser_error_message">%1$@ isn\'t responding.\nCheck your connection and try again.</string>
     <string name="browser_error_title">This page can\'t be loaded</string>
     <string name="browser_find">Find in page</string>
     <string name="browser_find_done">Stop finding</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Files</string>
     <string name="browser_upload_photos">Photos</string>
     <string name="browser_upload_title">Choose a file to upload</string>
-    <string name="browser_upload_wants_image">%1$@ asks for an image.</string>
     <string name="browser_zoom">Page zoom</string>
     <string name="browser_zoom_in">Zoom in</string>
     <string name="browser_zoom_out">Zoom out</string>

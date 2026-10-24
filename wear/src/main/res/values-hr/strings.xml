@@ -114,8 +114,6 @@
     <string name="browser_appearance">Izgled</string>
     <string name="browser_appearance_dark">Tamno</string>
     <string name="browser_appearance_light">Svijetlo</string>
-    <string name="browser_appearance_note">„Automatski” prilagođava boje preglednika stranici. Stranice s tamnim načinom odmah se prebacuju, bez ponovnog učitavanja.</string>
-    <string name="browser_appearance_note_next_load">„Automatski” prilagođava boje preglednika stranici. Stranice s tamnim načinom prebacuju se od sljedeće stranice koju otvorite.</string>
     <string name="browser_back">Prethodna stranica</string>
     <string name="browser_certificate">Prikaži certifikat</string>
     <string name="browser_certificate_common_name">Uobičajeni naziv</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Preuzete datoteke</string>
     <string name="browser_downloads_empty">Još ništa nije preuzeto.</string>
     <string name="browser_error_certificate">Certifikat za %1$@ nije valjan pa TigerDuck neće otvoriti ovu stranicu.</string>
-    <string name="browser_error_message">%1$@ ne odgovara. Provjerite vezu i pokušajte ponovno.</string>
+    <string name="browser_error_message">%1$@ ne odgovara.\nProvjerite vezu i pokušajte ponovno.</string>
     <string name="browser_error_title">Ova se stranica ne može učitati</string>
     <string name="browser_find">Pronađi na stranici</string>
     <string name="browser_find_done">Završi pretraživanje</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Datoteke</string>
     <string name="browser_upload_photos">Fotografije</string>
     <string name="browser_upload_title">Odaberite datoteku za prijenos</string>
-    <string name="browser_upload_wants_image">%1$@ traži sliku.</string>
     <string name="browser_zoom">Zumiranje stranice</string>
     <string name="browser_zoom_in">Povećaj</string>
     <string name="browser_zoom_out">Smanji</string>

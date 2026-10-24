@@ -114,8 +114,6 @@
     <string name="browser_appearance">ظاهر</string>
     <string name="browser_appearance_dark">تیره</string>
     <string name="browser_appearance_light">روشن</string>
-    <string name="browser_appearance_note">«خودکار» رنگ‌های مرورگر را با صفحه هماهنگ می‌کند. صفحه‌هایی که از حالت تیره پشتیبانی می‌کنند، بی‌درنگ و بدون بارگیری دوباره عوض می‌شوند.</string>
-    <string name="browser_appearance_note_next_load">«خودکار» رنگ‌های مرورگر را با صفحه هماهنگ می‌کند. صفحه‌هایی که از حالت تیره پشتیبانی می‌کنند، از صفحهٔ بعدی که باز می‌کنید عوض می‌شوند.</string>
     <string name="browser_back">صفحهٔ قبلی</string>
     <string name="browser_certificate">دیدن گواهی</string>
     <string name="browser_certificate_common_name">نام عمومی</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">فایل‌های بارگیری‌شده</string>
     <string name="browser_downloads_empty">هنوز چیزی بارگیری نشده است.</string>
     <string name="browser_error_certificate">گواهی %1$@ معتبر نیست، بنابراین TigerDuck این صفحه را باز نمی‌کند.</string>
-    <string name="browser_error_message">%1$@ پاسخ نمی‌دهد. اتصال خود را بررسی کنید و دوباره امتحان کنید.</string>
+    <string name="browser_error_message">%1$@ پاسخ نمی‌دهد.\nاتصال خود را بررسی کنید و دوباره امتحان کنید.</string>
     <string name="browser_error_title">این صفحه بار نمی‌شود</string>
     <string name="browser_find">یافتن در صفحه</string>
     <string name="browser_find_done">پایان جست‌وجو</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">فایل‌ها</string>
     <string name="browser_upload_photos">عکس‌ها</string>
     <string name="browser_upload_title">فایلی را برای بارگذاری انتخاب کنید</string>
-    <string name="browser_upload_wants_image">%1$@ یک تصویر می‌خواهد.</string>
     <string name="browser_zoom">بزرگ‌نمایی صفحه</string>
     <string name="browser_zoom_in">بزرگ‌نمایی</string>
     <string name="browser_zoom_out">کوچک‌نمایی</string>

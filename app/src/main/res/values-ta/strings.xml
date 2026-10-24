@@ -114,8 +114,6 @@
     <string name="browser_appearance">தோற்றம்</string>
     <string name="browser_appearance_dark">அடர்</string>
     <string name="browser_appearance_light">வெளிர்</string>
-    <string name="browser_appearance_note">\"தானியங்கு\" உலாவியின் நிறங்களைப் பக்கத்துக்கு ஏற்ப மாற்றும். டார்க் பயன்முறையை ஆதரிக்கும் பக்கங்கள் மீண்டும் ஏற்றாமல் உடனே மாறும்.</string>
-    <string name="browser_appearance_note_next_load">\"தானியங்கு\" உலாவியின் நிறங்களைப் பக்கத்துக்கு ஏற்ப மாற்றும். டார்க் பயன்முறையை ஆதரிக்கும் பக்கங்கள் நீங்கள் திறக்கும் அடுத்த பக்கத்திலிருந்து மாறும்.</string>
     <string name="browser_back">முந்தைய பக்கம்</string>
     <string name="browser_certificate">சான்றிதழைக் காட்டு</string>
     <string name="browser_certificate_common_name">பொதுப் பெயர்</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">பதிவிறக்கிய கோப்புகள்</string>
     <string name="browser_downloads_empty">இன்னும் எதுவும் பதிவிறக்கப்படவில்லை.</string>
     <string name="browser_error_certificate">%1$@ சான்றிதழ் செல்லுபடியாகாது, எனவே TigerDuck இந்தப் பக்கத்தைத் திறக்காது.</string>
-    <string name="browser_error_message">%1$@ பதிலளிக்கவில்லை. இணைப்பைச் சரிபார்த்து மீண்டும் முயலவும்.</string>
+    <string name="browser_error_message">%1$@ பதிலளிக்கவில்லை.\nஇணைப்பைச் சரிபார்த்து மீண்டும் முயலவும்.</string>
     <string name="browser_error_title">இந்தப் பக்கத்தை ஏற்ற முடியவில்லை</string>
     <string name="browser_find">பக்கத்தில் தேடு</string>
     <string name="browser_find_done">தேடலை நிறுத்து</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">கோப்புகள்</string>
     <string name="browser_upload_photos">படங்கள்</string>
     <string name="browser_upload_title">பதிவேற்ற ஒரு கோப்பைத் தேர்வுசெய்</string>
-    <string name="browser_upload_wants_image">%1$@ ஒரு படத்தைக் கேட்கிறது.</string>
     <string name="browser_zoom">பக்க அளவு</string>
     <string name="browser_zoom_in">பெரிதாக்கு</string>
     <string name="browser_zoom_out">சிறிதாக்கு</string>

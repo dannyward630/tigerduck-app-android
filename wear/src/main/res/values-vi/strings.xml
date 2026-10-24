@@ -114,8 +114,6 @@
     <string name="browser_appearance">Giao diện</string>
     <string name="browser_appearance_dark">Tối</string>
     <string name="browser_appearance_light">Sáng</string>
-    <string name="browser_appearance_note">\"Tự động\" làm màu của trình duyệt khớp với trang. Các trang hỗ trợ chế độ tối đổi ngay mà không cần tải lại.</string>
-    <string name="browser_appearance_note_next_load">\"Tự động\" làm màu của trình duyệt khớp với trang. Các trang hỗ trợ chế độ tối đổi từ trang tiếp theo bạn mở.</string>
     <string name="browser_back">Trang trước</string>
     <string name="browser_certificate">Xem chứng chỉ</string>
     <string name="browser_certificate_common_name">Tên chung</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Tệp đã tải xuống</string>
     <string name="browser_downloads_empty">Chưa tải xuống gì.</string>
     <string name="browser_error_certificate">Chứng chỉ của %1$@ không hợp lệ nên TigerDuck sẽ không mở trang này.</string>
-    <string name="browser_error_message">%1$@ không phản hồi. Hãy kiểm tra kết nối rồi thử lại.</string>
+    <string name="browser_error_message">%1$@ không phản hồi.\nHãy kiểm tra kết nối rồi thử lại.</string>
     <string name="browser_error_title">Không tải được trang này</string>
     <string name="browser_find">Tìm trong trang</string>
     <string name="browser_find_done">Dừng tìm</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Tệp</string>
     <string name="browser_upload_photos">Ảnh</string>
     <string name="browser_upload_title">Chọn tệp để tải lên</string>
-    <string name="browser_upload_wants_image">%1$@ yêu cầu một hình ảnh.</string>
     <string name="browser_zoom">Thu phóng trang</string>
     <string name="browser_zoom_in">Phóng to</string>
     <string name="browser_zoom_out">Thu nhỏ</string>

@@ -114,8 +114,6 @@
     <string name="browser_appearance">ನೋಟ</string>
     <string name="browser_appearance_dark">ಗಾಢ</string>
     <string name="browser_appearance_light">ತಿಳಿ</string>
-    <string name="browser_appearance_note">\"ಸ್ವಯಂಚಾಲಿತ\" ಬ್ರೌಸರ್ ಬಣ್ಣಗಳನ್ನು ಪುಟಕ್ಕೆ ಹೊಂದಿಸುತ್ತದೆ. ಡಾರ್ಕ್ ಮೋಡ್ ಬೆಂಬಲಿಸುವ ಪುಟಗಳು ಮರುಲೋಡ್ ಮಾಡದೆ ತಕ್ಷಣ ಬದಲಾಗುತ್ತವೆ.</string>
-    <string name="browser_appearance_note_next_load">\"ಸ್ವಯಂಚಾಲಿತ\" ಬ್ರೌಸರ್ ಬಣ್ಣಗಳನ್ನು ಪುಟಕ್ಕೆ ಹೊಂದಿಸುತ್ತದೆ. ಡಾರ್ಕ್ ಮೋಡ್ ಬೆಂಬಲಿಸುವ ಪುಟಗಳು ನೀವು ತೆರೆಯುವ ಮುಂದಿನ ಪುಟದಿಂದ ಬದಲಾಗುತ್ತವೆ.</string>
     <string name="browser_back">ಹಿಂದಿನ ಪುಟ</string>
     <string name="browser_certificate">ಪ್ರಮಾಣಪತ್ರ ನೋಡಿ</string>
     <string name="browser_certificate_common_name">ಸಾಮಾನ್ಯ ಹೆಸರು</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಫೈಲ್‌ಗಳು</string>
     <string name="browser_downloads_empty">ಇನ್ನೂ ಏನನ್ನೂ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿಲ್ಲ.</string>
     <string name="browser_error_certificate">%1$@ ಪ್ರಮಾಣಪತ್ರ ಮಾನ್ಯವಾಗಿಲ್ಲ, ಆದ್ದರಿಂದ TigerDuck ಈ ಪುಟವನ್ನು ತೆರೆಯುವುದಿಲ್ಲ.</string>
-    <string name="browser_error_message">%1$@ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ. ನಿಮ್ಮ ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
+    <string name="browser_error_message">%1$@ ಪ್ರತಿಕ್ರಿಯಿಸುತ್ತಿಲ್ಲ.\nನಿಮ್ಮ ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.</string>
     <string name="browser_error_title">ಈ ಪುಟ ಲೋಡ್ ಆಗುತ್ತಿಲ್ಲ</string>
     <string name="browser_find">ಪುಟದಲ್ಲಿ ಹುಡುಕಿ</string>
     <string name="browser_find_done">ಹುಡುಕಾಟ ನಿಲ್ಲಿಸಿ</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">ಫೈಲ್‌ಗಳು</string>
     <string name="browser_upload_photos">ಫೋಟೋಗಳು</string>
     <string name="browser_upload_title">ಅಪ್‌ಲೋಡ್ ಮಾಡಲು ಫೈಲ್ ಆಯ್ಕೆಮಾಡಿ</string>
-    <string name="browser_upload_wants_image">%1$@ ಒಂದು ಚಿತ್ರವನ್ನು ಕೇಳುತ್ತಿದೆ.</string>
     <string name="browser_zoom">ಪುಟ ಝೂಮ್</string>
     <string name="browser_zoom_in">ಝೂಮ್ ಇನ್</string>
     <string name="browser_zoom_out">ಝೂಮ್ ಔಟ್</string>

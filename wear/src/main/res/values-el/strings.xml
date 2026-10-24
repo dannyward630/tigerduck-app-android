@@ -114,8 +114,6 @@
     <string name="browser_appearance">Εμφάνιση</string>
     <string name="browser_appearance_dark">Σκούρο</string>
     <string name="browser_appearance_light">Ανοιχτό</string>
-    <string name="browser_appearance_note">Το «Αυτόματο» προσαρμόζει τα χρώματα του προγράμματος περιήγησης στη σελίδα. Οι σελίδες με σκούρο θέμα αλλάζουν αμέσως, χωρίς επαναφόρτωση.</string>
-    <string name="browser_appearance_note_next_load">Το «Αυτόματο» προσαρμόζει τα χρώματα του προγράμματος περιήγησης στη σελίδα. Οι σελίδες με σκούρο θέμα αλλάζουν από την επόμενη σελίδα που θα ανοίξετε.</string>
     <string name="browser_back">Προηγούμενη σελίδα</string>
     <string name="browser_certificate">Προβολή πιστοποιητικού</string>
     <string name="browser_certificate_common_name">Κοινό όνομα</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Ληφθέντα αρχεία</string>
     <string name="browser_downloads_empty">Δεν έχει ληφθεί τίποτα ακόμη.</string>
     <string name="browser_error_certificate">Το πιστοποιητικό του %1$@ δεν είναι έγκυρο, γι\' αυτό το TigerDuck δεν θα ανοίξει αυτή τη σελίδα.</string>
-    <string name="browser_error_message">Το %1$@ δεν αποκρίνεται. Ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.</string>
+    <string name="browser_error_message">Το %1$@ δεν αποκρίνεται.\nΕλέγξτε τη σύνδεσή σας και δοκιμάστε ξανά.</string>
     <string name="browser_error_title">Δεν είναι δυνατή η φόρτωση της σελίδας</string>
     <string name="browser_find">Εύρεση στη σελίδα</string>
     <string name="browser_find_done">Τέλος αναζήτησης</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Αρχεία</string>
     <string name="browser_upload_photos">Φωτογραφίες</string>
     <string name="browser_upload_title">Επιλέξτε αρχείο για μεταφόρτωση</string>
-    <string name="browser_upload_wants_image">Το %1$@ ζητά μια εικόνα.</string>
     <string name="browser_zoom">Ζουμ σελίδας</string>
     <string name="browser_zoom_in">Μεγέθυνση</string>
     <string name="browser_zoom_out">Σμίκρυνση</string>

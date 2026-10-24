@@ -114,8 +114,6 @@
     <string name="browser_appearance">Välimus</string>
     <string name="browser_appearance_dark">Tume</string>
     <string name="browser_appearance_light">Hele</string>
-    <string name="browser_appearance_note">„Automaatne“ sobitab brauseri värvid lehega. Tumedat režiimi toetavad lehed vahetuvad kohe, ilma uuesti laadimata.</string>
-    <string name="browser_appearance_note_next_load">„Automaatne“ sobitab brauseri värvid lehega. Tumedat režiimi toetavad lehed vahetuvad alates järgmisest lehest, mille avad.</string>
     <string name="browser_back">Eelmine leht</string>
     <string name="browser_certificate">Kuva sertifikaat</string>
     <string name="browser_certificate_common_name">Üldnimi</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Allalaaditud failid</string>
     <string name="browser_downloads_empty">Midagi pole veel alla laaditud.</string>
     <string name="browser_error_certificate">Saidi %1$@ sertifikaat ei kehti, seega TigerDuck seda lehte ei ava.</string>
-    <string name="browser_error_message">%1$@ ei vasta. Kontrolli ühendust ja proovi uuesti.</string>
+    <string name="browser_error_message">%1$@ ei vasta.\nKontrolli ühendust ja proovi uuesti.</string>
     <string name="browser_error_title">Seda lehte ei saa laadida</string>
     <string name="browser_find">Otsi lehelt</string>
     <string name="browser_find_done">Lõpeta otsing</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Failid</string>
     <string name="browser_upload_photos">Fotod</string>
     <string name="browser_upload_title">Vali üleslaaditav fail</string>
-    <string name="browser_upload_wants_image">%1$@ küsib pilti.</string>
     <string name="browser_zoom">Lehe suum</string>
     <string name="browser_zoom_in">Suurenda</string>
     <string name="browser_zoom_out">Vähenda</string>

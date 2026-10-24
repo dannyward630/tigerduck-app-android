@@ -114,8 +114,6 @@
     <string name="browser_appearance">Aparença</string>
     <string name="browser_appearance_dark">Fosc</string>
     <string name="browser_appearance_light">Clar</string>
-    <string name="browser_appearance_note">«Automàtic» ajusta els colors del navegador a la pàgina. Les pàgines amb mode fosc canvien a l\'instant, sense tornar a carregar.</string>
-    <string name="browser_appearance_note_next_load">«Automàtic» ajusta els colors del navegador a la pàgina. Les pàgines amb mode fosc canvien a partir de la propera pàgina que obris.</string>
     <string name="browser_back">Pàgina anterior</string>
     <string name="browser_certificate">Mostra el certificat</string>
     <string name="browser_certificate_common_name">Nom comú</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Fitxers baixats</string>
     <string name="browser_downloads_empty">Encara no has baixat res.</string>
     <string name="browser_error_certificate">El certificat de %1$@ no és vàlid, per això TigerDuck no obrirà aquesta pàgina.</string>
-    <string name="browser_error_message">%1$@ no respon. Comprova la connexió i torna-ho a provar.</string>
+    <string name="browser_error_message">%1$@ no respon.\nComprova la connexió i torna-ho a provar.</string>
     <string name="browser_error_title">No es pot carregar aquesta pàgina</string>
     <string name="browser_find">Cerca a la pàgina</string>
     <string name="browser_find_done">Deixa de cercar</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Fitxers</string>
     <string name="browser_upload_photos">Fotos</string>
     <string name="browser_upload_title">Tria un fitxer per pujar</string>
-    <string name="browser_upload_wants_image">%1$@ demana una imatge.</string>
     <string name="browser_zoom">Zoom de la pàgina</string>
     <string name="browser_zoom_in">Amplia</string>
     <string name="browser_zoom_out">Redueix</string>

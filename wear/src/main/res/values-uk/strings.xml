@@ -114,8 +114,6 @@
     <string name="browser_appearance">Вигляд</string>
     <string name="browser_appearance_dark">Темний</string>
     <string name="browser_appearance_light">Світлий</string>
-    <string name="browser_appearance_note">«Автоматично» підлаштовує кольори браузера під сторінку. Сторінки з темним режимом перемикаються одразу, без перезавантаження.</string>
-    <string name="browser_appearance_note_next_load">«Автоматично» підлаштовує кольори браузера під сторінку. Сторінки з темним режимом перемикаються з наступної сторінки, яку ви відкриєте.</string>
     <string name="browser_back">Попередня сторінка</string>
     <string name="browser_certificate">Переглянути сертифікат</string>
     <string name="browser_certificate_common_name">Загальне ім\'я</string>
@@ -152,7 +150,7 @@
     <string name="browser_downloads">Завантажені файли</string>
     <string name="browser_downloads_empty">Поки нічого не завантажено.</string>
     <string name="browser_error_certificate">Сертифікат %1$@ недійсний, тому TigerDuck не відкриє цю сторінку.</string>
-    <string name="browser_error_message">%1$@ не відповідає. Перевірте з\'єднання та спробуйте ще раз.</string>
+    <string name="browser_error_message">%1$@ не відповідає.\nПеревірте з\'єднання та спробуйте ще раз.</string>
     <string name="browser_error_title">Не вдалося завантажити сторінку</string>
     <string name="browser_find">Знайти на сторінці</string>
     <string name="browser_find_done">Завершити пошук</string>
@@ -187,7 +185,6 @@
     <string name="browser_upload_files">Файли</string>
     <string name="browser_upload_photos">Фото</string>
     <string name="browser_upload_title">Виберіть файл для завантаження</string>
-    <string name="browser_upload_wants_image">%1$@ просить зображення.</string>
     <string name="browser_zoom">Масштаб сторінки</string>
     <string name="browser_zoom_in">Збільшити</string>
     <string name="browser_zoom_out">Зменшити</string>
