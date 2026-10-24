@@ -11,8 +11,6 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import okhttp3.Cookie
-import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
@@ -191,11 +189,12 @@ class BrowserDownloadsTest {
         hops: Map<String, Hop>,
         sent: MutableList<Pair<String, String?>>,
         saved: MutableList<String>,
-        browser: ((HttpUrl) -> List<Cookie>)? = null,
+        cookies: FakeCookieStore? = null,
     ) = MediaStoreDownloadTransfer(
         context = RuntimeEnvironment.getApplication(),
         allowlist = { BrowserAllowlist.DEFAULT },
-        browserCookies = browser ?: { url -> cookiesFromHeader(url, if (url.host.contains("moodle2")) "MoodleSession=abc" else "Other=1") },
+        cookieFor = { url -> cookies?.cookieFor(url) ?: if (url.contains("moodle2")) "MoodleSession=abc" else "Other=1" },
+        keepCookie = { url, value -> cookies?.keep(url, value) },
         userAgent = { "UA" },
         client = client(hops, sent),
         save = { _, _, input, _ ->
@@ -223,141 +222,40 @@ class BrowserDownloadsTest {
         )
     }
 
+    /** The browser's cookies, by host, as far as these tests need; [kept] says how many requests had gone when. */
+    private class FakeCookieStore(private val sent: List<Pair<String, String?>>) {
+        val kept = mutableListOf<String>()
+        private val byHost = mutableMapOf("moodle2.ntust.edu.tw" to linkedMapOf("MoodleSession" to "abc"))
+
+        fun keep(url: String, setCookie: String) {
+            kept += "after ${sent.size}: $url $setCookie"
+            val pair = setCookie.substringBefore(';')
+            byHost.getOrPut(url.toHttpUrl().host) { linkedMapOf() }[pair.substringBefore('=')] = pair.substringAfter('=')
+        }
+
+        fun cookieFor(url: String): String? =
+            byHost[url.toHttpUrl().host]?.entries?.joinToString("; ") { "${it.key}=${it.value}" }?.takeIf { it.isNotEmpty() }
+    }
+
     @Test
-    fun `a cookie a redirect sets goes with the next hops it is for, over the browser's, and no further`() = runTest(StandardTestDispatcher()) {
+    fun `a redirect's cookies go into the browser's, for the address that set them, before the next hop`() = runTest(StandardTestDispatcher()) {
         val sent = mutableListOf<Pair<String, String?>>()
+        val store = FakeCookieStore(sent)
         val hops = mapOf(
-            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
-                302,
-                "https://moodle2.ntust.edu.tw/b.pdf",
-                setCookies = listOf("dl=1; Path=/; Secure", "MoodleSession=new; Path=/"),
-            ),
-            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(303, "https://files.ntust.edu.tw/real.pdf"),
-            "https://files.ntust.edu.tw/real.pdf" to Hop(200, body = "PDF"),
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/b.pdf", setCookies = listOf("dl=1; Path=/; Secure", "MoodleSession=new; Path=/")),
+            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(200, body = "PDF"),
         )
 
-        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
+        transfer(hops, sent, mutableListOf(), store).download(save) { _, _ -> }
 
         assertEquals(
             listOf(
-                "https://moodle2.ntust.edu.tw/a.pdf" to "MoodleSession=abc",
-                "https://moodle2.ntust.edu.tw/b.pdf" to "MoodleSession=new; dl=1",
-                "https://files.ntust.edu.tw/real.pdf" to "Other=1",
+                "after 1: https://moodle2.ntust.edu.tw/a.pdf dl=1; Path=/; Secure",
+                "after 1: https://moodle2.ntust.edu.tw/a.pdf MoodleSession=new; Path=/",
             ),
-            sent,
+            store.kept,
         )
-    }
-
-    @Test
-    fun `a cookie a redirect expires is off the next hop, the browser's of that name too`() = runTest(StandardTestDispatcher()) {
-        val sent = mutableListOf<Pair<String, String?>>()
-        val hops = mapOf(
-            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/b.pdf", setCookies = listOf("MoodleSession=; Max-Age=0; Path=/")),
-            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(200, body = "PDF"),
-        )
-
-        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
-
-        assertEquals(listOf("https://moodle2.ntust.edu.tw/a.pdf" to "MoodleSession=abc", "https://moodle2.ntust.edu.tw/b.pdf" to null), sent)
-    }
-
-    @Test
-    fun `a cookie for another site, or for another path, is not sent`() = runTest(StandardTestDispatcher()) {
-        val sent = mutableListOf<Pair<String, String?>>()
-        val hops = mapOf(
-            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
-                302,
-                "https://moodle2.ntust.edu.tw/files/b.pdf",
-                setCookies = listOf("evil=1; Domain=example.com", "elsewhere=1; Path=/admin", "here=1; Path=/files"),
-            ),
-            "https://moodle2.ntust.edu.tw/files/b.pdf" to Hop(200, body = "PDF"),
-        )
-
-        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
-
-        assertEquals("here=1; MoodleSession=abc", sent.last().second)
-    }
-
-    @Test
-    fun `cookies of one name go longest path first, as a browser sends them`() = runTest(StandardTestDispatcher()) {
-        val sent = mutableListOf<Pair<String, String?>>()
-        val hops = mapOf(
-            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
-                302,
-                "https://moodle2.ntust.edu.tw/files/b.pdf",
-                setCookies = listOf("sid=outer; Path=/", "sid=download; Path=/files"),
-            ),
-            "https://moodle2.ntust.edu.tw/files/b.pdf" to Hop(200, body = "PDF"),
-        )
-
-        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
-
-        assertEquals("sid=download; MoodleSession=abc; sid=outer", sent.last().second)
-    }
-
-    @Test
-    fun `a redirect's cookie replaces only the browser's of its name, host and path`() = runTest(StandardTestDispatcher()) {
-        val sent = mutableListOf<Pair<String, String?>>()
-        val hops = mapOf(
-            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/files/report.pdf", setCookies = listOf("sid=rotated; Path=/")),
-            "https://moodle2.ntust.edu.tw/files/report.pdf" to Hop(200, body = "PDF"),
-        )
-        // The browser's, as the WebView tells them with their paths.
-        val browser = { url: HttpUrl ->
-            listOfNotNull(
-                Cookie.parse(url, "sid=download; Path=/files")?.takeIf { it.matches(url) },
-                Cookie.parse(url, "sid=outer; Path=/"),
-            )
-        }
-
-        transfer(hops, sent, mutableListOf(), browser).download(save) { _, _ -> }
-
-        assertEquals("sid=download; sid=rotated", sent.last().second)
-    }
-
-    @Test
-    fun `a cookie a later redirect refreshes keeps its place among those of its path`() = runTest(StandardTestDispatcher()) {
-        val sent = mutableListOf<Pair<String, String?>>()
-        val hops = mapOf(
-            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
-                302,
-                "https://moodle2.ntust.edu.tw/b.pdf",
-                setCookies = listOf("first=1; Path=/", "second=1; Path=/"),
-            ),
-            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/c.pdf", setCookies = listOf("first=2; Path=/")),
-            "https://moodle2.ntust.edu.tw/c.pdf" to Hop(200, body = "PDF"),
-        )
-
-        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
-
-        assertEquals("MoodleSession=abc; first=2; second=1", sent.last().second)
-    }
-
-    @Test
-    fun `a Cookie header becomes cookies for the host and the whole site`() {
-        val url = "https://moodle2.ntust.edu.tw/files/a.pdf".toHttpUrl()
-
-        val cookies = cookiesFromHeader(url, "a=1; b = 2 ;; =x; c=")
-
-        assertEquals(listOf("a" to "1", "b" to "2", "c" to ""), cookies.map { it.name to it.value })
-        assertTrue(cookies.all { it.hostOnly && it.domain == "moodle2.ntust.edu.tw" && it.path == "/" })
-        assertEquals(emptyList<Cookie>(), cookiesFromHeader(url, null))
-    }
-
-    @Test
-    fun `a download's cookies end with it`() = runTest(StandardTestDispatcher()) {
-        val sent = mutableListOf<Pair<String, String?>>()
-        val hops = mapOf(
-            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/b.pdf", setCookies = listOf("dl=1; Path=/")),
-            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(200, body = "PDF"),
-        )
-        val transfer = transfer(hops, sent, mutableListOf())
-        transfer.download(save) { _, _ -> }
-        sent.clear()
-
-        transfer.download(save) { _, _ -> }
-
-        assertEquals("MoodleSession=abc", sent.first().second)
+        assertEquals("https://moodle2.ntust.edu.tw/b.pdf" to "MoodleSession=new; dl=1", sent.last())
     }
 
     @Test
@@ -408,7 +306,8 @@ class BrowserDownloadsTest {
         val transfer = MediaStoreDownloadTransfer(
             context = RuntimeEnvironment.getApplication(),
             allowlist = { BrowserAllowlist.DEFAULT },
-            browserCookies = { url -> cookiesFromHeader(url, "MoodleSession=abc") },
+            cookieFor = { "MoodleSession=abc" },
+            keepCookie = { _, _ -> },
             userAgent = { null },
             client = client,
             save = { _, _, _, _ -> Uri.parse("content://downloads/1") },
@@ -450,7 +349,8 @@ class BrowserDownloadsTest {
         val transfer = MediaStoreDownloadTransfer(
             context = RuntimeEnvironment.getApplication(),
             allowlist = { BrowserAllowlist.DEFAULT },
-            browserCookies = { emptyList() },
+            cookieFor = { null },
+            keepCookie = { _, _ -> },
             userAgent = { null },
             client = client,
             save = { _, _, input, _ ->
