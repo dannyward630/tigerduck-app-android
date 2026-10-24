@@ -444,12 +444,19 @@ private fun MeTag(text: String) {
 /**
  * The line under a name in the list: the student ID, whole, then the department's short name, which
  * is the one cut short when the line runs out of room, as on the iPhone.
+ *
+ * The two share one baseline. Set from the top, a Chinese department's font sits its baseline lower
+ * than the ID's digits, and Material's ListItem reads a supporting line whose first and last
+ * baselines differ as two lines of text: it then lays the row out as a three-line one, taller and
+ * from the top.
  */
 @Composable
 internal fun MemberSubline(studentId: String, department: String?) {
     Row {
-        Text(studentId, maxLines = 1, softWrap = false)
-        if (department != null) Text(" · $department", maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(studentId, maxLines = 1, softWrap = false, modifier = Modifier.alignByBaseline())
+        if (department != null) {
+            Text(" · $department", maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.alignByBaseline())
+        }
     }
 }
 

@@ -60,9 +60,11 @@ import org.ntust.app.tigerduck.review.ReviewPrompt
 import org.ntust.app.tigerduck.serverpush.ServerPopupRequest
 import org.ntust.app.tigerduck.serverpush.ServerPushIntentToken
 import org.ntust.app.tigerduck.serverpush.ServerPushPopupCoordinator
+import org.ntust.app.tigerduck.ui.AppProcessing
 import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
 import org.ntust.app.tigerduck.ui.BrowserPreference
+import org.ntust.app.tigerduck.ui.component.AppProcessingHost
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptController
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptHost
@@ -126,6 +128,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var authTokenManager: AuthTokenManager
+
+    @Inject
+    lateinit var appProcessing: AppProcessing
 
     @Inject
     lateinit var networkChecker: NetworkChecker
@@ -339,25 +344,33 @@ class MainActivity : AppCompatActivity() {
                         // moment ReviewPrompt picks and, like the prompt
                         // above, not over another prompt: the root-level
                         // ones here, AppNavigation's permission warning,
-                        // reset dialog and sign-in sheet, and the retired-
-                        // API dialog. A dialog a page owns is the page's to
-                        // hold the moment back for.
+                        // reset dialog and sign-in sheet, the retired-API
+                        // dialog, and the processing spinner. A dialog a page
+                        // owns is the page's to hold the moment back for.
                         val popupPending by serverPushPopupCoordinator.pending.collectAsStateWithLifecycle()
                         val permissionWarning by appState.systemPermissions.warningShowing.collectAsStateWithLifecycle()
                         val needsReset by appState.needsUserReset.collectAsStateWithLifecycle()
                         val apiRetired by ApiVersionGate.isRetired.collectAsStateWithLifecycle()
+                        val processingHolds by appProcessing.holds.collectAsStateWithLifecycle()
                         ReviewPromptHost(
                             reviewPrompt = reviewPrompt,
                             inAppReview = inAppReview,
                             otherPromptShowing = whatsNewFlow.value != null || updatePending != null ||
                                 pendingPrompt != null || popupPending != null || permissionWarning ||
-                                needsReset || apiRetired || appState.ntustSignInSheetRequested,
+                                needsReset || apiRetired || appState.ntustSignInSheetRequested ||
+                                processingHolds > 0,
                         )
 
                         // Operator-issued popup: rendered over whatever screen
                         // the user lands on after tapping the notification.
                         // Coordinator's dedupe set short-circuits replays.
                         ServerPushPopupHost(serverPushPopupCoordinator)
+
+                        // "Processing… Please don't close the app.": work the
+                        // user waits on, such as the sign-in a Moodle page
+                        // opened in the browser waits for. Last, so it comes
+                        // up over anything above.
+                        AppProcessingHost(appProcessing)
                     }
                 }
             }
