@@ -10,8 +10,16 @@ internal interface MailSessionRunner {
     suspend fun <T> run(stillWanted: () -> Boolean, block: (MailSession) -> T): T
 }
 
-/** How far a download into the search index has come: [done] of the [total] mails it lacked. */
-data class MailIndexProgress(val done: Int, val total: Int)
+/**
+ * How far a download into the search index has come: [done] of the [total] mails it lacked, or
+ * [COUNTING] while it lists every folder to find that total.
+ */
+data class MailIndexProgress(val done: Int, val total: Int?) {
+    companion object {
+        /** Under way, with no total yet: every folder listed, planned and its flags asked for first. */
+        val COUNTING = MailIndexProgress(0, null)
+    }
+}
 
 /**
  * Brings the [MailSearchIndex] up to the server's mail, a folder at a time and [BATCH] mails at a
