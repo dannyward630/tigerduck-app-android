@@ -9,7 +9,9 @@ import java.io.File
 /**
  * The pin document's envelope as it was received (TLS pins spec, A5), in a file outside the
  * cache and the user-data folders a full reset empties. Every load verifies it again, so a file
- * changed on disk, signed by a retired key or past its expiry counts as no document.
+ * changed on disk or signed by a retired key counts as no document. One past its expiry still
+ * loads, so its serial keeps an older document out; [PinPolicy][org.ntust.app.tigerduck.shared.tls.PinPolicy]
+ * applies none past its expiry.
  */
 class PinDocumentStore(
     file: File,
@@ -20,7 +22,7 @@ class PinDocumentStore(
     /** The stored document if it still verifies, or null. */
     fun load(): PinDocument? {
         val bytes = runCatching { atomic.readFully() }.getOrNull() ?: return null
-        return (verifier.verify(bytes) as? PinDocumentResult.Verified)?.document
+        return (verifier.verify(bytes, allowExpired = true) as? PinDocumentResult.Verified)?.document
     }
 
     fun save(document: PinDocument) {

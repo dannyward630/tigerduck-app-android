@@ -80,8 +80,11 @@ class PinDocumentVerifierTest {
     }
 
     @Test
-    fun `an expired document is refused`() {
-        assertEquals(PinDocumentRejection.EXPIRED, rejection(signer.envelope(payload(expiresAt = now))))
+    fun `an expired document is refused, unless only its serial is wanted`() {
+        val expired = signer.envelope(payload(expiresAt = now))
+
+        assertEquals(PinDocumentRejection.EXPIRED, rejection(expired))
+        assertTrue(verifier.verify(expired, allowExpired = true) is PinDocumentResult.Verified)
     }
 
     @Test

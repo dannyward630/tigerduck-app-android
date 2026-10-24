@@ -42,8 +42,8 @@ class BuiltInPinsTest {
     }
 
     @Test
-    fun `the table starts from the first TigerSync document`() {
-        assertEquals(1L, BuiltInPins.BASELINE_SERIAL)
+    fun `until the first production document, any document wins over the table`() {
+        assertEquals(0L, BuiltInPins.BASELINE_SERIAL)
     }
 
     private fun certificates(resource: String): List<X509Certificate> =

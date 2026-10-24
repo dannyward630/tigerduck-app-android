@@ -55,9 +55,10 @@ class WatchTlsPins internal constructor(
         state.update { it.with(document = document ?: it.document, acceptances = accepted) }
     }
 
+    /** The stored envelope, verified again; one past its expiry still keeps its serial's place. */
     private fun verified(base64: String): PinDocument? {
         val bytes = runCatching { Base64.getDecoder().decode(base64) }.getOrNull() ?: return null
-        return (verifier.verify(bytes) as? PinDocumentResult.Verified)?.document
+        return (verifier.verify(bytes, allowExpired = true) as? PinDocumentResult.Verified)?.document
     }
 
     companion object {

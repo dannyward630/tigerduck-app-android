@@ -34,9 +34,10 @@ object BuiltInPins {
     /**
      * The serial of the TigerSync document these sets were copied from. A remote document
      * replaces a set only when its serial is greater, so a newer app's own pins win over an
-     * older document still cached.
+     * older document still cached. 0 until the first production document is published: any
+     * valid document, serial 1 or more, wins over the built-in pins until then.
      */
-    const val BASELINE_SERIAL: Long = 1
+    const val BASELINE_SERIAL: Long = 0
 
     val sets: List<PinSet> = listOf(
         // CA pins only (D20), never a leaf: *.ntust.edu.tw's TWCA Secure SSL intermediate; the

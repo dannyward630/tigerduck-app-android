@@ -71,6 +71,13 @@ class PinPolicyTest {
     }
 
     @Test
+    fun `with the shipped baseline, a first document of serial 1 wins over the built-in pins`() {
+        val rules = PinPolicy(builtIn, document = document(1, school.copy(pins = setOf(pin(9)))), appVersion = 30)
+
+        assertEquals(setOf(pin(9)), rules.setFor("i.ntust.edu.tw", now)?.pins)
+    }
+
+    @Test
     fun `a document held past its own expiry stops applying`() {
         val rules = policy(document(101, school.copy(pins = setOf(pin(9)))))
         val later = now.plusSeconds(2 * 86_400)

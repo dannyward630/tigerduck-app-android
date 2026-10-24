@@ -60,7 +60,12 @@ class PinDocumentVerifier(
     private val now: () -> Instant = Instant::now,
 ) {
 
-    fun verify(envelope: ByteArray): PinDocumentResult {
+    /**
+     * [envelope]'s document, or why not. With [allowExpired], one past its `expires_at` still
+     * verifies: a stored document is loaded that way, so its serial keeps an older one out after
+     * it expires, while [PinPolicy.documentAt] no longer applies it.
+     */
+    fun verify(envelope: ByteArray, allowExpired: Boolean = false): PinDocumentResult {
         val outer = parseObject(String(envelope, Charsets.UTF_8)) ?: return rejected(PinDocumentRejection.MALFORMED)
         val format = outer.int("format") ?: return rejected(PinDocumentRejection.MALFORMED)
         if (format != FORMAT) return rejected(PinDocumentRejection.UNKNOWN_FORMAT)
@@ -85,7 +90,7 @@ class PinDocumentVerifier(
             val array = element.takeIf { it.isJsonArray }?.asJsonArray ?: return rejected(PinDocumentRejection.MALFORMED)
             array.map { it.asSpki() ?: return rejected(PinDocumentRejection.MALFORMED) }.toSet()
         }.orEmpty()
-        if (!now().isBefore(expiresAt)) return rejected(PinDocumentRejection.EXPIRED)
+        if (!allowExpired && !now().isBefore(expiresAt)) return rejected(PinDocumentRejection.EXPIRED)
         return PinDocumentResult.Verified(PinDocument(serial, issuedAt, expiresAt, sets, promptRoots, envelope.copyOf()))
     }
 

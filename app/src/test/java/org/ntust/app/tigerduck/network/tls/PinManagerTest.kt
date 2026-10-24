@@ -102,6 +102,19 @@ class PinManagerTest {
     }
 
     @Test
+    fun `a stored document past its expiry no longer applies, but still keeps an older serial out`() {
+        served += document(5, school(fake(1)))
+        manager().refresh()
+        now = expiry.plusSeconds(1).toEpochMilli()
+        val later = manager()
+
+        assertEquals(5L, later.document?.serial)
+        assertEquals(BuiltInPins.sets.single { it.id == "ntust" }.pins, later.state.policy.setFor("i.ntust.edu.tw", Instant.ofEpochMilli(now))?.pins)
+        served += signer.envelope(4, Instant.ofEpochMilli(now).plusSeconds(86_400), listOf(school(fake(2))))
+        assertFalse(later.refresh())
+    }
+
+    @Test
     fun `a newer document that allows the chain fixes a mismatch silently`() {
         val pins = manager()
         served += document(2, school(chain.intermediate.certificate.spki))
