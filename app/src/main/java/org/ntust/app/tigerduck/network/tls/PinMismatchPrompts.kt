@@ -86,6 +86,18 @@ class PinMismatchPrompts(
         showNext()
     }
 
+    /**
+     * Retires the prompt waiting to be shown if it is no longer eligible (D18), as when its
+     * document lapsed while the app was in the background, and shows the next one that is.
+     */
+    @Synchronized
+    fun revalidate() {
+        val shown = _pending.value ?: return
+        if (eligible(shown)) return
+        answers.remove(shown.setId)?.complete(false)
+        showNext()
+    }
+
     private fun showNext() {
         while (true) {
             val next = backlog.entries.firstOrNull()

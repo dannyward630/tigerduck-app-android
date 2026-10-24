@@ -151,4 +151,23 @@ class PinMismatchPromptsTest {
         prompts.queue(school)
         assertEquals(school, prompts.pending.value)
     }
+
+    @Test
+    fun `a prompt no longer eligible when it comes to be shown is retired, and the next one shown`() {
+        var eligible = setOf("ntust", "library")
+        val prompts = PinMismatchPrompts(store, { now }, onContinue = { continued += it.setId }, eligible = { it.setId in eligible })
+        prompts.queue(school)
+        prompts.queue(library)
+
+        // Its document expired, or was replaced by one without its root, before the app came back.
+        eligible = setOf("library")
+        prompts.revalidate()
+
+        assertEquals("library", prompts.pending.value?.setId)
+        assertFalse(prompts.awaitAnswer("ntust", 0))
+        eligible = emptySet()
+        prompts.revalidate()
+        assertNull(prompts.pending.value)
+        assertTrue(continued.isEmpty())
+    }
 }

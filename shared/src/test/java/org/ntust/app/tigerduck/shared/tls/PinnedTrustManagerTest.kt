@@ -64,7 +64,7 @@ class PinnedTrustManagerTest {
         return pinnedClientBuilder(tls)
             .connectTimeout(5, TimeUnit.SECONDS)
             .readTimeout(5, TimeUnit.SECONDS)
-            .retryOnConnectionFailure(false)
+            .retryOnConnectionFailure(false).dns(LOOPBACK_DNS)
             .build()
     }
 
@@ -188,11 +188,39 @@ class PinnedTrustManagerTest {
         assertTrue("not refused: $refused", refused is javax.net.ssl.SSLPeerUnverifiedException)
 
         // Its chain meets the school's pins, or it was made for a host of the same set.
-        trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leaf.certificate, pinnedCa.certificate))
+        trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leafSignedBy(pinnedCa).certificate, pinnedCa.certificate))
         trust.checkReused("moodle.school.test", "sso.school.test", served)
         // The host itself, or an unpinned one.
         trust.checkReused("moodle.school.test", "moodle.school.test", served)
         trust.checkReused("other.test", "elsewhere.test", served)
+    }
+
+    @Test
+    fun `a reused connection's mismatch is one like a handshake's, so it can be refreshed, offered and retried`() {
+        val school = PinSet("school", listOf(PinDomain("school.test", true)), setOf(pinnedCa.certificate.spki), now.plusSeconds(3600))
+        val trust = PinnedTrustManager(systemTrust, AnchoringValidator(systemTrust), { policy(school) }, mismatches::add, { now })
+
+        val refused = runCatching {
+            trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leaf.certificate, intermediate.certificate))
+        }.exceptionOrNull()
+
+        assertTrue("not refused: $refused", refused is javax.net.ssl.SSLPeerUnverifiedException)
+        val mismatch = refused?.pinMismatch()
+        assertEquals("school", mismatch?.setId)
+        assertEquals("moodle.school.test", mismatch?.host)
+        // Built up to its anchor, as a handshake's chain is.
+        assertEquals(root.certificate, mismatch?.chain?.last())
+        assertEquals(listOf(mismatch), mismatches.toList())
+    }
+
+    @Test
+    fun `a reused connection's chain is built up to its anchor, so a root pin matches with the root left out`() {
+        val school = PinSet("school", listOf(PinDomain("school.test", true)), setOf(root.certificate.spki), now.plusSeconds(3600))
+        val trust = PinnedTrustManager(systemTrust, AnchoringValidator(systemTrust), { policy(school) }, mismatches::add, { now })
+
+        trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leaf.certificate, intermediate.certificate))
+
+        assertEquals(emptyList<PinMismatch>(), mismatches.toList())
     }
 
     private companion object {

@@ -69,7 +69,9 @@ class NtustSessionManager @Inject constructor(
     private val accountGuard = AccountSessionGuard()
 
     val client: OkHttpClient = pinnedClientBuilder(tls)
-        .addInterceptor(accountGuard.markCall)
+        // Ahead of the pin-mismatch retry, so a call tried again keeps the account it started
+        // under, and one the student signed out of meanwhile is refused.
+        .apply { interceptors().add(0, accountGuard.markCall) }
         // Before the UA/Accept rewriting below: a demo session has no reason
         // to dress up a request it is about to refuse.
         .addInterceptor(demoMode)

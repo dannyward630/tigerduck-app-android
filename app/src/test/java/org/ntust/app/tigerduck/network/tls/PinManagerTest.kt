@@ -18,7 +18,9 @@ import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import org.robolectric.annotation.Config
@@ -39,17 +41,20 @@ class PinManagerTest {
     private var foreground = true
     private val direct = Executor { it.run() }
 
-    private fun manager(): PinManager {
+    private fun manager(
+        client: PinDocumentSource = PinDocumentSource { _ -> fetches.incrementAndGet(); served.removeFirstOrNull() },
+        executor: Executor = direct,
+    ): PinManager {
         val verifier = PinDocumentVerifier(signer.keys) { Instant.ofEpochMilli(now) }
         return PinManager(
             documents = PinDocumentStore(file, verifier),
             acceptances = PinAcceptanceStore(context.getSharedPreferences(PinAcceptanceStore.FILE, Context.MODE_PRIVATE), 30),
-            client = { _ -> fetches.incrementAndGet(); served.removeFirstOrNull() },
+            client = client,
             verifier = verifier,
             versionCode = 30,
             clock = { now },
             isForeground = { foreground },
-            executor = direct,
+            executor = executor,
         )
     }
 
@@ -234,5 +239,20 @@ class PinManagerTest {
 
         assertTrue(updated.currentAcceptances.isEmpty())
         assertFalse(updated.state.policy.allows(chain.mismatch(), Instant.ofEpochMilli(now)))
+    }
+
+    @Test
+    fun `a call given up stops waiting for the document fetch, which goes on for the calls after it`() {
+        val stalled = CountDownLatch(1)
+        val pins = manager(client = { _ -> stalled.await(30, TimeUnit.SECONDS); null }, executor = Executors.newCachedThreadPool())
+        val started = System.nanoTime()
+        val elapsedMs = { TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started) }
+
+        try {
+            assertFalse(pins.mayRetry(chain.mismatch()) { elapsedMs() > 300 })
+            assertTrue("waited ${elapsedMs()} ms", elapsedMs() < 3_000)
+        } finally {
+            stalled.countDown()
+        }
     }
 }

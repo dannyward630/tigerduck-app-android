@@ -380,7 +380,7 @@ class MainActivity : AppCompatActivity() {
                         // user waits on, such as the sign-in a Moodle page
                         // opened in the browser waits for. Last, so it comes
                         // up over anything above.
-                        AppProcessingHost(appProcessing)
+                        AppProcessingHost(appProcessing, questionShowing = pinPrompt != null)
                     }
                 }
             }

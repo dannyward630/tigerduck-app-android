@@ -109,8 +109,10 @@ class PinnedTrustManager(
     /**
      * For a request to [host] carried over a connection made for [connectedTo], as OkHttp's
      * HTTP/2 coalescing does without asking this manager again: the connection's
-     * [peerCertificates] must meet [host]'s own pins when its set isn't [connectedTo]'s.
-     * Throws before the request is written.
+     * [peerCertificates] must meet [host]'s own pins when its set isn't [connectedTo]'s. They are
+     * built up to their anchor for [host], as its own handshake's would be, and a mismatch is one
+     * like a handshake's, which [onMismatch] hears of and a retry can clear, carried by an
+     * [SSLPeerUnverifiedException]. Throws before the request is written.
      */
     fun checkReused(host: String, connectedTo: String, peerCertificates: List<Certificate>) {
         if (host.equals(connectedTo, ignoreCase = true)) return
@@ -118,9 +120,16 @@ class PinnedTrustManager(
         val at = now()
         val set = rules.setFor(host, at) ?: return
         if (rules.setFor(connectedTo, at)?.id == set.id) return
-        val spkis = peerCertificates.filterIsInstance<X509Certificate>().map { it.spki }.toSet()
-        if (rules.decide(set, spkis, at) != PinDecision.Allowed) {
+        val served = peerCertificates.filterIsInstance<X509Certificate>().toTypedArray()
+        val validated = try {
+            if (served.isEmpty()) throw CertificateException("no certificates")
+            validator.validate(served, REUSED_AUTH_TYPE, host)
+        } catch (e: CertificateException) {
+            throw SSLPeerUnverifiedException("$host's trust not met on a connection made for $connectedTo").apply { initCause(e) }
+        }
+        mismatchOf(rules, set, validated, host, at)?.let { mismatch ->
             throw SSLPeerUnverifiedException("pins for $host not met on a connection made for $connectedTo")
+                .apply { initCause(PinMismatchException(mismatch)) }
         }
     }
 
@@ -133,15 +142,22 @@ class PinnedTrustManager(
             return
         }
         val validated = validator.validate(chain, authType, host)
+        mismatchOf(rules, set, validated, host, at)?.let { throw PinMismatchException(it) }
+    }
+
+    /** The mismatch [validated] makes with [set]'s pins, which [onMismatch] hears of, or null. */
+    private fun mismatchOf(rules: PinPolicy, set: PinSet, validated: List<X509Certificate>, host: String, at: Instant): PinMismatch? {
         val spkis = validated.map { it.spki }.toSet()
-        when (val decision = rules.decide(set, spkis, at)) {
-            PinDecision.Allowed -> Unit
-            is PinDecision.Mismatch -> {
-                val mismatch = PinMismatch(decision.set.id, host, decision.set.domains, validated, spkis)
-                runCatching { onMismatch(mismatch) }
-                throw PinMismatchException(mismatch)
-            }
-        }
+        val decision = rules.decide(set, spkis, at) as? PinDecision.Mismatch ?: return null
+        return PinMismatch(decision.set.id, host, decision.set.domains, validated, spkis).also { runCatching { onMismatch(it) } }
+    }
+
+    private companion object {
+        /**
+         * A reused connection's key exchange auth type, which only key-usage checks read: its own
+         * handshake ran those.
+         */
+        const val REUSED_AUTH_TYPE = "UNKNOWN"
     }
 }
 

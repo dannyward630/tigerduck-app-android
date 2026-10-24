@@ -24,6 +24,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.FutureTask
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -111,6 +112,8 @@ class PinManager internal constructor(
             runCatching { documents.save(document) }.onFailure { Log.w(TAG, "pin document not saved: ${it.javaClass.simpleName}") }
             state.update { it.with(document = document) }
         }
+        // A prompt waiting may have lost the root that made it eligible.
+        prompts.revalidate()
         _changes.tryEmit(Unit)
         return true
     }
@@ -133,20 +136,22 @@ class PinManager internal constructor(
      * Continue made after that still holds for the requests that follow.
      */
     override fun mayRetry(mismatch: PinMismatch, isCanceled: () -> Boolean): Boolean {
-        if (settle(mismatch)) return true
+        if (settle(mismatch, isCanceled)) return true
         if (!isForeground() || isCanceled()) return false
         return prompts.awaitAnswer(mismatch.setId, ANSWER_WAIT_MS, isCanceled) && !isCanceled() && allows(mismatch)
     }
 
     /**
      * Refreshes the document once per set per launch, then decides (A4): true when the pins now
-     * allow the chain; otherwise a prompt is queued for a chain the student may be offered.
+     * allow the chain; otherwise a prompt is queued for a chain the student may be offered. A call
+     * given up stops waiting for the refresh, which goes on for the calls after it, and the
+     * handshake's own [onMismatch] still settles.
      */
-    private fun settle(mismatch: PinMismatch): Boolean {
+    private fun settle(mismatch: PinMismatch, isCanceled: () -> Boolean = { false }): Boolean {
         val refresh = mismatchRefreshes.computeIfAbsent(mismatch.setId) { _ ->
             FutureTask { refresh(fresh = true) }.also(executor::execute)
         }
-        runCatching { refresh.get(REFRESH_WAIT_MS, TimeUnit.MILLISECONDS) }
+        if (!awaitRefresh(refresh, isCanceled)) return false
         if (allows(mismatch)) return true
         if (state.policy.mayPrompt(mismatch, Instant.ofEpochMilli(clock()))) {
             prompts.queue(mismatch)
@@ -154,6 +159,24 @@ class PinManager internal constructor(
             Log.w(TAG, "pin mismatch with no prompt: set ${mismatch.setId}, host ${mismatch.host}")
         }
         return false
+    }
+
+    /** Waits for [refresh] up to [REFRESH_WAIT_MS], in slices; false once the call is given up. */
+    private fun awaitRefresh(refresh: FutureTask<Boolean>, isCanceled: () -> Boolean): Boolean {
+        val deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(REFRESH_WAIT_MS)
+        while (!refresh.isDone) {
+            if (isCanceled()) return false
+            val left = deadline - System.nanoTime()
+            if (left <= 0) return true
+            try {
+                refresh.get(minOf(left, TimeUnit.MILLISECONDS.toNanos(WAIT_SLICE_MS)), TimeUnit.NANOSECONDS)
+            } catch (_: TimeoutException) {
+                // Not fetched yet: look at the call again.
+            } catch (_: Exception) {
+                return true
+            }
+        }
+        return true
     }
 
     private fun allows(mismatch: PinMismatch) = state.policy.allows(mismatch, Instant.ofEpochMilli(clock()))
@@ -181,6 +204,9 @@ class PinManager internal constructor(
 
         /** The fetch's own timeout is 10 s. */
         const val REFRESH_WAIT_MS = 12_000L
+
+        /** How often a wait looks at its call again. */
+        const val WAIT_SLICE_MS = 250L
 
         /** How long a foreground request waits for the student's answer. */
         const val ANSWER_WAIT_MS = 120_000L

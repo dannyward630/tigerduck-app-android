@@ -33,7 +33,7 @@ class PinMismatchRetryTest {
 
     private fun client(resolver: PinMismatchResolver) = pinnedClientBuilder(
         PinnedTls(PinnedTrustManager(trust, AnchoringValidator(trust), { state.policy }, {}), resolver),
-    ).connectTimeout(5, TimeUnit.SECONDS).readTimeout(5, TimeUnit.SECONDS).retryOnConnectionFailure(false).build()
+    ).connectTimeout(5, TimeUnit.SECONDS).readTimeout(5, TimeUnit.SECONDS).retryOnConnectionFailure(false).dns(LOOPBACK_DNS).build()
 
     private fun call(resolver: PinMismatchResolver) =
         client(resolver).newCall(Request.Builder().url("https://localhost:${server.port}/").build()).execute().use { it.body.string() }

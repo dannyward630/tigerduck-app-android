@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.shared.tls
 
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
+import okhttp3.Dns
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator
@@ -15,6 +16,7 @@ import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import java.time.Instant
 import java.util.Base64
+import java.util.Collections
 import java.util.concurrent.atomic.AtomicInteger
 import javax.net.ssl.SSLServerSocket
 import javax.net.ssl.SSLSocket
@@ -120,7 +122,18 @@ class AnchoringValidator(private val trust: X509ExtendedTrustManager) : ChainVal
 }
 
 /** A TLS server on the loopback that serves [leaf] and [chain] and counts the request bytes it reads. */
-class LocalTlsServer(leaf: HeldCertificate, chain: List<X509Certificate>) : AutoCloseable {
+/**
+ * "localhost" as [LocalTlsServer] listens on it: IPv4 loopback only, where a Mac's resolver
+ * would try IPv6 first and a test client, retrying no route, would give up.
+ */
+val LOOPBACK_DNS = Dns { listOf(InetAddress.getLoopbackAddress()) }
+
+class LocalTlsServer(
+    leaf: HeldCertificate,
+    chain: List<X509Certificate>,
+    /** The response to a request, by its request line. */
+    private val reply: (String) -> String = { OK },
+) : AutoCloseable {
     private val socket = HandshakeCertificates.Builder()
         .heldCertificate(leaf, *chain.toTypedArray())
         .build()
@@ -132,6 +145,9 @@ class LocalTlsServer(leaf: HeldCertificate, chain: List<X509Certificate>) : Auto
 
     /** Bytes of request a client sent once its handshake was through. */
     val requestBytes = AtomicInteger()
+
+    /** Each request's line, in the order they came. */
+    val requestLines: MutableList<String> = Collections.synchronizedList(mutableListOf())
 
     init {
         thread(isDaemon = true) {
@@ -149,7 +165,12 @@ class LocalTlsServer(leaf: HeldCertificate, chain: List<X509Certificate>) : Auto
                             requestBytes.incrementAndGet()
                             head.append(b.toChar())
                         }
-                        it.outputStream.write("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok".toByteArray())
+                        if (head.isEmpty()) return@use
+                        val length = CONTENT_LENGTH.find(head)?.groupValues?.get(1)?.toInt() ?: 0
+                        repeat(length) { if (input.read() >= 0) requestBytes.incrementAndGet() }
+                        val line = head.toString().substringBefore("\r\n")
+                        requestLines += line
+                        it.outputStream.write(reply(line).toByteArray())
                         it.outputStream.flush()
                     }
                 }
@@ -158,4 +179,9 @@ class LocalTlsServer(leaf: HeldCertificate, chain: List<X509Certificate>) : Auto
     }
 
     override fun close() = socket.close()
+
+    companion object {
+        const val OK = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nok"
+        private val CONTENT_LENGTH = Regex("""(?i)\r\ncontent-length: *(\d+)""")
+    }
 }

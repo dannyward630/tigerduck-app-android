@@ -6,6 +6,8 @@ import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.academic.AcademicCalendar
@@ -195,12 +197,17 @@ class WearScheduleBridge @Inject constructor(
      * verifies the envelope with its own keys and applies an acceptance only while its build is
      * the matching one.
      */
-    suspend fun publishTlsPins() {
-        val request = PutDataMapRequest.create(WearProtocol.TlsPins.PATH).apply {
-            pins.envelope?.let { dataMap.putByteArray(WearProtocol.TlsPins.KEY_ENVELOPE, it) }
-            dataMap.putString(WearProtocol.TlsPins.KEY_ACCEPTANCES, PinAcceptances.encode(pins.currentAcceptances))
-            dataMap.putLong(WearProtocol.TlsPins.KEY_VERSION, nextTlsPinsEpoch())
-        }.asPutDataRequest().setUrgent()
+    suspend fun publishTlsPins() = tlsPins.publish()
+
+    private val tlsPins = TlsPinsPublisher(
+        snapshot = {
+            PutDataMapRequest.create(WearProtocol.TlsPins.PATH).apply {
+                pins.envelope?.let { dataMap.putByteArray(WearProtocol.TlsPins.KEY_ENVELOPE, it) }
+                dataMap.putString(WearProtocol.TlsPins.KEY_ACCEPTANCES, PinAcceptances.encode(pins.currentAcceptances))
+                dataMap.putLong(WearProtocol.TlsPins.KEY_VERSION, nextTlsPinsEpoch())
+            }.asPutDataRequest().setUrgent()
+        },
+    ) { request ->
         try {
             Wearable.getDataClient(context).putDataItem(request).await()
         } catch (t: Throwable) {
@@ -310,3 +317,13 @@ internal fun Course.toWearDto(): WearScheduleBridge.CourseDto = WearScheduleBrid
     customColorHex = customColorHex,
     isManual = isManual,
 )
+
+/**
+ * Publishes the TLS pins item one at a time (A8): a snapshot, its version included, is taken and
+ * put with no other publish in between, so the item last put is always the newest.
+ */
+internal class TlsPinsPublisher<T>(private val snapshot: () -> T, private val put: suspend (T) -> Unit) {
+    private val mutex = Mutex()
+
+    suspend fun publish() = mutex.withLock { put(snapshot()) }
+}

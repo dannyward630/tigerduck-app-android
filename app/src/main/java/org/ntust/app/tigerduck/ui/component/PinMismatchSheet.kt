@@ -33,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -92,6 +93,8 @@ data class PinCertificateRow(
 @Composable
 fun PinMismatchHost(prompts: PinMismatchPrompts) {
     val mismatch by prompts.pending.collectAsState()
+    // Checked again on its way in: one queued in the background may have lapsed meanwhile.
+    LaunchedEffect(mismatch) { prompts.revalidate() }
     val shown = mismatch ?: return
     val locale = Locale.getDefault()
     val domains = ListFormatter.getInstance(locale).format(shown.domains.map { it.name })
