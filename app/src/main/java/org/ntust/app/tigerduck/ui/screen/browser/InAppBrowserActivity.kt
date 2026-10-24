@@ -116,7 +116,8 @@ object InAppBrowser {
     /**
      * Opens [url], an https page, in the TigerDuck browser; false when it is
      * not one, when this phone's WebView cannot be cleared ([canClearEverything]),
-     * or nothing could open, for the caller to open it another way.
+     * while a deletion is unconfirmed or a clearing owed ([BrowserCleanup]),
+     * or when nothing could open, for the caller to open it another way.
      */
     fun open(context: Context, url: String): Boolean {
         if (url.toHttpUrlOrNull()?.isHttps != true) return false
