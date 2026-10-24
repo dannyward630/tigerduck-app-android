@@ -65,6 +65,9 @@ class MoodleWebSignInTest {
     /** How long Moodle's OIDC entry blocks, cancelled or not, as a stuck lookup of its address does. */
     private var entryBlocksMs = 0L
 
+    /** How long the next password post blocks, cancelled or not. */
+    private var postBlocksMs = 0L
+
     private val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain) }.build()
 
     /** The time the latch and the pause read. */
@@ -258,6 +261,23 @@ class MoodleWebSignInTest {
         assertTrue("nothing posted", posts.isEmpty())
     }
 
+    @Test
+    fun `a password post stuck where a cancel cannot reach holds up no renewal past the deadline`() = runTest(UnconfinedTestDispatcher()) {
+        val service = service(websiteDeadlineMs = 300)
+        postBlocksMs = 4_000
+
+        val failed = onTheClock { withTimeout(10_000) { runCatching { service.signInToWebsite() } } }
+        assertTrue(failed.exceptionOrNull() is MoodleWebserviceError.TransientNetwork)
+
+        // The renewal posts while the stuck post still sleeps: neither lock is held for it.
+        ssoAnswer = { "$MOODLE/admin/tool/mobile/launch.php?confirmed=1" to tokenPage() }
+        val started = System.nanoTime()
+        assertEquals("made-up-renewed-wstoken", onTheClock { withTimeout(10_000) { service.renewToken("made-up-wstoken") } })
+        val tookMs = (System.nanoTime() - started) / 1_000_000
+        assertTrue("not held behind the stuck post ($tookMs ms)", tookMs < 2_000)
+        assertEquals("no refusal counted for the abandoned post", 0, latch.refusals.value)
+    }
+
     /** [block] timed on the clock rather than the test's virtual time, as the run is. */
     private suspend fun <T> onTheClock(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default.limitedParallelism(1), block)
@@ -281,6 +301,12 @@ class MoodleWebSignInTest {
         val (landed, html, sets) = when {
             request.method == "POST" && request.url.host == SSO_HOST -> {
                 posts += url
+                if (postBlocksMs > 0) {
+                    val blocks = postBlocksMs
+                    postBlocksMs = 0
+                    Thread.sleep(blocks)
+                    if (chain.call().isCanceled()) throw java.io.IOException("Canceled")
+                }
                 if (ssoHangs) {
                     ssoHangs = false
                     // As OkHttp's own: a cancelled call gives up on its read.

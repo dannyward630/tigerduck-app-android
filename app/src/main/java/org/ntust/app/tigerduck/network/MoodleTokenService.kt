@@ -248,19 +248,25 @@ class MoodleTokenService internal constructor(
         studentId: String,
         password: String,
         posting: PasswordPosting,
-    ): List<Cookie> {
-        val calls = RunningCalls()
-        // Apart from the caller, which stops waiting the moment it is cancelled (at the run's
-        // deadline, say) and lets the sign-in lock go then: a blocking call does not stop for a
-        // cancelled coroutine, and one stuck where Call.cancel cannot reach (an address lookup)
-        // would hold the lock. Cancelled, the run's calls are cancelled at once, and any it would
-        // make after, so it ends without another request going out, its password post among them.
-        val run = CoroutineScope(Dispatchers.IO).async { walkWebsiteSignIn(studentId, password, posting, calls) }
+    ): List<Cookie> = withContext(Dispatchers.IO) {
+        walkWebsiteSignIn(studentId, password, posting, RunningCalls())
+    }
+
+    /**
+     * Runs one of the website sign-in's calls, [call], apart from its caller, which stops waiting
+     * the moment it is cancelled (at the run's deadline, say) and lets its locks go then, the
+     * password post's among them: a blocking call does not stop for a cancelled coroutine, and one
+     * stuck where Call.cancel cannot reach (an address lookup) would hold them. Cancelled, every
+     * call of the run is cancelled at once, and any it would start after, and what an abandoned
+     * call answers is never read: no refusal counted, no password taken.
+     */
+    private suspend fun <T> apart(calls: RunningCalls, call: () -> T): T {
+        val running = CoroutineScope(Dispatchers.IO).async { call() }
         return try {
-            run.await()
+            running.await()
         } catch (e: CancellationException) {
             calls.cancelAll()
-            run.cancel()
+            running.cancel()
             throw e
         }
     }
@@ -279,7 +285,7 @@ class MoodleTokenService internal constructor(
             .build()
         val entry = moodleBaseUrl.resolve(WEBSITE_SIGN_IN_ENTRY)!!
         Log.i("MoodleTokenService", "website sign-in GET ${entry.redactForLog()}")
-        val (html, finalUrl) = getPage(client, entry)
+        val (html, finalUrl) = apart(calls) { getPage(client, entry) }
         walkOidc(
             client = client,
             html = html,
@@ -289,8 +295,9 @@ class MoodleTokenService internal constructor(
             posting = posting,
             remainingSteps = 6,
             arrived = { _, url -> url.takeIf(::isPastMoodleSignIn) },
+            io = { call -> apart(calls, call) },
         )
-        val (editor, checked) = getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!)
+        val (editor, checked) = apart(calls) { getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!) }
         if (!checked.host.equals(moodleBaseUrl.host, ignoreCase = true) ||
             checked.encodedPath != SIGNED_IN_CHECK ||
             !isSignedInEditor(editor)
@@ -355,6 +362,8 @@ class MoodleTokenService internal constructor(
         posting: PasswordPosting,
         remainingSteps: Int,
         arrived: (html: String, url: HttpUrl) -> T?,
+        /** How each of its calls is run: as it is, or apart from a caller that may be cancelled. */
+        io: suspend (() -> Pair<String, HttpUrl>) -> Pair<String, HttpUrl> = { it() },
     ): T {
         if (remainingSteps <= 0) {
             throw MoodleWebserviceError.MalformedResponse("OIDC flow exceeded maximum step count")
@@ -374,13 +383,15 @@ class MoodleTokenService internal constructor(
                     ?: throw MoodleWebserviceError.MalformedResponse("Invalid bridge action: ${bridge.action}")
             }
             Log.i("MoodleTokenService", "posting OIDC bridge → ${url.redactForLog()}")
-            val (nextHtml, nextUrl) = postForm(
-                client,
-                url,
-                bridge.payload,
-                referer = responseUrl.toString()
-            )
-            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived)
+            val (nextHtml, nextUrl) = io {
+                postForm(
+                    client,
+                    url,
+                    bridge.payload,
+                    referer = responseUrl.toString()
+                )
+            }
+            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived, io)
         }
 
         // SSO login step: we landed on ssoam2.ntust.edu.tw with a form.
@@ -416,13 +427,15 @@ class MoodleTokenService internal constructor(
             // lets go.
             val (nextHtml, nextUrl) = posting.post {
                 Log.i("MoodleTokenService", "posting SSO login → ${postUrl.redactForLog()}")
-                val answer = postLoginForm(
-                    client = client,
-                    url = postUrl,
-                    fields = payload,
-                    referer = responseUrl.toString(),
-                    origin = "https://ssoam2.ntust.edu.tw",
-                )
+                val answer = io {
+                    postLoginForm(
+                        client = client,
+                        url = postUrl,
+                        fields = payload,
+                        referer = responseUrl.toString(),
+                        origin = "https://ssoam2.ntust.edu.tw",
+                    )
+                }
                 // If we're still at /account/login and neither a token nor an OIDC
                 // bridge is in sight, the credentials were rejected.
                 if (answer.second.encodedPath.contains("/account/login") &&
@@ -433,7 +446,7 @@ class MoodleTokenService internal constructor(
                 }
                 answer
             }
-            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived)
+            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived, io)
         }
 
         // Redact secrets before they hit logs/crash reports: the URL goes
