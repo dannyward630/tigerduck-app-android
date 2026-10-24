@@ -57,8 +57,10 @@ fun MailWebView(
     val allowed by rememberUpdatedState(allowedRemoteUrls)
     val currentLinkCount by rememberUpdatedState(linkCount)
     // A WebView has no height until its page is first drawn, which left nothing at all under the
-    // header while it loaded: longest the first time, which starts the WebView itself too.
-    var drawn by remember { mutableStateOf(false) }
+    // header while it loaded: longest the first time, which starts the WebView itself too. The
+    // document last drawn, not a flag, so each later load (remote images let in, the mail's theme
+    // changed) shows progress too.
+    var drawnDocument by remember { mutableStateOf<Any?>(null) }
     Box(modifier) {
         AndroidView(
             modifier = Modifier.fillMaxWidth(),
@@ -83,12 +85,12 @@ fun MailWebView(
                     }
                     webViewClient = object : WebViewClient() {
                         override fun onPageCommitVisible(view: WebView, url: String?) {
-                            drawn = true
+                            drawnDocument = view.tag
                         }
 
                         // Should the page never say it was drawn, it has at least loaded.
                         override fun onPageFinished(view: WebView, url: String?) {
-                            drawn = true
+                            drawnDocument = view.tag
                         }
 
                         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -122,7 +124,7 @@ fun MailWebView(
             },
             onRelease = { it.destroy() },
         )
-        if (!drawn) CircularProgressIndicator(Modifier.align(Alignment.Center).padding(24.dp))
+        if (drawnDocument != document) CircularProgressIndicator(Modifier.align(Alignment.Center).padding(24.dp))
     }
 }
 
