@@ -24,6 +24,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
+import okhttp3.Cookie
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -153,9 +156,40 @@ class BrowserDownloads(
 }
 
 /**
+ * The cookies a download's own redirects set, for its next hops: what the browser would then have
+ * sent. Kept for that download alone rather than written to the WebView's: a write landing after a
+ * sign-out's clearing would hand the next student this one's cookies, and the download, with this,
+ * goes at the clearing. Each is held to the host, path and https rules it came with
+ * ([Cookie.parseAll], [Cookie.matches]); one that a redirect expires takes the browser's of that
+ * name off the next hops too.
+ */
+internal class DownloadCookies(private val now: () -> Long = System::currentTimeMillis) {
+    private val kept = mutableListOf<Cookie>()
+
+    /** Keeps what a redirect set, each over the one of its name, host and path it replaces; an expired one as its removal. */
+    fun keep(cookies: List<Cookie>) {
+        for (cookie in cookies) {
+            kept.removeAll { it.name == cookie.name && it.domain == cookie.domain && it.path == cookie.path }
+            kept += cookie
+        }
+    }
+
+    /** The Cookie header for [url]: the browser's ([browser], as CookieManager gives it), with this download's over it. */
+    fun header(url: HttpUrl, browser: String?): String? {
+        val mine = kept.filter { it.matches(url) }
+        val replaced = mine.mapTo(HashSet()) { it.name }
+        val fromBrowser = browser.orEmpty().split(';').map { it.trim() }
+            .filter { it.isNotEmpty() && it.substringBefore('=').trim() !in replaced }
+        val live = mine.filter { it.expiresAt > now() }.map { "${it.name}=${it.value}" }
+        return (fromBrowser + live).joinToString("; ").takeIf { it.isNotEmpty() }
+    }
+}
+
+/**
  * Fetches with a client of its own, which holds no cookies of the app's: each
  * request carries only the browser's cookies for its own host
- * ([cookieFor], `CookieManager.getCookie`), and the browser's user agent.
+ * ([cookieFor], `CookieManager.getCookie`) with those the download's own
+ * redirects set ([DownloadCookies]), and the browser's user agent.
  * Redirects are followed here, one at a time, so a cookie never goes to a
  * host it is not for and a redirect off the allowlist stops the download.
  * The file is written to MediaStore's Downloads, pending until complete and
@@ -173,16 +207,22 @@ class MediaStoreDownloadTransfer(
 
     override suspend fun download(plan: DownloadPlan.Save, progress: (Long, Long?) -> Unit): Uri = withContext(Dispatchers.IO) {
         var url = plan.url
+        // This download's own: gone with it, which a clearing stops and waits for.
+        val cookies = DownloadCookies()
         repeat(MAX_REDIRECTS + 1) {
             // A download stopped at a sign-out asks for nothing more, under anyone's cookies.
             currentCoroutineContext().ensureActive()
             if (!allowlist().allows(url)) throw IOException("download left the allowlist")
-            val request = Request.Builder().url(url).apply {
-                cookieFor(url)?.takeIf { it.isNotBlank() }?.let { header("Cookie", it) }
+            val httpUrl = url.toHttpUrlOrNull() ?: throw IOException("not a web address")
+            val request = Request.Builder().url(httpUrl).apply {
+                cookies.header(httpUrl, cookieFor(url))?.let { header("Cookie", it) }
                 userAgent()?.let { header("User-Agent", it) }
             }.build()
             when (val hop = hop(client.newCall(request), plan, progress)) {
-                is Hop.Redirect -> url = hop.url
+                is Hop.Redirect -> {
+                    cookies.keep(hop.cookies)
+                    url = hop.url
+                }
                 is Hop.Saved -> return@withContext hop.uri
             }
         }
@@ -190,7 +230,8 @@ class MediaStoreDownloadTransfer(
     }
 
     private sealed interface Hop {
-        data class Redirect(val url: String) : Hop
+        /** On to [url], with the [cookies] the redirect set. */
+        data class Redirect(val url: String, val cookies: List<Cookie>) : Hop
         data class Saved(val uri: Uri) : Hop
     }
 
@@ -211,7 +252,7 @@ class MediaStoreDownloadTransfer(
                 if (response.isRedirect) {
                     val next = response.header("Location")?.let { response.request.url.resolve(it)?.toString() }
                         ?: throw IOException("redirect without a location")
-                    return@coroutineScope Hop.Redirect(next)
+                    return@coroutineScope Hop.Redirect(next, Cookie.parseAll(response.request.url, response.headers))
                 }
                 if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
                 val body = response.body ?: throw IOException("no body")

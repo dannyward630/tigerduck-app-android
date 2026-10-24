@@ -161,7 +161,7 @@ class BrowserDownloadsTest {
 
     // ── The fetch ─────────────────────────────────────────────────────────
 
-    private class Hop(val code: Int, val location: String? = null, val body: String = "")
+    private class Hop(val code: Int, val location: String? = null, val body: String = "", val setCookies: List<String> = emptyList())
 
     /** A client answering each URL from [hops], recording each request's cookie. */
     private fun client(hops: Map<String, Hop>, sent: MutableList<Pair<String, String?>>) = OkHttpClient.Builder()
@@ -175,7 +175,10 @@ class BrowserDownloadsTest {
                 .protocol(Protocol.HTTP_1_1)
                 .code(hop.code)
                 .message("x")
-                .apply { hop.location?.let { header("Location", it) } }
+                .apply {
+                    hop.location?.let { header("Location", it) }
+                    hop.setCookies.forEach { addHeader("Set-Cookie", it) }
+                }
                 .body(hop.body.toResponseBody("application/pdf".toMediaType()))
                 .build()
         })
@@ -210,6 +213,77 @@ class BrowserDownloadsTest {
             listOf("https://moodle2.ntust.edu.tw/a.pdf" to "MoodleSession=abc", "https://files.ntust.edu.tw/real.pdf" to "Other=1"),
             sent,
         )
+    }
+
+    @Test
+    fun `a cookie a redirect sets goes with the next hops it is for, over the browser's, and no further`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
+                302,
+                "https://moodle2.ntust.edu.tw/b.pdf",
+                setCookies = listOf("dl=1; Path=/; Secure", "MoodleSession=new; Path=/"),
+            ),
+            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(303, "https://files.ntust.edu.tw/real.pdf"),
+            "https://files.ntust.edu.tw/real.pdf" to Hop(200, body = "PDF"),
+        )
+
+        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
+
+        assertEquals(
+            listOf(
+                "https://moodle2.ntust.edu.tw/a.pdf" to "MoodleSession=abc",
+                "https://moodle2.ntust.edu.tw/b.pdf" to "dl=1; MoodleSession=new",
+                "https://files.ntust.edu.tw/real.pdf" to "Other=1",
+            ),
+            sent,
+        )
+    }
+
+    @Test
+    fun `a cookie a redirect expires is off the next hop, the browser's of that name too`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/b.pdf", setCookies = listOf("MoodleSession=; Max-Age=0; Path=/")),
+            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(200, body = "PDF"),
+        )
+
+        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
+
+        assertEquals(listOf("https://moodle2.ntust.edu.tw/a.pdf" to "MoodleSession=abc", "https://moodle2.ntust.edu.tw/b.pdf" to null), sent)
+    }
+
+    @Test
+    fun `a cookie for another site, or for another path, is not sent`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
+                302,
+                "https://moodle2.ntust.edu.tw/files/b.pdf",
+                setCookies = listOf("evil=1; Domain=example.com", "elsewhere=1; Path=/admin", "here=1; Path=/files"),
+            ),
+            "https://moodle2.ntust.edu.tw/files/b.pdf" to Hop(200, body = "PDF"),
+        )
+
+        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
+
+        assertEquals("MoodleSession=abc; here=1", sent.last().second)
+    }
+
+    @Test
+    fun `a download's cookies end with it`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/b.pdf", setCookies = listOf("dl=1; Path=/")),
+            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(200, body = "PDF"),
+        )
+        val transfer = transfer(hops, sent, mutableListOf())
+        transfer.download(save) { _, _ -> }
+        sent.clear()
+
+        transfer.download(save) { _, _ -> }
+
+        assertEquals("MoodleSession=abc", sent.first().second)
     }
 
     @Test
