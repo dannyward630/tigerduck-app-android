@@ -226,6 +226,28 @@ class BrowserLoadsTest {
     }
 
     @Test
+    fun `a page starting retires the request before it, so a refused image of that address is not the page's`() {
+        // A's request, which redirected to B without the browser being asked.
+        loads.mainFrameRequested(A)
+        loads.started(B)
+        state.url = B
+        loads.finished(B)
+
+        assertFalse(loads.certificateFailed(A, "moodle2.ntust.edu.tw"))
+        assertNull(state.error)
+        assertEquals(B, loads.loadingUrl)
+    }
+
+    @Test
+    fun `a navigation the browser is asked about retires the request before it`() {
+        loads.mainFrameRequested(A)
+        loads.requested(B)
+
+        assertFalse(loads.certificateFailed(A, "moodle2.ntust.edu.tw"))
+        assertNull(state.error)
+    }
+
+    @Test
     fun `a certificate refused for a sign-in link is still the page's`() {
         loads.signInTarget = A
         loads.requested(SIGNED_IN)

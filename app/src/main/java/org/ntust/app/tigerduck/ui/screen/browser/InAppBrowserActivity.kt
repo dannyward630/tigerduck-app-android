@@ -770,7 +770,10 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
 
         override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
-            // Never past a bad certificate.
+            // Never past a bad certificate. This is asked about an image or a script too, and does not say
+            // which; the page's own is told by its address (BrowserLoads.certificateFailed). The one it
+            // cannot tell is a POST's 307/308 redirect, which no callback names before it starts (see
+            // shouldInterceptRequest): refused all the same, it is cancelled without the certificate page.
             handler.cancel()
             val url = error.url
             if (loads.certificateFailed(url, url?.toHttpUrlOrNull()?.host ?: state.host)) state.loading = false

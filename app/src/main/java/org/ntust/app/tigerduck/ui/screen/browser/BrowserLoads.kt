@@ -25,7 +25,7 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
 
     private var startedUrl: String? = null
 
-    /** The main-frame request out last; written off the main thread. */
+    /** The main-frame request out last, till a page starts or a navigation supersedes it; written off the main thread. */
     @Volatile
     private var mainFrameRequest: String? = null
 
@@ -35,6 +35,8 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
     /** A load the app chose, or a page's navigation the browser let through. */
     fun requested(url: String) {
         current = url
+        // A navigation of its own, or the redirect a request went to: the request is no longer the page's.
+        mainFrameRequest = null
         failedBeforeStart = null
     }
 
@@ -49,6 +51,8 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
     /** [url]'s page started. */
     fun started(url: String) {
         current = url
+        // The page it was for has started, or another has instead.
+        mainFrameRequest = null
         if (failedBeforeStart != url) state.error = null
         failedBeforeStart = null
         startedUrl = url
