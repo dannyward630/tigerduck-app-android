@@ -504,7 +504,7 @@ class EmptyClassroomViewModelTest {
     }
 
     @Test
-    fun `leaving the screen stops its read, so nothing it started lands later`() {
+    fun `leaving the screen lets its read finish, so the return shows the day without another`() {
         val harness = Harness(time(14, 22, 30))
         val gate = CompletableDeferred<Unit>()
         harness.serveDay(listOf(Pages.row("IB-508", "..............")), gate)
@@ -513,9 +513,54 @@ class EmptyClassroomViewModelTest {
 
         harness.model.disappear()
         gate.complete(Unit)
+        assertEquals(listOf("IB-508"), harness.rooms)
+
+        harness.model.appear()
+        assertEquals(listOf("IB-508"), harness.rooms)
+        assertEquals(3, harness.requests)
+    }
+
+    @Test
+    fun `a return while the day still loads joins that read instead of sending its requests again`() {
+        // Pinned to the bottom bar, the finder keeps its model between visits.
+        val harness = Harness(time(14, 22, 30))
+        val gate = CompletableDeferred<Unit>()
+        harness.serveDay(listOf(Pages.row("IB-508", "..............")), gate)
+        harness.model.appear()
+        assertEquals(3, harness.requests)
+
+        harness.model.disappear()
+        harness.model.appear()
+        gate.complete(Unit)
+
+        assertEquals(listOf("IB-508"), harness.rooms)
+        assertEquals(3, harness.requests)
+    }
+
+    @Test
+    fun `a sign-out while the screen is away ends the read it left running`() {
+        val harness = Harness(time(14, 22, 30))
+        harness.serveDay(listOf(Pages.row("IB-508", "..............")))
+        harness.model.appear()
+        harness.model.disappear()
+
+        // Back once the day is too old to be fresh, but still shown while it is read again.
+        harness.clockMs += 4 * 60 * 60_000L
+        val gate = CompletableDeferred<Unit>()
+        harness.serveDay(listOf(Pages.row("TR-209", "..............")), gate)
+        harness.model.appear()
+        assertTrue(harness.state.isReloading)
+        harness.model.disappear()
+
+        harness.env.account = null
+        harness.env.signedIn.value = false
+        gate.complete(Unit)
 
         assertEquals(FinderContent.Loading, harness.state.content)
-        assertNull(harness.service.keptUsage(day(16)))
+        assertFalse(harness.state.isReloading)
+        // The read never finished, so the day is kept as the first read had it.
+        assertEquals(1_000_000L, harness.service.keptUsage(day(16))?.fetchedAtMs)
+        assertEquals(6, harness.requests)
     }
 
     @Test

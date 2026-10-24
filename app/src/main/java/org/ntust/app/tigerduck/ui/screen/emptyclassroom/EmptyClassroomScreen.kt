@@ -53,9 +53,9 @@ fun EmptyClassroomScreen(
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
 
     val activity = LocalActivity.current
-    // Back in the foreground the screen reads again, which sends nothing while the day is fresh.
-    // Only a real trip to the background counts: a dark-mode or text-size change rebuilds the
-    // activity, and that keeps the read in flight.
+    // Back in the foreground the screen reads again, which sends nothing while the day is fresh
+    // and joins a read still running. Only a real trip to the background counts: a dark-mode or
+    // text-size change rebuilds the activity, which is no visit of its own.
     LifecycleStartEffect(viewModel) {
         viewModel.appear()
         onStopOrDispose { if (activity?.isChangingConfigurations != true) viewModel.disappear() }

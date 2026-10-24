@@ -128,7 +128,17 @@ object MoodleHtmlText {
     }
 }
 
-private class MarkdownWriter(private val baseUrl: String) {
+private class MarkdownWriter(
+    private val baseUrl: String,
+    /**
+     * The lists and quotes around what is written. The Markdown renderer draws each level inside
+     * the last, indented further each time, on the main thread, and its parse of quotes nested a
+     * few hundred deep takes seconds; so a list or quote deeper than [MAXIMUM_NESTING] is written
+     * as the blocks it holds. As iOS (tigerduck-app/tigerduck-app#758).
+     */
+    private val nesting: Int = 0,
+) {
+    private val nested: MarkdownWriter get() = MarkdownWriter(baseUrl, nesting + 1)
 
     /** The Markdown blocks of [element]'s children; inline runs between blocks become paragraphs. */
     fun blocks(element: Element): List<String> {
@@ -158,14 +168,18 @@ private class MarkdownWriter(private val baseUrl: String) {
                     val text = inline(child).trim()
                     if (text.isNotEmpty()) result += "#".repeat(level) + " " + text
                 }
+                (tag == "ul" || tag == "ol" || tag == "blockquote") && nesting >= MAXIMUM_NESTING -> {
+                    endParagraph()
+                    result += blocks(child)
+                }
                 tag == "ul" || tag == "ol" -> {
                     endParagraph()
-                    val list = list(child, ordered = tag == "ol")
+                    val list = nested.list(child, ordered = tag == "ol")
                     if (list.isNotEmpty()) result += list
                 }
                 tag == "blockquote" -> {
                     endParagraph()
-                    val quoted = blocks(child).joinToString("\n\n")
+                    val quoted = nested.blocks(child).joinToString("\n\n")
                     if (quoted.isNotEmpty()) {
                         result += quoted.split("\n").joinToString("\n") { if (it.isEmpty()) ">" else "> $it" }
                     }
@@ -294,10 +308,13 @@ private class MarkdownWriter(private val baseUrl: String) {
     }
 
     companion object {
+        const val MAXIMUM_NESTING = 5
+
+        /** A list item among them for a list past [MAXIMUM_NESTING], whose items stay apart. */
         private val BLOCK_TAGS = setOf(
             "p", "div", "section", "article", "main", "aside", "header", "footer", "nav", "center",
             "address", "figure", "figcaption", "table", "thead", "tbody", "tfoot", "tr", "td", "th",
-            "dl", "dt", "dd", "form", "fieldset", "details", "summary",
+            "dl", "dt", "dd", "form", "fieldset", "details", "summary", "li",
         )
 
         fun separatesText(tag: String): Boolean =
