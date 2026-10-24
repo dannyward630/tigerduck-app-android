@@ -24,8 +24,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -51,6 +55,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -119,7 +124,7 @@ fun MoodleMemberScreen(
             if (member == null) {
                 MoodleFirstLoad(failure = (lookup as? MoodleLookup.Failed)?.error, onRetry = { attempt++ })
             } else {
-                MemberProfile(
+                MemberPage(
                     member = member,
                     picture = member.pictureUrl?.let { pictures[it] },
                     // Moodle's default picture, or none, opens nothing.
@@ -134,11 +139,23 @@ fun MoodleMemberScreen(
                     onWrite = { address ->
                         if (schoolMail) onComposeSchoolMail(address) else writeWithMailApp(context, address)
                     },
+                    // Moodle gives students no web service for the other profile fields.
+                    onEditOnMoodle = if (isOwnPage(member, members?.ownId)) {
+                        { openMoodleWebPage(context, ownProfileEditorUrl()) }
+                    } else {
+                        null
+                    },
                 )
             }
         }
     }
 }
+
+/** Whether [member]'s page is the signed-in student's own, by [ownId], their Moodle user; none without it. */
+internal fun isOwnPage(member: MoodleMember, ownId: Int?): Boolean = ownId != null && member.id == ownId
+
+/** Moodle's profile editor for the signed-in account, on the website. */
+internal fun ownProfileEditorUrl(): String = MoodlePage.webUrl(MoodlePage.PROFILE_EDITOR)
 
 private fun writeWithMailApp(context: Context, address: String) {
     runCatching {
@@ -169,6 +186,37 @@ internal fun memberRows(member: MoodleMember): List<MemberRow> {
     }
 }
 
+/**
+ * A member's page below its top bar: their profile, and on the signed-in student's own page
+ * ([onEditOnMoodle] set) a round pencil at the bottom right that opens Moodle's profile editor,
+ * signed in. The pencil has no text, so its size does not depend on the language, as on the iPhone.
+ */
+@Composable
+internal fun MemberPage(
+    member: MoodleMember,
+    picture: ImageBitmap?,
+    onOpenPicture: (() -> Unit)?,
+    openingPicture: Boolean,
+    onWrite: (String) -> Unit,
+    onEditOnMoodle: (() -> Unit)?,
+) {
+    Box(Modifier.fillMaxSize()) {
+        // Room below the profile for the pencil, so it covers none of it at the end of the scroll.
+        MemberProfile(member, picture, onOpenPicture, openingPicture, onWrite, bottom = if (onEditOnMoodle != null) 96.dp else 32.dp)
+        if (onEditOnMoodle != null) {
+            FloatingActionButton(
+                onClick = onEditOnMoodle,
+                shape = CircleShape,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp),
+            ) {
+                Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.course_member_edit_on_moodle))
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun MemberProfile(
@@ -177,6 +225,7 @@ private fun MemberProfile(
     onOpenPicture: (() -> Unit)?,
     openingPicture: Boolean,
     onWrite: (String) -> Unit,
+    bottom: Dp,
 ) {
     val rows = memberRows(member)
     Column(
@@ -184,7 +233,7 @@ private fun MemberProfile(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
-            .padding(top = 16.dp, bottom = 32.dp),
+            .padding(top = 16.dp, bottom = bottom),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
