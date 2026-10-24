@@ -14,6 +14,7 @@ import org.ntust.app.tigerduck.mail.model.MailPage
 import org.ntust.app.tigerduck.mail.model.MailSummary
 import java.io.ByteArrayInputStream
 import java.io.OutputStream
+import java.time.Instant
 import java.util.Properties
 
 /** An in-memory mailbox behind the MailSession interface, for logic tests. */
@@ -93,10 +94,11 @@ class FakeMailServer {
         messageId: String? = null,
         body: MailBody = MailBody(null, "body of $subject", emptyList(), emptyMap()),
         sizeBytes: Long = 100,
+        receivedAt: Instant? = null,
     ): Long {
         val uid = nextUid++
         folders.getOrPut(folder) { mutableListOf() } += Stored(
-            MailSummary(uid, from, emptyList(), emptyList(), emptyList(), subject, null, null,
+            MailSummary(uid, from, emptyList(), emptyList(), emptyList(), subject, null, receivedAt,
                 MailFlags.NONE.copy(seen = seen), sizeBytes, false, messageId, null, null),
             body,
         )

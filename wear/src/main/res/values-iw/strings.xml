@@ -351,6 +351,7 @@
     <string name="course_member_email">אימייל</string>
     <string name="course_member_groups">קבוצות</string>
     <string name="course_member_me">אני</string>
+    <string name="course_member_picture_unreadable">לא ניתן היה לפתוח את התמונה הזו. יש לבחור תמונה אחרת.</string>
     <string name="course_member_profile_picture">תמונת פרופיל</string>
     <string name="course_members_auditors">שומעים חופשיים</string>
     <string name="course_members_students">סטודנטים</string>
@@ -795,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- הודעה שהועברה ----------</string>
     <string name="school_mail_guide_load_failed">לא ניתן היה לטעון את המדריך</string>
     <string name="school_mail_guide_open_in_browser">פתח בדפדפן</string>
+    <string name="school_mail_held_attachments_missing">לא ניתן היה לשמור את הקבצים המצורפים האלה, והם כבר לא בהודעה: %1$@. צרף אותם שוב לפני השליחה.</string>
     <string name="school_mail_invalid_recipients">בדוק את הכתובות האלה: %1$@</string>
     <string name="school_mail_keep_editing">המשך לערוך</string>
     <string name="school_mail_leave_title">לשמור את ההודעה הזו כטיוטה?</string>
@@ -837,6 +839,8 @@
     <string name="school_mail_send_confirm_title">לשלוח את ההודעה הזו?</string>
     <string name="school_mail_send_failed">לא ניתן היה לשלוח את ההודעה</string>
     <string name="school_mail_send_unconfirmed">לא ניתן לאשר שההודעה נשלחה; ניסיון חוזר עלול לשלוח אותה פעמיים</string>
+    <string name="school_mail_send_undone">השליחה בוטלה. ההודעה חזרה לעורך.</string>
+    <string name="school_mail_sending_hold">שולח…</string>
     <string name="school_mail_sent_copy_failed">ההודעה נשלחה, אך לא ניתן היה לשמור את העותק בתיקיית נשלח.</string>
     <string name="school_mail_sent_copy_no_folder">ההודעה נשלחה, אך אין תיקיית נשלח לשמירת עותק.</string>
     <string name="school_mail_sent_copy_not_saved">ההודעה נשלחה, אך העותק לא נשמר בתיקיית נשלח</string>
@@ -858,6 +862,7 @@
     <string name="school_mail_subject">נושא</string>
     <string name="school_mail_to">אל</string>
     <string name="school_mail_too_large">הקבצים המצורפים חורגים מהמגבלה של 50MB</string>
+    <string name="school_mail_undo_send">ביטול</string>
     <string name="school_mail_unread_only">הצג רק הודעות שלא נקראו</string>
     <string name="school_mail_use_other_app">השתמש באפליקציה אחרת</string>
     <string name="school_mail_view_formatted">מעוצב</string>

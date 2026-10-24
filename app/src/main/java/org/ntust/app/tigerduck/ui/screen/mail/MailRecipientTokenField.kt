@@ -7,6 +7,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -64,6 +65,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.mail.compose.ComposeRules
+import org.ntust.app.tigerduck.mail.model.MailAddress
 
 /** A capsule on one line -- half a one-line bubble's height -- that stays a rounded box, rather than a stretched pill, when a long address wraps. */
 private val BubbleShape = RoundedCornerShape(16.dp)
@@ -91,6 +93,9 @@ private val LineRaise = 4.dp
  * a change for it to apply to its latest state, which it answers with what the field became. Drawn
  * as an [OutlinedTextFieldDefaults.DecorationBox], so it reads as the same kind of field as Subject
  * and Body beneath it.
+ *
+ * While it is typed in, [suggestions], the people what is typed matches, are listed under it; a
+ * tap on one makes it the bubble in place of the typing (tigerduck-app#552).
  */
 @Composable
 internal fun MailRecipientTokenField(
@@ -99,6 +104,7 @@ internal fun MailRecipientTokenField(
     onChange: ((RecipientField) -> RecipientField) -> RecipientField,
     enabled: Boolean,
     modifier: Modifier = Modifier,
+    suggestions: List<MailAddress> = emptyList(),
 ) {
     // The text being typed, live: its cursor and the keyboard's composition with it. Taken from
     // the view model only when the field is created -- after a rotation, exactly what was there --
@@ -149,6 +155,13 @@ internal fun MailRecipientTokenField(
         focusRequester.requestFocus()
     }
 
+    // As finishing a bubble: never under a live composition, which is why none is listed then.
+    fun pick(suggestion: MailAddress) {
+        if (draft.composition != null) return
+        showDraftOf(onChange { it.pick(suggestion) })
+        focusRequester.requestFocus()
+    }
+
     // Backspace with nothing typed reaches no onValueChange -- there is nothing to delete -- so it
     // is taken as the key, which a hardware keyboard sends and so does a soft one, finding the
     // text before the cursor empty.
@@ -171,89 +184,134 @@ internal fun MailRecipientTokenField(
     val labelHalfHeight = with(LocalDensity.current) { MaterialTheme.typography.bodySmall.lineHeight.toDp() / 2 }
     // Read with the field: without them it announced itself as empty however many it held.
     val finishedText = field.tokens.joinToString(", ") { it.text }
-    CompositionLocalProvider(LocalTextSelectionColors provides colors.textSelectionColors) {
-        BasicTextField(
-            value = draft,
-            onValueChange = ::onDraftChange,
-            modifier = modifier
-                .fillMaxWidth()
-                // The label is read as part of the field, as OutlinedTextField's is. Each bubble is
-                // its own clickable, and so stays separately reachable.
-                .semantics(mergeDescendants = true) {
-                    if (finishedText.isNotEmpty()) stateDescription = finishedText
-                }
-                .padding(top = labelHalfHeight)
-                .defaultMinSize(minWidth = OutlinedTextFieldDefaults.MinWidth, minHeight = OutlinedTextFieldDefaults.MinHeight)
-                .focusRequester(focusRequester)
-                .onFocusChanged {
-                    if (hadFocus && !it.isFocused) finishDraft()
-                    hadFocus = it.isFocused
-                }
-                .onPreviewKeyEvent(::onKey),
-            enabled = enabled,
-            textStyle = MaterialTheme.typography.bodyLarge.copy(color = textColor),
-            cursorBrush = SolidColor(colors.cursorColor),
-            keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = {
-                finishDraft()
-                defaultKeyboardAction(ImeAction.Next)
-            }),
-            singleLine = true,
-            interactionSource = interactionSource,
-            decorationBox = { innerTextField ->
-                OutlinedTextFieldDefaults.DecorationBox(
-                    // Only whether this is empty matters: it decides where the label sits.
-                    value = draft.text.ifEmpty { field.tokens.firstOrNull()?.text.orEmpty() },
-                    innerTextField = {
-                        FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            itemVerticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            @Composable
-                            fun Bubble(token: RecipientField.Token) = RecipientBubble(
-                                token.text,
-                                enabled,
-                                removeLabel,
-                                onEdit = { edit(token.id) },
-                                onRemove = { onChange { it.remove(token.id) } },
-                            )
-                            val at = field.draftAt.coerceIn(0, field.tokens.size)
-                            field.tokens.subList(0, at).forEach { key(it.id) { Bubble(it) } }
-                            // Where the typing stands: after the last bubble, or in the place of
-                            // one taken back to be edited. One call, wherever that is, so the text
-                            // and the keyboard on it stay put as bubbles pass from one side to the
-                            // other. Wide enough to type into; it moves to a line of its own once
-                            // the bubbles leave it less than that.
-                            Box(
-                                Modifier.widthIn(min = 120.dp).heightIn(min = TouchHeight).padding(bottom = LineRaise * 2),
-                                contentAlignment = Alignment.CenterStart,
+    // [modifier] stays on the text field itself, which is what a tag passed in has to find to type
+    // into; the suggestions sit below it.
+    Column(Modifier.fillMaxWidth()) {
+        CompositionLocalProvider(LocalTextSelectionColors provides colors.textSelectionColors) {
+            BasicTextField(
+                value = draft,
+                onValueChange = ::onDraftChange,
+                modifier = modifier
+                    .fillMaxWidth()
+                    // The label is read as part of the field, as OutlinedTextField's is. Each bubble is
+                    // its own clickable, and so stays separately reachable.
+                    .semantics(mergeDescendants = true) {
+                        if (finishedText.isNotEmpty()) stateDescription = finishedText
+                    }
+                    .padding(top = labelHalfHeight)
+                    .defaultMinSize(minWidth = OutlinedTextFieldDefaults.MinWidth, minHeight = OutlinedTextFieldDefaults.MinHeight)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged {
+                        if (hadFocus && !it.isFocused) finishDraft()
+                        hadFocus = it.isFocused
+                    }
+                    .onPreviewKeyEvent(::onKey),
+                enabled = enabled,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = textColor),
+                cursorBrush = SolidColor(colors.cursorColor),
+                keyboardOptions = KeyboardOptions(autoCorrectEnabled = false, keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = {
+                    finishDraft()
+                    defaultKeyboardAction(ImeAction.Next)
+                }),
+                singleLine = true,
+                interactionSource = interactionSource,
+                decorationBox = { innerTextField ->
+                    OutlinedTextFieldDefaults.DecorationBox(
+                        // Only whether this is empty matters: it decides where the label sits.
+                        value = draft.text.ifEmpty { field.tokens.firstOrNull()?.text.orEmpty() },
+                        innerTextField = {
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                itemVerticalAlignment = Alignment.CenterVertically,
                             ) {
-                                innerTextField()
+                                @Composable
+                                fun Bubble(token: RecipientField.Token) = RecipientBubble(
+                                    token.text,
+                                    enabled,
+                                    removeLabel,
+                                    onEdit = { edit(token.id) },
+                                    onRemove = { onChange { it.remove(token.id) } },
+                                )
+                                val at = field.draftAt.coerceIn(0, field.tokens.size)
+                                field.tokens.subList(0, at).forEach { key(it.id) { Bubble(it) } }
+                                // Where the typing stands: after the last bubble, or in the place of
+                                // one taken back to be edited. One call, wherever that is, so the text
+                                // and the keyboard on it stay put as bubbles pass from one side to the
+                                // other. Wide enough to type into; it moves to a line of its own once
+                                // the bubbles leave it less than that.
+                                Box(
+                                    Modifier.widthIn(min = 120.dp).heightIn(min = TouchHeight).padding(bottom = LineRaise * 2),
+                                    contentAlignment = Alignment.CenterStart,
+                                ) {
+                                    innerTextField()
+                                }
+                                field.tokens.subList(at, field.tokens.size).forEach { key(it.id) { Bubble(it) } }
                             }
-                            field.tokens.subList(at, field.tokens.size).forEach { key(it.id) { Bubble(it) } }
-                        }
-                    },
-                    enabled = enabled,
-                    // Centres the label while it sits inside the field, and one line of bubbles.
-                    singleLine = true,
-                    visualTransformation = VisualTransformation.None,
-                    interactionSource = interactionSource,
-                    label = { Text(label) },
-                    colors = colors,
-                    // Each line is already a finger's 48dp tall, which puts one line of bubbles
-                    // where Subject's text sits; the floated label keeps its own room above.
-                    contentPadding = OutlinedTextFieldDefaults.contentPadding(top = 0.dp, bottom = 0.dp),
-                    container = {
-                        OutlinedTextFieldDefaults.Container(
-                            enabled = enabled,
-                            isError = false,
-                            interactionSource = interactionSource,
-                            colors = colors,
+                        },
+                        enabled = enabled,
+                        // Centres the label while it sits inside the field, and one line of bubbles.
+                        singleLine = true,
+                        visualTransformation = VisualTransformation.None,
+                        interactionSource = interactionSource,
+                        label = { Text(label) },
+                        colors = colors,
+                        // Each line is already a finger's 48dp tall, which puts one line of bubbles
+                        // where Subject's text sits; the floated label keeps its own room above.
+                        contentPadding = OutlinedTextFieldDefaults.contentPadding(top = 0.dp, bottom = 0.dp),
+                        container = {
+                            OutlinedTextFieldDefaults.Container(
+                                enabled = enabled,
+                                isError = false,
+                                interactionSource = interactionSource,
+                                colors = colors,
+                            )
+                        },
+                    )
+                },
+            )
+        }
+        if (focused && enabled && draft.composition == null && suggestions.isNotEmpty()) {
+            RecipientSuggestionList(suggestions, onPick = ::pick)
+        }
+    }
+}
+
+/**
+ * The people a recipient field suggests, best first, each a finger's 48dp tall: the name over the
+ * address, or the address alone. A tap leaves the keyboard on the field, so the next recipient
+ * can be typed at once.
+ */
+@Composable
+private fun RecipientSuggestionList(suggestions: List<MailAddress>, onPick: (MailAddress) -> Unit) {
+    val cs = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = cs.surfaceContainerHigh,
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+    ) {
+        Column(Modifier.padding(vertical = 4.dp)) {
+            suggestions.forEach { suggestion ->
+                key(suggestion.address.lowercase()) {
+                    val name = suggestion.name?.takeIf { it.isNotBlank() }
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = TouchHeight)
+                            .clickable(role = Role.Button) { onPick(suggestion) }
+                            .padding(horizontal = 16.dp, vertical = 6.dp),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        if (name != null) Text(name, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            suggestion.address,
+                            style = if (name != null) MaterialTheme.typography.bodySmall else MaterialTheme.typography.bodyMedium,
+                            color = if (name != null) cs.outline else cs.onSurface,
                         )
-                    },
-                )
-            },
-        )
+                    }
+                }
+            }
+        }
     }
 }
 

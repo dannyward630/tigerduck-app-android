@@ -16,6 +16,7 @@ import org.ntust.app.tigerduck.mail.imap.MailFolders
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
 import org.ntust.app.tigerduck.mail.notify.MailNotifier
+import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.store.MailCredentialStore
 import org.ntust.app.tigerduck.mail.store.MailStateStore
@@ -40,6 +41,12 @@ class MailAccount @Inject constructor(
     private val scheduler: MailBackgroundScheduler,
     private val notifier: MailNotifier,
     @param:ApplicationScope private val scope: CoroutineScope,
+    /**
+     * The mail held for Undo or being sent, emptied with the cache whenever the account leaves:
+     * a held mail is the student's who wrote it, and no one else's (tigerduck-app#555). Absent in
+     * tests that are not about it.
+     */
+    private val heldSends: HeldSendStore? = null,
 ) {
     private val _signedIn = MutableStateFlow(credentialsOrNull() != null)
     val signedIn: StateFlow<Boolean> = _signedIn.asStateFlow()
@@ -132,7 +139,7 @@ class MailAccount @Inject constructor(
         val replacing = !sameStudent && !credentials.mailStudentId.isNullOrBlank()
 
         if (demo.matches(creds.studentId, password)) {
-            if (!sameStudent) cache.clearAll()
+            if (!sameStudent) leaveMailOf(ownAddress)
             if (replacing) leaveStudent()
             save(creds, sameStudent) {
                 state.demoMailbox = true
@@ -150,7 +157,7 @@ class MailAccount @Inject constructor(
                 val name = folders.nameOf(SpecialFolder.SENT)?.let { sent ->
                     runCatching { session.newestSenderName(sent, creds.address, window = 20) }.getOrNull()
                 }
-                if (!sameStudent) cache.clearAll()
+                if (!sameStudent) leaveMailOf(ownAddress)
                 if (replacing) leaveStudent()
                 val fresh: () -> Unit = {
                     state.inboxUidValidity = status.uidValidity
@@ -178,6 +185,17 @@ class MailAccount @Inject constructor(
         notifier.cancelAll()
     }
 
+    /**
+     * The mail on the phone of [departing], an account that leaves: the cache, and the mail it
+     * held to send under a sign-in before [keptBefore]. Only its own held mail: a sign-out's
+     * cleanup runs some time after it, and the next student may have mail of their own held by
+     * then. A read of the encrypted store when the caller reads [departing]: for the IO dispatcher.
+     */
+    private fun leaveMailOf(departing: String?, keptBefore: Int = Int.MAX_VALUE) {
+        cache.clearAll()
+        heldSends?.clear(departing, below = keptBefore)
+    }
+
     /** A password typed again keeps what the student chose; see [MailStateStore.clearSignIn]. */
     private fun resetState(sameStudent: Boolean) = if (sameStudent) state.clearSignIn() else state.clear()
 
@@ -192,9 +210,10 @@ class MailAccount @Inject constructor(
         scheduler.cancel()
         // Together, so a snapshot holds the departing account with its own generation or nothing.
         onLockWait?.invoke()
+        var leftAt = 0
         val departing = synchronized(accountLock) {
             ownAddress.also {
-                generation.incrementAndGet()
+                leftAt = generation.incrementAndGet()
                 credentials.clearMailCredentials()
             }
         }
@@ -203,7 +222,9 @@ class MailAccount @Inject constructor(
         _authFailed.value = false
         _signOuts.tryEmit(departing)
         scope.launch(Dispatchers.IO) {
-            cache.clearAll()
+            // Only the mail of the sign-in that left: by now the same student may have signed in
+            // again and kept a mail of the new sign-in's.
+            leaveMailOf(departing, keptBefore = leftAt)
             notifier.cancelAll()
         }
     }

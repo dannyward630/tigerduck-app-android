@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import com.google.gson.Gson
 import org.ntust.app.tigerduck.data.model.mail.MailSummaryDto
 import org.ntust.app.tigerduck.mail.model.MailFlags
+import org.ntust.app.tigerduck.mail.model.MailRow
 import org.ntust.app.tigerduck.mail.model.MailSummary
 import org.ntust.app.tigerduck.mail.store.toDto
 import org.ntust.app.tigerduck.mail.store.toModel
@@ -62,6 +63,12 @@ interface MailSearchIndex {
 
     /** The summaries of those of [uids] downloaded into [folder] under [uidValidity], by UID. */
     fun summaries(owner: String, folder: String, uidValidity: Long, uids: Collection<Long>): Map<Long, MailSummary>
+
+    /**
+     * Every mail downloaded for [owner], in every folder, as the list shows it: the people the
+     * compose screen suggests come from it (`RecipientSuggestions`). None for anyone else.
+     */
+    fun allMail(owner: String): List<MailRow>
 
     /**
      * Brings the flags of [folder]'s mail downloaded under [uidValidity] to [flags], as the server
@@ -223,6 +230,19 @@ class SqliteMailSearchIndex(private val context: Context, private val name: Stri
                         val summary = summaryOf(c.getString(0)) ?: continue
                         put(summary.uid, summary)
                     }
+                }
+            }
+        }
+    }
+
+    @Synchronized
+    override fun allMail(owner: String): List<MailRow> {
+        if (ownerLocked() != owner) return emptyList()
+        return db.rawQuery("SELECT folder, summary FROM mail", null).use { c ->
+            buildList {
+                while (c.moveToNext()) {
+                    val summary = summaryOf(c.getString(1)) ?: continue
+                    add(MailRow(c.getString(0), summary))
                 }
             }
         }

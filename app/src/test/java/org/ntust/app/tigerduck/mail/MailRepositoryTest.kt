@@ -843,6 +843,40 @@ class MailRepositoryTest {
     }
 
     @Test
+    fun `the mail on the phone is what was downloaded for the student, in every folder, and none after a sign-out`() = runTest {
+        server.deliver("received", from = MailAddress("Teacher", "teacher@example.com"))
+        server.deliver("sent", folder = "寄件備份匣", from = MailAddress(null, "b10000001@mail.ntust.edu.tw"))
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+
+        assertEquals(listOf("received", "sent"), repo.correspondence().map { it.subject }.sorted())
+
+        setup.signOutAndSettle()
+        assertEquals(emptyList<MailSummary>(), repo.correspondence())
+    }
+
+    @Test
+    fun `a student signed in over another has none of the other's mail on the phone`() = runTest {
+        server.deliver("received")
+        val setup = TestSetup(backgroundScope)
+        val repo = setup.signedIn()
+        repo.updateSearchIndex()
+
+        server.passwords["B10000002"] = "pw"
+        assertNull(setup.account.signIn("b10000002", "pw"))
+
+        assertEquals(emptyList<MailSummary>(), repo.correspondence())
+    }
+
+    @Test
+    fun `the demo mailbox's mail is the mail on the phone`() = runTest {
+        val repo = TestSetup(backgroundScope).signedIn("B10000099", "demo")
+
+        assertEquals(demo.box.messages.map { it.summary.subject }.sorted(), repo.correspondence().map { it.subject }.sorted())
+    }
+
+    @Test
     fun `a search returns the newest page of matches and keeps the rest to fetch`() = runTest {
         val uids = (1..MailRepository.PAGE_SIZE + 2).map { server.deliver("期中考 $it") }
         val repo = TestSetup(backgroundScope).signedIn()

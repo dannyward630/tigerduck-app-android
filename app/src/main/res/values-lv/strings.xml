@@ -351,6 +351,7 @@
     <string name="course_member_email">E-pasts</string>
     <string name="course_member_groups">Grupas</string>
     <string name="course_member_me">Es</string>
+    <string name="course_member_picture_unreadable">Neizdevās atvērt šo fotoattēlu. Izvēlieties citu.</string>
     <string name="course_member_profile_picture">Profila attēls</string>
     <string name="course_members_auditors">Brīvklausītāji</string>
     <string name="course_members_students">Studenti</string>
@@ -795,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Pārsūtīta vēstule ----------</string>
     <string name="school_mail_guide_load_failed">Neizdevās ielādēt pamācību</string>
     <string name="school_mail_guide_open_in_browser">Atvērt pārlūkā</string>
+    <string name="school_mail_held_attachments_missing">Šos pielikumus neizdevās saglabāt, un vēstulē to vairs nav: %1$@. Pirms sūtīšanas pievienojiet tos vēlreiz.</string>
     <string name="school_mail_invalid_recipients">Pārbaudiet šīs adreses: %1$@</string>
     <string name="school_mail_keep_editing">Turpināt rediģēšanu</string>
     <string name="school_mail_leave_title">Vai saglabāt šo vēstuli kā melnrakstu?</string>
@@ -837,6 +839,8 @@
     <string name="school_mail_send_confirm_title">Vai sūtīt šo vēstuli?</string>
     <string name="school_mail_send_failed">Neizdevās nosūtīt vēstuli</string>
     <string name="school_mail_send_unconfirmed">Neizdevās apstiprināt, vai vēstule tika nosūtīta; atkārtots mēģinājums to var piegādāt divreiz</string>
+    <string name="school_mail_send_undone">Sūtīšana atcelta. Vēstule atkal ir redaktorā.</string>
+    <string name="school_mail_sending_hold">Sūta…</string>
     <string name="school_mail_sent_copy_failed">Vēstule tika nosūtīta, bet kopiju neizdevās saglabāt mapē Nosūtītie.</string>
     <string name="school_mail_sent_copy_no_folder">Vēstule tika nosūtīta, bet nav mapes Nosūtītie, kurā saglabāt kopiju.</string>
     <string name="school_mail_sent_copy_not_saved">Vēstule nosūtīta, bet kopija netika saglabāta mapē Nosūtītie</string>
@@ -858,6 +862,7 @@
     <string name="school_mail_subject">Tēma</string>
     <string name="school_mail_to">Kam</string>
     <string name="school_mail_too_large">Pielikumi pārsniedz 50 MB limitu</string>
+    <string name="school_mail_undo_send">Atsaukt</string>
     <string name="school_mail_unread_only">Rādīt tikai nelasītās</string>
     <string name="school_mail_use_other_app">Izmantot citu lietotni</string>
     <string name="school_mail_view_formatted">Formatēts</string>

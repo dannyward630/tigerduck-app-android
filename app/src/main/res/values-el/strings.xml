@@ -351,6 +351,7 @@
     <string name="course_member_email">Email</string>
     <string name="course_member_groups">Ομάδες</string>
     <string name="course_member_me">Εγώ</string>
+    <string name="course_member_picture_unreadable">Δεν ήταν δυνατό το άνοιγμα αυτής της φωτογραφίας. Διάλεξε άλλη.</string>
     <string name="course_member_profile_picture">Φωτογραφία προφίλ</string>
     <string name="course_members_auditors">Ακροατές</string>
     <string name="course_members_students">Φοιτητές</string>
@@ -795,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Προωθημένο μήνυμα ----------</string>
     <string name="school_mail_guide_load_failed">Δεν ήταν δυνατή η φόρτωση του οδηγού</string>
     <string name="school_mail_guide_open_in_browser">Άνοιγμα στον περιηγητή</string>
+    <string name="school_mail_held_attachments_missing">Αυτά τα συνημμένα δεν ήταν δυνατό να διατηρηθούν και δεν βρίσκονται πλέον στο email: %1$@. Επισύναψέ τα ξανά πριν από την αποστολή.</string>
     <string name="school_mail_invalid_recipients">Έλεγξε αυτές τις διευθύνσεις: %1$@</string>
     <string name="school_mail_keep_editing">Συνέχιση επεξεργασίας</string>
     <string name="school_mail_leave_title">Αποθήκευση αυτού του email ως πρόχειρο;</string>
@@ -837,6 +839,8 @@
     <string name="school_mail_send_confirm_title">Αποστολή αυτού του email;</string>
     <string name="school_mail_send_failed">Δεν ήταν δυνατή η αποστολή του email</string>
     <string name="school_mail_send_unconfirmed">Δεν ήταν δυνατό να επιβεβαιωθεί η αποστολή του email, και μια νέα προσπάθεια μπορεί να το παραδώσει δύο φορές</string>
+    <string name="school_mail_send_undone">Η αποστολή ακυρώθηκε. Το email επέστρεψε στον επεξεργαστή.</string>
+    <string name="school_mail_sending_hold">Αποστολή…</string>
     <string name="school_mail_sent_copy_failed">Το email στάλθηκε, αλλά το αντίγραφο δεν ήταν δυνατό να αποθηκευτεί στα Απεσταλμένα.</string>
     <string name="school_mail_sent_copy_no_folder">Το email στάλθηκε, αλλά δεν υπάρχει φάκελος Απεσταλμένων για να κρατηθεί αντίγραφο.</string>
     <string name="school_mail_sent_copy_not_saved">Email στάλθηκε, αλλά δεν αποθηκεύτηκε αντίγραφο στα Απεσταλμένα</string>
@@ -858,6 +862,7 @@
     <string name="school_mail_subject">Θέμα</string>
     <string name="school_mail_to">Προς</string>
     <string name="school_mail_too_large">Τα συνημμένα υπερβαίνουν το όριο των 50 MB</string>
+    <string name="school_mail_undo_send">Αναίρεση</string>
     <string name="school_mail_unread_only">Εμφάνιση μόνο μη αναγνωσμένων</string>
     <string name="school_mail_use_other_app">Χρήση άλλης εφαρμογής</string>
     <string name="school_mail_view_formatted">Μορφοποιημένο</string>

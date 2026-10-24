@@ -351,6 +351,7 @@
     <string name="course_member_email">البريد الإلكتروني</string>
     <string name="course_member_groups">المجموعات</string>
     <string name="course_member_me">أنا</string>
+    <string name="course_member_picture_unreadable">تعذّر فتح هذه الصورة. اختر صورة أخرى.</string>
     <string name="course_member_profile_picture">صورة الملف الشخصي</string>
     <string name="course_members_auditors">المستمعون</string>
     <string name="course_members_students">الطلاب</string>
@@ -795,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- رسالة معاد توجيهها ----------</string>
     <string name="school_mail_guide_load_failed">تعذّر تحميل الدليل</string>
     <string name="school_mail_guide_open_in_browser">فتح في المتصفح</string>
+    <string name="school_mail_held_attachments_missing">تعذّر الاحتفاظ بهذه المرفقات ولم تعد موجودة في الرسالة: %1$@. أرفقها مرة أخرى قبل الإرسال.</string>
     <string name="school_mail_invalid_recipients">تحقّق من هذه العناوين: %1$@</string>
     <string name="school_mail_keep_editing">متابعة التحرير</string>
     <string name="school_mail_leave_title">هل تريد حفظ هذه الرسالة كمسودة؟</string>
@@ -837,6 +839,8 @@
     <string name="school_mail_send_confirm_title">هل تريد إرسال هذه الرسالة؟</string>
     <string name="school_mail_send_failed">تعذّر إرسال الرسالة</string>
     <string name="school_mail_send_unconfirmed">تعذّر التأكد من إرسال الرسالة؛ قد تؤدي إعادة المحاولة إلى وصولها مرتين</string>
+    <string name="school_mail_send_undone">تم إلغاء الإرسال. عادت الرسالة إلى المحرر.</string>
+    <string name="school_mail_sending_hold">جارٍ الإرسال…</string>
     <string name="school_mail_sent_copy_failed">تم إرسال الرسالة، لكن تعذّر حفظ النسخة في البريد المرسل.</string>
     <string name="school_mail_sent_copy_no_folder">تم إرسال الرسالة، لكن لا يوجد مجلد البريد المرسل لحفظ نسخة فيه.</string>
     <string name="school_mail_sent_copy_not_saved">تم إرسال الرسالة، لكن لم يتم حفظ نسخة في البريد المرسل</string>
@@ -858,6 +862,7 @@
     <string name="school_mail_subject">الموضوع</string>
     <string name="school_mail_to">إلى</string>
     <string name="school_mail_too_large">المرفقات تتجاوز الحد الأقصى البالغ 50 ميغابايت</string>
+    <string name="school_mail_undo_send">تراجع</string>
     <string name="school_mail_unread_only">إظهار غير المقروءة فقط</string>
     <string name="school_mail_use_other_app">استخدام تطبيق آخر</string>
     <string name="school_mail_view_formatted">منسّق</string>

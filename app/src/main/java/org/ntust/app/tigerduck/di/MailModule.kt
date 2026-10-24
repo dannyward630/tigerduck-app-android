@@ -33,6 +33,7 @@ import org.ntust.app.tigerduck.mail.notify.MailNotifier
 import org.ntust.app.tigerduck.mail.smtp.AngusMailTransport
 import org.ntust.app.tigerduck.mail.smtp.MailSender
 import org.ntust.app.tigerduck.mail.smtp.MailTransport
+import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.store.MailCredentialStore
 import org.ntust.app.tigerduck.mail.store.MailStateStore
@@ -100,6 +101,12 @@ object MailModule {
     @Provides
     @Singleton
     fun cache(@ApplicationContext context: Context): MailCache = MailCache(File(context.cacheDir, "mail"))
+
+    // Not the cache directory, which the system may empty to free space: a held mail must stay
+    // until it is sent or taken back. No backup copies this one.
+    @Provides
+    @Singleton
+    fun heldSends(@ApplicationContext context: Context): HeldSendStore = HeldSendStore(File(context.noBackupFilesDir, "mail_held_sends"))
 
     @Provides
     @Singleton

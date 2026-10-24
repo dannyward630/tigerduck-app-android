@@ -29,20 +29,25 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.analytics.AnalyticsLogger
 import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.library.LibraryQrShortcut
 import org.ntust.app.tigerduck.liveactivity.LiveActivityManager
+import org.ntust.app.tigerduck.mail.MailAccount
+import org.ntust.app.tigerduck.mail.MailRoutes
+import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.network.ApiVersionGate
 import org.ntust.app.tigerduck.network.MoodleTokenService
 import org.ntust.app.tigerduck.network.NetworkChecker
@@ -144,6 +149,12 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var heldShareLink: HeldShareLink
 
+    @Inject
+    lateinit var heldSends: HeldSendStore
+
+    @Inject
+    lateinit var mailAccount: MailAccount
+
     private val widgetStartRoute = mutableStateOf<String?>(null)
     private val whatsNewFlow = mutableStateOf<WhatsNewFlow?>(null)
 
@@ -178,6 +189,9 @@ class MainActivity : AppCompatActivity() {
         widgetStartRoute.value = resolveStartRoute(intent, restored = savedInstanceState != null)
         handleServerPushIntent(intent)
         openSharedClassTable(intent, restored = savedInstanceState != null)
+        // On every creation, a configuration change's included: a lookup the change cut short is
+        // asked again, and a mail a composer has open is not offered (HeldSendStore.orphan).
+        reopenHeldMail()
         // A share link held while no one could import it opens once someone signs in and onboarding
         // is finished, in either order. Only in the Activity on screen: another one, stopped in
         // another app's task, would take it and open its import where no one sees it.
@@ -484,6 +498,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Opens the composer again for a mail the system ended the app over while its send was held
+     * for Undo or under way (tigerduck-app#555), for the student to review: it is never sent on its
+     * own. The only place that does: a composer the system rebuilds from saved state opens empty
+     * and gives way to this one. A link the app was opened with goes first, and the mail waits for
+     * the next creation.
+     */
+    private fun reopenHeldMail() {
+        lifecycleScope.launch {
+            // The account's address and the kept mail are reads of the disk.
+            val route = withContext(Dispatchers.IO) { heldMailRoute(heldSends, mailAccount.ownAddress) } ?: return@launch
+            if (widgetStartRoute.value == null) widgetStartRoute.value = route
+        }
+    }
+
+    /**
      * Opens the class table with the import of the share code a link carries: an App Link from
      * the camera, Google Lens, another QR app or a tapped link, or the share page's button. It
      * takes the steps a scanned code does, and replaces an import already open. Only for someone
@@ -690,6 +719,13 @@ internal fun takeLinkedAssignmentId(intent: Intent, restored: Boolean): String? 
     val fromHistory = intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
     return link.id.takeIf { !restored && !fromHistory }
 }
+
+/**
+ * The composer to open for [owner]'s mail kept for its send that no composer of this process has
+ * open, the oldest, or null: none kept, or no one signed in to the mail.
+ */
+internal fun heldMailRoute(store: HeldSendStore, owner: String?): String? =
+    owner?.let(store::orphan)?.let(MailRoutes::reopen)
 
 /**
  * The NavHost route [intent] opens: the page of the assignment a `tigerduck://assignment/<id>`

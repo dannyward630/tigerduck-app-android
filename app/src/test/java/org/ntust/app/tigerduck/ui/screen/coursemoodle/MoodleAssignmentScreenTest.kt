@@ -44,11 +44,21 @@ class MoodleAssignmentScreenTest {
 
     private fun string(id: Int) = RuntimeEnvironment.getApplication().getString(id)
 
-    /** Markdown from Moodle's HTML is converted off the main thread, so its text lands a moment after the rest. */
+    /**
+     * Markdown from Moodle's HTML is converted on Dispatchers.Default, which the test's clock does
+     * not wait for, so its text lands a moment after the rest, and on a busy machine much later.
+     */
     private fun markdownNode(text: String): SemanticsNodeInteraction {
-        composeRule.waitUntil(5_000) { composeRule.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
+        composeRule.waitUntil(MARKDOWN_WAIT_MS) { composeRule.onAllNodesWithText(text, substring = true).fetchSemanticsNodes().isNotEmpty() }
         return composeRule.onNodeWithText(text, substring = true)
     }
+
+    /**
+     * Waits for every markdown [texts] on the page before anything is looked at: a section such as
+     * the description shows only once its markdown is ready, and markdown landing between a scroll
+     * and its check moves what was scrolled to.
+     */
+    private fun awaitMarkdown(vararg texts: String) = texts.forEach { markdownNode(it) }
 
     private fun record(noSubmissions: Boolean = false, cmid: Int = 9101) = MoodleAssignmentRecord(
         assignId = 701, cmid = cmid, courseId = 20119, name = "HW 2: Linked lists", dueDate = 1_789_000_740L,
@@ -95,6 +105,7 @@ class MoodleAssignmentScreenTest {
                 AssignmentSubmitButton(MoodleAssignmentEntry(record(), listed()))
             }
         }
+        awaitMarkdown("singly linked list")
 
         composeRule.onNodeWithText("HW 2: Linked lists").assertIsDisplayed()
         composeRule.onNodeWithText("Data Structures").assertIsDisplayed()
@@ -120,6 +131,7 @@ class MoodleAssignmentScreenTest {
                 onRetry = {},
             )
         }
+        awaitMarkdown("singly linked list", "See the attached report.", "Please check page 2.")
 
         composeRule.onNodeWithText("Group 3").assertIsDisplayed()
         // Handed in 100,740 s before the due time.
@@ -150,6 +162,7 @@ class MoodleAssignmentScreenTest {
                 onRetry = {},
             )
         }
+        awaitMarkdown("singly linked list", "See the attached report.", "Please check page 2.", "Case 7 misses the")
 
         composeRule.onNodeWithText(string(R.string.assignment_detail_grade)).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText("85").performScrollTo().assertIsDisplayed()
@@ -173,6 +186,7 @@ class MoodleAssignmentScreenTest {
                 onRetry = {},
             )
         }
+        awaitMarkdown("singly linked list", "Half done")
 
         composeRule.onNodeWithText(string(R.string.assignment_detail_not_submitted)).performScrollTo().assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.assignment_detail_draft)).performScrollTo().assertIsDisplayed()
@@ -238,5 +252,10 @@ class MoodleAssignmentScreenTest {
         composeRule.onNodeWithText("HW 2: Linked lists").assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.assignment_status_submitted)).assertIsDisplayed()
         composeRule.onNodeWithText(MoodleDates.minute(1_789_000_740L)).assertIsDisplayed()
+    }
+
+    private companion object {
+        /** Ample for a busy machine; a wait that is met returns at once. */
+        const val MARKDOWN_WAIT_MS = 15_000L
     }
 }

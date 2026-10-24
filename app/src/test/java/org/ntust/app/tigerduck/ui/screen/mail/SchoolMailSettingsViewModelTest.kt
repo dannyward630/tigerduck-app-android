@@ -19,6 +19,9 @@ import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.MainDispatcherRule
 import org.ntust.app.tigerduck.mail.cancelAndJoinBlocking
 import org.ntust.app.tigerduck.mail.model.MailBody
+import org.ntust.app.tigerduck.mail.notify.MailMutePreset
+import org.ntust.app.tigerduck.mail.notify.MailMuteRule
+import org.ntust.app.tigerduck.mail.notify.MailMuteSettings
 import org.ntust.app.tigerduck.mail.RecordingNotifier
 import org.ntust.app.tigerduck.mail.RecordingScheduler
 import org.ntust.app.tigerduck.mail.store.MailCache
@@ -26,6 +29,7 @@ import org.ntust.app.tigerduck.mail.sync.ExactAlarmAccess
 import org.ntust.app.tigerduck.mail.testApplicationScope
 import org.ntust.app.tigerduck.notification.SystemPermissions
 import java.io.File
+import java.time.DayOfWeek
 import org.ntust.app.tigerduck.mail.FakeSchoolMailRepository
 import org.ntust.app.tigerduck.mail.schoolMailSite
 
@@ -151,6 +155,67 @@ class SchoolMailSettingsViewModelTest {
         vm.clearCache()
         assertEquals(0L, vm.cacheBytes.value)
         assertFalse(cache.attachmentsDir.exists())
+    }
+
+    @Test
+    fun `quiet hours, presets and rules are saved as set`() {
+        signIn("b10000001", "pw")
+        val vm = viewModel()
+        assertEquals(MailMuteSettings(), vm.ui.value.muteSettings)
+
+        vm.setQuietHoursEnabled(true)
+        vm.setQuietHoursStart(22 * 60 + 30)
+        vm.setQuietHoursEnd(6 * 60)
+        vm.toggleQuietDay(DayOfWeek.SATURDAY)
+        vm.setPreset(MailMutePreset.BULLETIN, true)
+
+        val quiet = state.muteSettings.quietHours
+        assertTrue(quiet.enabled)
+        assertEquals(22 * 60 + 30, quiet.startMinute)
+        assertEquals(6 * 60, quiet.endMinute)
+        assertEquals(DayOfWeek.entries.toSet() - DayOfWeek.SATURDAY, quiet.days)
+        assertEquals(setOf(MailMutePreset.BULLETIN), state.muteSettings.presets)
+        assertEquals(state.muteSettings, vm.ui.value.muteSettings)
+
+        vm.setPreset(MailMutePreset.BULLETIN, false)
+        assertEquals(emptySet<MailMutePreset>(), state.muteSettings.presets)
+    }
+
+    @Test
+    fun `a rule is added, edited in place and deleted, with its value trimmed`() {
+        signIn("b10000001", "pw")
+        val vm = viewModel()
+        val rule = MailMuteRule("a", MailMuteRule.Field.FROM, MailMuteRule.Operator.CONTAINS, "  list@example.com ")
+        vm.saveRule(rule)
+        vm.saveRule(MailMuteRule("b", MailMuteRule.Field.SUBJECT, MailMuteRule.Operator.IS, "Digest"))
+        assertEquals(listOf("list@example.com", "Digest"), state.muteSettings.rules.map { it.value })
+
+        vm.saveRule(rule.copy(op = MailMuteRule.Operator.IS, value = "other@example.com"))
+        assertEquals(
+            listOf(MailMuteRule("a", MailMuteRule.Field.FROM, MailMuteRule.Operator.IS, "other@example.com"), state.muteSettings.rules[1]),
+            state.muteSettings.rules,
+        )
+
+        vm.deleteRule("a")
+        assertEquals(listOf("b"), state.muteSettings.rules.map { it.id })
+        assertEquals(state.muteSettings, vm.ui.value.muteSettings)
+    }
+
+    @Test
+    fun `a rule with nothing to match is not saved`() {
+        signIn("b10000001", "pw")
+        val vm = viewModel()
+        vm.saveRule(MailMuteRule("a", MailMuteRule.Field.FROM, MailMuteRule.Operator.CONTAINS, "   "))
+        assertEquals(emptyList<MailMuteRule>(), state.muteSettings.rules)
+    }
+
+    @Test
+    fun `signed out, nothing is saved for whoever signs in next`() {
+        val vm = viewModel()
+        vm.setQuietHoursEnabled(true)
+        vm.setPreset(MailMutePreset.BULLETIN, true)
+        vm.saveRule(MailMuteRule("a", MailMuteRule.Field.FROM, MailMuteRule.Operator.CONTAINS, "x@example.com"))
+        assertEquals(MailMuteSettings(), state.muteSettings)
     }
 
     /** The demo mailbox is a sign-in like any other, so it must not grey anything out. */

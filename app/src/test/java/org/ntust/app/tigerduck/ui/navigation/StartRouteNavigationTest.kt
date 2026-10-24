@@ -11,11 +11,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.mail.ComposeMode
+import org.ntust.app.tigerduck.mail.MailRoutes
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -39,6 +42,12 @@ class StartRouteNavigationTest {
             NavHost(navController = navController, startDestination = "home") {
                 composable("home") {}
                 composable("classTable") {}
+                composable(
+                    MailRoutes.COMPOSE,
+                    arguments = listOf("mode", "folder", "mailto", "to", "held").map { name ->
+                        navArgument(name) { type = NavType.StringType; defaultValue = "" }
+                    } + navArgument("uid") { type = NavType.LongType; defaultValue = -1L },
+                ) {}
                 composable(
                     "schoolMail/message/{folder}/{uid}",
                     arguments = listOf(
@@ -74,6 +83,21 @@ class StartRouteNavigationTest {
     @Test
     fun `an argument the graph cannot read leaves the app where it is`() {
         assertFalse(open("schoolMail/message/INBOX/9999999999999999999"))
+        assertEquals("home", current)
+    }
+
+    @Test
+    fun `a kept mail's composer replaces a composer on top instead of reusing it`() {
+        // One the system rebuilt after ending the app, which would keep its view model under singleTop.
+        assertTrue(open(MailRoutes.compose(ComposeMode.NEW)))
+        val rebuilt = navController.currentBackStackEntry!!.id
+
+        assertTrue(open(MailRoutes.compose(ComposeMode.NEW, held = "m1")))
+
+        val entry = navController.currentBackStackEntry!!
+        assertNotEquals(rebuilt, entry.id)
+        assertEquals("m1", entry.arguments?.getString("held"))
+        composeRule.runOnIdle { navController.popBackStack() }
         assertEquals("home", current)
     }
 }

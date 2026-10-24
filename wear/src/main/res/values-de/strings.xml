@@ -351,6 +351,7 @@
     <string name="course_member_email">E-Mail</string>
     <string name="course_member_groups">Gruppen</string>
     <string name="course_member_me">Ich</string>
+    <string name="course_member_picture_unreadable">Dieses Foto konnte nicht geöffnet werden. Wähle ein anderes.</string>
     <string name="course_member_profile_picture">Profilbild</string>
     <string name="course_members_auditors">Gasthörer</string>
     <string name="course_members_students">Studierende</string>
@@ -795,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Weitergeleitete Nachricht ----------</string>
     <string name="school_mail_guide_load_failed">Anleitung konnte nicht geladen werden</string>
     <string name="school_mail_guide_open_in_browser">Im Browser öffnen</string>
+    <string name="school_mail_held_attachments_missing">Diese Anhänge konnten nicht beibehalten werden und sind nicht mehr in der E-Mail: %1$@. Hänge sie vor dem Senden erneut an.</string>
     <string name="school_mail_invalid_recipients">Überprüfe diese Adressen: %1$@</string>
     <string name="school_mail_keep_editing">Weiter bearbeiten</string>
     <string name="school_mail_leave_title">Diese E-Mail als Entwurf speichern?</string>
@@ -837,6 +839,8 @@
     <string name="school_mail_send_confirm_title">Diese E-Mail senden?</string>
     <string name="school_mail_send_failed">E-Mail konnte nicht gesendet werden</string>
     <string name="school_mail_send_unconfirmed">Es ließ sich nicht bestätigen, ob die E-Mail gesendet wurde; ein erneuter Versuch kann sie doppelt zustellen</string>
+    <string name="school_mail_send_undone">Senden abgebrochen. Die E-Mail ist wieder im Editor.</string>
+    <string name="school_mail_sending_hold">Wird gesendet…</string>
     <string name="school_mail_sent_copy_failed">Die E-Mail wurde gesendet, aber die Kopie konnte nicht in Gesendet gespeichert werden.</string>
     <string name="school_mail_sent_copy_no_folder">Die E-Mail wurde gesendet, aber es gibt keinen Ordner Gesendet, in dem eine Kopie abgelegt werden kann.</string>
     <string name="school_mail_sent_copy_not_saved">E-Mail gesendet, aber keine Kopie in Gesendet gespeichert</string>
@@ -858,6 +862,7 @@
     <string name="school_mail_subject">Betreff</string>
     <string name="school_mail_to">An</string>
     <string name="school_mail_too_large">Anhänge überschreiten das Limit von 50 MB</string>
+    <string name="school_mail_undo_send">Rückgängig</string>
     <string name="school_mail_unread_only">Nur Ungelesene anzeigen</string>
     <string name="school_mail_use_other_app">Andere App verwenden</string>
     <string name="school_mail_view_formatted">Formatiert</string>
