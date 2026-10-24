@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GppBad
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
@@ -207,7 +208,12 @@ private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onMenu: () ->
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (state.isHttps) {
-                    Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(14.dp), tint = colors.onSurface)
+                    Icon(
+                        if (state.certificateRefused) Icons.Filled.GppBad else Icons.Filled.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = colors.onSurface,
+                    )
                     Spacer(Modifier.width(4.dp))
                 }
                 Text(

@@ -776,7 +776,8 @@ class InAppBrowserActivity : AppCompatActivity() {
             // shouldInterceptRequest): refused all the same, it is cancelled without the certificate page.
             handler.cancel()
             val url = error.url
-            if (loads.certificateFailed(url, url?.toHttpUrlOrNull()?.host ?: state.host)) state.loading = false
+            val refused = runCatching { error.certificate?.let(CertificateInfo::of) }.getOrNull()
+            if (loads.certificateFailed(url, url?.toHttpUrlOrNull()?.host ?: state.host, refused)) state.loading = false
         }
 
         override fun onRenderProcessGone(view: WebView, detail: android.webkit.RenderProcessGoneDetail): Boolean {

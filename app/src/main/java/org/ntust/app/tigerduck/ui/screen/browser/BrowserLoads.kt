@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.ui.screen.browser
 
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.ntust.app.tigerduck.browser.BrowserSignIns
+import org.ntust.app.tigerduck.browser.CertificateInfo
 
 /**
  * What the browser keeps about its main-frame loads: the page Retry and "Open in browser" name
@@ -79,9 +80,9 @@ internal class BrowserLoads(private val state: BrowserPageState, private val sig
      * the certificate error. The WebView asks about an image or a script on the page too: refused
      * all the same, it leaves the page as it is.
      */
-    fun certificateFailed(url: String?, host: String?): Boolean {
+    fun certificateFailed(url: String?, host: String?, certificate: CertificateInfo? = null): Boolean {
         if (url == null || (url != current && url != state.url && url != mainFrameRequest)) return false
-        failed(url, BrowserError.BadCertificate(host))
+        failed(url, BrowserError.BadCertificate(host, certificate))
         return true
     }
 

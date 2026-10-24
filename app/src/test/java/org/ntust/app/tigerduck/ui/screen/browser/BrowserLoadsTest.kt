@@ -7,6 +7,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.browser.BrowserSignIn
 import org.ntust.app.tigerduck.browser.BrowserSignIns
+import org.ntust.app.tigerduck.browser.CertificateInfo
 import org.ntust.app.tigerduck.browser.MoodleBrowserSignIn
 
 /**
@@ -178,12 +179,13 @@ class BrowserLoadsTest {
     }
 
     @Test
-    fun `a certificate refused for the page being loaded shows the certificate error`() {
+    fun `a certificate refused for the page being loaded shows the certificate error, with that certificate`() {
+        val refused = CertificateInfo("moodle2.ntust.edu.tw", null, "Expired CA", null, null, null, "CC:DD")
         loads.requested(B)
 
-        assertTrue(loads.certificateFailed(B, "moodle2.ntust.edu.tw"))
+        assertTrue(loads.certificateFailed(B, "moodle2.ntust.edu.tw", refused))
 
-        assertEquals(BrowserError.BadCertificate("moodle2.ntust.edu.tw"), state.error)
+        assertEquals(BrowserError.BadCertificate("moodle2.ntust.edu.tw", refused), state.error)
         assertEquals(B, loads.loadingUrl)
     }
 

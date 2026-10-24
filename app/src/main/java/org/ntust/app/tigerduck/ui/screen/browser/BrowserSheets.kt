@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.GppBad
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -107,7 +108,11 @@ private fun PageHeader(state: BrowserPageState) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Surface(shape = RoundedCornerShape(18.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(36.dp)) {
             Icon(
-                if (state.isHttps) Icons.Filled.Lock else Icons.Filled.LockOpen,
+                when {
+                    state.certificateRefused -> Icons.Filled.GppBad
+                    state.isHttps -> Icons.Filled.Lock
+                    else -> Icons.Filled.LockOpen
+                },
                 contentDescription = null,
                 modifier = Modifier.padding(9.dp),
             )
@@ -239,7 +244,13 @@ internal fun BrowserMenuSheet(
         MenuRow(Icons.Filled.Search, stringResource(R.string.browser_find), enabled = state.error == null && state.signIn == null) { act(actions::startFind) }
         MenuRow(Icons.Filled.Print, stringResource(R.string.browser_print), enabled = url != null && state.error == null && state.signIn == null) { act(actions::print) }
         MenuRow(Icons.Filled.Download, stringResource(R.string.browser_downloads), showArrow = true, onClick = onDownloads)
-        MenuRow(Icons.Filled.VerifiedUser, stringResource(R.string.browser_security), enabled = url != null, showArrow = true, onClick = onAddress)
+        MenuRow(
+            if (state.certificateRefused) Icons.Filled.GppBad else Icons.Filled.VerifiedUser,
+            stringResource(R.string.browser_security),
+            enabled = url != null,
+            showArrow = true,
+            onClick = onAddress,
+        )
     }
 }
 
@@ -267,17 +278,22 @@ internal fun BrowserAddressSheet(
             }
             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainerHigh) {
                 Column {
-                    InfoRow(
-                        icon = if (state.isHttps) Icons.Filled.Lock else Icons.Filled.LockOpen,
-                        title = stringResource(if (state.isHttps) R.string.browser_connection_secure else R.string.browser_connection_insecure),
-                        detail = if (state.isHttps) stringResource(R.string.browser_connection_secure_detail) else null,
-                    )
+                    when {
+                        // Encrypted, but to a certificate the browser refused: neither secure nor unencrypted.
+                        state.certificateRefused -> InfoRow(Icons.Filled.GppBad, stringResource(R.string.browser_certificate_invalid), detail = null)
+                        state.isHttps -> InfoRow(
+                            Icons.Filled.Lock,
+                            stringResource(R.string.browser_connection_secure),
+                            stringResource(R.string.browser_connection_secure_detail),
+                        )
+                        else -> InfoRow(Icons.Filled.LockOpen, stringResource(R.string.browser_connection_insecure), detail = null)
+                    }
                     if (state.signedIn) {
                         HorizontalDivider()
                         InfoRow(icon = Icons.Filled.Person, title = stringResource(R.string.browser_signed_in), detail = null)
                     }
                     HorizontalDivider()
-                    MenuRow(Icons.Filled.VerifiedUser, stringResource(R.string.browser_certificate), enabled = state.certificate != null, showArrow = true, onClick = onCertificate)
+                    MenuRow(Icons.Filled.VerifiedUser, stringResource(R.string.browser_certificate), enabled = state.shownCertificate != null, showArrow = true, onClick = onCertificate)
                 }
             }
         }
@@ -299,7 +315,7 @@ private fun InfoRow(icon: ImageVector, title: String, detail: String?) {
 /** The page certificate's details, and a copy of them as text. */
 @Composable
 internal fun BrowserCertificateSheet(state: BrowserPageState, actions: BrowserActions, onDismiss: () -> Unit) {
-    val info = state.certificate
+    val info = state.shownCertificate
     val locale = LocalConfiguration.current.locales[0]
     val dates = remember(locale) { DateFormat.getDateInstance(DateFormat.MEDIUM, locale) }
     fun date(d: Date?) = d?.let(dates::format) ?: "—"
@@ -318,7 +334,11 @@ internal fun BrowserCertificateSheet(state: BrowserPageState, actions: BrowserAc
                 Text(stringResource(R.string.browser_certificate_none), style = MaterialTheme.typography.bodyMedium)
                 return@Column
             }
-            InfoRow(Icons.Filled.VerifiedUser, state.host.orEmpty(), stringResource(R.string.browser_certificate_valid))
+            if (state.certificateRefused) {
+                InfoRow(Icons.Filled.GppBad, state.host.orEmpty(), stringResource(R.string.browser_certificate_invalid))
+            } else {
+                InfoRow(Icons.Filled.VerifiedUser, state.host.orEmpty(), stringResource(R.string.browser_certificate_valid))
+            }
             CertificateGroup(issuedTo, listOf(commonName to info.issuedToName, organization to info.issuedToOrganization))
             CertificateGroup(issuedBy, listOf(commonName to info.issuedByName, organization to info.issuedByOrganization))
             CertificateGroup(validity, listOf(notBefore to date(info.validFrom), notAfter to date(info.validUntil)))

@@ -5,8 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -20,6 +20,7 @@ import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.browser.BrowserAppearance
 import org.ntust.app.tigerduck.browser.BrowserDownload
+import org.ntust.app.tigerduck.browser.CertificateInfo
 import org.ntust.app.tigerduck.browser.UploadSource
 import org.ntust.app.tigerduck.util.replaceIosArg
 import org.robolectric.RobolectricTestRunner
@@ -171,6 +172,46 @@ class InAppBrowserScreenTest {
         composeRule.onNodeWithText(string(R.string.browser_error_certificate).replaceIosArg(1, "moodle2.ntust.edu.tw")).assertExists()
         composeRule.onNodeWithText(string(R.string.action_retry)).assertDoesNotExist()
         composeRule.onNodeWithText(string(R.string.browser_open_external)).assertDoesNotExist()
+    }
+
+    private val goodCertificate = CertificateInfo("moodle2.ntust.edu.tw", "NTUST", "Good CA", null, null, null, "AA:BB")
+    private val refusedCertificate = CertificateInfo("moodle2.ntust.edu.tw", null, "Expired CA", null, null, null, "CC:DD")
+
+    private fun refused(certificate: CertificateInfo?) = loaded().apply {
+        // The page before, whose certificate was fine.
+        this.certificate = goodCertificate
+        error = BrowserError.BadCertificate("moodle2.ntust.edu.tw", certificate)
+    }
+
+    @Test
+    fun `a refused certificate is not called valid in the address sheet`() {
+        show(refused(refusedCertificate))
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_connection_secure)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.browser_connection_secure_detail)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.browser_connection_insecure)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.browser_certificate_invalid)).assertExists()
+    }
+
+    @Test
+    fun `View certificate shows the refused certificate, as not valid`() {
+        show(refused(refusedCertificate))
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_certificate)).performClick()
+
+        composeRule.onNodeWithText("Expired CA").assertExists()
+        composeRule.onNodeWithText("Good CA").assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.browser_certificate_valid)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.browser_certificate_invalid)).assertExists()
+    }
+
+    @Test
+    fun `with no refused certificate to show, View certificate is off rather than the page before's`() {
+        show(refused(null))
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_certificate)).assertIsNotEnabled()
     }
 
     @Test

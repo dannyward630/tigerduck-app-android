@@ -51,6 +51,16 @@ class BrowserPageState {
 
     val host: String? get() = url?.toHttpUrlOrNull()?.host
     val isHttps: Boolean get() = url?.toHttpUrlOrNull()?.isHttps == true
+
+    /** Whether the page's certificate was refused: then nothing calls its connection secure. */
+    val certificateRefused: Boolean get() = error is BrowserError.BadCertificate
+
+    /** The certificate View certificate shows: the refused one while it is refused, never the page's before. */
+    val shownCertificate: CertificateInfo?
+        get() = when (val refused = error) {
+            is BrowserError.BadCertificate -> refused.certificate
+            else -> certificate
+        }
 }
 
 sealed interface BrowserError {
@@ -59,8 +69,8 @@ sealed interface BrowserError {
     /** The page did not load: no network, a server not answering. */
     data class Unreachable(override val host: String?) : BrowserError
 
-    /** The page's certificate failed; the page is never shown. */
-    data class BadCertificate(override val host: String?) : BrowserError
+    /** The page's [certificate] failed, when the WebView gave it; the page is never shown. */
+    data class BadCertificate(override val host: String?, val certificate: CertificateInfo? = null) : BrowserError
 }
 
 /** Find in page: what is looked for, which match is on screen (from 1) and how many there are. */
