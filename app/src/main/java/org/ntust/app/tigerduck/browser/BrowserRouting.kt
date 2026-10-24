@@ -43,6 +43,11 @@ object BrowserRouting {
      * `shouldOverrideUrlLoading`, so this is the check that stops it before
      * the form reaches another site. Moodle's logout never goes, whoever asks for it: a frame or a
      * script ends the session as surely as the page.
+     *
+     * What no WebView callback sees is where a server redirects a frame or a script's request:
+     * only its first address comes here. Sent to the logout that way, by a page of Moodle's own that
+     * knows the session's key (`sesskey`, which the logout asks for), the session would end; the
+     * browser then signs in again as for any session Moodle ends.
      */
     fun blocksRequest(url: String, isForMainFrame: Boolean, allowlist: BrowserAllowlist): Boolean =
         isMoodleLogout(url) || isForMainFrame && navigation(url, allowlist) != NavigationDecision.Load
@@ -60,15 +65,6 @@ object BrowserRouting {
         val segments = parsed.pathSegments.filter { it.isNotEmpty() }.map { it.lowercase() }
         return LOGOUT_PATHS.any { path -> segments.size >= path.size && segments.subList(0, path.size) == path }
     }
-
-    /**
-     * Whether a frame's navigation must not go: one to Moodle's logout, the redirect a frame is sent
-     * on included, which `shouldOverrideUrlLoading` is asked about where `shouldInterceptRequest`
-     * is not. A script's fetch that a server redirects there is seen by neither; it would need the
-     * session's own key (`sesskey`, or SSO's session ID for auth_oidc's), which only Moodle's pages
-     * hold, and they send their logout as a page's navigation.
-     */
-    fun blocksFrameNavigation(url: String): Boolean = isMoodleLogout(url)
 
     private val LOGOUT_PATHS = listOf(listOf("login", "logout.php"), listOf("auth", "oidc", "logout.php"))
 

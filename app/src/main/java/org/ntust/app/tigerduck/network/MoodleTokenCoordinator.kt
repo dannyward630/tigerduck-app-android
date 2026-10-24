@@ -93,7 +93,7 @@ internal class MoodleTokenCoordinator(
         now = now,
         scope = scope,
         pauseMs = pauseMs,
-        refusal = KeptRefusal(LatchedRefusal(passwordLatch)),
+        refusal = HeldRefusal(passwordLatch),
     )
 
     /**
@@ -154,23 +154,17 @@ internal class LatchedRefusal(private val latch: StoredPasswordLatch) : StoredPa
 }
 
 /**
- * [refusal], and besides it the credentials SSO refused here, kept until they change or a sign-in
- * by hand clears them. The app-wide count lets a first refusal be tried again after a short wait;
- * a sign-in to Moodle's website, which only spares the student a sign-in screen, never posts a
- * password SSO refused again.
+ * Refused while the app-wide count holds any refusal of the stored password, whatever wait it has
+ * served since. The count lets a first refusal be tried again after a short wait; a sign-in to
+ * Moodle's website, which only spares the student a sign-in screen, never posts a password SSO
+ * refused until SSO takes it again (a renewal the count lets through) or the student signs in by
+ * hand, which clears the count. Kept on disk with the count, so a new process keeps it too.
  */
-internal class KeptRefusal(private val refusal: StoredPasswordRefusal) : StoredPasswordRefusal {
-    @Volatile private var refused: String? = null
+internal class HeldRefusal(private val latch: StoredPasswordLatch) : StoredPasswordRefusal {
+    override fun isRefused(fingerprint: String): Boolean = latch.isRejected || latch.postMustWait()
 
-    override fun isRefused(fingerprint: String): Boolean = refused == fingerprint || refusal.isRefused(fingerprint)
+    // The count is what keeps it: guardAutomaticHarvest has counted the refusal.
+    override fun markRefused(fingerprint: String) = Unit
 
-    override fun markRefused(fingerprint: String) {
-        refused = fingerprint
-        refusal.markRefused(fingerprint)
-    }
-
-    override fun clear() {
-        refused = null
-        refusal.clear()
-    }
+    override fun clear() = latch.clear()
 }

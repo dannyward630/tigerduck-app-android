@@ -103,10 +103,4 @@ class BrowserRoutingTest {
             assertFalse(it, BrowserRouting.blocksRequest(it, isForMainFrame = false, allowlist = allowlist))
         }
     }
-
-    @Test
-    fun `a frame never goes to Moodle's logout, redirected there included`() {
-        logouts.forEach { assertTrue(it, BrowserRouting.blocksFrameNavigation(it)) }
-        assertFalse(BrowserRouting.blocksFrameNavigation("https://moodle2.ntust.edu.tw/mod/page/view.php?id=1"))
-    }
 }

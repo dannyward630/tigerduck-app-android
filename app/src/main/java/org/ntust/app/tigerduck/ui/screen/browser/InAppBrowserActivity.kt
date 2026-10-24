@@ -752,11 +752,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     private inner class Client : WebViewClient() {
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-            if (request.isForMainFrame) {
-                handleNavigation(request.url.toString())
-            } else {
-                BrowserRouting.blocksFrameNavigation(request.url.toString())
-            }
+            request.isForMainFrame && handleNavigation(request.url.toString())
 
         override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
             // Off the main thread. A form's POST off the allowlist is stopped here, before it is

@@ -82,8 +82,11 @@ class MoodleWebSignInTest {
         latchPrefs.edit().clear().commit()
     }
 
+    /** The latch the last service was made with, as a fresh process reads it from disk. */
+    private lateinit var latch: PersistedStoredPasswordLatch
+
     private fun TestScope.service(): MoodleTokenService {
-        val latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) {
+        latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) {
             val id = tokens.studentId
             val password = tokens.password
             if (id == null || password == null) null else id to password
@@ -177,12 +180,18 @@ class MoodleWebSignInTest {
         val service = service()
         expectFailure(MoodleWebserviceError.SsoLoginRejected::class.java) { service.signInToWebsite() }
 
-        // The app-wide count lets a first refusal be tried again after a short wait; the website does not.
+        // The app-wide count lets a first refusal be tried again after a short wait; the website does not,
+        // in this process or the next.
         clock += 60 * 60_000L
         ssoAnswer = { BRIDGE_URL to BRIDGE_PAGE }
         expectFailure(MoodleWebserviceError.SsoLoginRejected::class.java) { service.signInToWebsite() }
-
+        expectFailure(MoodleWebserviceError.SsoLoginRejected::class.java) { service().signInToWebsite() }
         assertEquals(1, posts.size)
+
+        // A sign-in by hand, which clears the count, lets it post again.
+        latch.clear()
+        service().signInToWebsite()
+        assertEquals(2, posts.size)
     }
 
     @Test
