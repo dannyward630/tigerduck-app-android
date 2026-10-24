@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import org.junit.Assert.assertEquals
@@ -72,11 +73,16 @@ class AppProcessingHostTest {
     fun `work that ends within the grace never flashes the spinner`() {
         val hold = processing.newHold()
         hold.start()
-        advance(PROCESSING_GRACE_MS / 2)
+        // Frame by frame, so a spinner up for a single frame would be seen.
+        repeat(((PROCESSING_GRACE_MS - 50L) / 16L).toInt()) {
+            advance(16L)
+            assertFalse(shown())
+        }
         hold.stop()
-        advance(2_000L)
-
-        assertFalse(shown())
+        repeat(120) {
+            advance(16L)
+            assertFalse(shown())
+        }
     }
 
     @Test
@@ -103,6 +109,10 @@ class AppProcessingHostTest {
 
         val node = rule.onAllNodes(hasText(line)).fetchSemanticsNodes().single()
         assertEquals(LiveRegionMode.Polite, node.config.getOrNull(SemanticsProperties.LiveRegion))
+        // One stop for TalkBack: the progress is read with the line, not as a node of its own.
+        val progress = rule.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+            .fetchSemanticsNodes()
+        assertEquals(listOf(node.id), progress.map { it.id })
     }
 
     @Test

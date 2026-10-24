@@ -20,7 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -79,11 +82,15 @@ internal fun ProcessingCard(text: String) {
             modifier = Modifier
                 .widthIn(min = 200.dp)
                 .padding(horizontal = 32.dp, vertical = 28.dp)
-                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+                .semantics(mergeDescendants = true) {
+                    liveRegion = LiveRegionMode.Polite
+                    progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
+                },
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            CircularProgressIndicator()
+            // Its progress is the card's, so TalkBack stops once, on the line.
+            CircularProgressIndicator(Modifier.clearAndSetSemantics {})
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyLarge,

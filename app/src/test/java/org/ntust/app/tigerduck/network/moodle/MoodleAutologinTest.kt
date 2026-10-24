@@ -361,13 +361,14 @@ class MoodleAutologinTest {
 
         // Off the Moodle site.
         autologin.signedIn("https://example.com/a", ::record)
+        assertEquals(emptyList<Boolean>(), waits)
         // Without a Moodle token to fetch for.
         moodleToken = false
         autologin.signedIn(page, ::record)
+        assertEquals(emptyList<Boolean>(), waits)
         // After a pair that came without a private token, for the same sign-in.
         moodleToken = true
         fetch = { false }
-        waits.clear()
         autologin.signedIn(page, ::record)
         assertEquals(listOf(true, false), waits)
         waits.clear()
