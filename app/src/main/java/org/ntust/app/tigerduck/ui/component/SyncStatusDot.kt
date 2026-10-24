@@ -53,6 +53,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Sync
@@ -547,6 +548,7 @@ private val ServerKind.icon: ImageVector
         ServerKind.MOODLE -> Icons.Filled.School
         ServerKind.COURSE_SELECTION -> Icons.Outlined.Checklist
         ServerKind.BACKEND -> Icons.Filled.Cloud
+        ServerKind.LIBRARY -> Icons.Filled.MenuBook
     }
 
 private val ServerKind.labelRes: Int
@@ -554,4 +556,5 @@ private val ServerKind.labelRes: Int
         ServerKind.MOODLE -> R.string.calendar_source_moodle
         ServerKind.COURSE_SELECTION -> R.string.feature_course_selection
         ServerKind.BACKEND -> R.string.cloud_sync_title
+        ServerKind.LIBRARY -> R.string.feature_library
     }

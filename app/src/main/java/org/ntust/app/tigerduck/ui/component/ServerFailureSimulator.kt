@@ -5,6 +5,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
+import okhttp3.Interceptor
+import okhttp3.Response
 import java.io.IOException
 
 enum class SimulatedFailure(val label: String) {
@@ -48,5 +51,17 @@ object ServerFailureSimulator {
             SimulatedFailure.SLOW -> delay(10_000)
             SimulatedFailure.UNREACHABLE -> throw IOException("Simulated unreachable for ${server.name}")
         }
+    }
+}
+
+/**
+ * Fails each call of a client as [ServerFailureSimulator] says for [server], before it goes out.
+ * For a client the app reaches through no call of its own to check first, such as the library's,
+ * which lives in `:shared`. It blocks the call's own thread for the timeout and the slow answer.
+ */
+class ServerFailureInterceptor(private val server: ServerKind) : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        runBlocking { ServerFailureSimulator.check(server) }
+        return chain.proceed(chain.request())
     }
 }
