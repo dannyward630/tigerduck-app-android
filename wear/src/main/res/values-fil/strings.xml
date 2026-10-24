@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Mensaheng ipinasa ----------</string>
     <string name="school_mail_guide_load_failed">Hindi ma-load ang gabay</string>
     <string name="school_mail_guide_open_in_browser">Buksan sa browser</string>
+    <string name="school_mail_held_attachments_missing">Hindi naitabi ang mga attachment na ito at wala na sa mail: %1$@. I-attach ulit ang mga ito bago ipadala.</string>
     <string name="school_mail_invalid_recipients">I-check ang mga address na ito: %1$@</string>
     <string name="school_mail_keep_editing">Ituloy ang pag-edit</string>
     <string name="school_mail_leave_title">I-save ang mail na ito bilang draft?</string>

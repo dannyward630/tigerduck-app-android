@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- 転送されたメッセージ ----------</string>
     <string name="school_mail_guide_load_failed">ガイドを読み込めませんでした</string>
     <string name="school_mail_guide_open_in_browser">ブラウザで開く</string>
+    <string name="school_mail_held_attachments_missing">次の添付ファイルは保持できず、メールから削除されました：%1$@。送信する前にもう一度添付してください。</string>
     <string name="school_mail_invalid_recipients">次のアドレスを確認してください：%1$@</string>
     <string name="school_mail_keep_editing">編集を続ける</string>
     <string name="school_mail_leave_title">このメールを下書きとして保存しますか？</string>

@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- ഫോർവേഡ് ചെയ്ത സന്ദേശം ----------</string>
     <string name="school_mail_guide_load_failed">ഗൈഡ് ലോഡ് ചെയ്യാനായില്ല</string>
     <string name="school_mail_guide_open_in_browser">ബ്രൗസറിൽ തുറക്കുക</string>
+    <string name="school_mail_held_attachments_missing">ഈ അറ്റാച്ച്‌മെന്റുകൾ നിലനിർത്താനായില്ല, അവ ഇനി ഇമെയിലിൽ ഇല്ല: %1$@. അയയ്ക്കുന്നതിന് മുമ്പ് അവ വീണ്ടും അറ്റാച്ച് ചെയ്യുക.</string>
     <string name="school_mail_invalid_recipients">ഈ വിലാസങ്ങൾ പരിശോധിക്കുക: %1$@</string>
     <string name="school_mail_keep_editing">എഡിറ്റിംഗ് തുടരുക</string>
     <string name="school_mail_leave_title">ഈ ഇമെയിൽ ഡ്രാഫ്റ്റായി സേവ് ചെയ്യണോ?</string>

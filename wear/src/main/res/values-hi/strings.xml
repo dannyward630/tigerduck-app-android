@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- फ़ॉरवर्ड किया गया संदेश ----------</string>
     <string name="school_mail_guide_load_failed">गाइड लोड नहीं हो सकी</string>
     <string name="school_mail_guide_open_in_browser">ब्राउज़र में खोलें</string>
+    <string name="school_mail_held_attachments_missing">ये अटैचमेंट रखे नहीं जा सके और अब मेल में नहीं हैं: %1$@। भेजने से पहले इन्हें फिर से अटैच करें।</string>
     <string name="school_mail_invalid_recipients">इन पतों की जाँच करें: %1$@</string>
     <string name="school_mail_keep_editing">संपादन जारी रखें</string>
     <string name="school_mail_leave_title">इस मेल को ड्राफ़्ट के रूप में सेव करें?</string>

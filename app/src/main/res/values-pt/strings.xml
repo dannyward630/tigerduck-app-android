@@ -796,6 +796,7 @@
     <string name="school_mail_forwarded_header">---------- Mensagem reencaminhada ----------</string>
     <string name="school_mail_guide_load_failed">Não foi possível carregar o guia</string>
     <string name="school_mail_guide_open_in_browser">Abrir no navegador</string>
+    <string name="school_mail_held_attachments_missing">Não foi possível manter estes anexos e já não estão no correio: %1$@. Anexa-os novamente antes de enviar.</string>
     <string name="school_mail_invalid_recipients">Verifica estes endereços: %1$@</string>
     <string name="school_mail_keep_editing">Continuar a editar</string>
     <string name="school_mail_leave_title">Guardar este correio como rascunho?</string>
