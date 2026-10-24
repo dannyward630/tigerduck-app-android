@@ -134,7 +134,8 @@ class BrowserDownloads(
     }
 
     fun cancel(id: Long) {
-        synchronized(jobs) { jobs.remove(id) }?.cancel()
+        // Registered until it has stopped, which its finally says: a clearing waits for it till then.
+        synchronized(jobs) { jobs[id] }?.cancel()
         change(id) { if (it.state == BrowserDownload.State.RUNNING) it.copy(state = BrowserDownload.State.CANCELLED) else it }
     }
 

@@ -4,10 +4,13 @@ import android.app.Application
 import android.net.Uri
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -17,6 +20,7 @@ import okhttp3.ResponseBody.Companion.asResponseBody
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.buffer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -121,6 +125,35 @@ class BrowserDownloadsTest {
         advanceUntilIdle()
 
         assertTrue(downloads.items.value.isEmpty())
+        assertTrue(stopped)
+    }
+
+    @Test
+    fun `a clearing waits for a download cancelled just before it to finish stopping`() = runTest {
+        val never = CompletableDeferred<Uri>()
+        val tidied = CompletableDeferred<Unit>()
+        var stopped = false
+        val downloads = BrowserDownloads(this) { _, _ ->
+            try {
+                never.await()
+            } finally {
+                // Closing its request and deleting the unfinished file, which takes a while.
+                withContext(NonCancellable) { tidied.await() }
+                stopped = true
+            }
+        }
+        val id = downloads.start(save)!!
+        advanceUntilIdle()
+        downloads.cancel(id)
+
+        val clearing = launch { downloads.clear() }
+        advanceUntilIdle()
+        val ended = clearing.isCompleted
+
+        tidied.complete(Unit)
+        advanceUntilIdle()
+        assertFalse("the clearing waits for the cancelled download", ended)
+        assertTrue(clearing.isCompleted)
         assertTrue(stopped)
     }
 
