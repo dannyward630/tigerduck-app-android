@@ -68,6 +68,7 @@ class LibraryShortcutWidget(
             val onAccent = resolveWidgetOnAccentColor(prefs, isDark)
             CompositionLocalProvider(
                 androidx.glance.LocalContext provides widgetContext(context, prefs.appLanguage),
+                LocalWidgetScale provides WidgetScale.of(prefs),
             ) {
                 LibraryShortcutContent(isDark = isDark, accent = accent, onAccent = onAccent, onTap = tapAction)
             }
@@ -105,7 +106,7 @@ private fun LibraryShortcutContent(
     Box(
         modifier = GlanceModifier
             .fillMaxSize()
-            .padding(4.dp)
+            .padding(4.dp.scaled)
             .clickable(onTap),
         contentAlignment = Alignment.Center,
     ) {
@@ -113,8 +114,8 @@ private fun LibraryShortcutContent(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(ColorProvider(background))
-                .cornerRadius(18.dp)
-                .padding(6.dp),
+                .cornerRadius(18.dp.scaled)
+                .padding(6.dp.scaled),
             contentAlignment = Alignment.Center,
         ) {
             Column(
@@ -124,24 +125,24 @@ private fun LibraryShortcutContent(
             ) {
                 Box(
                     modifier = GlanceModifier
-                        .size(32.dp)
+                        .size(32.dp.scaled)
                         .background(ColorProvider(accent))
-                        .cornerRadius(10.dp),
+                        .cornerRadius(10.dp.scaled),
                     contentAlignment = Alignment.Center,
                 ) {
                     Image(
                         provider = ImageProvider(R.drawable.widget_library_icon),
                         contentDescription = null,
-                        modifier = GlanceModifier.size(20.dp),
+                        modifier = GlanceModifier.size(20.dp.scaled),
                         colorFilter = ColorFilter.tint(ColorProvider(onAccent)),
                     )
                 }
-                Box(modifier = GlanceModifier.height(4.dp)) {}
+                Box(modifier = GlanceModifier.height(4.dp.scaled)) {}
                 Text(
                     text = context.getString(R.string.widget_library_shortcut_title),
                     style = TextStyle(
                         color = ColorProvider(onSurface),
-                        fontSize = 11.sp,
+                        fontSize = 11.sp.scaled,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
                     ),

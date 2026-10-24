@@ -33,8 +33,10 @@ import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy.CourseColorStyle
 import org.ntust.app.tigerduck.widget.CourseBlock
+import org.ntust.app.tigerduck.widget.LocalWidgetScale
 import org.ntust.app.tigerduck.widget.WidgetColors
 import org.ntust.app.tigerduck.widget.WidgetState
+import org.ntust.app.tigerduck.widget.scaled
 import org.ntust.app.tigerduck.widget.widgetCourseColor
 
 /**
@@ -75,7 +77,8 @@ internal fun nextClassShownCourse(state: WidgetState): Course? = when {
 @Composable
 fun NextClassContent(state: WidgetState, colors: WidgetColors, style: VisualStylePolicy, tapAction: Action) {
     val height = LocalSize.current.height
-    val compact = height < 90.dp
+    // Its content grows with the widget's sizes, and runs out of room sooner.
+    val compact = height < 90.dp * LocalWidgetScale.current.textBox
     val drawn = nextClassColors(nextClassShownCourse(state), colors, style, state.courseColors)
 
     if (compact) CompactLayout(state, drawn, tapAction)
@@ -89,7 +92,7 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(colors.background))
-            .padding(horizontal = 10.dp, vertical = 6.dp)
+            .padding(horizontal = 10.dp.scaled, vertical = 6.dp.scaled)
             .clickable(tapAction),
         verticalAlignment = Alignment.Vertical.CenterVertically,
     ) {
@@ -100,7 +103,7 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                     text = context.getString(R.string.widget_sign_in),
                     style = TextStyle(
                         color = ColorProvider(colors.onSurfaceVariant),
-                        fontSize = 14.sp
+                        fontSize = 14.sp.scaled
                     ),
                 )
             }
@@ -111,8 +114,8 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                 Box(
                     modifier = GlanceModifier
                         .background(ColorProvider(colors.highlight))
-                        .cornerRadius(10.dp)
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                        .cornerRadius(10.dp.scaled)
+                        .padding(horizontal = 8.dp.scaled, vertical = 2.dp.scaled),
                 ) {
                     Text(
                         text = if (ongoing.size > 1) {
@@ -122,18 +125,18 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                         },
                         style = TextStyle(
                             color = ColorProvider(colors.onHighlight),
-                            fontSize = 11.sp,
+                            fontSize = 11.sp.scaled,
                             fontWeight = FontWeight.Bold
                         ),
                     )
                 }
-                Spacer(GlanceModifier.width(8.dp))
+                Spacer(GlanceModifier.width(8.dp.scaled))
                 Column(modifier = GlanceModifier.defaultWeight()) {
                     Text(
                         text = first.course.displayName,
                         style = TextStyle(
                             color = ColorProvider(colors.onSurface),
-                            fontSize = 15.sp * state.courseNameScale,
+                            fontSize = 15.sp.scaled * state.courseNameScale,
                             fontWeight = FontWeight.Bold
                         ),
                         maxLines = 1,
@@ -155,7 +158,7 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                             // Only the second-course branch is a course name; the
                             // fallback string is "until …  room" metadata so it
                             // stays at the fixed 12.sp regardless of the slider.
-                            fontSize = if (second != null) 14.sp * state.courseNameScale else 12.sp,
+                            fontSize = if (second != null) 14.sp.scaled * state.courseNameScale else 12.sp.scaled,
                             fontWeight = if (second != null) FontWeight.Bold else FontWeight.Normal,
                         ),
                         maxLines = 1,
@@ -171,17 +174,17 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                     text = context.getString(R.string.widget_next_class_short),
                     style = TextStyle(
                         color = ColorProvider(colors.onSurfaceVariant),
-                        fontSize = 12.sp,
+                        fontSize = 12.sp.scaled,
                         fontWeight = FontWeight.Bold
                     ),
                 )
-                Spacer(GlanceModifier.width(8.dp))
+                Spacer(GlanceModifier.width(8.dp.scaled))
                 Column(modifier = GlanceModifier.defaultWeight()) {
                     Text(
                         text = course.displayName,
                         style = TextStyle(
                             color = ColorProvider(colors.onSurface),
-                            fontSize = 15.sp * state.courseNameScale,
+                            fontSize = 15.sp.scaled * state.courseNameScale,
                             fontWeight = FontWeight.Bold
                         ),
                         maxLines = 1,
@@ -197,7 +200,7 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                         },
                         style = TextStyle(
                             color = ColorProvider(colors.onSurfaceVariant),
-                            fontSize = 12.sp
+                            fontSize = 12.sp.scaled
                         ),
                         maxLines = 1,
                     )
@@ -224,9 +227,9 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                             // copy, not a course name — keep it at the baseline
                             // 15.sp so the slider doesn't blow it up.
                             fontSize = if (tomorrowCourse != null) {
-                                15.sp * state.courseNameScale
+                                15.sp.scaled * state.courseNameScale
                             } else {
-                                15.sp
+                                15.sp.scaled
                             },
                             fontWeight = FontWeight.Bold
                         ),
@@ -242,7 +245,7 @@ private fun CompactLayout(state: WidgetState, colors: WidgetColors, tapAction: A
                             ),
                             style = TextStyle(
                                 color = ColorProvider(colors.onSurfaceVariant),
-                                fontSize = 12.sp
+                                fontSize = 12.sp.scaled
                             ),
                             maxLines = 1,
                         )
@@ -262,13 +265,13 @@ private fun FullLayout(state: WidgetState, colors: WidgetColors, tapAction: Acti
     // Widget is resizable between 2-cell (~110dp) and 4-cell (~250dp) heights.
     // A midpoint threshold picks the right variant regardless of whether the
     // widget is at its narrow (2-cell wide) or wide (3-cell wide) size.
-    val tall = heightDp >= 180f
+    val tall = heightDp >= 180f * LocalWidgetScale.current.textBox
 
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(colors.background))
-            .padding(12.dp)
+            .padding(12.dp.scaled)
             .clickable(tapAction),
     ) {
         when {
@@ -277,7 +280,7 @@ private fun FullLayout(state: WidgetState, colors: WidgetColors, tapAction: Acti
                     text = context.getString(R.string.widget_sign_in),
                     style = TextStyle(
                         color = ColorProvider(colors.onSurfaceVariant),
-                        fontSize = 15.sp
+                        fontSize = 15.sp.scaled
                     ),
                 )
             }
@@ -289,7 +292,7 @@ private fun FullLayout(state: WidgetState, colors: WidgetColors, tapAction: Acti
                 Column(modifier = GlanceModifier.defaultWeight()) {
                     OngoingCard(ongoing[0], state, colors)
                 }
-                Spacer(GlanceModifier.height(12.dp))
+                Spacer(GlanceModifier.height(12.dp.scaled))
                 Column(modifier = GlanceModifier.defaultWeight()) {
                     OngoingCard(ongoing[1], state, colors)
                 }
@@ -346,38 +349,38 @@ private fun OngoingCard(block: CourseBlock, state: WidgetState, colors: WidgetCo
         Box(
             modifier = GlanceModifier
                 .background(ColorProvider(colors.highlight))
-                .cornerRadius(12.dp)
-                .padding(horizontal = 10.dp, vertical = 3.dp),
+                .cornerRadius(12.dp.scaled)
+                .padding(horizontal = 10.dp.scaled, vertical = 3.dp.scaled),
         ) {
             Text(
                 text = context.getString(R.string.widget_ongoing),
                 style = TextStyle(
                     color = ColorProvider(colors.onHighlight),
-                    fontSize = 12.sp,
+                    fontSize = 12.sp.scaled,
                     fontWeight = FontWeight.Bold
                 ),
             )
         }
-        Spacer(GlanceModifier.height(6.dp))
+        Spacer(GlanceModifier.height(6.dp.scaled))
         Text(
             text = block.course.displayName,
             style = TextStyle(
                 color = ColorProvider(colors.onSurface),
-                fontSize = 19.sp * state.courseNameScale,
+                fontSize = 19.sp.scaled * state.courseNameScale,
                 fontWeight = FontWeight.Bold,
             ),
             maxLines = 2,
         )
-        Spacer(GlanceModifier.height(3.dp))
+        Spacer(GlanceModifier.height(3.dp.scaled))
         Text(
             text = "${block.startTime}–${block.endTime}  ${block.periodRange}",
-            style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 13.sp),
+            style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 13.sp.scaled),
         )
         val room = block.classroom
         if (room.isNotEmpty()) {
             Text(
                 text = room,
-                style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 13.sp),
+                style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 13.sp.scaled),
             )
         }
         // Weighted spacer pushes the progress bar to the bottom of whatever
@@ -385,16 +388,16 @@ private fun OngoingCard(block: CourseBlock, state: WidgetState, colors: WidgetCo
         // -ongoing case, half for the tall two-ongoing case).
         Spacer(GlanceModifier.defaultWeight())
         val widgetWidth = LocalSize.current.width
-        val filledWidth = (widgetWidth.value * progress - 24f).coerceAtLeast(0f).dp
+        val filledWidth = (widgetWidth.value * progress - 24f * LocalWidgetScale.current.ui).coerceAtLeast(0f).dp
         Row(
-            modifier = GlanceModifier.fillMaxWidth().height(5.dp)
+            modifier = GlanceModifier.fillMaxWidth().height(5.dp.scaled)
                 .background(ColorProvider(colors.emptyCell))
-                .cornerRadius(2.5.dp),
+                .cornerRadius(2.5.dp.scaled),
         ) {
             Box(
                 modifier = GlanceModifier.width(filledWidth).fillMaxHeight()
                     .background(ColorProvider(colors.highlight))
-                    .cornerRadius(2.5.dp),
+                    .cornerRadius(2.5.dp.scaled),
             ) {}
         }
     }
@@ -411,24 +414,24 @@ private fun OngoingMiniCard(block: CourseBlock, state: WidgetState, colors: Widg
         Box(
             modifier = GlanceModifier
                 .background(ColorProvider(colors.highlight))
-                .cornerRadius(6.dp)
-                .padding(horizontal = 5.dp, vertical = 1.dp),
+                .cornerRadius(6.dp.scaled)
+                .padding(horizontal = 5.dp.scaled, vertical = 1.dp.scaled),
         ) {
             Text(
                 text = context.getString(R.string.widget_ongoing),
                 style = TextStyle(
                     color = ColorProvider(colors.onHighlight),
-                    fontSize = 9.sp,
+                    fontSize = 9.sp.scaled,
                     fontWeight = FontWeight.Bold
                 ),
             )
         }
-        Spacer(GlanceModifier.width(5.dp))
+        Spacer(GlanceModifier.width(5.dp.scaled))
         Text(
             text = block.course.displayName,
             style = TextStyle(
                 color = ColorProvider(colors.onSurface),
-                fontSize = 13.sp * state.courseNameScale,
+                fontSize = 13.sp.scaled * state.courseNameScale,
                 fontWeight = FontWeight.Bold,
             ),
             maxLines = 1,
@@ -443,21 +446,21 @@ private fun OngoingMiniCard(block: CourseBlock, state: WidgetState, colors: Widg
                 append(room)
             }
         },
-        style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 10.sp),
+        style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 10.sp.scaled),
         maxLines = 1,
     )
-    Spacer(GlanceModifier.height(3.dp))
+    Spacer(GlanceModifier.height(3.dp.scaled))
     val widgetWidth = LocalSize.current.width
-    val filledWidth = (widgetWidth.value * progress - 24f).coerceAtLeast(0f).dp
+    val filledWidth = (widgetWidth.value * progress - 24f * LocalWidgetScale.current.ui).coerceAtLeast(0f).dp
     Row(
-        modifier = GlanceModifier.fillMaxWidth().height(3.dp)
+        modifier = GlanceModifier.fillMaxWidth().height(3.dp.scaled)
             .background(ColorProvider(colors.emptyCell))
-            .cornerRadius(1.5.dp),
+            .cornerRadius(1.5.dp.scaled),
     ) {
         Box(
             modifier = GlanceModifier.width(filledWidth).fillMaxHeight()
                 .background(ColorProvider(colors.highlight))
-                .cornerRadius(1.5.dp),
+                .cornerRadius(1.5.dp.scaled),
         ) {}
     }
 }
@@ -482,16 +485,16 @@ private fun NextCard(
         text = label,
         style = TextStyle(
             color = ColorProvider(colors.onSurfaceVariant),
-            fontSize = 13.sp,
+            fontSize = 13.sp.scaled,
             fontWeight = FontWeight.Bold
         ),
     )
-    Spacer(GlanceModifier.height(5.dp))
+    Spacer(GlanceModifier.height(5.dp.scaled))
     Text(
         text = block.course.displayName,
         style = TextStyle(
             color = ColorProvider(colors.onSurface),
-            fontSize = 19.sp * courseNameScale,
+            fontSize = 19.sp.scaled * courseNameScale,
             fontWeight = FontWeight.Bold,
         ),
         maxLines = 2,
@@ -499,14 +502,14 @@ private fun NextCard(
     if (startTime.isNotEmpty()) {
         Text(
             text = startTime,
-            style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 14.sp),
+            style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 14.sp.scaled),
         )
     }
     val room = block.classroom
     if (room.isNotEmpty()) {
         Text(
             text = room,
-            style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 13.sp),
+            style = TextStyle(color = ColorProvider(colors.onSurfaceVariant), fontSize = 13.sp.scaled),
         )
     }
 }
@@ -577,7 +580,7 @@ private fun NoMoreClassesCard(colors: WidgetColors) {
             text = context.getString(R.string.widget_no_more_classes),
             style = TextStyle(
                 color = ColorProvider(colors.onSurface),
-                fontSize = 16.sp,
+                fontSize = 16.sp.scaled,
                 fontWeight = FontWeight.Bold,
             ),
         )

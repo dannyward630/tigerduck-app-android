@@ -30,6 +30,7 @@ import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CourseNameScale
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
+import org.ntust.app.tigerduck.data.preferences.DisplayScale
 import org.ntust.app.tigerduck.data.preferences.LibraryTabAddMigration
 import org.ntust.app.tigerduck.data.preferences.effectiveCloudSyncEnabled
 import org.ntust.app.tigerduck.library.FlipToLibraryDefaultOffMigration
@@ -427,6 +428,19 @@ class AppState @Inject constructor(
             widgetUpdater.requestUpdate()
         }
 
+    private val displayScaleSetting = DisplayScaleSetting(prefs, onWidgetChange = { widgetUpdater.requestUpdate() })
+
+    /** A size on the Display and text size page; see [DisplayScale]. */
+    fun displayScale(scale: DisplayScale): Float = displayScaleSetting[scale]
+
+    /** Picks [value] for [scale]; a widget size redraws the widgets. */
+    fun setDisplayScale(scale: DisplayScale, value: Float) {
+        displayScaleSetting[scale] = value
+    }
+
+    /** The app's display and text sizes as picked, which MainActivity makes itself again at. */
+    val appScale: AppScale get() = displayScaleSetting.app
+
     private var rotationModeState by mutableStateOf(prefs.rotationMode)
 
     /** One of "auto", "enabled", "disabled". */
@@ -631,6 +645,7 @@ class AppState @Inject constructor(
                 TigerDuckTheme.setCourseNameScale(it)
             }
             rotationModeState = prefs.rotationMode
+            displayScaleSetting.reload()
             assignmentReminderSettings.reload()
             flipToLibrary.reload()
             cloudSyncEnabledState = prefs.cloudSyncEnabled

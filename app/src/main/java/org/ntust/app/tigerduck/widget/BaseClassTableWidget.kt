@@ -72,6 +72,8 @@ abstract class BaseClassTableWidget(
             // The interface style, for the Week grid, which draws as the class table
             // does, and the Today list's course colors.
             val style = VisualStylePolicy(prefs.visualPreset)
+            // The widget sizes picked on the Display and text size page.
+            val scale = WidgetScale.of(prefs)
 
             var state by remember { mutableStateOf<WidgetState?>(null) }
             LaunchedEffect(tick) {
@@ -87,7 +89,10 @@ abstract class BaseClassTableWidget(
             } else {
                 // Read per tick, like the theme, so a language switch
                 // redraws in the new language.
-                CompositionLocalProvider(LocalContext provides widgetContext(context, prefs.appLanguage)) {
+                CompositionLocalProvider(
+                    LocalContext provides widgetContext(context, prefs.appLanguage),
+                    LocalWidgetScale provides scale,
+                ) {
                     when (layout) {
                         WidgetLayout.Week -> WeekGridContent(s, colors, style, tapAction)
                         WidgetLayout.Today -> TodayListContent(s, colors, style, tapAction)

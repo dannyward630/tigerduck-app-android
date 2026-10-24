@@ -37,12 +37,15 @@ import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy.ClassTableGridStyle
 import org.ntust.app.tigerduck.widget.LayerCourse
+import org.ntust.app.tigerduck.widget.LocalWidgetScale
 import org.ntust.app.tigerduck.widget.ScheduleCell
 import org.ntust.app.tigerduck.widget.WidgetColors
+import org.ntust.app.tigerduck.widget.WidgetScale
 import org.ntust.app.tigerduck.widget.WidgetState
 import org.ntust.app.tigerduck.widget.buildScheduleCells
 import org.ntust.app.tigerduck.widget.isOngoingTile
 import org.ntust.app.tigerduck.widget.renderConflictLayer
+import org.ntust.app.tigerduck.widget.scaled
 import org.ntust.app.tigerduck.widget.widgetCourseColor
 
 /**
@@ -70,14 +73,16 @@ fun WeekGridContent(
     val showsPeriodTimes = style.classTableShowsPeriodTimes
     // Narrower where the column holds only the period, growing with a large
     // font as the class table's does, so "10" stays on one line.
+    // Each held to its text where text sizes it, at the widget text size too.
+    val scale = LocalWidgetScale.current
     val periodColWidth = if (showsPeriodTimes) {
-        32.dp
+        32.dp * scale.textBox
     } else {
-        maxOf(20.dp, (16 * context.resources.configuration.fontScale).dp)
+        maxOf(20.dp.scaled, (16 * context.resources.configuration.fontScale * scale.text).dp)
     }
-    val outerPadding = 6.dp
-    val headerHeight = 22.dp
-    val headerBottomPad = 4.dp
+    val outerPadding = 6.dp.scaled
+    val headerHeight = 22.dp * scale.textBox
+    val headerBottomPad = 4.dp.scaled
 
     val widgetSize = LocalSize.current
     val widgetHeight = widgetSize.height
@@ -125,7 +130,7 @@ fun WeekGridContent(
                         },
                         style = TextStyle(
                             color = ColorProvider(colors.onSurfaceVariant),
-                            fontSize = 14.sp,
+                            fontSize = 14.sp.scaled,
                             textAlign = TextAlign.Center,
                         ),
                     )
@@ -149,7 +154,7 @@ fun WeekGridContent(
                             text = dayNames[day - 1],
                             style = TextStyle(
                                 color = ColorProvider(colors.highlight),
-                                fontSize = 12.sp,
+                                fontSize = 12.sp.scaled,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center,
                             ),
@@ -171,7 +176,7 @@ fun WeekGridContent(
                     val cellStarts = cells.runningFold(0) { row, cell -> row + cell.length }
                     GlanceStack(
                         items = cells.zip(cellStarts),
-                        modifier = GlanceModifier.defaultWeight().padding(horizontal = 1.dp),
+                        modifier = GlanceModifier.defaultWeight().padding(horizontal = 1.dp.scaled),
                     ) { (cell, start) ->
                         ScheduleCellBox(
                             cell = cell,
@@ -282,7 +287,7 @@ private fun PeriodLabelCell(
             text = periodId,
             style = TextStyle(
                 color = ColorProvider(colors.onSurface),
-                fontSize = 12.sp,
+                fontSize = 12.sp.scaled,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             ),
@@ -292,7 +297,7 @@ private fun PeriodLabelCell(
                 text = startTime,
                 style = TextStyle(
                     color = ColorProvider(colors.onSurfaceVariant),
-                    fontSize = 9.sp,
+                    fontSize = 9.sp.scaled,
                     textAlign = TextAlign.Center,
                 ),
             )
@@ -353,7 +358,7 @@ private fun EmptyCell(blockHeight: Dp, colors: WidgetColors, style: VisualStyleP
         modifier = GlanceModifier
             .fillMaxWidth()
             .height(blockHeight)
-            .padding(vertical = 1.dp),
+            .padding(vertical = 1.dp.scaled),
     ) {
         // Left bare under a style that leaves empty slots bare, as on the class table.
         if (style.classTableGridStyle == ClassTableGridStyle.Blocks) {
@@ -361,7 +366,7 @@ private fun EmptyCell(blockHeight: Dp, colors: WidgetColors, style: VisualStyleP
                 modifier = GlanceModifier
                     .fillMaxSize()
                     .background(ColorProvider(colors.emptyCell))
-                    .cornerRadius(4.dp),
+                    .cornerRadius(4.dp.scaled),
             ) {}
         }
     }
@@ -386,7 +391,7 @@ private fun SoloCell(
             fill = cellBg,
             textColor = textColor,
             height = blockHeight,
-            cornerRadius = 6.dp,
+            cornerRadius = 6.dp.scaled,
             maxLines = if (length >= 2) 3 else 2,
             courseNameScale = courseNameScale,
         )
@@ -405,8 +410,8 @@ private fun SoloCell(
                     textColor = textColor,
                     height = tileHeight,
                     // A period tile's corners, tighter than a block's.
-                    cornerRadius = 4.dp,
-                    maxLines = tileNameLines(tileHeight, courseNameScale, fontScale),
+                    cornerRadius = 4.dp.scaled,
+                    maxLines = tileNameLines(tileHeight, courseNameScale, fontScale, LocalWidgetScale.current),
                     courseNameScale = courseNameScale,
                 )
             }
@@ -429,21 +434,21 @@ private fun CourseTile(
         modifier = GlanceModifier
             .fillMaxWidth()
             .height(height)
-            .padding(vertical = 1.dp),
+            .padding(vertical = 1.dp.scaled),
     ) {
         Box(
             modifier = GlanceModifier
                 .fillMaxSize()
                 .background(ColorProvider(fill))
                 .cornerRadius(cornerRadius)
-                .padding(2.dp),
+                .padding(2.dp.scaled),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = name,
                 style = TextStyle(
                     color = ColorProvider(textColor),
-                    fontSize = 10.sp * courseNameScale,
+                    fontSize = 10.sp.scaled * courseNameScale,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
                 ),
@@ -466,7 +471,9 @@ private fun ConflictCell(
 ) {
     val context = LocalContext.current
     val density = context.resources.displayMetrics.density
-    val widthPx = ((blockWidth - 2.dp).value * density).toInt().coerceAtLeast(1)
+    // The L-shapes' corners, at the widget display size as the other tiles' are.
+    val shapeDensity = density * LocalWidgetScale.current.ui
+    val widthPx = ((blockWidth - 2.dp.scaled).value * density).toInt().coerceAtLeast(1)
     val heightPx = (blockHeight.value * density).toInt().coerceAtLeast(1)
 
     val ongoingA = isOngoing(cell.courseA, cell.offsetA, cell.spanA)
@@ -485,21 +492,21 @@ private fun ConflictCell(
     // and inflate the RemoteViews payload toward the Binder 1 MB limit.
     val fillA = weekCourseFill(cell.courseA, highlightA, colors, style, courseColors)
     val fillB = weekCourseFill(cell.courseB, highlightB, colors, style, courseColors)
-    val bitmapA = remember(cell, widthPx, heightPx, density, fillA) {
+    val bitmapA = remember(cell, widthPx, heightPx, shapeDensity, fillA) {
         renderConflictLayer(
             clusterWidthPx = widthPx,
             clusterHeightPx = heightPx,
-            densityFactor = density,
+            densityFactor = shapeDensity,
             cell = cell,
             course = LayerCourse.A,
             fillColor = fillA,
         )
     }
-    val bitmapB = remember(cell, widthPx, heightPx, density, fillB) {
+    val bitmapB = remember(cell, widthPx, heightPx, shapeDensity, fillB) {
         renderConflictLayer(
             clusterWidthPx = widthPx,
             clusterHeightPx = heightPx,
-            densityFactor = density,
+            densityFactor = shapeDensity,
             cell = cell,
             course = LayerCourse.B,
             fillColor = fillB,
@@ -512,7 +519,7 @@ private fun ConflictCell(
         modifier = GlanceModifier
             .fillMaxWidth()
             .height(blockHeight)
-            .padding(vertical = 1.dp),
+            .padding(vertical = 1.dp.scaled),
     ) {
         Box(modifier = GlanceModifier.fillMaxSize()) {
             Image(
@@ -573,7 +580,7 @@ private fun MultiConflictCell(
         modifier = GlanceModifier
             .fillMaxWidth()
             .height(blockHeight)
-            .padding(vertical = 1.dp),
+            .padding(vertical = 1.dp.scaled),
     ) {
         Row(modifier = GlanceModifier.fillMaxSize()) {
             for (laneIdx in 0 until cell.laneCount) {
@@ -584,7 +591,7 @@ private fun MultiConflictCell(
                     modifier = GlanceModifier
                         .defaultWeight()
                         .fillMaxHeight()
-                        .padding(horizontal = 0.5.dp),
+                        .padding(horizontal = 0.5.dp.scaled),
                 ) {
                     var cursor = 0
                     laneMembers.forEach { member ->
@@ -598,21 +605,21 @@ private fun MultiConflictCell(
                             modifier = GlanceModifier
                                 .fillMaxWidth()
                                 .height(rowHeight * member.span)
-                                .padding(vertical = 0.5.dp),
+                                .padding(vertical = 0.5.dp.scaled),
                         ) {
                             Box(
                                 modifier = GlanceModifier
                                     .fillMaxSize()
                                     .background(ColorProvider(tileFill))
-                                    .cornerRadius(4.dp)
-                                    .padding(1.dp),
+                                    .cornerRadius(4.dp.scaled)
+                                    .padding(1.dp.scaled),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(
                                     text = member.course.displayName,
                                     style = TextStyle(
                                         color = ColorProvider(tileTextColor),
-                                        fontSize = 9.sp * courseNameScale,
+                                        fontSize = 9.sp.scaled * courseNameScale,
                                         fontWeight = FontWeight.Medium,
                                         textAlign = TextAlign.Center,
                                     ),
@@ -650,14 +657,14 @@ private fun ConflictLabel(
         Box(
             modifier = GlanceModifier
                 .width(barWidth)
-                .padding(horizontal = 2.dp, vertical = 2.dp),
+                .padding(horizontal = 2.dp.scaled, vertical = 2.dp.scaled),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = courseName,
                 style = TextStyle(
                     color = ColorProvider(textColor),
-                    fontSize = 9.sp * courseNameScale,
+                    fontSize = 9.sp.scaled * courseNameScale,
                     fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center,
                 ),
@@ -702,12 +709,13 @@ internal fun weekCourseTextColor(
  * How many lines of a course name fit a period tile [height] high, from one up
  * to two: a second line that does not fit is cut through the middle, on every
  * tile of the run. The name is 10sp, scaled by [courseNameScale] and the
- * system [fontScale], inside the tile's 1dp above and below and 2dp padding;
+ * system [fontScale] and the widget text size, inside the tile's 1dp above
+ * and below and 2dp padding at the widget display size;
  * a line of Chinese, which most course names are, takes about 1.45 times
  * its size.
  */
-internal fun tileNameLines(height: Dp, courseNameScale: Float, fontScale: Float): Int {
-    val textHeight = height.value - 2 * 1f - 2 * 2f
-    val lineHeight = 10f * courseNameScale * fontScale * 1.45f
+internal fun tileNameLines(height: Dp, courseNameScale: Float, fontScale: Float, scale: WidgetScale = WidgetScale()): Int {
+    val textHeight = height.value - (2 * 1f + 2 * 2f) * scale.ui
+    val lineHeight = 10f * courseNameScale * fontScale * scale.text * 1.45f
     return (textHeight / lineHeight).toInt().coerceIn(1, 2)
 }

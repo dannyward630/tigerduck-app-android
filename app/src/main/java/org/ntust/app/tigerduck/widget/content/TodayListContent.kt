@@ -28,9 +28,11 @@ import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.VisualStylePolicy.CourseColorStyle
 import org.ntust.app.tigerduck.widget.CourseBlock
+import org.ntust.app.tigerduck.widget.LocalWidgetScale
 import org.ntust.app.tigerduck.widget.WidgetColors
 import org.ntust.app.tigerduck.widget.WidgetState
 import org.ntust.app.tigerduck.widget.isOngoing
+import org.ntust.app.tigerduck.widget.scaled
 import org.ntust.app.tigerduck.widget.widgetCourseColor
 
 /**
@@ -113,7 +115,7 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(colors.background))
-            .padding(8.dp)
+            .padding(8.dp.scaled)
             .clickable(tapAction),
     ) {
         Text(
@@ -124,10 +126,10 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
             },
             style = TextStyle(
                 color = ColorProvider(colors.onSurface),
-                fontSize = 15.sp,
+                fontSize = 15.sp.scaled,
                 fontWeight = FontWeight.Bold,
             ),
-            modifier = GlanceModifier.padding(bottom = 6.dp),
+            modifier = GlanceModifier.padding(bottom = 6.dp.scaled),
         )
 
         when {
@@ -140,7 +142,7 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
                         text = context.getString(R.string.widget_sign_in),
                         style = TextStyle(
                             color = ColorProvider(colors.onSurfaceVariant),
-                            fontSize = 14.sp,
+                            fontSize = 14.sp.scaled,
                         ),
                     )
                 }
@@ -151,7 +153,7 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
                     text = context.getString(R.string.widget_no_classes_weekend),
                     style = TextStyle(
                         color = ColorProvider(colors.onSurfaceVariant),
-                        fontSize = 14.sp
+                        fontSize = 14.sp.scaled
                     ),
                 )
             }
@@ -161,7 +163,7 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
                     text = context.getString(R.string.widget_no_classes_today),
                     style = TextStyle(
                         color = ColorProvider(colors.onSurfaceVariant),
-                        fontSize = 14.sp
+                        fontSize = 14.sp.scaled
                     ),
                 )
             }
@@ -177,18 +179,18 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
                     Row(
                         modifier = GlanceModifier
                             .fillMaxWidth()
-                            .padding(vertical = 2.dp)
+                            .padding(vertical = 2.dp.scaled)
                             .background(ColorProvider(rowBg))
-                            .cornerRadius(4.dp)
-                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                            .cornerRadius(4.dp.scaled)
+                            .padding(horizontal = 6.dp.scaled, vertical = 4.dp.scaled),
                         verticalAlignment = Alignment.Vertical.CenterVertically,
                     ) {
-                        Column(modifier = GlanceModifier.width(70.dp)) {
+                        Column(modifier = GlanceModifier.width(70.dp * LocalWidgetScale.current.textBox)) {
                             Text(
                                 text = block.periodRange,
                                 style = TextStyle(
                                     color = ColorProvider(primaryText),
-                                    fontSize = 13.sp,
+                                    fontSize = 13.sp.scaled,
                                     fontWeight = FontWeight.Bold,
                                 ),
                             )
@@ -196,18 +198,18 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
                                 text = "${block.startTime}–${block.endTime}",
                                 style = TextStyle(
                                     color = ColorProvider(secondaryText),
-                                    fontSize = 11.sp,
+                                    fontSize = 11.sp.scaled,
                                 ),
                             )
                         }
                         Column(
-                            modifier = GlanceModifier.defaultWeight().padding(start = 6.dp),
+                            modifier = GlanceModifier.defaultWeight().padding(start = 6.dp.scaled),
                         ) {
                             Text(
                                 text = course.displayName,
                                 style = TextStyle(
                                     color = ColorProvider(primaryText),
-                                    fontSize = 14.sp * state.courseNameScale,
+                                    fontSize = 14.sp.scaled * state.courseNameScale,
                                     fontWeight = FontWeight.Medium,
                                 ),
                                 maxLines = 1,
@@ -218,7 +220,7 @@ fun TodayListContent(state: WidgetState, colors: WidgetColors, style: VisualStyl
                                     text = room,
                                     style = TextStyle(
                                         color = ColorProvider(secondaryText),
-                                        fontSize = 11.sp,
+                                        fontSize = 11.sp.scaled,
                                     ),
                                     maxLines = 1,
                                 )

@@ -109,7 +109,7 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
     FirstTriggerSeenStore, AssignmentReminderPrefs, ReviewPromptStore {
 
     private val prefs: SharedPreferences =
-        context.getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE)
+        context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
 
     init {
         // The "Remember bulletin filters" option is gone: the bulletin page's
@@ -678,6 +678,14 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
             .putFloat("courseNameScale", CourseNameScale.normalize(value))
             .apply()
 
+    /** One of the sizes on the Display and text size page, normalized; see [DisplayScale]. */
+    fun displayScale(scale: DisplayScale): Float = scale.read(prefs)
+
+    /** Stores [value] as [scale]'s nearest step. */
+    fun setDisplayScale(scale: DisplayScale, value: Float) {
+        prefs.edit().putFloat(scale.key, scale.normalize(value)).apply()
+    }
+
     /** One of "auto", "enabled", "disabled". */
     var rotationMode: String
         get() = prefs.getString("rotationMode", null)
@@ -1234,6 +1242,16 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
     }
 
     companion object {
+        private const val PREFS_FILE = "tigerduck_prefs"
+
+        /**
+         * [scale] as stored, read straight from the file: for
+         * MainActivity.attachBaseContext, which sizes the Activity before Hilt
+         * can hand it this class.
+         */
+        fun storedDisplayScale(context: Context, scale: DisplayScale): Float =
+            scale.read(context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE))
+
         /** The same key the iPhone app stores its interface style under. */
         private const val VISUAL_PRESET_KEY = "visualPreset"
         // The iPhone's UserDefaults key names, for whoever reads both apps.

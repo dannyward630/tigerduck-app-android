@@ -97,6 +97,7 @@ import org.ntust.app.tigerduck.ui.screen.settings.LicenseDetailScreen
 import org.ntust.app.tigerduck.ui.screen.settings.AssignmentReminderSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.ClassReminderSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.CourseNameSizeSettingsScreen
+import org.ntust.app.tigerduck.ui.screen.settings.DisplaySizeSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LibrarySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LiveActivitySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.NotificationPermissionSettingsScreen
@@ -163,6 +164,7 @@ sealed class Screen(val route: String) {
             MailRoutes.compose(mode, folder, uid, mailto, to)
     }
     object CourseNameSizeSettings : Screen("courseNameSizeSettings")
+    object DisplaySizeSettings : Screen("displaySizeSettings")
     object CloudSync : Screen("cloudSync")
     object SyncContent : Screen("syncContent")
     object VibrationSettings : Screen("vibrationSettings")
@@ -742,7 +744,7 @@ fun MainNavigation(
                         navController.navigate(Screen.ApiEndpointDebug.route)
                     },
                     onNavigateToVibration = { navController.navigate(Screen.VibrationSettings.route) },
-                    onNavigateToCourseNameSize = { navController.navigate(Screen.CourseNameSizeSettings.route) },
+                    onNavigateToDisplaySize = { navController.navigate(Screen.DisplaySizeSettings.route) },
                 )
             }
             page(Screen.AboutOthers.route) {
@@ -784,6 +786,12 @@ fun MainNavigation(
             }
             page(Screen.VibrationSettings.route) {
                 VibrationSettingsScreen(onBack = { navController.popBackStack() })
+            }
+            page(Screen.DisplaySizeSettings.route) {
+                DisplaySizeSettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateToCourseNameSize = { navController.navigate(Screen.CourseNameSizeSettings.route) },
+                )
             }
             page(Screen.CourseNameSizeSettings.route) {
                 CourseNameSizeSettingsScreen(onBack = { navController.popBackStack() })
