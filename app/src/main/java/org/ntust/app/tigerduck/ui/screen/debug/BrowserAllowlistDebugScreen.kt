@@ -101,14 +101,7 @@ fun BrowserAllowlistDebugScreen(
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(Modifier.weight(1f)) {
-                    Text("Allow every site", style = MaterialTheme.typography.bodyLarge)
-                    Text(
-                        "For testing. Every https link opens in the in-app browser, without asking.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text("Allow every site", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(12.dp))
                 Switch(checked = allowlist.allowEverySite, onCheckedChange = null)
             }
@@ -149,14 +142,10 @@ fun BrowserAllowlistDebugScreen(
             }
             note?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
 
+            // Takes the added domains off and turns Allow every site off.
             OutlinedButton(onClick = store::reset, modifier = Modifier.fillMaxWidth()) {
                 Text("Reset to default", color = MaterialTheme.colorScheme.error)
             }
-            Text(
-                "Removes the custom domains and turns off Allow every site.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }

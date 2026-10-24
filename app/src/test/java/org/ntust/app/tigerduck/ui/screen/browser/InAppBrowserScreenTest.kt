@@ -20,7 +20,6 @@ import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.browser.BrowserAppearance
 import org.ntust.app.tigerduck.browser.BrowserDownload
-import org.ntust.app.tigerduck.browser.PageSchemeFollow
 import org.ntust.app.tigerduck.browser.UploadSource
 import org.ntust.app.tigerduck.util.replaceIosArg
 import org.robolectric.RobolectricTestRunner
@@ -65,7 +64,7 @@ class InAppBrowserScreenTest {
     private fun show(state: BrowserPageState, downloads: List<BrowserDownload> = emptyList(), appearance: BrowserAppearance = BrowserAppearance.AUTO) {
         composeRule.setContent {
             MaterialTheme {
-                InAppBrowserScreen(state, appearance, downloads, actions, PageSchemeFollow.LIVE) { Box(it) }
+                InAppBrowserScreen(state, appearance, downloads, actions) { Box(it) }
             }
         }
     }
@@ -112,7 +111,7 @@ class InAppBrowserScreenTest {
     }
 
     @Test
-    fun `the menu has zoom, desktop site and appearance with its note`() {
+    fun `the menu has zoom, desktop site and appearance with no note under it`() {
         show(loaded())
         composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
 
@@ -120,7 +119,9 @@ class InAppBrowserScreenTest {
         composeRule.onNodeWithContentDescription(string(R.string.browser_zoom_in)).performClick()
         composeRule.onNodeWithText(string(R.string.browser_desktop_site)).performClick()
         composeRule.onNodeWithText(string(R.string.browser_appearance_dark)).performClick()
-        composeRule.onNodeWithText(string(R.string.browser_appearance_note)).performScrollTo().assertExists()
+        composeRule.onNodeWithText(
+            "Auto matches the browser's colors to the page. Pages that support dark mode switch right away, without reloading.",
+        ).assertDoesNotExist()
         composeRule.onNodeWithText(string(R.string.browser_print)).performScrollTo().assertExists()
         composeRule.onNodeWithText(string(R.string.browser_downloads)).performScrollTo().assertExists()
 
@@ -155,7 +156,8 @@ class InAppBrowserScreenTest {
     fun `a page that did not load offers a retry and the phone's browser`() {
         show(loaded().apply { error = BrowserError.Unreachable("moodle2.ntust.edu.tw") })
 
-        composeRule.onNodeWithText(string(R.string.browser_error_message).replaceIosArg(1, "moodle2.ntust.edu.tw")).assertExists()
+        // Two lines: who is not answering, then what to do.
+        composeRule.onNodeWithText("moodle2.ntust.edu.tw isn't responding.\nCheck your connection and try again.").assertExists()
         composeRule.onNodeWithText(string(R.string.action_retry)).performClick()
         composeRule.onNodeWithText(string(R.string.browser_open_external)).performClick()
 
@@ -199,7 +201,8 @@ class InAppBrowserScreenTest {
             upload = UploadRequest("moodle2.ntust.edu.tw", listOf(UploadSource.PHOTOS, UploadSource.CAMERA, UploadSource.FILES), imagesOnly = true, acceptTypes = listOf("image/*"), multiple = false) {}
         })
 
-        composeRule.onNodeWithText(string(R.string.browser_upload_wants_image).replaceIosArg(1, "moodle2.ntust.edu.tw")).assertExists()
+        // The sheet names neither the site nor the type it asks for.
+        composeRule.onNodeWithText("moodle2.ntust.edu.tw asks for an image.").assertDoesNotExist()
         composeRule.onNodeWithText(string(R.string.browser_upload_photos)).assertExists()
         composeRule.onNodeWithText(string(R.string.browser_upload_files)).assertExists()
         composeRule.onNodeWithText(string(R.string.browser_upload_camera)).performClick()

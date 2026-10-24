@@ -59,7 +59,6 @@ import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.browser.BrowserAppearance
 import org.ntust.app.tigerduck.browser.BrowserDownload
-import org.ntust.app.tigerduck.browser.PageSchemeFollow
 import org.ntust.app.tigerduck.browser.UploadSource
 import org.ntust.app.tigerduck.util.replaceIosArg
 
@@ -117,7 +116,6 @@ fun InAppBrowserScreen(
     appearance: BrowserAppearance,
     downloads: List<BrowserDownload>,
     actions: BrowserActions,
-    schemeFollow: PageSchemeFollow = PageSchemeFollow.LIVE,
     web: @Composable (Modifier) -> Unit,
 ) {
     var sheet by rememberSaveable { mutableStateOf<BrowserSheet?>(null) }
@@ -163,7 +161,6 @@ fun InAppBrowserScreen(
         BrowserSheet.MENU -> BrowserMenuSheet(
             state = state,
             appearance = appearance,
-            schemeFollow = schemeFollow,
             actions = actions,
             onAddress = { sheet = BrowserSheet.ADDRESS },
             onCertificate = { sheet = BrowserSheet.CERTIFICATE },

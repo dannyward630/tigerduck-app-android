@@ -82,7 +82,6 @@ import org.ntust.app.tigerduck.browser.BrowserAppearance
 import org.ntust.app.tigerduck.browser.BrowserDownload
 import org.ntust.app.tigerduck.browser.BrowserZoom
 import org.ntust.app.tigerduck.browser.CertificateInfo
-import org.ntust.app.tigerduck.browser.PageSchemeFollow
 import org.ntust.app.tigerduck.browser.UploadSource
 import org.ntust.app.tigerduck.util.replaceIosArg
 import java.text.DateFormat
@@ -162,7 +161,6 @@ private fun MenuRow(icon: ImageVector, label: String, enabled: Boolean = true, s
 internal fun BrowserMenuSheet(
     state: BrowserPageState,
     appearance: BrowserAppearance,
-    schemeFollow: PageSchemeFollow,
     actions: BrowserActions,
     onAddress: () -> Unit,
     onCertificate: () -> Unit,
@@ -236,14 +234,6 @@ internal fun BrowserMenuSheet(
                     ) { Text(label, maxLines = 1) }
                 }
             }
-            Text(
-                stringResource(
-                    if (schemeFollow == PageSchemeFollow.LIVE) R.string.browser_appearance_note else R.string.browser_appearance_note_next_load,
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 40.dp),
-            )
         }
 
         MenuRow(Icons.Filled.Search, stringResource(R.string.browser_find), enabled = state.error == null && state.signIn == null) { act(actions::startFind) }
@@ -463,14 +453,6 @@ internal fun downloadStatus(download: BrowserDownload): String {
 internal fun BrowserUploadSheet(request: UploadRequest, actions: BrowserActions) {
     BrowserSheetFrame(onDismiss = actions::cancelUpload) {
         Text(stringResource(R.string.browser_upload_title), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
-        if (request.imagesOnly && request.host != null) {
-            Text(
-                stringResource(R.string.browser_upload_wants_image).replaceIosArg(1, request.host),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
-            )
-        }
         request.sources.forEach { source ->
             val (icon, label) = when (source) {
                 UploadSource.PHOTOS -> Icons.Filled.Image to R.string.browser_upload_photos

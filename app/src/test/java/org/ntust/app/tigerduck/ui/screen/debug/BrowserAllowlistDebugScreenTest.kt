@@ -90,4 +90,10 @@ class BrowserAllowlistDebugScreenTest {
         assertFalse(store.allowlist.value.allowEverySite)
         composeRule.onNodeWithText("example.com").assertDoesNotExist()
     }
+
+    @Test
+    fun `allow every site and reset carry no line under them`() {
+        composeRule.onNodeWithText("For testing. Every https link opens in the in-app browser, without asking.").assertDoesNotExist()
+        composeRule.onNodeWithText("Removes the custom domains and turns off Allow every site.").assertDoesNotExist()
+    }
 }

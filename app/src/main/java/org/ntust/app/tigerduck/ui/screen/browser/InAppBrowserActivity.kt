@@ -265,7 +265,6 @@ class InAppBrowserActivity : AppCompatActivity() {
                     appearance = appearance,
                     downloads = items,
                     actions = actions,
-                    schemeFollow = SCHEME_FOLLOW,
                 ) { modifier ->
                     AndroidView(
                         factory = { webView.also { (it.parent as? ViewGroup)?.removeView(it) } },
