@@ -15,16 +15,19 @@ class BrowserColorsTest {
     }
 
     @Test
-    fun `the bars follow the page in auto, and the app until the page is known`() {
-        assertTrue(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = true, appDark = false))
-        assertFalse(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = false, appDark = true))
-        assertTrue(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = null, appDark = true))
+    fun `the bars follow the page in auto, and are light until the page is known`() {
+        assertTrue(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = true))
+        assertFalse(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = false))
+        // Most pages the browser opens are light, so a dark app doesn't flash dark bars first.
+        assertFalse(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = null))
     }
 
     @Test
     fun `light and dark set the bars whatever the page is`() {
-        assertFalse(BrowserColors.barsDark(BrowserAppearance.LIGHT, pageDark = true, appDark = true))
-        assertTrue(BrowserColors.barsDark(BrowserAppearance.DARK, pageDark = false, appDark = false))
+        assertFalse(BrowserColors.barsDark(BrowserAppearance.LIGHT, pageDark = true))
+        assertFalse(BrowserColors.barsDark(BrowserAppearance.LIGHT, pageDark = null))
+        assertTrue(BrowserColors.barsDark(BrowserAppearance.DARK, pageDark = false))
+        assertTrue(BrowserColors.barsDark(BrowserAppearance.DARK, pageDark = null))
     }
 
     @Test

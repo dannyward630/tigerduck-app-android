@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
@@ -51,6 +52,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -87,6 +89,8 @@ import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
 import org.ntust.app.tigerduck.ui.BrowserPreference
 import org.ntust.app.tigerduck.ui.openLink
+import org.ntust.app.tigerduck.ui.theme.DarkColorScheme
+import org.ntust.app.tigerduck.ui.theme.LightColorScheme
 import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
 import org.ntust.app.tigerduck.util.fileProviderAuthority
 import java.io.ByteArrayInputStream
@@ -211,9 +215,10 @@ class InAppBrowserActivity : AppCompatActivity() {
             finish()
             return
         }
-        enableEdgeToEdge()
-
         appearance = settings.appearance
+        // Before Compose draws, the window and the system bars are all there is: as light or dark as
+        // the bars will be, not as the phone's night mode, so a dark phone doesn't flash dark first.
+        paintWindow(BrowserColors.barsDark(appearance, pageDark = null))
         pageTheme = ContextThemeWrapper(this, R.style.Theme_TigerDuck)
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
         webView = createWebView()
@@ -245,11 +250,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         setContent {
             val appDark = appIsDark(systemDark = isSystemInDarkTheme())
             LaunchedEffect(appDark, appearance) { tellPage(BrowserColors.pageToldDark(appearance, appDark)) }
-            val barsDark = BrowserColors.barsDark(appearance, state.pageDark, appDark)
-            LaunchedEffect(barsDark) {
-                val style = if (barsDark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
-                enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
-            }
+            val barsDark = BrowserColors.barsDark(appearance, state.pageDark)
+            LaunchedEffect(barsDark) { paintWindow(barsDark) }
             TigerDuckAppTheme(
                 darkTheme = barsDark,
                 accentColor = appState.accentColor(barsDark),
@@ -272,6 +274,13 @@ class InAppBrowserActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /** The system bars' icons and the window behind Compose, light or [dark] as the bars are. */
+    private fun paintWindow(dark: Boolean) {
+        val style = if (dark) SystemBarStyle.dark(Color.TRANSPARENT) else SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT)
+        enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+        window.setBackgroundDrawable(ColorDrawable((if (dark) DarkColorScheme else LightColorScheme).surface.toArgb()))
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

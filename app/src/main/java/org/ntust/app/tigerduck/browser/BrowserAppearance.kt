@@ -29,13 +29,14 @@ enum class PageSchemeFollow { LIVE, NEXT_LOAD }
 object BrowserColors {
     /**
      * Whether the browser's bars are dark: as [appearance] says, or in Auto as
-     * the page is ([pageDark], from [pageTone]), and as the app is ([appDark])
-     * until the page is known.
+     * the page is ([pageDark], from [pageTone]), and light until the page is
+     * known. Most pages the browser opens are light, so a dark app would
+     * otherwise flash dark bars over a page about to come up light.
      */
-    fun barsDark(appearance: BrowserAppearance, pageDark: Boolean?, appDark: Boolean): Boolean = when (appearance) {
+    fun barsDark(appearance: BrowserAppearance, pageDark: Boolean?): Boolean = when (appearance) {
         BrowserAppearance.LIGHT -> false
         BrowserAppearance.DARK -> true
-        BrowserAppearance.AUTO -> pageDark ?: appDark
+        BrowserAppearance.AUTO -> pageDark ?: false
     }
 
     /**
