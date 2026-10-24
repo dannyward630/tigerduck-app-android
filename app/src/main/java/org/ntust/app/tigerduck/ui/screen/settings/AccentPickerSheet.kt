@@ -11,15 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -29,20 +26,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
+import org.ntust.app.tigerduck.ui.component.ColorCodeField
+import org.ntust.app.tigerduck.ui.component.ColorCodeState
 import org.ntust.app.tigerduck.ui.component.HueSlider
 import org.ntust.app.tigerduck.ui.component.SatValSquare
 
@@ -57,14 +51,6 @@ private data class EditedColor(val hue: Float, val sat: Float, val value: Float,
         EditedColor(hue, sat, value, android.graphics.Color.HSVToColor(floatArrayOf(hue, sat, value)) and 0xFFFFFF)
 
     companion object {
-        /** [hex] as the code field shows it: "#RRGGBB". */
-        fun code(hex: Int): String = "#%06X".format(hex and 0xFFFFFF)
-
-        /** The color a typed code stands for, with or without its "#", or null for anything else. */
-        fun parse(code: String): Int? = code.trim().removePrefix("#")
-            .takeIf { it.length == 6 && it.all { c -> c in '0'..'9' || c.lowercaseChar() in 'a'..'f' } }
-            ?.toInt(16)
-
         fun of(hex: Int): EditedColor {
             val hsv = FloatArray(3)
             android.graphics.Color.colorToHSV(hex or 0xFF000000.toInt(), hsv)
@@ -100,20 +86,19 @@ internal fun AccentPickerSheet(
     var editing by remember { mutableIntStateOf(0) }
     val edited = colors[editing]
     // What the code field holds: the edited color's code, or what is being typed.
-    var code by remember { mutableStateOf(EditedColor.code(colors[0].hex)) }
-    val focusManager = LocalFocusManager.current
+    val code = remember { ColorCodeState(colors[0].hex) }
 
     // The square and the slider keep the first lambdas they are given, so
     // these read which color is edited when they are called.
     fun move(change: (EditedColor) -> EditedColor) {
         val index = editing
         colors[index] = change(colors[index])
-        code = EditedColor.code(colors[index].hex)
+        code.show(colors[index].hex)
     }
 
     fun edit(index: Int) {
         editing = index
-        code = EditedColor.code(colors[index].hex)
+        code.show(colors[index].hex)
     }
 
     ModalBottomSheet(
@@ -179,21 +164,9 @@ internal fun AccentPickerSheet(
                     onHueChange = { h -> move { it.moved(hue = h) } },
                 )
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = code,
-                    onValueChange = { typed ->
-                        code = typed.take(7)
-                        EditedColor.parse(typed)?.let { colors[editing] = EditedColor.of(it) }
-                    },
-                    label = { Text(stringResource(R.string.color_picker_hex_code)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Characters,
-                        keyboardType = KeyboardType.Ascii,
-                        imeAction = ImeAction.Done,
-                    ),
-                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    modifier = Modifier.fillMaxWidth(),
+                ColorCodeField(
+                    state = code,
+                    onColor = { colors[editing] = EditedColor.of(it) },
                 )
             }
             Spacer(Modifier.height(16.dp))
