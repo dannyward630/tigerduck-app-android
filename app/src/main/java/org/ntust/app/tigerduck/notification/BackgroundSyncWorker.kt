@@ -41,6 +41,7 @@ import org.ntust.app.tigerduck.di.ApplicationScope
 import org.ntust.app.tigerduck.push.BackendSyncResult
 import org.ntust.app.tigerduck.ui.screen.home.BackgroundMarkStep
 import org.ntust.app.tigerduck.ui.screen.home.CourseSyncReconciler
+import org.ntust.app.tigerduck.ui.screen.home.commitReconciledTerm
 import org.ntust.app.tigerduck.ui.screen.home.sendMovedColors
 import org.ntust.app.tigerduck.data.CourseRosterMerge
 import org.ntust.app.tigerduck.data.RefreshPolicy
@@ -326,20 +327,16 @@ class BackgroundSyncWorker @AssistedInject constructor(
         dataCache.restoredCoursesListed(
             semester, result.serverCourses.filter { it.semester == semester }.map { it.courseNo }, result.fetchedAtMs,
         )
-        dataCache.handAddedHidesTombstoned(semester, tombstoneNos)
-        if (outcome.tombstones != stored) {
-            // Only what the reconcile changed: a hide lifted or written meanwhile stands.
-            dataCache.updateDeletedCourseNos(stored, outcome.tombstones)
-        }
         // Unconditional: a course hidden by an earlier build and left in
         // the cache is pruned on the first run, not the next change.
-        CourseSyncReconciler.pruneHidden(semester, localCourses, outcome.tombstones, legacyBare = false)
-            ?.let { kept ->
-                dataCache.updateCourses(semester) { current, _ -> CourseSyncReconciler.committedCourses(current, localCourses, kept) }
-                // A course hidden since takes its waiting colour and name
-                // with it; see PendingCourseOverrides.forget.
-                pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
-            }
+        val pruned = CourseSyncReconciler.pruneHidden(semester, localCourses, outcome.tombstones, legacyBare = false)
+        // Merging down is Home's: nothing merged here.
+        commitReconciledTerm(dataCache, semester, stored, outcome.tombstones, tombstoneNos, localCourses, pruned, emptyList())
+        pruned?.let { kept ->
+            // A course hidden since takes its waiting colour and name
+            // with it; see PendingCourseOverrides.forget.
+            pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
+        }
         var known = outcome.serverKnownNos
         if (outcome.uploadLocal) {
             // resend: the server has nothing for the term, whatever list the

@@ -506,7 +506,6 @@ class HomeBackendSync @Inject constructor(
                 restoredNos = restored,
             )
             dataCache.restoredCoursesListed(semester, rowsBySemester[semester].orEmpty().map { it.courseNo }, result.fetchedAtMs)
-            dataCache.handAddedHidesTombstoned(semester, tombstoneNos)
             tombstones = outcome.tombstones
             if (outcome.serverKnownNos.isNotEmpty()) {
                 updatedKnown[semester] = outcome.serverKnownNos.sorted()
@@ -524,7 +523,7 @@ class HomeBackendSync @Inject constructor(
             if (outcome.merged.isNotEmpty()) {
                 Log.i(TAG, "[Sync] $semester: merged from server ${outcome.merged.map { it.courseNo }}")
             }
-            if (commitReconciledTerm(dataCache, semester, read, tombstones, localCourses, pruned, outcome.merged) &&
+            if (commitReconciledTerm(dataCache, semester, read, tombstones, tombstoneNos, localCourses, pruned, outcome.merged) &&
                 semester == currentSemester
             ) {
                 touchedCurrent = true
@@ -587,30 +586,37 @@ class HomeBackendSync @Inject constructor(
 }
 
 /**
- * A term's reconcile committed to [dataCache]: the hides it changed, from [read], the hides it
- * was handed, to [hides], and the term's courses, without those it pruned from [localCourses],
- * its own load ([kept] says which stay, null when it pruned none), and with the rows it
- * [merged] down. Each is applied to the store as it stands, so a delete, a fetch or a hide
- * lifted while the sync ran stays. Returns whether it wrote the courses.
+ * A term's reconcile committed to [dataCache], by Home's sync and the background one: the hides
+ * it changed, from [read], the hides it was handed, to [hides], the marks of those
+ * [tombstoneNos], the course numbers its snapshot's tombstones name, hold let go of, and the
+ * term's courses, without those it pruned from [localCourses], its own load ([kept] says which
+ * stay, null when it pruned none), and with the rows it [merged] down. Each is applied to the
+ * store as it stands, so a delete, a fetch or a hide lifted while the sync ran stays. Returns
+ * whether it wrote the courses.
  *
  * The hides first: the courses keep out every merged row the store hides when they are written,
  * and a course another device added back has its row merged and its hide lifted by the same
  * reconcile, so written the other way round it stays missing until the next sync. A hide a
  * delete wrote since the read is no change of this reconcile's, and still keeps its row out.
+ * The marks go with the hides, in one write: a delete made before it marks its hide, and one
+ * made after finds the course hidden and marks nothing (`DataCache.hideDeletedCourse`). A course
+ * selection answer that lifted a tombstoned hide meanwhile is undone, and every course the
+ * commit hid goes from the term, wherever the term has it now.
  */
 internal suspend fun commitReconciledTerm(
     dataCache: DataCache,
     semester: String,
     read: Set<String>,
     hides: Set<String>,
+    tombstoneNos: Set<String>,
     localCourses: List<Course>,
     kept: List<Course>?,
     merged: List<Course>,
 ): Boolean {
-    if (hides != read) dataCache.updateDeletedCourseNos(read, hides)
-    if (kept == null && merged.isEmpty()) return false
+    val newlyHidden = dataCache.commitSyncHides(semester, read, hides, tombstoneNos)
+    if (kept == null && merged.isEmpty() && newlyHidden.isEmpty()) return false
     dataCache.updateCourses(semester) { current, hidden ->
-        CourseSyncReconciler.committedCourses(current, localCourses, kept ?: localCourses, merged, hidden)
+        CourseSyncReconciler.committedCourses(current, localCourses, kept ?: localCourses, merged, hidden, newlyHidden)
     }
     return true
 }

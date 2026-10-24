@@ -48,14 +48,22 @@ class ClassTableHandAddedHideTest {
     /** As the class table's delete leaves the store and the term, reading the course off the term. */
     private suspend fun delete(course: Course) {
         val held = cache.loadCourses(TERM).first { it.courseNo == course.courseNo }
-        cache.hideDeletedCourse(held.courseNo, TERM)
+        cache.hideDeletedCourse(held.courseNo, TERM, held)
         cache.saveCourses(cache.loadCourses(TERM).filter { it.courseNo != held.courseNo }, TERM)
-        cache.markDeletedCourse(held.courseNo, TERM, held)
     }
 
-    /** The sync's reconcile as HomeBackendSync stores it, for a tombstone another device wrote for [course]. */
-    private suspend fun tombstonedElsewhere(course: Course) {
+    /**
+     * The sync's reconcile as HomeBackendSync stores it, for a tombstone another device wrote for
+     * [course], held after it reads the term's courses for [afterCoursesRead] and before its commit
+     * for [beforeCommit].
+     */
+    private suspend fun tombstonedElsewhere(
+        course: Course,
+        afterCoursesRead: suspend () -> Unit = {},
+        beforeCommit: suspend () -> Unit = {},
+    ) {
         val localCourses = cache.loadCourses(TERM)
+        afterCoursesRead()
         val restored = cache.restoredCoursesIn(TERM, Long.MAX_VALUE)
         val stored = CourseSyncReconciler.withoutRestored(TERM, cache.loadDeletedCourseNos(), restored)
         val outcome = CourseSyncReconciler.reconcileSemester(
@@ -67,9 +75,9 @@ class ClassTableHandAddedHideTest {
             serverKnownNos = setOf(enrolled.courseNo, course.courseNo),
             restoredNos = restored,
         )
-        cache.handAddedHidesTombstoned(TERM, setOf(course.courseNo))
-        cache.updateDeletedCourseNos(stored, outcome.tombstones)
-        CourseSyncReconciler.pruneHidden(TERM, cache.loadCourses(TERM), outcome.tombstones)?.let { cache.saveCourses(it, TERM) }
+        beforeCommit()
+        val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones)
+        commitReconciledTerm(cache, TERM, stored, outcome.tombstones, setOf(course.courseNo), localCourses, kept, outcome.merged)
     }
 
     /**
@@ -100,7 +108,7 @@ class ClassTableHandAddedHideTest {
         cache.restoredCoursesListed(TERM, serverNos.toList(), fetchedAtMs)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
         val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones)
-        commitReconciledTerm(cache, TERM, stored, outcome.tombstones, localCourses, kept, outcome.merged)
+        commitReconciledTerm(cache, TERM, stored, outcome.tombstones, emptySet(), localCourses, kept, outcome.merged)
     }
 
     /**
@@ -331,6 +339,97 @@ class ClassTableHandAddedHideTest {
 
         assertEquals(setOf(handAdded.courseNo), hidden())
         assertEquals(listOf(enrolled.courseNo, MERGED), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+    }
+
+    @Test
+    fun `a course brought back while a sync that read its hide waits stays in the term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        // The delete has written its hide, but not yet the shorter term, when Home's sync reads both.
+        cache.hideDeletedCourse(handAdded.courseNo, TERM, handAdded)
+
+        syncListing(enrolled.courseNo, beforeCommit = {
+            // The delete saves the shorter term, and a fetch whose course selection answer lists
+            // the course brings it back.
+            cache.saveCourses(cache.loadCourses(TERM).filter { it.courseNo != handAdded.courseNo }, TERM)
+            fetchListing(enrolled.courseNo, handAdded.courseNo)
+        })
+
+        assertEquals(emptySet<String>(), hidden())
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo).sorted(), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+    }
+
+    @Test
+    fun `a hand-added course deleted while a sync finds another device's tombstone for it stays hidden`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+
+        // The sync has found the tombstone and not yet committed when the student deletes the course.
+        tombstonedElsewhere(handAdded, beforeCommit = { delete(handAdded) })
+
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+    }
+
+    @Test
+    fun `a course brought back while a sync that found another device's tombstone for it waits is hidden again`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+
+        // The sync has read the marked hide and found the tombstone when a course selection
+        // answer that lists the course brings it back.
+        tombstonedElsewhere(handAdded, beforeCommit = { fetchListing(enrolled.courseNo, handAdded.courseNo) })
+
+        assertEquals(setOf(handAdded.courseNo), hidden())
+        assertEquals(listOf(enrolled.courseNo), cache.loadCourses(TERM).map { it.courseNo })
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
+    }
+
+    @Test
+    fun `a course brought back after a sync read the term goes again with the hide another device's tombstone writes`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+
+        // A course selection answer brings the course back after the sync has read the term's
+        // courses and before it reads which courses are being brought back.
+        tombstonedElsewhere(handAdded, afterCoursesRead = { fetchListing(enrolled.courseNo, handAdded.courseNo) })
+
+        assertEquals(setOf(handAdded.courseNo), hidden())
+        assertEquals(listOf(enrolled.courseNo), cache.loadCourses(TERM).map { it.courseNo })
+    }
+
+    @Test
+    fun `a delete of a course a legacy hide already hides is kept for its term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        // A bare entry from before hides were kept per term, hiding the course in every term.
+        cache.saveDeletedCourseNos(setOf(enrolled.courseNo))
+        delete(enrolled)
+
+        // A sync of another term that lists the course lifts the bare entry with that term's hide.
+        cache.updateDeletedCourseNos(
+            setOf(enrolled.courseNo),
+            CourseTombstoneKeys.unhide(enrolled.courseNo, "1131", setOf(enrolled.courseNo)),
+        )
+
+        assertEquals(setOf(enrolled.courseNo), hidden())
+    }
+
+    @Test
+    fun `a course deleted on a screen still showing it after another device's tombstone hid it stays hidden`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        tombstonedElsewhere(handAdded)
+
+        // The class table has yet to reload the term the sync pruned, and the student deletes the row.
+        cache.hideDeletedCourse(handAdded.courseNo, TERM, handAdded)
+
+        assertEquals(listOf(enrolled.courseNo), fetchListing(enrolled.courseNo, handAdded.courseNo))
     }
 
     @Test

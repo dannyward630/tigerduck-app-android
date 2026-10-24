@@ -1203,8 +1203,7 @@ class ClassTableViewModel @Inject constructor(
                     // lifts only once no DELETE of the course is waiting; see
                     // DataCache.hideDeletedCourse.
                     pendingCourseDeletes.keep(semester, courseNo, queuedAt)
-                    dataCache.hideDeletedCourse(courseNo, semester)
-                    dataCache.markDeletedCourse(courseNo, semester, deletedCourse)
+                    dataCache.hideDeletedCourse(courseNo, semester, deletedCourse)
                 } finally {
                     tombstoneEdits.saved(tombstoneEdit)
                 }

@@ -239,21 +239,26 @@ object CourseSyncReconciler {
     /**
      * The term's courses as a sync commits them: [current], the list as it
      * stands now, without the courses the sync pruned from [read], its own
-     * earlier load, as [kept] says, and with the rows it merged down
-     * ([merged]) that [current] still lacks and [hidden], the course numbers
-     * hidden in the term now, does not name. A course a delete or a fetch
-     * took out or put in since the read stays as that left it, where writing
-     * [kept] back would undo it.
+     * earlier load, as [kept] says, that [hidden], the course numbers hidden
+     * in the term now, still names, and with the rows it merged down
+     * ([merged]) that [current] still lacks and [hidden] does not name. A
+     * course a delete or a fetch took out or put in since the read stays as
+     * that left it, where writing [kept] back would undo it: one pruned for a
+     * hide a course selection answer has lifted since is back in the term.
+     * [newlyHidden], the course numbers whose hide the sync's commit added
+     * (`DataCache.commitSyncHides`), go as the pruned do, so the term holds
+     * none that such an answer saved back into it since the read.
      */
     fun committedCourses(
         current: List<Course>,
         read: List<Course>,
         kept: List<Course>,
-        merged: List<Course> = emptyList(),
-        hidden: Set<String> = emptySet(),
+        merged: List<Course>,
+        hidden: Set<String>,
+        newlyHidden: Set<String> = emptySet(),
     ): List<Course> {
-        val pruned = read.mapTo(mutableSetOf()) { it.courseNo } - kept.mapTo(mutableSetOf()) { it.courseNo }
-        val held = current.filter { it.courseNo !in pruned }
+        val pruned = read.mapTo(mutableSetOf()) { it.courseNo } - kept.mapTo(mutableSetOf()) { it.courseNo } + newlyHidden
+        val held = current.filter { it.courseNo !in pruned || it.courseNo !in hidden }
         val heldNos = held.mapTo(mutableSetOf()) { it.courseNo }
         return held + merged.filter { it.courseNo !in heldNos && it.courseNo !in hidden }
     }

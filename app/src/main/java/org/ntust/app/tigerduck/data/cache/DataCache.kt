@@ -623,37 +623,43 @@ class DataCache @Inject constructor(
     // back for one, and written again later for another device's tombstone,
     // is not marked. Every change to the three goes under [courseHidesMutex],
     // and a sync commits only what its reconcile changed
-    // ([updateDeletedCourseNos]). All three are new files: an older install
+    // ([commitSyncHides]). All three are new files: an older install
     // has none, and the hides it kept bind as they did.
 
     private val courseHidesMutex = Mutex()
 
     /**
-     * Hides [courseNo] in [semester] for the class table's delete. Binding
-     * until [markDeletedCourse], which the class table calls once the
-     * delete's DELETE is kept (PendingCourseDeletes.keep) and before it is
-     * sent: a hide lifted before it is kept would go up with the roster, and
-     * the DELETE landing after would take the course off the server again;
-     * marked after the send, a process killed during it would leave a hide
-     * that binds.
+     * Hides [courseNo] in [semester] for the class table's delete of
+     * [course], the row the term held, and marks the hide for
+     * [recordSelectionRoster] to lift when the course was added by hand on
+     * this phone and the term's latest course selection answer did not list
+     * it. Added by hand here is manual with no Moodle id: a row merged from
+     * another device's carries the id the server holds, and the server need
+     * not have it as a hand-added course's, and a hand-added course a roster
+     * listed has taken the fetched row's. With no answer kept for the term,
+     * nothing says the course was not enrolled, and the hide binds.
+     *
+     * The class table calls it once the delete's DELETE is kept
+     * (PendingCourseDeletes.keep) and before it is sent: a hide lifted
+     * before it is kept would go up with the roster, and the DELETE landing
+     * after would take the course off the server again; marked after the
+     * send, a process killed during it would leave a hide that binds.
+     *
+     * The hide and its mark in one write under [courseHidesMutex], and
+     * neither for a course the term hides already: that hide is a sync's,
+     * for a delete elsewhere, made after the class table last read the term,
+     * and a mark written after the sync let go of the ones another device's
+     * tombstone names ([commitSyncHides]) would let a course selection
+     * answer lift it. A legacy bare entry hiding it still takes the term's
+     * hide, unmarked, as it binds: a sync of another term lifts the bare
+     * entry once that term lists the course.
      */
-    suspend fun hideDeletedCourse(courseNo: String, semester: String) = courseHidesMutex.withLock {
-        writeDeletedCourseNos(CourseTombstoneKeys.hide(courseNo, semester, loadDeletedCourseNos()))
-    }
-
-    /**
-     * Marks the hide [hideDeletedCourse] wrote for [course], the row the term
-     * held, for [recordSelectionRoster] to lift, when the course was added by
-     * hand on this phone and the term's latest course selection answer did
-     * not list it. Added by hand here is manual with no Moodle id: a row
-     * merged from another device's carries the id the server holds, and the
-     * server need not have it as a hand-added course's, and a hand-added
-     * course a roster listed has taken the fetched row's. With no answer kept
-     * for the term, nothing says the course was not enrolled, and the hide
-     * binds.
-     */
-    suspend fun markDeletedCourse(courseNo: String, semester: String, course: Course?) = courseHidesMutex.withLock {
+    suspend fun hideDeletedCourse(courseNo: String, semester: String, course: Course?) = courseHidesMutex.withLock {
+        val hides = loadDeletedCourseNos()
         val key = CourseTombstoneKeys.key(semester, courseNo)
+        if (key in hides) return@withLock
+        writeDeletedCourseNos(hides + key)
+        if (courseNo in hides) return@withLock
         val addedHere = course != null && course.isManual && course.moodleIdNumber.isNullOrEmpty()
         val answer = loadSelectionRosters()[semester]
         if (addedHere && answer != null && courseNo !in answer) {
@@ -662,15 +668,39 @@ class DataCache @Inject constructor(
     }
 
     /**
-     * Lets go of the marks of the hides [courseNos], the course numbers a
-     * snapshot's tombstones name for [semester], hold: the backend leaves the
-     * tombstone this device's own delete of a hand-added course wrote out of
-     * its snapshots, so one there is another device's, which binds.
+     * A sync's commit of [semester]'s hides: what its reconcile changed from
+     * [before], the hides it read, to [after], applied to the hides as they
+     * are now (see [updateDeletedCourseNos]), and the marks of the hides of
+     * [tombstoned], the course numbers its snapshot's tombstones name, let
+     * go of: the backend leaves the tombstone this device's own delete of a
+     * hand-added course wrote out of its snapshots, so one there is another
+     * device's, which binds. One write under [courseHidesMutex], so a course
+     * selection answer cannot lift such a hide between the two.
+     *
+     * A hide of [tombstoned] the sync read and its reconcile kept that such
+     * an answer lifted since is written again, as the reconcile writes it
+     * for a course it reads as brought back. Returns the course numbers of
+     * every hide this write added, those and the reconcile's own, for the
+     * sync to take out of the term: an answer may have saved one back into
+     * it since the sync read the term's courses.
      */
-    suspend fun handAddedHidesTombstoned(semester: String, courseNos: Collection<String>) = courseHidesMutex.withLock {
+    suspend fun commitSyncHides(
+        semester: String,
+        before: Set<String>,
+        after: Set<String>,
+        tombstoned: Collection<String>,
+    ): Set<String> = courseHidesMutex.withLock {
+        val now = loadDeletedCourseNos()
+        val keys = tombstoned.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
+        val restored = loadRestoredCourses()
+        val lifted = keys.filterTo(mutableSetOf()) { it in before && it in after && it !in now && it in restored }
+        val updated = now + (after - before) - (before - after) + lifted
+        if (updated != now) writeDeletedCourseNos(updated)
         val marks = loadHandAddedHides()
-        val kept = marks - courseNos.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
+        val kept = marks - keys
         if (kept != marks) saveToUserData(kept.toList(), HAND_ADDED_HIDES_FILE)
+        val prefix = CourseTombstoneKeys.key(semester, "")
+        (updated - now).filter { it.startsWith(prefix) }.mapTo(mutableSetOf()) { it.removePrefix(prefix) }
     }
 
     /**
@@ -715,7 +745,7 @@ class DataCache @Inject constructor(
      */
     data class RestoredCourse(val restoredAt: Long, val listedAt: Long?)
 
-    /** The marked hides, as `<semester>:<courseNo>` keys; see [markDeletedCourse]. */
+    /** The marked hides, as `<semester>:<courseNo>` keys; see [hideDeletedCourse]. */
     private suspend fun loadHandAddedHides(): Set<String> {
         val type = object : TypeToken<List<String?>>() {}.type
         return loadFromUserData<List<String?>>(type, HAND_ADDED_HIDES_FILE).orEmpty().filterNotNullTo(mutableSetOf())
