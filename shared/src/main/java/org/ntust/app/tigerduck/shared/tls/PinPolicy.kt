@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.shared.tls
 
 import java.time.Instant
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -107,8 +108,23 @@ class PinPolicy(
 /** The [PinPolicy] every connection reads, replaced whole as documents and acceptances change. */
 class PinState(initial: PinPolicy) {
     private val current = AtomicReference(initial)
+    private val listeners = CopyOnWriteArrayList<(PinPolicy, PinPolicy) -> Unit>()
 
     val policy: PinPolicy get() = current.get()
 
-    fun update(change: (PinPolicy) -> PinPolicy): PinPolicy = current.updateAndGet(change)
+    /** Applies [change]; each listener then hears the policy before it and after. */
+    fun update(change: (PinPolicy) -> PinPolicy): PinPolicy {
+        while (true) {
+            val old = current.get()
+            val new = change(old)
+            if (current.compareAndSet(old, new)) {
+                listeners.forEach { it(old, new) }
+                return new
+            }
+        }
+    }
+
+    fun onChange(listener: (old: PinPolicy, new: PinPolicy) -> Unit) {
+        listeners += listener
+    }
 }

@@ -121,16 +121,18 @@ class AnchoringValidator(private val trust: X509ExtendedTrustManager) : ChainVal
     }
 }
 
-/** A TLS server on the loopback that serves [leaf] and [chain] and counts the request bytes it reads. */
 /**
  * "localhost" as [LocalTlsServer] listens on it: IPv4 loopback only, where a Mac's resolver
  * would try IPv6 first and a test client, retrying no route, would give up.
  */
 val LOOPBACK_DNS = Dns { listOf(InetAddress.getLoopbackAddress()) }
 
+/** A TLS server on the loopback that serves [leaf] and [chain] and counts the request bytes it reads. */
 class LocalTlsServer(
     leaf: HeldCertificate,
     chain: List<X509Certificate>,
+    /** Whether a connection stays open for the next request, as a pooled one does. */
+    private val keepAlive: Boolean = false,
     /** The response to a request, by its request line. */
     private val reply: (String) -> String = { OK },
 ) : AutoCloseable {
@@ -153,29 +155,36 @@ class LocalTlsServer(
         thread(isDaemon = true) {
             while (!socket.isClosed) {
                 val client = runCatching { socket.accept() as SSLSocket }.getOrNull() ?: break
-                runCatching {
-                    client.use {
-                        it.soTimeout = 5_000
-                        it.startHandshake()
-                        val input = it.inputStream
-                        val head = StringBuilder()
-                        while (!head.endsWith("\r\n\r\n")) {
-                            val b = input.read()
-                            if (b < 0) break
-                            requestBytes.incrementAndGet()
-                            head.append(b.toChar())
-                        }
-                        if (head.isEmpty()) return@use
-                        val length = CONTENT_LENGTH.find(head)?.groupValues?.get(1)?.toInt() ?: 0
-                        repeat(length) { if (input.read() >= 0) requestBytes.incrementAndGet() }
-                        val line = head.toString().substringBefore("\r\n")
-                        requestLines += line
-                        it.outputStream.write(reply(line).toByteArray())
-                        it.outputStream.flush()
-                    }
-                }
+                connections.incrementAndGet()
+                thread(isDaemon = true) { runCatching { client.use(::serve) } }
             }
         }
+    }
+
+    /** Connections a client opened. */
+    val connections = AtomicInteger()
+
+    private fun serve(client: SSLSocket) {
+        client.soTimeout = 5_000
+        client.startHandshake()
+        val input = client.inputStream
+        do {
+            val head = StringBuilder()
+            while (!head.endsWith("\r\n\r\n")) {
+                val b = input.read()
+                if (b < 0) break
+                requestBytes.incrementAndGet()
+                head.append(b.toChar())
+            }
+            if (head.isEmpty()) return
+            val length = CONTENT_LENGTH.find(head)?.groupValues?.get(1)?.toInt() ?: 0
+            repeat(length) { if (input.read() >= 0) requestBytes.incrementAndGet() }
+            val line = head.toString().substringBefore("\r\n")
+            requestLines += line
+            val response = reply(line)
+            client.outputStream.write((if (keepAlive) response.replace("Connection: close\r\n", "") else response).toByteArray())
+            client.outputStream.flush()
+        } while (keepAlive)
     }
 
     override fun close() = socket.close()

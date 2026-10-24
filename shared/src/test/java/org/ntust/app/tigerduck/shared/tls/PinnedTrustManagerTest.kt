@@ -178,30 +178,27 @@ class PinnedTrustManagerTest {
     }
 
     @Test
-    fun `a pinned host reached over another host's connection must meet its own pins`() {
+    fun `every request over an open connection meets its host's pins in force now`() {
         val school = PinSet("school", listOf(PinDomain("school.test", true)), setOf(pinnedCa.certificate.spki), now.plusSeconds(3600))
         val trust = PinnedTrustManager(systemTrust, AnchoringValidator(systemTrust), { policy(school) }, {}, { now })
         val served = listOf(leaf.certificate, intermediate.certificate, root.certificate)
 
-        // A connection made for an unpinned host, its chain not the school's.
-        val refused = runCatching { trust.checkReused("moodle.school.test", "elsewhere.test", served) }.exceptionOrNull()
+        // Its chain isn't the school's, whichever host the connection was made for.
+        val refused = runCatching { trust.checkExchange("moodle.school.test", served, Any()) }.exceptionOrNull()
         assertTrue("not refused: $refused", refused is javax.net.ssl.SSLPeerUnverifiedException)
 
-        // Its chain meets the school's pins, or it was made for a host of the same set.
-        trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leafSignedBy(pinnedCa).certificate, pinnedCa.certificate))
-        trust.checkReused("moodle.school.test", "sso.school.test", served)
-        // The host itself, or an unpinned one.
-        trust.checkReused("moodle.school.test", "moodle.school.test", served)
-        trust.checkReused("other.test", "elsewhere.test", served)
+        // A chain that meets them, or a host no set covers.
+        trust.checkExchange("moodle.school.test", listOf(leafSignedBy(pinnedCa).certificate, pinnedCa.certificate), Any())
+        trust.checkExchange("other.test", served, Any())
     }
 
     @Test
-    fun `a reused connection's mismatch is one like a handshake's, so it can be refreshed, offered and retried`() {
+    fun `an open connection's mismatch is one like a handshake's, so it can be refreshed, offered and retried`() {
         val school = PinSet("school", listOf(PinDomain("school.test", true)), setOf(pinnedCa.certificate.spki), now.plusSeconds(3600))
         val trust = PinnedTrustManager(systemTrust, AnchoringValidator(systemTrust), { policy(school) }, mismatches::add, { now })
 
         val refused = runCatching {
-            trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leaf.certificate, intermediate.certificate))
+            trust.checkExchange("moodle.school.test", listOf(leaf.certificate, intermediate.certificate), Any())
         }.exceptionOrNull()
 
         assertTrue("not refused: $refused", refused is javax.net.ssl.SSLPeerUnverifiedException)
@@ -214,11 +211,11 @@ class PinnedTrustManagerTest {
     }
 
     @Test
-    fun `a reused connection's chain is built up to its anchor, so a root pin matches with the root left out`() {
+    fun `an open connection's chain is built up to its anchor, so a root pin matches with the root left out`() {
         val school = PinSet("school", listOf(PinDomain("school.test", true)), setOf(root.certificate.spki), now.plusSeconds(3600))
         val trust = PinnedTrustManager(systemTrust, AnchoringValidator(systemTrust), { policy(school) }, mismatches::add, { now })
 
-        trust.checkReused("moodle.school.test", "elsewhere.test", listOf(leaf.certificate, intermediate.certificate))
+        trust.checkExchange("moodle.school.test", listOf(leaf.certificate, intermediate.certificate), Any())
 
         assertEquals(emptyList<PinMismatch>(), mismatches.toList())
     }

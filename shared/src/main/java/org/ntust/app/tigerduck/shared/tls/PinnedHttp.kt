@@ -20,30 +20,32 @@ fun pinnedClientBuilder(tls: PinnedTls?): OkHttpClient.Builder {
     val builder = OkHttpClient.Builder()
     if (tls != null) {
         builder.sslSocketFactory(tls.socketFactory, tls.trustManager)
+        // Shared, so a change of pins can close every client's idle connections.
+        builder.connectionPool(tls.connectionPool)
         val retry = PinMismatchRetry(tls.resolver)
         // First, so a retry passes through every interceptor the client adds after it. One that
         // marks a call for its whole life, as AccountSessionGuard's does, goes ahead of it.
         builder.addInterceptor(retry)
-        (tls.trustManager as? PinnedTrustManager)?.let { builder.addNetworkInterceptor(ReusedConnectionPins(it)) }
-        // Once a reused connection's pins are met: only then is a hop on its way out.
+        (tls.trustManager as? PinnedTrustManager)?.let { builder.addNetworkInterceptor(ConnectionPins(it)) }
+        // Once the connection's pins are met: only then is a hop on its way out.
         builder.addNetworkInterceptor(retry.noteSent)
     }
     return builder
 }
 
 /**
- * OkHttp may carry a request over an HTTP/2 connection made for another host, without a new
- * handshake: a pinned host reached that way gets its own pins checked against the connection's
- * chain, before a byte of the request is written.
+ * Each request meets its host's pins in force now on the connection it goes out on, before a
+ * byte of it is written: one pooled since pins a newer document dropped, or an HTTP/2 connection
+ * made for another host, which OkHttp carries it over without a new handshake.
  */
-class ReusedConnectionPins(private val trust: PinnedTrustManager) : Interceptor {
+class ConnectionPins(private val trust: PinnedTrustManager) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val connection = chain.connection()
         if (connection != null) {
-            trust.checkReused(
+            trust.checkExchange(
                 host = chain.request().url.host,
-                connectedTo = connection.route().address.url.host,
                 peerCertificates = connection.handshake()?.peerCertificates.orEmpty(),
+                connection = connection,
             )
         }
         return chain.proceed(chain.request())

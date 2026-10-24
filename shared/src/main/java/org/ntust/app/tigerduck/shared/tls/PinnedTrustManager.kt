@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.shared.tls
 
 import android.net.http.X509TrustManagerExtensions
+import okhttp3.ConnectionPool
 import java.net.Socket
 import java.security.KeyStore
 import java.security.MessageDigest
@@ -9,6 +10,7 @@ import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 import java.time.Instant
 import java.util.Base64
+import java.util.WeakHashMap
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLPeerUnverifiedException
@@ -17,6 +19,7 @@ import javax.net.ssl.SSLSocketFactory
 import javax.net.ssl.TrustManagerFactory
 import javax.net.ssl.X509ExtendedTrustManager
 import javax.net.ssl.X509TrustManager
+import kotlin.concurrent.thread
 
 /**
  * A pinned host's chain passed system trust but shares no SPKI with its set's effective pins
@@ -106,31 +109,41 @@ class PinnedTrustManager(
 
     override fun getAcceptedIssuers(): Array<X509Certificate> = platform.acceptedIssuers
 
+    /** Each open connection's chain as validated for a host, once, with its SPKIs. */
+    private val validatedByConnection = WeakHashMap<Any, MutableMap<String, Pair<List<X509Certificate>, Set<String>>>>()
+
     /**
-     * For a request to [host] carried over a connection made for [connectedTo], as OkHttp's
-     * HTTP/2 coalescing does without asking this manager again: the connection's
-     * [peerCertificates] must meet [host]'s own pins when its set isn't [connectedTo]'s. They are
-     * built up to their anchor for [host], as its own handshake's would be, and a mismatch is one
-     * like a handshake's, which [onMismatch] hears of and a retry can clear, carried by an
-     * [SSLPeerUnverifiedException]. Throws before the request is written.
+     * For each request OkHttp writes, over a connection just made or one it reuses, pooled or
+     * coalesced from another host's (HTTP/2): the connection's [peerCertificates] must meet the
+     * pins in force now for [host], which a newer document, or one that expired, may have changed
+     * since the handshake. They are built up to their anchor for [host] once per [connection], as
+     * its own handshake's would be, and a mismatch is one like a handshake's, which [onMismatch]
+     * hears of and a retry can clear, carried by an [SSLPeerUnverifiedException]. Throws before
+     * the request is written.
      */
-    fun checkReused(host: String, connectedTo: String, peerCertificates: List<Certificate>) {
-        if (host.equals(connectedTo, ignoreCase = true)) return
+    fun checkExchange(host: String, peerCertificates: List<Certificate>, connection: Any) {
         val rules = policy()
         val at = now()
         val set = rules.setFor(host, at) ?: return
-        if (rules.setFor(connectedTo, at)?.id == set.id) return
+        val (validated, spkis) = validated(connection, host, peerCertificates)
+        mismatchOf(rules, set, validated, spkis, host, at)?.let { mismatch ->
+            throw SSLPeerUnverifiedException("pins for $host not met on an open connection")
+                .apply { initCause(PinMismatchException(mismatch)) }
+        }
+    }
+
+    private fun validated(connection: Any, host: String, peerCertificates: List<Certificate>): Pair<List<X509Certificate>, Set<String>> {
+        synchronized(validatedByConnection) { validatedByConnection[connection]?.get(host) }?.let { return it }
         val served = peerCertificates.filterIsInstance<X509Certificate>().toTypedArray()
         val validated = try {
             if (served.isEmpty()) throw CertificateException("no certificates")
-            validator.validate(served, REUSED_AUTH_TYPE, host)
+            validator.validate(served, OPEN_CONNECTION_AUTH_TYPE, host)
         } catch (e: CertificateException) {
-            throw SSLPeerUnverifiedException("$host's trust not met on a connection made for $connectedTo").apply { initCause(e) }
+            throw SSLPeerUnverifiedException("$host's trust not met on an open connection").apply { initCause(e) }
         }
-        mismatchOf(rules, set, validated, host, at)?.let { mismatch ->
-            throw SSLPeerUnverifiedException("pins for $host not met on a connection made for $connectedTo")
-                .apply { initCause(PinMismatchException(mismatch)) }
-        }
+        val entry = validated to validated.map { it.spki }.toSet()
+        synchronized(validatedByConnection) { validatedByConnection.getOrPut(connection) { HashMap() }[host] = entry }
+        return entry
     }
 
     private fun check(chain: Array<X509Certificate>, authType: String, host: String?, unpinned: () -> Unit) {
@@ -142,22 +155,28 @@ class PinnedTrustManager(
             return
         }
         val validated = validator.validate(chain, authType, host)
-        mismatchOf(rules, set, validated, host, at)?.let { throw PinMismatchException(it) }
+        mismatchOf(rules, set, validated, validated.map { it.spki }.toSet(), host, at)?.let { throw PinMismatchException(it) }
     }
 
-    /** The mismatch [validated] makes with [set]'s pins, which [onMismatch] hears of, or null. */
-    private fun mismatchOf(rules: PinPolicy, set: PinSet, validated: List<X509Certificate>, host: String, at: Instant): PinMismatch? {
-        val spkis = validated.map { it.spki }.toSet()
+    /** The mismatch [validated], with [spkis], makes with [set]'s pins, which [onMismatch] hears of, or null. */
+    private fun mismatchOf(
+        rules: PinPolicy,
+        set: PinSet,
+        validated: List<X509Certificate>,
+        spkis: Set<String>,
+        host: String,
+        at: Instant,
+    ): PinMismatch? {
         val decision = rules.decide(set, spkis, at) as? PinDecision.Mismatch ?: return null
         return PinMismatch(decision.set.id, host, decision.set.domains, validated, spkis).also { runCatching { onMismatch(it) } }
     }
 
     private companion object {
         /**
-         * A reused connection's key exchange auth type, which only key-usage checks read: its own
+         * An open connection's key exchange auth type, which only key-usage checks read: its own
          * handshake ran those.
          */
-        const val REUSED_AUTH_TYPE = "UNKNOWN"
+        const val OPEN_CONNECTION_AUTH_TYPE = "UNKNOWN"
     }
 }
 
@@ -174,7 +193,25 @@ fun interface PinMismatchResolver {
 class PinnedTls(
     val trustManager: X509TrustManager,
     val resolver: PinMismatchResolver = PinMismatchResolver { _, _ -> false },
+    /** The pins [trustManager] reads, whose changes close the idle connections. */
+    state: PinState? = null,
 ) {
+
+    /** The pool every client made by [pinnedClientBuilder] shares. */
+    val connectionPool = ConnectionPool()
+
+    init {
+        // A new document, or a debug simulation, can change the pins: the idle connections, made
+        // under the old ones, are closed so the next request makes a handshake under the new ones.
+        // One busy with a call meets them request by request (PinnedTrustManager.checkExchange).
+        // An acceptance only adds pins, so it leaves them open. Off the updating thread, which may
+        // be the main one: closing a TLS socket writes its close_notify.
+        state?.onChange { old, new ->
+            if (old.document !== new.document || old.simulatedMismatch != new.simulatedMismatch) {
+                thread(isDaemon = true, name = "tls-pins-evict") { connectionPool.evictAll() }
+            }
+        }
+    }
 
     val socketFactory: SSLSocketFactory =
         SSLContext.getInstance("TLS").apply { init(null, arrayOf(trustManager), null) }.socketFactory
@@ -193,7 +230,7 @@ class PinnedTls(
             val platform = platformTrust()
             val extensions = X509TrustManagerExtensions(platform)
             val validator = ChainValidator { chain, authType, host -> extensions.checkServerTrusted(chain, authType, host) }
-            return PinnedTls(PinnedTrustManager(platform, validator, { state.policy }, onMismatch), resolver)
+            return PinnedTls(PinnedTrustManager(platform, validator, { state.policy }, onMismatch), resolver, state)
         }
 
         /** The platform's default trust manager: on Android, the one network_security_config.xml configures. */

@@ -29,7 +29,7 @@ class PinMismatchReplayTest {
         HandshakeCertificates.Builder().addTrustedCertificate(root.certificate).build().trustManager as X509ExtendedTrustManager
 
     /** Everything but /next is sent on to /next on the other host. */
-    private val server: LocalTlsServer = LocalTlsServer(leaf, emptyList()) { line ->
+    private val server: LocalTlsServer = LocalTlsServer(leaf, emptyList()) { line: String ->
         if (" /next " in line) LocalTlsServer.OK
         else "HTTP/1.1 302 Found\r\nLocation: https://127.0.0.1:${server.port}/next\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
     }
