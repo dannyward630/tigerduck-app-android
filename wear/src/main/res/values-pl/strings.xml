@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Nazwa pospolita</string>
     <string name="browser_certificate_copy">Kopiuj szczegóły certyfikatu</string>
     <string name="browser_certificate_fingerprint">Odcisk cyfrowy</string>
+    <string name="browser_certificate_invalid">Ten certyfikat jest nieważny, więc strona nie została otwarta.</string>
     <string name="browser_certificate_issued_by">Wystawiony przez</string>
     <string name="browser_certificate_issued_to">Wystawiony dla</string>
     <string name="browser_certificate_none">Ta strona nie ma certyfikatu do pokazania.</string>

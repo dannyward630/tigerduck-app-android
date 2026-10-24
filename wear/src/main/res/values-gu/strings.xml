@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">સામાન્ય નામ</string>
     <string name="browser_certificate_copy">પ્રમાણપત્રની વિગતો કૉપિ કરો</string>
     <string name="browser_certificate_fingerprint">ફિંગરપ્રિન્ટ</string>
+    <string name="browser_certificate_invalid">આ પ્રમાણપત્ર માન્ય નથી, તેથી પેજ ખોલવામાં આવ્યું નથી.</string>
     <string name="browser_certificate_issued_by">જારી કરનાર</string>
     <string name="browser_certificate_issued_to">જેને જારી કર્યું</string>
     <string name="browser_certificate_none">આ પેજ પાસે બતાવવા માટે કોઈ પ્રમાણપત્ર નથી.</string>

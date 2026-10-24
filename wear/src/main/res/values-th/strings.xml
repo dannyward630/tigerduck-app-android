@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">ชื่อทั่วไป</string>
     <string name="browser_certificate_copy">คัดลอกรายละเอียดใบรับรอง</string>
     <string name="browser_certificate_fingerprint">ลายนิ้วมือ</string>
+    <string name="browser_certificate_invalid">ใบรับรองนี้ใช้ไม่ได้ จึงไม่ได้เปิดหน้านี้</string>
     <string name="browser_certificate_issued_by">ออกโดย</string>
     <string name="browser_certificate_issued_to">ออกให้แก่</string>
     <string name="browser_certificate_none">หน้านี้ไม่มีใบรับรองให้แสดง</string>

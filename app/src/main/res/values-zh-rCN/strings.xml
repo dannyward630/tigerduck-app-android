@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">通用名称</string>
     <string name="browser_certificate_copy">复制证书信息</string>
     <string name="browser_certificate_fingerprint">指纹</string>
+    <string name="browser_certificate_invalid">证书无效，未打开此网页</string>
     <string name="browser_certificate_issued_by">颁发者</string>
     <string name="browser_certificate_issued_to">颁发对象</string>
     <string name="browser_certificate_none">此网页没有可以显示的证书。</string>

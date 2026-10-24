@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">一般名</string>
     <string name="browser_certificate_copy">証明書の詳細をコピー</string>
     <string name="browser_certificate_fingerprint">フィンガープリント</string>
+    <string name="browser_certificate_invalid">この証明書は有効ではないため、ページを開きませんでした。</string>
     <string name="browser_certificate_issued_by">発行元</string>
     <string name="browser_certificate_issued_to">発行先</string>
     <string name="browser_certificate_none">このページには表示できる証明書がありません。</string>

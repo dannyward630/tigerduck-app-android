@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Algemene naam</string>
     <string name="browser_certificate_copy">Certificaatgegevens kopiëren</string>
     <string name="browser_certificate_fingerprint">Vingerafdruk</string>
+    <string name="browser_certificate_invalid">Dit certificaat is niet geldig, dus de pagina is niet geopend.</string>
     <string name="browser_certificate_issued_by">Uitgegeven door</string>
     <string name="browser_certificate_issued_to">Uitgegeven aan</string>
     <string name="browser_certificate_none">Deze pagina heeft geen certificaat om te tonen.</string>

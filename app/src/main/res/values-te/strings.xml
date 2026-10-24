@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">సాధారణ పేరు</string>
     <string name="browser_certificate_copy">సర్టిఫికెట్ వివరాలను కాపీ చేయండి</string>
     <string name="browser_certificate_fingerprint">వేలిముద్ర</string>
+    <string name="browser_certificate_invalid">ఈ సర్టిఫికెట్ చెల్లుబాటు కాదు, కాబట్టి పేజీ తెరవబడలేదు.</string>
     <string name="browser_certificate_issued_by">జారీ చేసినవారు</string>
     <string name="browser_certificate_issued_to">ఎవరికి జారీ చేశారు</string>
     <string name="browser_certificate_none">ఈ పేజీకి చూపించడానికి సర్టిఫికెట్ ఏదీ లేదు.</string>

@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Bendrasis vardas</string>
     <string name="browser_certificate_copy">Kopijuoti sertifikato informaciją</string>
     <string name="browser_certificate_fingerprint">Kontrolinis kodas</string>
+    <string name="browser_certificate_invalid">Šis sertifikatas negalioja, todėl puslapis neatidarytas.</string>
     <string name="browser_certificate_issued_by">Išdavė</string>
     <string name="browser_certificate_issued_to">Išduota</string>
     <string name="browser_certificate_none">Šiame puslapyje nėra rodytino sertifikato.</string>

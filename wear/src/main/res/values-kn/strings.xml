@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">ಸಾಮಾನ್ಯ ಹೆಸರು</string>
     <string name="browser_certificate_copy">ಪ್ರಮಾಣಪತ್ರದ ವಿವರಗಳನ್ನು ನಕಲಿಸಿ</string>
     <string name="browser_certificate_fingerprint">ಫಿಂಗರ್‌ಪ್ರಿಂಟ್</string>
+    <string name="browser_certificate_invalid">ಈ ಪ್ರಮಾಣಪತ್ರ ಮಾನ್ಯವಾಗಿಲ್ಲ, ಆದ್ದರಿಂದ ಪುಟವನ್ನು ತೆರೆಯಲಿಲ್ಲ.</string>
     <string name="browser_certificate_issued_by">ನೀಡಿದವರು</string>
     <string name="browser_certificate_issued_to">ಯಾರಿಗೆ ನೀಡಲಾಗಿದೆ</string>
     <string name="browser_certificate_none">ಈ ಪುಟದಲ್ಲಿ ತೋರಿಸಲು ಯಾವುದೇ ಪ್ರಮಾಣಪತ್ರವಿಲ್ಲ.</string>

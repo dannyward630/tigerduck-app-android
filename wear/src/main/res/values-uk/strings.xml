@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Загальне ім\'я</string>
     <string name="browser_certificate_copy">Копіювати дані сертифіката</string>
     <string name="browser_certificate_fingerprint">Відбиток</string>
+    <string name="browser_certificate_invalid">Цей сертифікат недійсний, тому сторінку не відкрито.</string>
     <string name="browser_certificate_issued_by">Ким видано</string>
     <string name="browser_certificate_issued_to">Кому видано</string>
     <string name="browser_certificate_none">Ця сторінка не має сертифіката для показу.</string>

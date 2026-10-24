@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">שם נפוץ</string>
     <string name="browser_certificate_copy">העתקת פרטי האישור</string>
     <string name="browser_certificate_fingerprint">טביעת אצבע</string>
+    <string name="browser_certificate_invalid">האישור הזה אינו תקף, ולכן הדף לא נפתח.</string>
     <string name="browser_certificate_issued_by">הונפק על ידי</string>
     <string name="browser_certificate_issued_to">הונפק עבור</string>
     <string name="browser_certificate_none">אין בדף הזה אישור להצגה.</string>

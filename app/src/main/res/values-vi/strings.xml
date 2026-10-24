@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Tên chung</string>
     <string name="browser_certificate_copy">Sao chép chi tiết chứng chỉ</string>
     <string name="browser_certificate_fingerprint">Vân tay</string>
+    <string name="browser_certificate_invalid">Chứng chỉ này không hợp lệ nên trang không được mở.</string>
     <string name="browser_certificate_issued_by">Cấp bởi</string>
     <string name="browser_certificate_issued_to">Cấp cho</string>
     <string name="browser_certificate_none">Trang này không có chứng chỉ để hiển thị.</string>

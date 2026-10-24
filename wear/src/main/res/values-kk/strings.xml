@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Жалпы атау</string>
     <string name="browser_certificate_copy">Сертификат мәліметін көшіру</string>
     <string name="browser_certificate_fingerprint">Саусақ ізі</string>
+    <string name="browser_certificate_invalid">Бұл сертификат жарамсыз, сондықтан бет ашылмады.</string>
     <string name="browser_certificate_issued_by">Берген</string>
     <string name="browser_certificate_issued_to">Кімге берілген</string>
     <string name="browser_certificate_none">Бұл бетте көрсетілетін сертификат жоқ.</string>

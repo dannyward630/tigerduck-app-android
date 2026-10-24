@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">نام عمومی</string>
     <string name="browser_certificate_copy">کپی جزئیات گواهی</string>
     <string name="browser_certificate_fingerprint">اثر انگشت</string>
+    <string name="browser_certificate_invalid">این گواهی معتبر نیست، بنابراین صفحه باز نشد.</string>
     <string name="browser_certificate_issued_by">صادرکننده</string>
     <string name="browser_certificate_issued_to">صادرشده برای</string>
     <string name="browser_certificate_none">این صفحه گواهی‌ای برای نمایش ندارد.</string>

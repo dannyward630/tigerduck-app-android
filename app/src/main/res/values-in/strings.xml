@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Nama umum</string>
     <string name="browser_certificate_copy">Salin detail sertifikat</string>
     <string name="browser_certificate_fingerprint">Sidik jari</string>
+    <string name="browser_certificate_invalid">Sertifikat ini tidak valid, jadi halaman tidak dibuka.</string>
     <string name="browser_certificate_issued_by">Diterbitkan oleh</string>
     <string name="browser_certificate_issued_to">Diterbitkan untuk</string>
     <string name="browser_certificate_none">Halaman ini tidak punya sertifikat untuk ditampilkan.</string>

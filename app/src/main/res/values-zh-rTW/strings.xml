@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">一般名稱</string>
     <string name="browser_certificate_copy">複製憑證資訊</string>
     <string name="browser_certificate_fingerprint">指紋</string>
+    <string name="browser_certificate_invalid">憑證無效，未開啟此網頁</string>
     <string name="browser_certificate_issued_by">核發者</string>
     <string name="browser_certificate_issued_to">核發對象</string>
     <string name="browser_certificate_none">此網頁沒有可以顯示的憑證。</string>

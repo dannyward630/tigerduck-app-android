@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Общо име</string>
     <string name="browser_certificate_copy">Копиране на данните за сертификата</string>
     <string name="browser_certificate_fingerprint">Отпечатък</string>
+    <string name="browser_certificate_invalid">Този сертификат не е валиден, затова страницата не беше отворена.</string>
     <string name="browser_certificate_issued_by">Издаден от</string>
     <string name="browser_certificate_issued_to">Издаден на</string>
     <string name="browser_certificate_none">Тази страница няма сертификат за показване.</string>

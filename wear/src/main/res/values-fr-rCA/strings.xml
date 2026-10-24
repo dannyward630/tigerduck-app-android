@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Nom commun</string>
     <string name="browser_certificate_copy">Copier les détails du certificat</string>
     <string name="browser_certificate_fingerprint">Empreinte</string>
+    <string name="browser_certificate_invalid">Ce certificat n\'est pas valide : la page n\'a pas été ouverte.</string>
     <string name="browser_certificate_issued_by">Délivré par</string>
     <string name="browser_certificate_issued_to">Délivré à</string>
     <string name="browser_certificate_none">Cette page n\'a aucun certificat à afficher.</string>

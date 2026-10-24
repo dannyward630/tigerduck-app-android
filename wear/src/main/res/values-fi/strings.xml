@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Yleinen nimi</string>
     <string name="browser_certificate_copy">Kopioi varmenteen tiedot</string>
     <string name="browser_certificate_fingerprint">Sormenjälki</string>
+    <string name="browser_certificate_invalid">Varmenne ei ole kelvollinen, joten sivua ei avattu.</string>
     <string name="browser_certificate_issued_by">Myöntäjä</string>
     <string name="browser_certificate_issued_to">Myönnetty kohteelle</string>
     <string name="browser_certificate_none">Tällä sivulla ei ole näytettävää varmennetta.</string>

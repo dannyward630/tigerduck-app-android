@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Karaniwang pangalan</string>
     <string name="browser_certificate_copy">Kopyahin ang detalye ng certificate</string>
     <string name="browser_certificate_fingerprint">Fingerprint</string>
+    <string name="browser_certificate_invalid">Hindi valid ang certificate na ito, kaya hindi binuksan ang page.</string>
     <string name="browser_certificate_issued_by">Inisyu ng</string>
     <string name="browser_certificate_issued_to">Inisyu para kay</string>
     <string name="browser_certificate_none">Walang certificate na maipapakita ang page na ito.</string>

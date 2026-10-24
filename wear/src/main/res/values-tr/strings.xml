@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Ortak ad</string>
     <string name="browser_certificate_copy">Sertifika ayrıntılarını kopyala</string>
     <string name="browser_certificate_fingerprint">Parmak izi</string>
+    <string name="browser_certificate_invalid">Bu sertifika geçerli değil; bu yüzden sayfa açılmadı.</string>
     <string name="browser_certificate_issued_by">Veren</string>
     <string name="browser_certificate_issued_to">Verilen</string>
     <string name="browser_certificate_none">Bu sayfanın gösterilecek bir sertifikası yok.</string>

@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Namn</string>
     <string name="browser_certificate_copy">Kopiera certifikatinformation</string>
     <string name="browser_certificate_fingerprint">Fingeravtryck</string>
+    <string name="browser_certificate_invalid">Certifikatet är inte giltigt, så sidan öppnades inte.</string>
     <string name="browser_certificate_issued_by">Utfärdat av</string>
     <string name="browser_certificate_issued_to">Utfärdat till</string>
     <string name="browser_certificate_none">Den här sidan har inget certifikat att visa.</string>

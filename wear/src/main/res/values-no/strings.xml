@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Vanlig navn</string>
     <string name="browser_certificate_copy">Kopier sertifikatdetaljer</string>
     <string name="browser_certificate_fingerprint">Fingeravtrykk</string>
+    <string name="browser_certificate_invalid">Sertifikatet er ikke gyldig, så siden ble ikke åpnet.</string>
     <string name="browser_certificate_issued_by">Utstedt av</string>
     <string name="browser_certificate_issued_to">Utstedt til</string>
     <string name="browser_certificate_none">Denne siden har ikke noe sertifikat å vise.</string>

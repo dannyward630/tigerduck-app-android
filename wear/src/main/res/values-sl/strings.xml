@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Splošno ime</string>
     <string name="browser_certificate_copy">Kopiraj podrobnosti potrdila</string>
     <string name="browser_certificate_fingerprint">Prstni odtis</string>
+    <string name="browser_certificate_invalid">To potrdilo ni veljavno, zato stran ni bila odprta.</string>
     <string name="browser_certificate_issued_by">Izdal</string>
     <string name="browser_certificate_issued_to">Izdano za</string>
     <string name="browser_certificate_none">Ta stran nima potrdila za prikaz.</string>

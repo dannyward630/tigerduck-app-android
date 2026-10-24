@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Vispārējais nosaukums</string>
     <string name="browser_certificate_copy">Kopēt sertifikāta informāciju</string>
     <string name="browser_certificate_fingerprint">Pirkstu nospiedums</string>
+    <string name="browser_certificate_invalid">Šis sertifikāts nav derīgs, tāpēc lapa netika atvērta.</string>
     <string name="browser_certificate_issued_by">Izdevējs</string>
     <string name="browser_certificate_issued_to">Izdots</string>
     <string name="browser_certificate_none">Šai lapai nav parādāma sertifikāta.</string>

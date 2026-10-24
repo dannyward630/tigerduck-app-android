@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Уобичајено име</string>
     <string name="browser_certificate_copy">Копирај податке о сертификату</string>
     <string name="browser_certificate_fingerprint">Отисак</string>
+    <string name="browser_certificate_invalid">Овај сертификат није важећи, па страница није отворена.</string>
     <string name="browser_certificate_issued_by">Издао</string>
     <string name="browser_certificate_issued_to">Издато за</string>
     <string name="browser_certificate_none">Ова страница нема сертификат за приказ.</string>

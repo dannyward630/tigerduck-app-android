@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Bežný názov</string>
     <string name="browser_certificate_copy">Kopírovať podrobnosti certifikátu</string>
     <string name="browser_certificate_fingerprint">Odtlačok</string>
+    <string name="browser_certificate_invalid">Tento certifikát nie je platný, preto sa stránka neotvorila.</string>
     <string name="browser_certificate_issued_by">Vydal</string>
     <string name="browser_certificate_issued_to">Vydané pre</string>
     <string name="browser_certificate_none">Táto stránka nemá žiadny certifikát na zobrazenie.</string>

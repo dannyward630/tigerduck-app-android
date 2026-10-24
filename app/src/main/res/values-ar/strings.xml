@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">الاسم الشائع</string>
     <string name="browser_certificate_copy">نسخ تفاصيل الشهادة</string>
     <string name="browser_certificate_fingerprint">البصمة</string>
+    <string name="browser_certificate_invalid">هذه الشهادة غير صالحة، لذا لم تُفتح الصفحة.</string>
     <string name="browser_certificate_issued_by">صادرة عن</string>
     <string name="browser_certificate_issued_to">صادرة إلى</string>
     <string name="browser_certificate_none">لا توجد شهادة لعرضها في هذه الصفحة.</string>

@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">ਆਮ ਨਾਮ</string>
     <string name="browser_certificate_copy">ਸਰਟੀਫ਼ਿਕੇਟ ਦੇ ਵੇਰਵੇ ਕਾਪੀ ਕਰੋ</string>
     <string name="browser_certificate_fingerprint">ਫ਼ਿੰਗਰਪ੍ਰਿੰਟ</string>
+    <string name="browser_certificate_invalid">ਇਹ ਸਰਟੀਫ਼ਿਕੇਟ ਵੈਧ ਨਹੀਂ ਹੈ, ਇਸ ਲਈ ਪੰਨਾ ਨਹੀਂ ਖੋਲ੍ਹਿਆ ਗਿਆ।</string>
     <string name="browser_certificate_issued_by">ਜਾਰੀ ਕਰਤਾ</string>
     <string name="browser_certificate_issued_to">ਕਿਸ ਨੂੰ ਜਾਰੀ ਕੀਤਾ</string>
     <string name="browser_certificate_none">ਇਸ ਪੰਨੇ ਕੋਲ ਦਿਖਾਉਣ ਲਈ ਕੋਈ ਸਰਟੀਫ਼ਿਕੇਟ ਨਹੀਂ।</string>

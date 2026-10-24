@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Nom comú</string>
     <string name="browser_certificate_copy">Copia els detalls del certificat</string>
     <string name="browser_certificate_fingerprint">Empremta</string>
+    <string name="browser_certificate_invalid">Aquest certificat no és vàlid, per això no s\'ha obert la pàgina.</string>
     <string name="browser_certificate_issued_by">Emès per</string>
     <string name="browser_certificate_issued_to">Emès per a</string>
     <string name="browser_certificate_none">Aquesta pàgina no té cap certificat per mostrar.</string>

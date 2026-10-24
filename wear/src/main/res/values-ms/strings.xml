@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Nama umum</string>
     <string name="browser_certificate_copy">Salin butiran sijil</string>
     <string name="browser_certificate_fingerprint">Cap jari</string>
+    <string name="browser_certificate_invalid">Sijil ini tidak sah, jadi halaman tidak dibuka.</string>
     <string name="browser_certificate_issued_by">Dikeluarkan oleh</string>
     <string name="browser_certificate_issued_to">Dikeluarkan kepada</string>
     <string name="browser_certificate_none">Halaman ini tiada sijil untuk dipaparkan.</string>

@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Nume comun</string>
     <string name="browser_certificate_copy">Copiați detaliile certificatului</string>
     <string name="browser_certificate_fingerprint">Amprentă</string>
+    <string name="browser_certificate_invalid">Acest certificat nu este valid, așa că pagina nu a fost deschisă.</string>
     <string name="browser_certificate_issued_by">Emis de</string>
     <string name="browser_certificate_issued_to">Emis pentru</string>
     <string name="browser_certificate_none">Această pagină nu are niciun certificat de afișat.</string>

@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">সাধারণ নাম</string>
     <string name="browser_certificate_copy">সার্টিফিকেটের বিবরণ কপি করুন</string>
     <string name="browser_certificate_fingerprint">ফিঙ্গারপ্রিন্ট</string>
+    <string name="browser_certificate_invalid">এই সার্টিফিকেট বৈধ নয়, তাই পেজটি খোলা হয়নি।</string>
     <string name="browser_certificate_issued_by">ইস্যুকারী</string>
     <string name="browser_certificate_issued_to">যাকে ইস্যু করা হয়েছে</string>
     <string name="browser_certificate_none">এই পেজে দেখানোর মতো কোনো সার্টিফিকেট নেই।</string>

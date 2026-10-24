@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Κοινό όνομα</string>
     <string name="browser_certificate_copy">Αντιγραφή στοιχείων πιστοποιητικού</string>
     <string name="browser_certificate_fingerprint">Αποτύπωμα</string>
+    <string name="browser_certificate_invalid">Αυτό το πιστοποιητικό δεν είναι έγκυρο, γι\' αυτό η σελίδα δεν άνοιξε.</string>
     <string name="browser_certificate_issued_by">Εκδόθηκε από</string>
     <string name="browser_certificate_issued_to">Εκδόθηκε για</string>
     <string name="browser_certificate_none">Αυτή η σελίδα δεν έχει πιστοποιητικό για προβολή.</string>

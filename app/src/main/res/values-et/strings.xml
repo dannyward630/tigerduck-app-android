@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Üldnimi</string>
     <string name="browser_certificate_copy">Kopeeri sertifikaadi andmed</string>
     <string name="browser_certificate_fingerprint">Sõrmejälg</string>
+    <string name="browser_certificate_invalid">See sertifikaat ei kehti, seega lehte ei avatud.</string>
     <string name="browser_certificate_issued_by">Väljastaja</string>
     <string name="browser_certificate_issued_to">Väljastatud</string>
     <string name="browser_certificate_none">Sellel lehel pole kuvatavat sertifikaati.</string>

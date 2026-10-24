@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Köznapi név</string>
     <string name="browser_certificate_copy">Tanúsítvány adatainak másolása</string>
     <string name="browser_certificate_fingerprint">Ujjlenyomat</string>
+    <string name="browser_certificate_invalid">Ez a tanúsítvány érvénytelen, ezért az oldal nem nyílt meg.</string>
     <string name="browser_certificate_issued_by">Kiállító</string>
     <string name="browser_certificate_issued_to">Kiállítva a következőnek</string>
     <string name="browser_certificate_none">Ennek az oldalnak nincs megjeleníthető tanúsítványa.</string>

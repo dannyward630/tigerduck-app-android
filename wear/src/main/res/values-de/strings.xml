@@ -119,6 +119,7 @@
     <string name="browser_certificate_common_name">Allgemeiner Name</string>
     <string name="browser_certificate_copy">Zertifikatsdetails kopieren</string>
     <string name="browser_certificate_fingerprint">Fingerabdruck</string>
+    <string name="browser_certificate_invalid">Dieses Zertifikat ist ungültig, daher wurde die Seite nicht geöffnet.</string>
     <string name="browser_certificate_issued_by">Ausgestellt von</string>
     <string name="browser_certificate_issued_to">Ausgestellt für</string>
     <string name="browser_certificate_none">Diese Seite hat kein Zertifikat, das angezeigt werden kann.</string>
