@@ -162,6 +162,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     private lateinit var pageTheme: ContextThemeWrapper
     private lateinit var webView: WebView
+    private val web: WebView? get() = if (::webView.isInitialized) webView else null
     private lateinit var mobileUserAgent: String
 
     /** The session the page was loaded in, once the clearing gate let it load. */
@@ -251,7 +252,10 @@ class InAppBrowserActivity : AppCompatActivity() {
             val appDark = appIsDark(systemDark = isSystemInDarkTheme())
             LaunchedEffect(appDark, appearance) { tellPage(BrowserColors.pageToldDark(appearance, appDark)) }
             val barsDark = BrowserColors.barsDark(appearance, state.pageDark)
-            LaunchedEffect(barsDark) { paintWindow(barsDark) }
+            LaunchedEffect(barsDark) {
+                paintWindow(barsDark)
+                web?.setBackgroundColor(BrowserColors.webBackground(appearance, state.pageDark))
+            }
             TigerDuckAppTheme(
                 darkTheme = barsDark,
                 accentColor = appState.accentColor(barsDark),
@@ -354,6 +358,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     @SuppressLint("SetJavaScriptEnabled")
     private fun createWebView(): WebView = WebView(pageTheme).apply {
         layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        setBackgroundColor(BrowserColors.webBackground(appearance, pageDark = null))
         settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true

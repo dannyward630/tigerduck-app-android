@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.browser
 
+import android.graphics.Color
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kotlin.math.pow
@@ -38,6 +39,16 @@ object BrowserColors {
         BrowserAppearance.DARK -> true
         BrowserAppearance.AUTO -> pageDark ?: false
     }
+
+    /**
+     * The WebView's own background: what shows before a page's first frame,
+     * and behind a page that paints none. White or black as the bars are
+     * ([barsDark]), so light until the page is known. Left to itself, a WebView
+     * on a phone in night mode painted black until the page's first frame, and
+     * every open flashed black before a light page.
+     */
+    fun webBackground(appearance: BrowserAppearance, pageDark: Boolean?): Int =
+        if (barsDark(appearance, pageDark)) Color.BLACK else Color.WHITE
 
     /**
      * Which scheme the page is told (`prefers-color-scheme`): Light or Dark

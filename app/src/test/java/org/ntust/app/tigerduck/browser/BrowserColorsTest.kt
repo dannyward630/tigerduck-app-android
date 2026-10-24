@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.browser
 
+import android.graphics.Color
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -20,6 +21,17 @@ class BrowserColorsTest {
         assertFalse(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = false))
         // Most pages the browser opens are light, so a dark app doesn't flash dark bars first.
         assertFalse(BrowserColors.barsDark(BrowserAppearance.AUTO, pageDark = null))
+    }
+
+    @Test
+    fun `the WebView's own background is as light or dark as the bars, light until the page is known`() {
+        // Black under a light page flashed black on every open on a dark phone, Auto included,
+        // where the page is told dark but most pages still come up light.
+        assertEquals(Color.WHITE, BrowserColors.webBackground(BrowserAppearance.AUTO, pageDark = null))
+        assertEquals(Color.WHITE, BrowserColors.webBackground(BrowserAppearance.AUTO, pageDark = false))
+        assertEquals(Color.BLACK, BrowserColors.webBackground(BrowserAppearance.AUTO, pageDark = true))
+        assertEquals(Color.WHITE, BrowserColors.webBackground(BrowserAppearance.LIGHT, pageDark = null))
+        assertEquals(Color.BLACK, BrowserColors.webBackground(BrowserAppearance.DARK, pageDark = null))
     }
 
     @Test
