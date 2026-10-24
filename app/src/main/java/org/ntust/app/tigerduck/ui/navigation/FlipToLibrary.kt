@@ -13,13 +13,15 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.ntust.app.tigerduck.library.FlipToLibrarySetting
 import org.ntust.app.tigerduck.sensor.FlipDetector
 import org.ntust.app.tigerduck.sensor.FlipSensor
@@ -28,15 +30,18 @@ import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptController
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptKey
 import org.ntust.app.tigerduck.ui.haptics.HapticScenario
 import org.ntust.app.tigerduck.ui.haptics.Haptics
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Side-effect composable that wires [FlipDetector] into the nav controller.
  *
  * The detector is registered only while:
  *   - the device has a rotation-vector sensor, AND
- *   - [FlipToLibraryGate.isArmed]: the user has turned it on via
- *     `appState.flipToLibraryEnabled` and a library account is signed in, as
- *     the switch in Settings shows it, AND
+ *   - [FlipToLibraryGate.isArmed]: a library account is signed in, as the
+ *     switch in Settings shows it, and either the user has turned it on via
+ *     `appState.flipToLibraryEnabled` or the question that offers it has never
+ *     been answered, AND
  *   - the host activity is at least STARTED.
  *
  * A flip checks the sign-in again as it fires: the account can be refused or
@@ -46,54 +51,29 @@ import org.ntust.app.tigerduck.ui.haptics.Haptics
  * signs in again behind the code (tigerduck-app/tigerduck-app#528).
  *
  * Net effect: when the user flips the phone face-down with a valid library
- * session, the nav controller jumps to [Screen.Library]; flips already on
- * Library or with something in front of the page (see [FlipToLibraryGate])
- * are silently no-op.
+ * session, the nav controller jumps to [Screen.Library]. With the switch off,
+ * that flip asks once whether to turn it on instead, and Turn on opens Library
+ * for it. The question is asked on a flip only, never on a sign-in or a
+ * launch. Flips already on Library or with something in front of the page
+ * (see [FlipToLibraryGate]) are silently no-op.
  */
 @Composable
 fun FlipToLibraryEffect(
     navController: NavController,
     appState: AppState,
-    /** Whether a page the app was opened on, such as the library shortcut's, is still to open. */
-    startRoutePending: Boolean = false,
 ) {
     val context = LocalContext.current
     val supported = remember(context) { FlipDetector.isSupported(context) }
     if (!supported) return
 
-    val firstTriggerController = remember(context) {
-        EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            FlipToLibraryEntryPoint::class.java,
-        ).firstTriggerPromptController()
+    val entryPoint = remember(context) {
+        EntryPointAccessors.fromApplication(context.applicationContext, FlipToLibraryEntryPoint::class.java)
     }
+    val firstTriggerController = remember(entryPoint) { entryPoint.firstTriggerPromptController() }
+    val openRequest = remember(entryPoint) { entryPoint.flipToLibraryOpenRequest() }
 
     val signedIn by appState.librarySession.signedIn.collectAsStateWithLifecycle()
-
-    // Asks once whether to turn the gesture on: right after a library sign-in,
-    // or at a launch already signed in. Not over the Library page, where it
-    // would cover the code someone just signed in to show: leaving the page
-    // asks (tigerduck-app/tigerduck-app#529). Nor before the first page is
-    // up, which can be Library, nor while the page the app was opened on is
-    // still to open. The root host holds it behind What's New and
-    // the update prompt, and while a Library page shows; the wizard, which
-    // signs in too, is over before this is composed.
-    val lifecycleOwner = LocalLifecycleOwner.current
-    val currentEntry by navController.currentBackStackEntryAsState()
-    val onLibraryPage = FlipToLibraryGate.offerWaitsForPage(currentEntry?.destination?.route, startRoutePending)
-    LaunchedEffect(signedIn, appState.flipToLibraryEnabled, onLibraryPage, lifecycleOwner) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            if (FlipToLibraryGate.offersGesture(
-                    signedInToLibrary = signedIn,
-                    enabled = appState.flipToLibraryEnabled,
-                    asked = firstTriggerController.hasSeen(FirstTriggerPromptKey.FLIP_TO_LIBRARY),
-                    onLibraryPage = onLibraryPage,
-                )
-            ) {
-                FlipToLibraryPrompt.request(firstTriggerController, appState.flipToLibrary)
-            }
-        }
-    }
+    val offerUnanswered = rememberFlipOfferUnanswered(firstTriggerController, appState.flipToLibraryEnabled)
 
     FlipToLibraryEffect(
         navController = navController,
@@ -101,7 +81,25 @@ fun FlipToLibraryEffect(
         signedInToLibrary = { signedIn },
         stillSignedInToLibrary = { appState.librarySession.refresh() },
         onNavigated = { Haptics.perform(context, HapticScenario.FlipToLibrary) },
+        offerUnanswered = { offerUnanswered },
+        // The root host shows it, behind What's New and the update prompt.
+        onOffer = {
+            FlipToLibraryPrompt.request(firstTriggerController, appState.flipToLibrary, onTurnedOn = openRequest::request)
+        },
+        openRequest = openRequest,
     )
+}
+
+/**
+ * Whether the question that offers the gesture is still to ask. The answer is
+ * stored, which Compose does not follow, so it is read again whenever a
+ * question comes or goes, as answering one clears it, and whenever the switch
+ * changes, as a change in Settings answers it too.
+ */
+@Composable
+internal fun rememberFlipOfferUnanswered(controller: FirstTriggerPromptController, enabled: Boolean): Boolean {
+    val pending by controller.pending.collectAsStateWithLifecycle()
+    return remember(pending, enabled) { !controller.hasSeen(FirstTriggerPromptKey.FLIP_TO_LIBRARY) }
 }
 
 /**
@@ -109,12 +107,16 @@ fun FlipToLibraryEffect(
  * test can drive a real detector, window and back stack without Hilt.
  * [stillSignedInToLibrary] checks the sign-in again as a flip fires.
  * [onNavigated] runs after a flip has opened Library (the haptic).
+ * [offerUnanswered] is whether the question that offers the gesture is still
+ * to ask; with the switch off, a flip then calls [onOffer] instead of opening
+ * Library. Its Turn on comes back through [openRequest], which this takes
+ * while on screen to open Library.
  * [newSensor] builds the detector, or returns null where the phone has no
  * sensor for it; an instrumented test passes one it can fire by hand.
  *
- * [flipToLibraryEnabled] and [signedInToLibrary] are also read during
- * composition: they must read snapshot state, so a change re-registers the
- * detector.
+ * [flipToLibraryEnabled], [signedInToLibrary] and [offerUnanswered] are also
+ * read during composition: a change to any of them must reach it, so it
+ * re-registers the detector.
  */
 @Composable
 internal fun FlipToLibraryEffect(
@@ -123,6 +125,9 @@ internal fun FlipToLibraryEffect(
     signedInToLibrary: () -> Boolean,
     stillSignedInToLibrary: () -> Boolean,
     onNavigated: () -> Unit,
+    offerUnanswered: () -> Boolean = { false },
+    onOffer: () -> Unit = {},
+    openRequest: FlipToLibraryOpenRequest? = null,
     newSensor: (Context, onFaceDown: () -> Unit) -> FlipSensor? = ::flipDetectorIfSupported,
 ) {
     val context = LocalContext.current
@@ -130,6 +135,8 @@ internal fun FlipToLibraryEffect(
     val currentFlipEnabled by rememberUpdatedState(flipToLibraryEnabled)
     val currentStillSignedIn by rememberUpdatedState(stillSignedInToLibrary)
     val currentOnNavigated by rememberUpdatedState(onNavigated)
+    val currentOfferUnanswered by rememberUpdatedState(offerUnanswered)
+    val currentOnOffer by rememberUpdatedState(onOffer)
     // The app window's; a dialog or sheet is a window of its own.
     val windowInfo by rememberUpdatedState(LocalWindowInfo.current)
 
@@ -140,10 +147,10 @@ internal fun FlipToLibraryEffect(
             // sensor callbacks deliver on the main thread by default. Re-checking
             // the switch closes the brief window where the user toggles
             // flipToLibrary off and a sensor event lands before
-            // DisposableEffect restarts and unregisters the detector. Only
-            // someone who turned it on is listening, so a flip that passes
-            // these opens Library straight away.
-            if (!currentFlipEnabled()) return@onFaceDown
+            // DisposableEffect restarts and unregisters the detector. With
+            // the switch off, only the question still to ask is listening.
+            val enabled = currentFlipEnabled()
+            if (!enabled && !currentOfferUnanswered()) return@onFaceDown
             if (!currentStillSignedIn()) return@onFaceDown
             // Not over a dialog, a sheet or a mail draft: leaving the page
             // drops what the user was in the middle of. Nothing is consumed,
@@ -162,16 +169,41 @@ internal fun FlipToLibraryEffect(
             // focus the gate above requires also arrives only after that
             // first frame.
             if (navController.currentBackStackEntry == null) return@onFaceDown
-            if (navigateToLibrary(navController)) currentOnNavigated()
+            if (enabled) {
+                if (navigateToLibrary(navController)) currentOnNavigated()
+            } else if (FlipToLibraryGate.offersGesture(
+                    enabled = false,
+                    asked = !currentOfferUnanswered(),
+                    onLibraryPage = navController.currentDestination?.route == Screen.Library.route,
+                )
+            ) {
+                currentOnOffer()
+            }
         }
     } ?: return // No rotation-vector sensor on this phone.
 
-    // Reading the Compose-state-backed switch and the sign-in here makes the
-    // enclosing composition observe changes, so the DisposableEffect below
-    // restarts when either changes.
+    // The question's Turn on, taken by the page on screen when it is given:
+    // the activity that asked may have been made anew under the question. The
+    // switch and the sign-in are checked again, as at a flip: the sign-in can
+    // be refused while the question is up. A request that fails them is
+    // dropped rather than kept for later.
+    if (openRequest != null) {
+        val requested by openRequest.pending.collectAsStateWithLifecycle()
+        val hasPage = navController.currentBackStackEntryAsState().value != null
+        LaunchedEffect(requested, hasPage) {
+            if (!requested || !hasPage || !openRequest.take()) return@LaunchedEffect
+            if (!currentFlipEnabled() || !currentStillSignedIn()) return@LaunchedEffect
+            if (navigateToLibrary(navController)) currentOnNavigated()
+        }
+    }
+
+    // Reading the Compose-state-backed switch, the sign-in and the question
+    // here makes the enclosing composition observe changes, so the
+    // DisposableEffect below restarts when any of them changes.
     val armed = FlipToLibraryGate.isArmed(
         enabled = flipToLibraryEnabled(),
         signedInToLibrary = signedInToLibrary(),
+        offerUnanswered = offerUnanswered(),
     )
 
     DisposableEffect(armed, lifecycle) {
@@ -194,12 +226,16 @@ internal fun FlipToLibraryEffect(
 }
 
 /**
- * Whether flip-to-library listens, what its switch in Settings shows, when it
- * offers itself, and whether a flip may leave the current page.
+ * Whether flip-to-library listens, what its switch in Settings shows, when a
+ * flip offers it, and whether a flip may leave the current page.
  *
  * The flip opens the library's QR code, which needs a signed-in library
  * account, so until one is the switch reads off and takes no input; the
  * choice it holds comes back with the sign-in.
+ *
+ * The question that offers the gesture is asked on a flip, not after a
+ * sign-in as on the iPhone (tigerduck-app/tigerduck-app#529): it comes when
+ * someone has just done what it offers.
  *
  * The iPhone ignores the flip while a sheet or alert is presented, since the
  * switch would drop whatever the user was in the middle of. Android has no
@@ -224,31 +260,26 @@ internal object FlipToLibraryGate {
      */
     private val SHEET_ROUTES = setOf(Screen.SchoolMailCompose.route)
 
-    fun isArmed(enabled: Boolean, signedInToLibrary: Boolean): Boolean = enabled && signedInToLibrary
+    /**
+     * Signed in to the library, with the switch on, or with it off and the
+     * question that offers it still to ask ([offerUnanswered]), which a flip
+     * asks.
+     */
+    fun isArmed(enabled: Boolean, signedInToLibrary: Boolean, offerUnanswered: Boolean): Boolean =
+        signedInToLibrary && (enabled || offerUnanswered)
 
     fun switchReadsOn(enabled: Boolean, signedInToLibrary: Boolean): Boolean = enabled && signedInToLibrary
 
     fun switchTakesInput(signedInToLibrary: Boolean): Boolean = signedInToLibrary
 
     /**
-     * Whether to ask to turn the gesture on: signed in to the library, with the
-     * switch off and the question never answered. Not over the Library page,
-     * where the prompt would cover the code someone just signed in to show;
-     * leaving the page asks.
+     * Whether a flip that may leave the page asks to turn the gesture on
+     * rather than opening Library: the switch off and the question never
+     * answered. Not on the Library page, where the question would cover the
+     * code it shows; a flip there does nothing, as it does with the switch on.
      */
-    fun offersGesture(signedInToLibrary: Boolean, enabled: Boolean, asked: Boolean, onLibraryPage: Boolean): Boolean =
-        signedInToLibrary && !enabled && !asked && !onLibraryPage
-
-    /**
-     * Whether the offer waits for the page shown, [currentRoute]: on the
-     * Library page, and before the back stack has a page at all, as in the
-     * first composition of a cold start, whose first page can be Library (the
-     * first tab). Also while a page the app was opened on is still to open
-     * ([startRoutePending]): the library shortcut opens the first tab for a
-     * frame before Library.
-     */
-    fun offerWaitsForPage(currentRoute: String?, startRoutePending: Boolean): Boolean =
-        startRoutePending || currentRoute == null || currentRoute == Screen.Library.route
+    fun offersGesture(enabled: Boolean, asked: Boolean, onLibraryPage: Boolean): Boolean =
+        !enabled && !asked && !onLibraryPage
 
     /**
      * [windowFocused] is whether the app's own window has the focus. A
@@ -276,26 +307,53 @@ private fun navigateToLibrary(navController: NavController): Boolean {
 }
 
 /**
- * The question that offers the flip gesture, shared with the debug Triggers
- * screen, which replays it after [FirstTriggerPromptController.reset]. No-ops
- * once the question has been answered.
+ * The question that offers the flip gesture, asked on a flip and shared with
+ * the debug Triggers screen, which replays it after
+ * [FirstTriggerPromptController.reset]. No-ops once the question has been
+ * answered.
  *
- * Turn on stores the switch on, which the `DisposableEffect` in
- * [FlipToLibraryEffect] observes to start the sensor. Maybe later stores it
- * off: an answer, which the default off is not.
+ * Turn on stores the switch on, which keeps the sensor in
+ * [FlipToLibraryEffect] listening, then runs [onTurnedOn]: asking for Library
+ * to open for the flip that asked ([FlipToLibraryOpenRequest]). Maybe later
+ * stores it off: an answer, which the default off is not, and the sensor
+ * stops.
  */
 object FlipToLibraryPrompt {
-    fun request(controller: FirstTriggerPromptController, setting: FlipToLibrarySetting) {
+    fun request(controller: FirstTriggerPromptController, setting: FlipToLibrarySetting, onTurnedOn: () -> Unit = {}) {
         controller.requestIfFirstTime(
             key = FirstTriggerPromptKey.FLIP_TO_LIBRARY,
-            onAccept = { setting.enabled = true },
+            onAccept = {
+                setting.enabled = true
+                onTurnedOn()
+            },
             onDecline = { setting.enabled = false },
         )
     }
+}
+
+/**
+ * A Turn on given to a flip's question, for the page on screen to open Library.
+ * The question is the app's and outlives the activity that asked it, which a
+ * theme, font or display size change makes anew under it, so the Turn on is
+ * held as data [FlipToLibraryEffect] takes, never as a call into the
+ * NavController that asked.
+ */
+@Singleton
+class FlipToLibraryOpenRequest @Inject constructor() {
+    private val _pending = MutableStateFlow(false)
+    val pending: StateFlow<Boolean> = _pending.asStateFlow()
+
+    fun request() {
+        _pending.value = true
+    }
+
+    /** Whether there was a request to take; it is taken, so only one page opens Library for it. */
+    fun take(): Boolean = _pending.compareAndSet(expect = true, update = false)
 }
 
 @EntryPoint
 @InstallIn(SingletonComponent::class)
 private interface FlipToLibraryEntryPoint {
     fun firstTriggerPromptController(): FirstTriggerPromptController
+    fun flipToLibraryOpenRequest(): FlipToLibraryOpenRequest
 }

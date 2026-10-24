@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.library
 
 import android.app.Application
 import android.content.Context
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -51,6 +52,24 @@ class FlipToLibrarySettingTest {
 
         assertTrue(prefs.flipToLibraryEnabled)
         assertTrue(setting.enabled)
+    }
+
+    @Test
+    fun `turn on opens Library for the flip that asked, with the switch already on`() {
+        var switchWhenOpened: Boolean? = null
+        FlipToLibraryPrompt.request(controller, setting, onTurnedOn = { switchWhenOpened = setting.enabled })
+        controller.finish(accept = true)
+
+        assertEquals(true, switchWhenOpened)
+    }
+
+    @Test
+    fun `maybe later opens nothing`() {
+        var opened = false
+        FlipToLibraryPrompt.request(controller, setting, onTurnedOn = { opened = true })
+        controller.finish(accept = false)
+
+        assertFalse(opened)
     }
 
     @Test

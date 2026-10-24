@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.auth.AuthTokenManager
@@ -14,6 +15,8 @@ import org.ntust.app.tigerduck.network.ApiVersionInterceptor
 import org.ntust.app.tigerduck.push.OwedUnregister
 import org.ntust.app.tigerduck.push.PushIdentity
 import org.ntust.app.tigerduck.shared.LibraryService
+import org.ntust.app.tigerduck.ui.component.ServerFailureInterceptor
+import org.ntust.app.tigerduck.ui.component.ServerKind
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -58,8 +61,16 @@ object NetworkModule {
     ): LibraryService = LibraryService(
         credentials,
         isDebugBuild = BuildConfig.DEBUG,
-        extraInterceptors = listOf(demoMode),
+        extraInterceptors = libraryInterceptors(demoMode, debug = BuildConfig.DEBUG),
     )
+
+    /**
+     * The library client's own interceptors: the demo-mode kill switch, and in a debug build the
+     * server failure simulator's Library row, which fails the library's sign-in and code the way
+     * the other rows fail theirs.
+     */
+    internal fun libraryInterceptors(demoMode: Interceptor, debug: Boolean): List<Interceptor> =
+        listOfNotNull(demoMode, if (debug) ServerFailureInterceptor(ServerKind.LIBRARY) else null)
 
     @Provides
     @Singleton

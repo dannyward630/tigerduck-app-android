@@ -10,8 +10,8 @@ import org.ntust.app.tigerduck.library.LibraryPagePresence
 /**
  * When a pending first-trigger prompt may show: not over What's New or the
  * update prompt, and the flip-to-library one not over the Library page, where
- * it would cover the code someone just signed in to show; leaving the page
- * shows it (tigerduck-app/tigerduck-app#529).
+ * it would cover the code; leaving the page shows it
+ * (tigerduck-app/tigerduck-app#529).
  */
 class FirstTriggerPromptHoldTest {
 

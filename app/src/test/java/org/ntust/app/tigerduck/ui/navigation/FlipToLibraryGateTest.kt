@@ -15,13 +15,20 @@ class FlipToLibraryGateTest {
 
     @Test
     fun `the flip does not listen while signed out of the library`() {
-        assertFalse(FlipToLibraryGate.isArmed(enabled = true, signedInToLibrary = false))
+        assertFalse(FlipToLibraryGate.isArmed(enabled = true, signedInToLibrary = false, offerUnanswered = false))
+        assertFalse(FlipToLibraryGate.isArmed(enabled = false, signedInToLibrary = false, offerUnanswered = true))
     }
 
     @Test
     fun `the flip listens with the switch on and a library account signed in`() {
-        assertTrue(FlipToLibraryGate.isArmed(enabled = true, signedInToLibrary = true))
-        assertFalse(FlipToLibraryGate.isArmed(enabled = false, signedInToLibrary = true))
+        assertTrue(FlipToLibraryGate.isArmed(enabled = true, signedInToLibrary = true, offerUnanswered = false))
+    }
+
+    /** The question is asked on a flip, so the flip listens for it with the switch still off. */
+    @Test
+    fun `with the switch off, the flip listens only while the question that offers it is still to ask`() {
+        assertTrue(FlipToLibraryGate.isArmed(enabled = false, signedInToLibrary = true, offerUnanswered = true))
+        assertFalse(FlipToLibraryGate.isArmed(enabled = false, signedInToLibrary = true, offerUnanswered = false))
     }
 
     @Test
@@ -38,42 +45,20 @@ class FlipToLibraryGateTest {
     }
 
     @Test
-    fun `the gesture is offered once signed in to the library, with the switch off and never asked`() {
-        assertTrue(FlipToLibraryGate.offersGesture(signedInToLibrary = true, enabled = false, asked = false, onLibraryPage = false))
+    fun `a flip with the switch off and the question never answered asks it`() {
+        assertTrue(FlipToLibraryGate.offersGesture(enabled = false, asked = false, onLibraryPage = false))
     }
 
     @Test
-    fun `the gesture is not offered signed out, already on, or once answered`() {
-        assertFalse(FlipToLibraryGate.offersGesture(signedInToLibrary = false, enabled = false, asked = false, onLibraryPage = false))
-        assertFalse(FlipToLibraryGate.offersGesture(signedInToLibrary = true, enabled = true, asked = false, onLibraryPage = false))
-        assertFalse(FlipToLibraryGate.offersGesture(signedInToLibrary = true, enabled = false, asked = true, onLibraryPage = false))
+    fun `a flip does not ask with the switch on, or once the question is answered`() {
+        assertFalse(FlipToLibraryGate.offersGesture(enabled = true, asked = false, onLibraryPage = false))
+        assertFalse(FlipToLibraryGate.offersGesture(enabled = false, asked = true, onLibraryPage = false))
     }
 
-    /** It would cover the code someone just signed in to show (tigerduck-app/tigerduck-app#529). */
+    /** It would cover the code the Library page shows (tigerduck-app/tigerduck-app#529). */
     @Test
-    fun `the gesture is not offered over the Library page, and leaving it asks`() {
-        assertFalse(FlipToLibraryGate.offersGesture(signedInToLibrary = true, enabled = false, asked = false, onLibraryPage = true))
-        assertTrue(FlipToLibraryGate.offersGesture(signedInToLibrary = true, enabled = false, asked = false, onLibraryPage = false))
-    }
-
-    /**
-     * A cold start composes the effect before the back stack has a page, and the first page can
-     * be Library, as the first tab or from the library shortcut: the offer waits for it.
-     */
-    @Test
-    fun `the offer waits while no page is shown yet, and on the Library page`() {
-        assertTrue(FlipToLibraryGate.offerWaitsForPage(currentRoute = null, startRoutePending = false))
-        assertTrue(FlipToLibraryGate.offerWaitsForPage(currentRoute = Screen.Library.route, startRoutePending = false))
-        assertFalse(FlipToLibraryGate.offerWaitsForPage(currentRoute = Screen.Home.route, startRoutePending = false))
-    }
-
-    /**
-     * The library shortcut opens the app on its first tab and then on Library: the offer waits
-     * out that first page too, rather than being made for the frame before Library opens.
-     */
-    @Test
-    fun `the offer waits while a page the app was opened on is still to open`() {
-        assertTrue(FlipToLibraryGate.offerWaitsForPage(currentRoute = Screen.Home.route, startRoutePending = true))
+    fun `a flip on the Library page does not ask`() {
+        assertFalse(FlipToLibraryGate.offersGesture(enabled = false, asked = false, onLibraryPage = true))
     }
 
     @Test
