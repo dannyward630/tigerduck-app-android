@@ -260,9 +260,13 @@ class AccentColorPageTest {
         show(fixedHex = blue, gradientEnd = purple, fontScale = 1.5f)
 
         val root = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
+        // Inside the card's content: its margin and its own padding, 16dp each.
+        val inset = with(composeRule.density) { 32.dp.toPx() }
         val tiles = directionTiles()
         assertDirectionGrid(tiles)
-        tiles.forEach { assertTrue("$it is cut", it.left >= root.left && it.right <= root.right) }
+        tiles.forEach {
+            assertTrue("$it runs into the card's padding", it.left >= root.left + inset - 0.5f && it.right <= root.right - inset + 0.5f)
+        }
     }
 
     @Test
