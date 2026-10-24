@@ -44,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -120,7 +121,8 @@ fun InAppBrowserScreen(
     actions: BrowserActions,
     web: @Composable (Modifier) -> Unit,
 ) {
-    var sheet by rememberSaveable { mutableStateOf<BrowserSheet?>(null) }
+    // The browser's own sheet, as its pages: the one it opened at, then each opened from the one before.
+    var pages by rememberSaveable(stateSaver = BrowserSheetPagesSaver) { mutableStateOf(emptyList<BrowserSheet>()) }
     val colors = MaterialTheme.colorScheme
 
     // Text and icons that name no color take the bars' own: a background alone leaves them
@@ -138,7 +140,7 @@ fun InAppBrowserScreen(
             if (find != null) {
                 FindBar(find, actions)
             } else {
-                TopBar(state, onAddress = { sheet = BrowserSheet.ADDRESS }, onClose = actions::close)
+                TopBar(state, onAddress = { pages = listOf(BrowserSheet.ADDRESS) }, onClose = actions::close)
             }
             Box(Modifier.fillMaxWidth().height(2.dp)) {
                 if (state.loading) {
@@ -158,29 +160,36 @@ fun InAppBrowserScreen(
                 )
             }
             HorizontalDivider(color = colors.outlineVariant)
-            BottomBar(state, actions, onMenu = { sheet = BrowserSheet.MENU })
+            BottomBar(state, actions, onMenu = { pages = listOf(BrowserSheet.MENU) })
         }
     }
 
     val url = state.url
-    when (sheet) {
-        BrowserSheet.MENU -> BrowserMenuSheet(
-            state = state,
-            appearance = appearance,
-            actions = actions,
-            onAddress = { sheet = BrowserSheet.ADDRESS },
-            onCertificate = { sheet = BrowserSheet.CERTIFICATE },
-            onDownloads = { sheet = BrowserSheet.DOWNLOADS },
-            onDismiss = { sheet = null },
-        )
-        BrowserSheet.ADDRESS -> if (url != null) {
-            BrowserAddressSheet(state, url, actions, onCertificate = { sheet = BrowserSheet.CERTIFICATE }, onDismiss = { sheet = null })
-        } else {
-            LaunchedEffect(Unit) { sheet = null }
+    if (pages.isNotEmpty()) {
+        fun open(page: BrowserSheet) {
+            pages = pages + page
         }
-        BrowserSheet.CERTIFICATE -> BrowserCertificateSheet(state, actions, onDismiss = { sheet = null })
-        BrowserSheet.DOWNLOADS -> BrowserDownloadsSheet(downloads, actions, onDismiss = { sheet = null })
-        null -> Unit
+        val close = { pages = emptyList() }
+        BrowserPagesSheet(pages, onBack = { pages = pages.dropLast(1) }, onDismiss = close) { page, onBack ->
+            when (page) {
+                BrowserSheet.MENU -> BrowserMenuPage(
+                    state = state,
+                    appearance = appearance,
+                    actions = actions,
+                    onAddress = { open(BrowserSheet.ADDRESS) },
+                    onCertificate = { open(BrowserSheet.CERTIFICATE) },
+                    onDownloads = { open(BrowserSheet.DOWNLOADS) },
+                    onDismiss = close,
+                )
+                BrowserSheet.ADDRESS -> if (url != null) {
+                    BrowserAddressPage(state, url, actions, onCertificate = { open(BrowserSheet.CERTIFICATE) }, onBack = onBack, onDismiss = close)
+                } else {
+                    LaunchedEffect(Unit) { close() }
+                }
+                BrowserSheet.CERTIFICATE -> BrowserCertificatePage(state, actions, onBack)
+                BrowserSheet.DOWNLOADS -> BrowserDownloadsPage(downloads, actions, onBack)
+            }
+        }
     }
     state.upload?.let { BrowserUploadSheet(it, actions) }
     state.linkMenuUrl?.let { BrowserLinkSheet(it, actions) }
@@ -188,8 +197,14 @@ fun InAppBrowserScreen(
     state.dialog?.let { BrowserPageDialog(it, actions) }
 }
 
-/** Which of the screen's sheets is open. */
+/** The pages of the browser's own sheet. */
 internal enum class BrowserSheet { MENU, ADDRESS, CERTIFICATE, DOWNLOADS }
+
+/** Keeps the sheet's pages through a rotation, by name. */
+private val BrowserSheetPagesSaver = listSaver<List<BrowserSheet>, String>(
+    save = { pages -> pages.map { it.name } },
+    restore = { names -> names.map(BrowserSheet::valueOf) },
+)
 
 @Composable
 private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onClose: () -> Unit) {

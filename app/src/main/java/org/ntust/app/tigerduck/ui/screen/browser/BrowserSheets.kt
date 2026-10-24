@@ -1,7 +1,17 @@
 package org.ntust.app.tigerduck.ui.screen.browser
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,6 +30,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.CameraAlt
@@ -56,6 +68,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
@@ -68,18 +81,26 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -87,6 +108,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.browser.BrowserAppearance
@@ -98,6 +120,7 @@ import org.ntust.app.tigerduck.util.replaceIosArg
 import java.text.DateFormat
 import java.text.NumberFormat
 import java.util.Date
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,6 +134,91 @@ private fun BrowserSheetFrame(onDismiss: () -> Unit, skipPartial: Boolean = true
         }
     }
 }
+
+/**
+ * The browser's own sheet: one sheet for the menu and the pages it leads to ([pages], the first
+ * page the sheet opened at and those opened from it since). A page opened from another comes up in
+ * the same sheet, which grows or shrinks to it, and Back goes to the page before it; Back on the
+ * first page, a tap outside or a drag down closes the sheet. [page] draws a page, with a way back
+ * when it has one.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+internal fun BrowserPagesSheet(
+    pages: List<BrowserSheet>,
+    onBack: () -> Unit,
+    onDismiss: () -> Unit,
+    page: @Composable (sheet: BrowserSheet, onBack: (() -> Unit)?) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        // Back is the pages' first: on the first page, it closes the sheet as the sheet's own would.
+        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+    ) {
+        BackHandler {
+            if (pages.size > 1) onBack() else scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+        }
+        val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        Box(Modifier.fillMaxWidth().testTag(BROWSER_SHEET_TAG)) {
+            AnimatedContent(
+                targetState = pages.size to pages.last(),
+                transitionSpec = {
+                    // Onward from the end, back from the start; a quarter of the way, under a fade.
+                    val onward = targetState.first > initialState.first
+                    val from = if (onward != rtl) 1 else -1
+                    (slideInHorizontally { from * it / 4 } + fadeIn()) togetherWith
+                        (slideOutHorizontally { -from * it / 4 } + fadeOut()) using SizeTransform(clip = false)
+                },
+                label = "browser sheet page",
+            ) { (depth, sheet) ->
+                val title = stringResource(
+                    when (sheet) {
+                        BrowserSheet.MENU -> R.string.browser_more
+                        BrowserSheet.ADDRESS -> R.string.browser_address_title
+                        BrowserSheet.CERTIFICATE -> R.string.browser_certificate_title
+                        BrowserSheet.DOWNLOADS -> R.string.browser_downloads
+                    },
+                )
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        // A new pane in the sheet, not the sheet closing and another opening.
+                        .semantics { paneTitle = title }
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = 16.dp),
+                ) {
+                    page(sheet, if (depth > 1) onBack else null)
+                }
+            }
+        }
+    }
+}
+
+/** A page's title, with the way back to the page before it when there is one; TalkBack goes to it. */
+@Composable
+private fun PageTitle(text: String, onBack: (() -> Unit)?, modifier: Modifier = Modifier) {
+    val focus = remember { FocusRequester() }
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        if (onBack != null) {
+            // Its arrow lines up with the page's text below.
+            IconButton(onClick = onBack, modifier = Modifier.offset(x = (-12).dp)) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
+            }
+        }
+        Text(
+            text,
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.semantics { heading() }.focusRequester(focus).focusable(),
+        )
+    }
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+}
+
+/** The browser's own sheet, for tests to tell one sheet from another. */
+internal const val BROWSER_SHEET_TAG = "browserSheet"
 
 /** The page's host and title at the top of a sheet that acts on it. */
 @Composable
@@ -190,7 +298,7 @@ private fun MenuRow(
 /** The ⋮ menu. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun BrowserMenuSheet(
+internal fun BrowserMenuPage(
     state: BrowserPageState,
     appearance: BrowserAppearance,
     actions: BrowserActions,
@@ -204,7 +312,7 @@ internal fun BrowserMenuSheet(
         onDismiss()
         block()
     }
-    BrowserSheetFrame(onDismiss) {
+    Column(Modifier.fillMaxWidth()) {
         PageHeader(state, onCertificate = onCertificate.takeIf { state.shownCertificate != null })
         Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
             QuickAction(Icons.Filled.ContentCopy, stringResource(R.string.browser_copy), enabled = url != null, onClick = { act { url?.let(actions::copy) } }, modifier = Modifier.weight(1f))
@@ -284,16 +392,17 @@ internal fun BrowserMenuSheet(
 
 /** The whole address of the page, its connection and its sign-in. */
 @Composable
-internal fun BrowserAddressSheet(
+internal fun BrowserAddressPage(
     state: BrowserPageState,
     url: String,
     actions: BrowserActions,
     onCertificate: () -> Unit,
+    onBack: (() -> Unit)?,
     onDismiss: () -> Unit,
 ) {
-    BrowserSheetFrame(onDismiss) {
+    Column(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(stringResource(R.string.browser_address_title), style = MaterialTheme.typography.titleLarge)
+            PageTitle(stringResource(R.string.browser_address_title), onBack)
             Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
                 SelectionContainer {
                     Text(url, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.fillMaxWidth().padding(12.dp))
@@ -384,7 +493,7 @@ private fun InfoRow(icon: ImageVector, title: String, detail: String?) {
 
 /** The page certificate's details, and a copy of them as text. */
 @Composable
-internal fun BrowserCertificateSheet(state: BrowserPageState, actions: BrowserActions, onDismiss: () -> Unit) {
+internal fun BrowserCertificatePage(state: BrowserPageState, actions: BrowserActions, onBack: (() -> Unit)?) {
     val info = state.shownCertificate
     val locale = LocalConfiguration.current.locales[0]
     val dates = remember(locale) { DateFormat.getDateInstance(DateFormat.MEDIUM, locale) }
@@ -397,9 +506,9 @@ internal fun BrowserCertificateSheet(state: BrowserPageState, actions: BrowserAc
     val notBefore = stringResource(R.string.browser_certificate_not_before)
     val notAfter = stringResource(R.string.browser_certificate_not_after)
     val fingerprint = stringResource(R.string.browser_certificate_fingerprint)
-    BrowserSheetFrame(onDismiss) {
+    Column(Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(stringResource(R.string.browser_certificate_title), style = MaterialTheme.typography.titleLarge)
+            PageTitle(stringResource(R.string.browser_certificate_title), onBack)
             if (info == null) {
                 Text(stringResource(R.string.browser_certificate_none), style = MaterialTheme.typography.bodyMedium)
                 return@Column
@@ -484,9 +593,9 @@ private fun CertificateGroup(title: String, rows: List<Pair<String, String?>>, m
 
 /** This run's downloads. */
 @Composable
-internal fun BrowserDownloadsSheet(downloads: List<BrowserDownload>, actions: BrowserActions, onDismiss: () -> Unit) {
-    BrowserSheetFrame(onDismiss) {
-        Text(stringResource(R.string.browser_downloads), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+internal fun BrowserDownloadsPage(downloads: List<BrowserDownload>, actions: BrowserActions, onBack: (() -> Unit)?) {
+    Column(Modifier.fillMaxWidth()) {
+        PageTitle(stringResource(R.string.browser_downloads), onBack, Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
         if (downloads.isEmpty()) {
             Text(stringResource(R.string.browser_downloads_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp))
         }

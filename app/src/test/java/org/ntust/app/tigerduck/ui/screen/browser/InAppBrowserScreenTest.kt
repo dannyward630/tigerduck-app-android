@@ -9,7 +9,14 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.junit4.StateRestorationTester
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -29,6 +36,7 @@ import org.ntust.app.tigerduck.browser.UploadSource
 import org.ntust.app.tigerduck.util.replaceIosArg
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowDialog
 
 /** The TigerDuck browser's screen, layout A, around a stand-in page. */
 @RunWith(RobolectricTestRunner::class)
@@ -163,6 +171,103 @@ class InAppBrowserScreenTest {
         val view = composeRule.onNodeWithText(string(R.string.browser_certificate), useUnmergedTree = true).getBoundsInRoot()
 
         assertEquals(connection.left.value, view.left.value, 0.5f)
+    }
+
+    private fun sheetId() = composeRule.onNodeWithTag(BROWSER_SHEET_TAG).fetchSemanticsNode().id
+
+    /** The phone's Back, which goes to the sheet's own window while it is up. */
+    @Suppress("DEPRECATION")
+    private fun pressBackInSheet() {
+        composeRule.runOnIdle { ShadowDialog.getLatestDialog().onBackPressed() }
+        composeRule.waitForIdle()
+    }
+
+    @Test
+    fun `a page the menu opens comes up in the same sheet`() {
+        show(loaded())
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+        val sheet = sheetId()
+
+        composeRule.onNodeWithText(string(R.string.browser_security)).performScrollTo().performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertExists()
+        composeRule.onAllNodesWithTag(BROWSER_SHEET_TAG).assertCountEquals(1)
+        assertEquals("the sheet stayed; only its page changed", sheet, sheetId())
+        // TalkBack hears a new pane, and lands on its title.
+        composeRule.onNode(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, string(R.string.browser_address_title))).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertIsFocused()
+    }
+
+    @Test
+    fun `a rotation keeps the sheet at its page`() {
+        val restoration = StateRestorationTester(composeRule)
+        val state = loaded()
+        restoration.setContent {
+            MaterialTheme {
+                InAppBrowserScreen(state, BrowserAppearance.AUTO, emptyList(), actions) { Box(it) }
+            }
+        }
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_security)).performScrollTo().performClick()
+
+        restoration.emulateSavedInstanceStateRestore()
+
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertExists()
+        // And Back still goes to the menu it came from.
+        composeRule.onNodeWithContentDescription(string(R.string.action_back)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_zoom)).assertExists()
+    }
+
+    @Test
+    fun `the sheet's back arrow returns to the menu, in the same sheet`() {
+        show(loaded())
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+        val sheet = sheetId()
+        composeRule.onNodeWithText(string(R.string.browser_security)).performScrollTo().performClick()
+
+        composeRule.onNodeWithContentDescription(string(R.string.action_back)).performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_zoom)).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertDoesNotExist()
+        assertEquals(sheet, sheetId())
+    }
+
+    @Test
+    fun `Back in a page returns to the one before it, and Back at the first page closes the sheet`() {
+        show(loaded().apply { certificate = goodCertificate })
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+        val sheet = sheetId()
+        composeRule.onNodeWithText(string(R.string.browser_security)).performScrollTo().performClick()
+        composeRule.onNodeWithText(string(R.string.browser_certificate)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_certificate_title)).assertExists()
+
+        pressBackInSheet()
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertExists()
+        pressBackInSheet()
+        composeRule.onNodeWithText(string(R.string.browser_zoom)).assertExists()
+        assertEquals(sheet, sheetId())
+        pressBackInSheet()
+
+        composeRule.waitForIdle()
+        composeRule.onAllNodesWithTag(BROWSER_SHEET_TAG).assertCountEquals(0)
+    }
+
+    @Test
+    fun `View certificate in the address sheet opens the certificate in the same sheet`() {
+        show(loaded().apply { certificate = goodCertificate })
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+        val sheet = sheetId()
+
+        composeRule.onNodeWithText(string(R.string.browser_certificate)).performClick()
+
+        composeRule.onNodeWithText("Good CA").assertExists()
+        assertEquals(sheet, sheetId())
+        // Opened from the address, the address is the first page: Back goes there, then closes.
+        pressBackInSheet()
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertExists()
+        pressBackInSheet()
+        composeRule.waitForIdle()
+        composeRule.onAllNodesWithTag(BROWSER_SHEET_TAG).assertCountEquals(0)
     }
 
     private fun layoutOf(text: String): TextLayoutResult {
