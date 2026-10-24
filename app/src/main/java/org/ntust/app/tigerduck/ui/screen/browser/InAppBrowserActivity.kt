@@ -57,7 +57,6 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewFeature
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -82,7 +81,6 @@ import org.ntust.app.tigerduck.browser.DownloadPlan
 import org.ntust.app.tigerduck.browser.NavigationDecision
 import org.ntust.app.tigerduck.browser.PageSchemeFollow
 import org.ntust.app.tigerduck.browser.UploadSource
-import org.ntust.app.tigerduck.browser.watchSignInRetry
 import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
 import org.ntust.app.tigerduck.ui.BrowserPreference
@@ -167,12 +165,8 @@ class InAppBrowserActivity : AppCompatActivity() {
     private var toldDark: Boolean? = null
     private var schemePokePending = false
 
-    /** The page the student was going to when a site sent the browser to its sign-in. */
-    private var signInTarget: String? = null
-    private var signInJob: Job? = null
-
-    /** The main-frame URL being loaded, for an error that names it. */
-    private var loadingUrl: String? = null
+    private val loads = BrowserLoads(state)
+    private lateinit var signInFlow: BrowserSignInFlow
     private var appliedHost: String? = null
 
     private var pendingUpload: UploadRequest? = null
@@ -221,10 +215,11 @@ class InAppBrowserActivity : AppCompatActivity() {
         pageTheme = ContextThemeWrapper(this, R.style.Theme_TigerDuck)
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
         webView = createWebView()
+        signInFlow = BrowserSignInFlow(state, loads, signIns, lifecycleScope, ::load) { webView.stopLoading() }
 
         val savedWeb = savedInstanceState?.getBundle(KEY_WEB_STATE)
         val savedSession = savedInstanceState?.getInt(KEY_SESSION, -1)
-        signInTarget = savedInstanceState?.getString(KEY_SIGN_IN_TARGET)
+        loads.signInTarget = savedInstanceState?.getString(KEY_SIGN_IN_TARGET)
         lifecycleScope.launch {
             // Nothing loads while a sign-out clears the browser, a page put back from saved state
             // included: the departing student's session is still there.
@@ -288,11 +283,11 @@ class InAppBrowserActivity : AppCompatActivity() {
         if (!::webView.isInitialized || session == null) return
         outState.putInt(KEY_SESSION, session)
         outState.putBundle(KEY_WEB_STATE, Bundle().also { webView.saveState(it) })
-        signInTarget?.let { outState.putString(KEY_SIGN_IN_TARGET, it) }
+        loads.signInTarget?.let { outState.putString(KEY_SIGN_IN_TARGET, it) }
     }
 
     override fun onDestroy() {
-        signInJob?.cancel()
+        if (::signInFlow.isInitialized) signInFlow.cancel()
         pendingUpload?.deliver?.invoke(null)
         pendingUpload = null
         state.dialog?.answer?.invoke(false, null)
@@ -383,23 +378,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             load(target)
             return
         }
-        signInTarget = target
-        // No page yet: the bars name the one on its way.
-        if (state.url == null) state.url = target
-        state.signIn = SignInState(provider.siteName, target, msLeft = 0, working = true, hasWebSignIn = provider.webSignInUrl(target) != null)
-        signInJob?.cancel()
-        signInJob = lifecycleScope.launch {
-            val signedIn = provider.signedInUrl(target)
-            if (signedIn != null) {
-                state.signIn = null
-                load(signedIn)
-            } else {
-                // TODO(#483): with no key due (one went to another open in the last 6 minutes) and no
-                //  session kept, this screen is all there is; see
-                //  https://github.com/tigerduck-app/tigerduck-app-android/issues/483 for the options.
-                showSignIn(provider, target, failed = provider.msUntilRetry() == 0L)
-            }
-        }
+        signInFlow.signIn(provider, target)
     }
 
     /** Loads [url], one the app chose, on the same terms as a page's own navigation. */
@@ -407,7 +386,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
             NavigationDecision.Load -> {
                 state.error = null
-                loadingUrl = url
+                loads.requested(url)
                 webView.loadUrl(url)
             }
             is NavigationDecision.OpenOutside -> state.outsideUrl = decision.url
@@ -416,50 +395,16 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
     }
 
-    /** The browser's sign-in screen for [provider], counting down to the next try and trying when due. */
-    private fun showSignIn(provider: BrowserSignIn, target: String, failed: Boolean = false) {
-        signInTarget = target
-        webView.stopLoading()
-        state.signIn = SignInState(
-            siteName = provider.siteName,
-            target = target,
-            msLeft = provider.msUntilRetry(),
-            failed = failed,
-            hasWebSignIn = provider.webSignInUrl(target) != null,
-        )
-        signInJob?.cancel()
-        signInJob = lifecycleScope.launch {
-            watchSignInRetry(
-                msUntilRetry = provider::msUntilRetry,
-                show = { left -> state.signIn?.let { state.signIn = it.copy(msLeft = left) } },
-                retry = { trySignIn(provider, target) },
-                stillShowing = { state.signIn?.target == target && state.signIn?.working == false },
-            )
-        }
-    }
-
-    private suspend fun trySignIn(provider: BrowserSignIn, target: String) {
-        val current = state.signIn ?: return
-        state.signIn = current.copy(working = true, failed = false, msLeft = 0)
-        val signedIn = provider.signedInUrl(target)
-        if (signedIn != null) {
-            state.signIn = null
-            load(signedIn)
-        } else {
-            showSignIn(provider, target, failed = provider.msUntilRetry() == 0L)
-        }
-    }
-
     /** What a main-frame navigation to [url] does; true when the browser takes it over and the page does not go. */
     private fun handleNavigation(url: String): Boolean {
         val provider = signIns.forUrl(url)
         if (provider != null && provider.isSignInPage(url)) {
-            showSignIn(provider, signInTarget ?: state.url ?: url)
+            signInFlow.signInPageReached(provider, url)
             return true
         }
         return when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
             NavigationDecision.Load -> {
-                loadingUrl = url
+                loads.requested(url)
                 false
             }
             is NavigationDecision.OpenOutside -> {
@@ -478,7 +423,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         // A navigation shouldOverrideUrlLoading was not asked about (a form's POST): checked here, and stopped.
         val provider = signIns.forUrl(url)
         if (provider != null && provider.isSignInPage(url)) {
-            showSignIn(provider, signInTarget ?: state.url ?: url)
+            signInFlow.signInPageReached(provider, url)
             return
         }
         val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)
@@ -492,6 +437,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             schemePokePending = false
             pokeSettings()
         }
+        loads.started(url, ofSigningInSite = provider != null)
         state.url = url
         state.loading = true
         state.certificate = null
@@ -501,6 +447,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     private fun onPageDone(url: String) {
+        loads.finished(url)
         state.loading = false
         state.url = url
         state.title = webView.title
@@ -714,7 +661,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun copy(url: String) = copyText(url, url, R.string.browser_copied)
         override fun openExternal(url: String) = openOutside(url)
         override fun openCurrentExternal() {
-            (loadingUrl ?: state.url)?.let(::openOutside)
+            (loads.loadingUrl ?: state.url)?.let(::openOutside)
         }
         override fun open(url: String) {
             if (!handleNavigation(url)) load(url)
@@ -752,7 +699,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             }
         }
         override fun retry() {
-            val url = loadingUrl ?: state.url ?: return
+            val url = loads.loadingUrl ?: state.url ?: return
             state.error = null
             load(url)
         }
@@ -769,19 +716,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
         override fun pickUpload(source: UploadSource) = this@InAppBrowserActivity.pickUpload(source)
         override fun cancelUpload() = deliverUpload(null)
-        override fun signInAgain() {
-            val target = state.signIn?.target ?: return
-            val provider = signIns.forUrl(target) ?: return
-            signInJob?.cancel()
-            signInJob = lifecycleScope.launch { trySignIn(provider, target) }
-        }
-        override fun signInOnWeb() {
-            val target = state.signIn?.target ?: return
-            val web = signIns.forUrl(target)?.webSignInUrl(target) ?: return
-            signInJob?.cancel()
-            state.signIn = null
-            load(web)
-        }
+        override fun signInAgain() = signInFlow.signInAgain()
+        override fun signInOnWeb() = signInFlow.signInOnWeb()
     }
 
     // ── WebView callbacks ─────────────────────────────────────────────────
@@ -825,16 +761,16 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
             if (!request.isForMainFrame) return
             state.loading = false
-            state.error = BrowserError.Unreachable(request.url.host)
+            loads.failed(request.url.toString(), BrowserError.Unreachable(request.url.host))
         }
 
         override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
             // Never past a bad certificate.
             handler.cancel()
             val url = error.url
-            if (url == loadingUrl || url == state.url || state.loading) {
+            if (url == loads.loadingUrl || url == state.url || state.loading) {
                 state.loading = false
-                state.error = BrowserError.BadCertificate(url?.toHttpUrlOrNull()?.host ?: state.host)
+                loads.failed(url, BrowserError.BadCertificate(url?.toHttpUrlOrNull()?.host ?: state.host))
             }
         }
 
