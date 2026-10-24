@@ -268,14 +268,18 @@ class SchoolMailMessageViewModel @Inject constructor(
             val generation = account.accountGeneration
             update { it.copy(content = Content.Loading) }
             try {
-                val folders = repository.folders()
-                update { it.copy(folders = folders) }
-                val summary = repository.summary(folder, uid) ?: throw MailError.Protocol("message is gone")
-                update { it.copy(content = Content.LoadingBody(summary)) }
-                val body = try {
-                    repository.body(folder, uid)
-                } catch (e: MailError.Protocol) {
-                    // A body we cannot parse is still readable as its source (spec §9.1).
+                // Ahead of the background download: otherwise one of its batches went before the
+                // summary and another between the summary and the body, seconds of waiting while
+                // the first download of a mailbox ran.
+                val (summary, body) = repository.ahead {
+                    val folders = repository.folders()
+                    update { it.copy(folders = folders) }
+                    val summary = repository.summary(folder, uid) ?: throw MailError.Protocol("message is gone")
+                    update { it.copy(content = Content.LoadingBody(summary)) }
+                    // A body we cannot parse is still readable as its source (spec §9.1): null.
+                    summary to try { repository.body(folder, uid) } catch (e: MailError.Protocol) { null }
+                }
+                if (body == null) {
                     update { it.copy(content = Content.Ready(summary, EMPTY_BODY, null, null, "", emptyList()), parseFailed = true) }
                     markSeen(summary)
                     selectMode(ViewMode.SOURCE)

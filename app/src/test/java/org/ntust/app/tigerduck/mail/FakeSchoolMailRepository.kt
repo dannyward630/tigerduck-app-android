@@ -124,6 +124,9 @@ class FakeSchoolMailRepository : SchoolMailRepository {
      * test can tell "the fetch was refused" apart from "the fetch was never attempted".
      */
     val bodyCalls = mutableListOf<Pair<String, Long>>()
+    /** What was asked for inside an [ahead] block, in order: "summary" and "body". */
+    val askedAhead = mutableListOf<String>()
+    private var aheadDepth = 0
     var moveError: MailError? = null
     var deleteError: MailError? = null
     /** Thrown by [setSeen] before it records anything, so a refused mark-read leaves no trace. */
@@ -341,10 +344,23 @@ class FakeSchoolMailRepository : SchoolMailRepository {
     }
     override suspend fun refreshFlags(folder: String, uids: List<Long>): Map<Long, MailFlags> =
         touching(folder) { sorted(folder).filter { it.uid in uids }.associate { it.uid to it.flags } }
-    override suspend fun summary(folder: String, uid: Long) = touching(folder) { sorted(folder).firstOrNull { it.uid == uid } }
+    override suspend fun <T> ahead(block: suspend () -> T): T {
+        aheadDepth++
+        try {
+            return block()
+        } finally {
+            aheadDepth--
+        }
+    }
+
+    override suspend fun summary(folder: String, uid: Long) = touching(folder) {
+        if (aheadDepth > 0) askedAhead += "summary"
+        sorted(folder).firstOrNull { it.uid == uid }
+    }
     override suspend fun body(folder: String, uid: Long): MailBody {
         foldersTouched += folder
         bodyCalls += folder to uid
+        if (aheadDepth > 0) askedAhead += "body"
         onBody?.invoke()
         bodyError?.let { throw it }
         return bodies[uid] ?: throw MailError.Protocol("gone")
