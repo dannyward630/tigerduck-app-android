@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.mail.index
 
 import org.ntust.app.tigerduck.mail.model.MailFlags
+import org.ntust.app.tigerduck.mail.model.MailRow
 import org.ntust.app.tigerduck.mail.model.MailSummary
 import java.util.Collections
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -110,6 +111,13 @@ class InMemoryMailSearchIndex : MailSearchIndex {
         if (this.owner != owner || validities[folder] != uidValidity) return emptyMap()
         val box = mail[folder].orEmpty()
         return uids.mapNotNull { box[it]?.summary }.associateBy { it.uid }
+    }
+
+    @Synchronized
+    override fun allMail(owner: String): List<MailRow> {
+        called()
+        if (this.owner != owner) return emptyList()
+        return mail.flatMap { (folder, box) -> box.values.map { MailRow(folder, it.summary) } }
     }
 
     @Synchronized

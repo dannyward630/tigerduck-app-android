@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.mail.compose.ComposeRules
+import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.ui.screen.mail.MailRecipientTokens.Consumed
 
 class MailRecipientTokensTest {
@@ -152,5 +153,16 @@ class MailRecipientTokensTest {
         val removed = editing.remove(field.tokens[0].id)
         assertEquals(listOf("b@x.tw", "c@x.tw"), removed.entries)
         assertEquals(1, removed.draftAt)
+    }
+
+    @Test
+    fun `a picked suggestion takes the place of what was being typed, quoted as sending reads it`() {
+        val field = RecipientField.of("a@x.tw, c@x.tw").let { it.edit(it.tokens[1].id) }.typed(emptyList(), "Chen")
+
+        val picked = field.pick(MailAddress("Chen, Bob", "bob@x.tw"))
+
+        assertEquals(listOf("a@x.tw", "\"Chen, Bob\" <bob@x.tw>"), picked.entries)
+        assertEquals("", picked.draft)
+        assertEquals("bob@x.tw", ComposeRules.sendableAddress(picked.tokens[1].text)?.address)
     }
 }

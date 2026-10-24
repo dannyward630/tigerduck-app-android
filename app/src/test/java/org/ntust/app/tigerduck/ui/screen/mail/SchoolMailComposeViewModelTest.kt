@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -102,6 +103,56 @@ class SchoolMailComposeViewModelTest {
         io.drain()
         assertFalse(vm.state.value.loading)
         assertTrue(vm.state.value.body.contains("line1"))
+    }
+
+    @Test
+    fun `a recipient field suggests the people in the mail on the phone, and a pick becomes a bubble`() {
+        val teacher = MailAddress("王大明", "wang@example.com")
+        repo.correspondence = listOf(mailSummary(1, from = teacher))
+        val vm = vm(ComposeMode.NEW)
+
+        vm.updateRecipients(RecipientSlot.TO) { it.typed(emptyList(), "大明") }
+        assertEquals(listOf(teacher), vm.state.value.suggestions(RecipientSlot.TO))
+        assertEquals("only the field typed in", emptyList<MailAddress>(), vm.state.value.suggestions(RecipientSlot.CC))
+
+        vm.updateRecipients(RecipientSlot.TO) { it.pick(teacher) }
+        assertEquals(listOf("王大明 <wang@example.com>"), vm.state.value.to.entries)
+        assertEquals("", vm.state.value.to.draft)
+        assertEquals(emptyList<MailAddress>(), vm.state.value.suggestions(RecipientSlot.TO))
+        // On the mail already, so not suggested in another field either.
+        vm.updateRecipients(RecipientSlot.CC) { it.typed(emptyList(), "wang") }
+        assertEquals(emptyList<MailAddress>(), vm.state.value.suggestions(RecipientSlot.CC))
+    }
+
+    @Test
+    fun `the suggestions go with a sign-out`() {
+        repo.correspondence = listOf(mailSummary(1, from = MailAddress("王大明", "wang@example.com")))
+        val vm = vm(ComposeMode.NEW)
+        vm.updateRecipients(RecipientSlot.TO) { it.typed(emptyList(), "wang") }
+        assertEquals(1, vm.state.value.suggestions(RecipientSlot.TO).size)
+
+        account.signOut()
+
+        assertEquals(emptyList<MailAddress>(), vm.state.value.suggestions(RecipientSlot.TO))
+    }
+
+    @Test
+    fun `contacts read for a student another one signs in over are not suggested`() {
+        val server = FakeMailServer().apply { passwords["B10000002"] = "pw" }
+        val account = MailAccount(InMemoryCredentialStore(), InMemoryMailStateStore(), server.factory(), cache,
+            FakeDemoGate(), schoolMailSite(), RecordingScheduler(), RecordingNotifier(), appScope)
+        assertNull(runBlocking { account.signIn("b10000001", "pw") })
+        repo.correspondence = listOf(mailSummary(1, from = MailAddress("王大明", "wang@example.com")))
+        val io = HeldDispatcher()
+        val vm = SchoolMailComposeViewModel(handle(ComposeMode.NEW), repo, account, cache, noPicks, notices, io)
+        // The load gets its answer once the next student has left this one behind, and before their
+        // sign-in moves the account on.
+        account.onLockWait = { io.drain() }
+        assertNull(runBlocking { account.signIn("b10000002", "pw") })
+        account.onLockWait = null
+
+        vm.updateRecipients(RecipientSlot.TO) { it.typed(emptyList(), "wang") }
+        assertEquals(emptyList<MailAddress>(), vm.state.value.suggestions(RecipientSlot.TO))
     }
 
     @Test

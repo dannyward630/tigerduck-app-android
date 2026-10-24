@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,11 +28,14 @@ import org.ntust.app.tigerduck.mail.compose.ComposeRules
 import org.ntust.app.tigerduck.mail.compose.MailtoLink
 import org.ntust.app.tigerduck.mail.compose.OutgoingAttachment
 import org.ntust.app.tigerduck.mail.compose.OutgoingMail
+import org.ntust.app.tigerduck.mail.compose.RecipientSuggestions
+import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.sanitize.HtmlSanitizer
 import org.ntust.app.tigerduck.mail.smtp.SentCopy
 import org.ntust.app.tigerduck.mail.store.MailCache
 import java.io.File
 import java.io.InputStream
+import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 
@@ -139,11 +143,25 @@ class SchoolMailComposeViewModel @Inject constructor(
         val errorAcknowledged: Boolean = false,
         val done: Boolean = false,
         val savedDraft: Boolean = false,
+        /** The people the recipient fields suggest, from the mail on the phone; see [suggestions]. */
+        val contacts: List<RecipientSuggestions.Contact> = emptyList(),
         internal val baseline: Fields = Fields(),
     ) {
         internal val fields get() = Fields(to.entries, cc.entries, bcc.entries, subject, body, attachments.map { it.id })
         /** Anything changed since the screen opened — leaving asks to save a draft (spec §6.4). */
         val dirty: Boolean get() = fields != baseline
+
+        /** Who [slot]'s field suggests for what is being typed in it, leaving out anyone the mail is to already. */
+        fun suggestions(slot: RecipientSlot): List<MailAddress> {
+            val field = when (slot) {
+                RecipientSlot.TO -> to
+                RecipientSlot.CC -> cc
+                RecipientSlot.BCC -> bcc
+            }
+            if (field.draft.isBlank()) return emptyList()
+            val taken = listOf(to, cc, bcc).flatMap { ComposeRules.parseRecipients(it.entries).addresses }.map { it.address }
+            return RecipientSuggestions.matching(contacts, field.draft, taken)
+        }
     }
 
     /** Who a new message is to when the screen was opened for someone, such as a course member. */
@@ -151,6 +169,50 @@ class SchoolMailComposeViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(initialState())
     val state: StateFlow<UiState> = _state.asStateFlow()
+
+    /**
+     * Moved by every sign-out and every student signing in over another, on the main thread: a
+     * load of the contacts lands only while it has not moved since the load began. The account's
+     * generation is not enough, as a student change is told before the next sign-in moves it.
+     */
+    private var contactsTicket = 0
+
+    init {
+        // Kept on the phone for the account they came from alone (tigerduck-app#552). Subscribed
+        // before this constructor returns, as the repository subscribes, so no change can come
+        // between the load starting and the screen hearing of it: neither flow replays.
+        for (left in listOf(account.signOuts, account.studentChanges)) {
+            viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                left.collect {
+                    contactsTicket++
+                    _state.update { it.copy(contacts = emptyList()) }
+                }
+            }
+        }
+        loadContacts()
+    }
+
+    /**
+     * Ranks the people in the mail on the phone for the recipient fields, once, off the main
+     * thread: a few thousand mail to read. Nothing is suggested when that fails, and nothing of an
+     * account that left meanwhile.
+     */
+    private fun loadContacts() {
+        val ticket = contactsTicket
+        viewModelScope.launch {
+            val generation = account.accountGeneration
+            val contacts = try {
+                withContext(io) {
+                    RecipientSuggestions.contacts(repository.correspondence(), repository.selfAddress().address, Instant.now())
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                return@launch
+            }
+            if (ticket == contactsTicket && account.accountGeneration == generation) _state.update { it.copy(contacts = contacts) }
+        }
+    }
 
     /**
      * A new message opened for someone starts addressed to them, and that address is its
