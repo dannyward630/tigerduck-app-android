@@ -2,6 +2,9 @@ package org.ntust.app.tigerduck.ui.screen.settings
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -15,6 +18,8 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -61,21 +66,53 @@ class AccentColorPageTest {
         direction: AccentGradientDirection = AccentGradientDirection.TopLeftToBottomRight,
         followsWallpaper: Boolean = false,
         isDark: Boolean = false,
+        fontScale: Float = 1f,
     ) {
         composeRule.setContent {
-            AccentColorPage(
-                fixedHex = fixedHex,
-                gradientEnd = gradientEnd,
-                direction = direction,
-                followsWallpaper = followsWallpaper,
-                isDark = isDark,
-                onPick = { picked = it },
-                onPickGradient = { start, end -> pickedGradient = start to end },
-                onPickDirection = { pickedDirection = it },
-                onPickWallpaper = { wallpaperPicks++ },
-            )
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                AccentColorPage(
+                    fixedHex = fixedHex,
+                    gradientEnd = gradientEnd,
+                    direction = direction,
+                    followsWallpaper = followsWallpaper,
+                    isDark = isDark,
+                    onPick = { picked = it },
+                    onPickGradient = { start, end -> pickedGradient = start to end },
+                    onPickDirection = { pickedDirection = it },
+                    onPickWallpaper = { wallpaperPicks++ },
+                )
+            }
         }
         composeRule.waitForIdle()
+    }
+
+    /** The directions' names, in the page's order: row by row, four to a row. */
+    private val directionNames = listOf(
+        R.string.settings_accent_gradient_direction_top_to_bottom,
+        R.string.settings_accent_gradient_direction_left_to_right,
+        R.string.settings_accent_gradient_direction_bottom_left_to_top_right,
+        R.string.settings_accent_gradient_direction_top_left_to_bottom_right,
+        R.string.settings_accent_gradient_direction_bottom_to_top,
+        R.string.settings_accent_gradient_direction_right_to_left,
+        R.string.settings_accent_gradient_direction_top_right_to_bottom_left,
+        R.string.settings_accent_gradient_direction_bottom_right_to_top_left,
+    )
+
+    private fun directionTiles(): List<Rect> = directionNames.map {
+        composeRule.onNodeWithContentDescription(text(it)).fetchSemanticsNode().boundsInRoot
+    }
+
+    /** Two rows of four, in [directionNames]' order, each tile above its reverse and big enough to tap. */
+    private fun assertDirectionGrid(tiles: List<Rect>) {
+        val (top, bottom) = tiles.take(4) to tiles.drop(4)
+        val tap = with(composeRule.density) { 48.dp.toPx() }
+        top.forEach { assertEquals(top[0].top, it.top, 0.5f) }
+        bottom.forEach { assertEquals(bottom[0].top, it.top, 0.5f) }
+        assertTrue("the second row is under the first", bottom[0].top >= top[0].bottom)
+        top.zip(bottom).forEach { (above, below) -> assertEquals(above.left, below.left, 0.5f) }
+        top.zipWithNext().forEach { (a, b) -> assertTrue("$b follows $a", b.left >= a.right) }
+        tiles.forEach { assertTrue("$it is too small to tap", it.width >= tap - 0.5f && it.height >= tap - 0.5f) }
     }
 
     @Test
@@ -202,15 +239,44 @@ class AccentColorPageTest {
         show(fixedHex = blue, gradientEnd = purple, direction = AccentGradientDirection.RightToLeft)
 
         composeRule.onNodeWithText(directionLabel).assertExists()
-        listOf(
-            R.string.settings_accent_gradient_direction_top_to_bottom,
-            R.string.settings_accent_gradient_direction_bottom_to_top,
-            R.string.settings_accent_gradient_direction_left_to_right,
-            R.string.settings_accent_gradient_direction_top_right_to_bottom_left,
-            R.string.settings_accent_gradient_direction_top_left_to_bottom_right,
-        ).forEach { composeRule.onNodeWithContentDescription(text(it)).assertIsNotSelected() }
+        (directionNames - R.string.settings_accent_gradient_direction_right_to_left)
+            .forEach { composeRule.onNodeWithContentDescription(text(it)).assertIsNotSelected() }
         composeRule.onNodeWithContentDescription(text(R.string.settings_accent_gradient_direction_right_to_left))
             .assertIsSelected()
+    }
+
+    @Test
+    fun `the directions are two rows of four, each above its reverse`() {
+        show(fixedHex = blue, gradientEnd = purple)
+
+        assertDirectionGrid(directionTiles())
+    }
+
+    // A 360dp phone at the app's 130% display size lays out as a 277dp one,
+    // and its 150% text size is a font scale of 1.5.
+    @Config(qualifiers = "w277dp-h1600dp")
+    @Test
+    fun `at the largest sizes on a small phone the directions stay two rows of four, whole and big enough to tap`() {
+        show(fixedHex = blue, gradientEnd = purple, fontScale = 1.5f)
+
+        val root = composeRule.onRoot().fetchSemanticsNode().boundsInRoot
+        // Inside the card's content: its margin and its own padding, 16dp each.
+        val inset = with(composeRule.density) { 32.dp.toPx() }
+        val tiles = directionTiles()
+        assertDirectionGrid(tiles)
+        tiles.forEach {
+            assertTrue("$it runs into the card's padding", it.left >= root.left + inset - 0.5f && it.right <= root.right - inset + 0.5f)
+        }
+    }
+
+    @Test
+    fun `choosing a direction from a bottom corner picks it`() {
+        show(fixedHex = blue, gradientEnd = purple)
+
+        composeRule.onNodeWithContentDescription(text(R.string.settings_accent_gradient_direction_bottom_right_to_top_left))
+            .performClick()
+
+        assertEquals(AccentGradientDirection.BottomRightToTopLeft, pickedDirection)
     }
 
     @Test
@@ -252,8 +318,8 @@ class AccentColorPageTest {
             .onAllNodes(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton))
             .fetchSemanticsNodes()
         // The wallpaper, eight presets and the custom color, six gradients and
-        // the custom one, and the six directions.
-        assertEquals(1 + 9 + 7 + 6, nodes.size)
+        // the custom one, and the eight directions.
+        assertEquals(1 + 9 + 7 + 8, nodes.size)
         nodes.forEach {
             val name = it.config[SemanticsProperties.ContentDescription].joinToString()
             assertTrue("$name is cut", it.boundsInRoot.left >= root.left && it.boundsInRoot.right <= root.right)

@@ -8,7 +8,7 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Test
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
 
-/** The accent gradient's six directions, as stored and as drawn. */
+/** The accent gradient's eight directions, as stored and as drawn. */
 class AccentBrushTest {
 
     private val size = Size(100f, 50f)
@@ -32,16 +32,19 @@ class AccentBrushTest {
         assertEquals(AccentGradientDirection.TopLeftToBottomRight, AccentGradientDirection.fromCode(-1))
     }
 
+    // Row by row in the page's grid of four: each direction above its reverse.
     @Test
-    fun `the page offers the directions top, bottom, left, right, then the two diagonals`() {
+    fun `the page offers the directions in two rows of four, each above its reverse`() {
         assertEquals(
             listOf(
                 AccentGradientDirection.TopToBottom,
-                AccentGradientDirection.BottomToTop,
                 AccentGradientDirection.LeftToRight,
+                AccentGradientDirection.BottomLeftToTopRight,
+                AccentGradientDirection.TopLeftToBottomRight,
+                AccentGradientDirection.BottomToTop,
                 AccentGradientDirection.RightToLeft,
                 AccentGradientDirection.TopRightToBottomLeft,
-                AccentGradientDirection.TopLeftToBottomRight,
+                AccentGradientDirection.BottomRightToTopLeft,
             ),
             AccentGradientDirection.entries,
         )
@@ -56,7 +59,10 @@ class AccentBrushTest {
             AccentGradientDirection.RightToLeft to (Offset(100f, 0f) to Offset(0f, 0f)),
             AccentGradientDirection.TopRightToBottomLeft to (Offset(100f, 0f) to Offset(0f, 50f)),
             AccentGradientDirection.TopLeftToBottomRight to (Offset(0f, 0f) to Offset(100f, 50f)),
+            AccentGradientDirection.BottomLeftToTopRight to (Offset(0f, 50f) to Offset(100f, 0f)),
+            AccentGradientDirection.BottomRightToTopLeft to (Offset(100f, 50f) to Offset(0f, 0f)),
         )
+        assertEquals(AccentGradientDirection.entries.toSet(), expected.keys)
         expected.forEach { (direction, points) ->
             assertEquals(direction.name, points, direction.endpoints(size))
         }

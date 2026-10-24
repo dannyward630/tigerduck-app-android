@@ -89,6 +89,15 @@ class WearAccentHexTest {
     }
 
     @Test
+    fun `a direction from a bottom corner is sent as its own code`() {
+        val setting = AccentSetting(prefs).apply { pickGradient(0x007AFF, 0xAF52DE) }
+        setting.pickDirection(AccentGradientDirection.BottomLeftToTopRight)
+        assertEquals(WearAccentGradient("#AF52DE", 6), wearAccentGradient(prefs))
+        setting.pickDirection(AccentGradientDirection.BottomRightToTopLeft)
+        assertEquals(WearAccentGradient("#AF52DE", 7), wearAccentGradient(prefs))
+    }
+
+    @Test
     fun `a gradient picked with no direction goes top left to bottom right`() {
         AccentSetting(prefs).pickGradient(0x5856D6, 0x5AC8FA)
         assertEquals(WearAccentGradient("#5AC8FA", 5), wearAccentGradient(prefs))
