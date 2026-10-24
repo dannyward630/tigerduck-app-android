@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -42,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
@@ -220,6 +223,7 @@ internal fun MembersList(
                                 store = store,
                                 member = row.member,
                                 picture = row.member.pictureUrl?.let { pictures[it] },
+                                isMe = row.member.id == list.ownId,
                                 first = row.index == 0,
                                 last = row.index == row.section.members.lastIndex,
                                 onOpen = onOpen,
@@ -359,6 +363,7 @@ private fun MemberCardRow(
     store: MoodleCourseStore,
     member: MoodleMember,
     picture: androidx.compose.ui.graphics.ImageBitmap?,
+    isMe: Boolean,
     first: Boolean,
     last: Boolean,
     onOpen: (MoodleMember) -> Unit,
@@ -376,26 +381,40 @@ private fun MemberCardRow(
             if (!first) {
                 HorizontalDivider(modifier = Modifier.padding(start = 72.dp), color = cardDividerColor())
             }
-            MemberRow(member, picture) { onOpen(member) }
+            MemberRow(member, picture, isMe) { onOpen(member) }
         }
     }
 }
 
-/** A person in the list: picture, name, and student ID and department, the department by its short name. */
+/**
+ * A person in the list: picture, name, and student ID and department, the department by its short
+ * name. The signed-in student's own row ([isMe]) has a "Me" tag after the name, which TalkBack
+ * reads with it, as on the iPhone.
+ */
 @Composable
-private fun MemberRow(member: MoodleMember, picture: androidx.compose.ui.graphics.ImageBitmap?, onClick: () -> Unit) {
+private fun MemberRow(member: MoodleMember, picture: androidx.compose.ui.graphics.ImageBitmap?, isMe: Boolean, onClick: () -> Unit) {
     val department = member.departmentKey?.let { departmentNameRes(it, short = true) }?.let { stringResource(it) }
     val subline = listOfNotNull(member.studentId, department).joinToString(" · ")
+    val me = stringResource(R.string.course_member_me)
     ListItem(
         modifier = Modifier
             .clickable(role = Role.Button, onClick = onClick)
             .clearAndSetSemantics {
-                contentDescription = member.name
+                contentDescription = if (isMe) "${member.name}, $me" else member.name
                 if (subline.isNotEmpty()) stateDescription = subline
             },
         colors = ListItemDefaults.colors(containerColor = MaterialTheme.colorScheme.surface),
         leadingContent = { MoodleAvatar(member.name, picture, 40.dp) },
-        headlineContent = { Text(member.name, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        headlineContent = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Cut short before the tag is: the tag says whose row it is.
+                Text(member.name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (isMe) {
+                    Spacer(Modifier.width(6.dp))
+                    MeTag(me)
+                }
+            }
+        },
         // The department comes from the ID, so there is none without one.
         supportingContent = member.studentId?.let { studentId -> { MemberSubline(studentId, department) } },
         trailingContent = {
@@ -406,6 +425,20 @@ private fun MemberRow(member: MoodleMember, picture: androidx.compose.ui.graphic
             )
         },
     )
+}
+
+/** The "Me" after the signed-in student's name, in the accent colour as the interests on a member's page. */
+@Composable
+private fun MeTag(text: String) {
+    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+        )
+    }
 }
 
 /**

@@ -89,6 +89,7 @@ import java.util.Locale
 fun CalendarScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
     onOpenSignInSettings: () -> Unit = {},
+    onOpenAssignment: (assignmentId: String) -> Unit = {},
 ) {
     val eventsByDay by viewModel.eventsByDay.collectAsStateWithLifecycle()
     val holidayOverrides by viewModel.holidayOverrides.collectAsStateWithLifecycle()
@@ -209,6 +210,7 @@ fun CalendarScreen(
                                 onNotifyOnHolidayChange = holidayId?.let { id ->
                                     { on: Boolean -> viewModel.setNotifyOnHoliday(id, on) }
                                 },
+                                onOpenAssignment = onOpenAssignment,
                             )
                         }
                     }
@@ -520,15 +522,24 @@ internal fun EventRow(
     event: CalendarEvent,
     notifyOnHoliday: Boolean? = null,
     onNotifyOnHolidayChange: ((Boolean) -> Unit)? = null,
+    onOpenAssignment: ((assignmentId: String) -> Unit)? = null,
 ) {
     val timeFmt = remember {
         SimpleDateFormat("HH:mm", Locale.TAIWAN).apply {
             timeZone = org.ntust.app.tigerduck.AppConstants.TAIPEI_TZ
         }
     }
+    // A Moodle deadline opens its assignment's page, as a row on Home does.
+    val assignmentId = event.moodleAssignmentId
+    val open = if (assignmentId != null && onOpenAssignment != null) {
+        Modifier.clickable(role = Role.Button) { onOpenAssignment(assignmentId) }
+    } else {
+        Modifier
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(open)
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

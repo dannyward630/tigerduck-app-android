@@ -131,6 +131,38 @@ class PendingCourseDeletesTest {
         assertEquals(emptySet<String>(), deletes.waitingIn(term))
     }
 
+    /** The class table keeps a delete before its hide is written, and sends it after. */
+    @Test
+    fun `a delete kept ahead of its send waits on disk, unsent, until the send takes it`() = runTest {
+        val queuedAt = deletes.stamp()
+        deletes.keep(term, typed, queuedAt)
+        assertEquals(mapOf(term to listOf(typed)), queued())
+        assertEquals(emptyList<String>(), keys())
+
+        deletes.send(term, typed, queuedAt)
+        assertEquals(listOf("client:1151:MA1010002"), keys())
+        assertEquals(emptyMap<String, List<String>>(), queued())
+    }
+
+    /**
+     * The class table keeps its delete, then sends it once its writes are done. A full sync's retry
+     * can send it in between, and a course selection answer bring the course back with the roster:
+     * sent again then, the DELETE would take the course off the server after its upload.
+     */
+    @Test
+    fun `a kept delete a retry has already sent is not sent again`() = runTest {
+        deletes.keep(term, typed, deletes.stamp())
+        deletes.retry()
+        assertEquals(emptyMap<String, List<String>>(), queued())
+        // The roster brings the course back meanwhile.
+        cache.saveCourses(listOf(course(typed)), term)
+
+        deletes.sendKept(term, typed)
+
+        assertEquals(listOf("client:1151:MA1010002"), keys())
+        assertEquals(emptyMap<String, List<String>>(), queued())
+    }
+
     @Test
     fun `a delete that lands is not kept`() = runTest {
         deletes.send(term, typed)
