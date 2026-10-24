@@ -15,6 +15,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.TorchState
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.BinaryBitmap
@@ -65,11 +67,15 @@ import java.util.concurrent.Executors
  * asks for the camera when the page opens, and with access refused says so, with a way to the
  * app's settings, as the iOS page does. Without a camera the area stays empty, as on iOS; a
  * camera that does not start offers Retry. Reading a code from a picture is `QrCodeImageReader`.
+ * [torch] hears of the camera bound, for the page's flashlight toggle, which this does not draw.
  */
 @Composable
-fun QrScannerCamera(onScanned: (String) -> Boolean, modifier: Modifier = Modifier) {
+fun QrScannerCamera(onScanned: (String) -> ClassTableImportModel.ScanAnswer, torch: ScannerTorch, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) return
+    if (!context.packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY)) {
+        LaunchedEffect(torch) { torch.unavailable() }
+        return
+    }
     // Saved, so turning the phone does not ask again.
     var granted by rememberSaveable { mutableStateOf(hasCameraPermission(context)) }
     var refused by rememberSaveable { mutableStateOf(false) }
@@ -88,7 +94,7 @@ fun QrScannerCamera(onScanned: (String) -> Boolean, modifier: Modifier = Modifie
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     when {
-        granted -> CameraPreview(onScanned = onScanned, modifier = modifier)
+        granted -> CameraPreview(onScanned = onScanned, torch = torch, modifier = modifier)
         refused -> CameraMessage(
             message = stringResource(R.string.class_table_import_camera_denied),
             action = stringResource(R.string.action_go_to_settings),
@@ -96,6 +102,7 @@ fun QrScannerCamera(onScanned: (String) -> Boolean, modifier: Modifier = Modifie
             modifier = modifier,
         )
     }
+    LaunchedEffect(granted, refused) { if (!granted && refused) torch.unavailable() }
 }
 
 @Composable
@@ -120,7 +127,7 @@ private fun CameraMessage(message: String?, action: String, onAction: () -> Unit
 }
 
 @Composable
-private fun CameraPreview(onScanned: (String) -> Boolean, modifier: Modifier) {
+private fun CameraPreview(onScanned: (String) -> ClassTableImportModel.ScanAnswer, torch: ScannerTorch, modifier: Modifier) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val latest by rememberUpdatedState(onScanned)
@@ -144,25 +151,49 @@ private fun CameraPreview(onScanned: (String) -> Boolean, modifier: Modifier) {
                 providerFuture.get()
             } catch (e: Exception) {
                 Log.w(TAG, "No camera provider: ${e.logSummary()}")
-                if (session.isActive) failed = true
+                if (session.isActive) {
+                    failed = true
+                    torch.unavailable()
+                }
                 return@addListener
             }
             session.start {
                 val preview = Preview.Builder().build().also {
                     it.setSurfaceProvider { request -> surfaceRequest = request }
                 }
+                // Codes go to the import on the main thread, where it keeps its state; one it
+                // could not take yet, as while a dialog is over the scanner, is read again.
+                val handOff = QrCodeHandOff(RepeatedQrCodeFilter(), post = mainExecutor::execute) { text -> latest(text) }
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
-                    // Codes go to the import on the main thread, where it keeps its state.
-                    .also { it.setAnalyzer(executor, QrFrameReader { text -> mainExecutor.execute { latest(text) } }) }
-                try {
+                    .also { it.setAnalyzer(executor, QrFrameReader(handOff)) }
+                val camera = try {
                     cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector(cameraProvider), preview, analysis)
                 } catch (e: Exception) {
                     Log.w(TAG, "The camera did not start: ${e.logSummary()}")
                     failed = true
+                    torch.unavailable()
+                    null
                 }
-                return@start { cameraProvider.unbind(preview, analysis) }
+                // The torch follows what the camera reports, which turns it off when the camera
+                // closes, as in the background, and opens it again with the torch off.
+                val torchState = camera?.cameraInfo?.torchState
+                val torchObserver = Observer<Int> { torch.stateChanged(on = it == TorchState.ON) }
+                if (camera != null) {
+                    torch.bound(
+                        if (camera.cameraInfo.hasFlashUnit()) { on -> camera.cameraControl.enableTorch(on) } else null,
+                    )
+                    torchState?.observe(lifecycleOwner, torchObserver)
+                }
+                return@start {
+                    // A frame still being read, or a code posted, must not reach the page that left.
+                    handOff.close()
+                    torchState?.removeObserver(torchObserver)
+                    // Off before the camera goes, so it never stays lit after the page.
+                    torch.unbinding()
+                    cameraProvider.unbind(preview, analysis)
+                }
             }
         }, mainExecutor)
         onDispose {
@@ -200,14 +231,13 @@ private fun cameraSelector(provider: ProcessCameraProvider): CameraSelector = li
     }
 } ?: provider.availableCameraInfos.firstOrNull()?.cameraSelector ?: CameraSelector.DEFAULT_BACK_CAMERA
 
-/** Reads each frame's brightness with ZXing; see [RepeatedQrCodeFilter] for a code kept in view. */
-private class QrFrameReader(private val onCode: (String) -> Unit) : ImageAnalysis.Analyzer {
+/** Reads each frame's brightness with ZXing, and hands each code to [handOff]; see [RepeatedQrCodeFilter] for a code kept in view. */
+private class QrFrameReader(private val handOff: QrCodeHandOff) : ImageAnalysis.Analyzer {
     private val reader = QRCodeReader()
     private val hints = mapOf(
         DecodeHintType.POSSIBLE_FORMATS to listOf(BarcodeFormat.QR_CODE),
         DecodeHintType.TRY_HARDER to true,
     )
-    private val filter = RepeatedQrCodeFilter()
 
     override fun analyze(image: ImageProxy) {
         image.use {
@@ -227,7 +257,7 @@ private class QrFrameReader(private val onCode: (String) -> Unit) : ImageAnalysi
             } finally {
                 reader.reset()
             }
-            if (text != null && filter.isNew(text, System.currentTimeMillis())) onCode(text)
+            if (text != null) handOff.read(text, System.currentTimeMillis())
         }
     }
 }

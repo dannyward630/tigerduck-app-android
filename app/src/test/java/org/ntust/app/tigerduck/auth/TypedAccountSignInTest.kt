@@ -106,7 +106,12 @@ class TypedAccountSignInTest {
             steps += "store"
         },
         latch = latch,
-        demoSignIn = { _, password -> (password == DEMO_PASSWORD).also { if (it) onDemo() } },
+        isDemoAccount = { _, password -> password == DEMO_PASSWORD },
+        enterDemo = {
+            steps += "demo"
+            onDemo()
+        },
+        accountChanging = { steps += "owed" },
         markSignedIn = {
             signedIn = true
             steps += "shown"
@@ -175,13 +180,15 @@ class TypedAccountSignInTest {
         assertTrue("got $failure", failure is SsoLoginError.LoginFailed)
         assertEquals(STUDENT to OLD_PASSWORD, stored)
         assertTrue(latch.isRejected)
+        assertEquals("no account change, so no clearing owed", emptyList<String>(), steps)
     }
 
     @Test
     fun `a school sign-in signs nothing in to the library, and shows the account after the store`() = runTest {
         signIn()
 
-        assertEquals(listOf("store", "prepare", "shown", "rest"), steps)
+        // The browser's clearing is owed before the new account reaches disk.
+        assertEquals(listOf("owed", "store", "prepare", "shown", "rest"), steps)
     }
 
     @Test
@@ -192,7 +199,8 @@ class TypedAccountSignInTest {
         assertEquals(emptyList<String>(), requests)
         assertEquals(STUDENT to DEMO_PASSWORD, stored)
         assertFalse(latch.isRejected)
-        assertEquals(listOf("store", "prepare", "shown"), steps)
+        // Owed before demo mode, which is on disk too, goes on.
+        assertEquals(listOf("owed", "demo", "store", "prepare", "shown"), steps)
     }
 
     @Test
@@ -216,7 +224,7 @@ class TypedAccountSignInTest {
 
         assertEquals(TypedAccountSignIn.Outcome.NOT_SIGNED_IN, outcome)
         assertEquals(null, stored)
-        assertEquals(listOf("store", "prepare"), steps)
+        assertEquals(listOf("owed", "store", "prepare"), steps)
         assertFalse(signedIn)
     }
 

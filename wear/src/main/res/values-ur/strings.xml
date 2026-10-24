@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">کورسز کی تعداد</string>
     <string name="class_table_import_enter_link">لنک درج کریں</string>
     <string name="class_table_import_failed">کلاس شیڈول درآمد نہیں ہو سکا</string>
+    <string name="class_table_import_flashlight">ٹارچ</string>
     <string name="class_table_import_invalid_message">شیئر کوڈ خراب ہے یا اس میں تبدیلی کی گئی ہے۔</string>
     <string name="class_table_import_link_placeholder">شیئر لنک</string>
     <string name="class_table_import_lookup_failed">کورس کی تفصیلات لوڈ نہیں ہو سکیں</string>

@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kursi</string>
     <string name="class_table_import_enter_link">Ievadīt saiti</string>
     <string name="class_table_import_failed">Neizdevās importēt stundu plānu</string>
+    <string name="class_table_import_flashlight">Lukturītis</string>
     <string name="class_table_import_invalid_message">Kopīgošanas kods ir bojāts vai mainīts.</string>
     <string name="class_table_import_link_placeholder">Kopīgošanas saite</string>
     <string name="class_table_import_lookup_failed">Neizdevās ielādēt kursu informāciju</string>

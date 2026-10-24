@@ -3,11 +3,15 @@ package org.ntust.app.tigerduck.auth
 import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.ntust.app.tigerduck.browser.BrowserCleanup
 import org.ntust.app.tigerduck.data.cache.BulletinCache
 import org.ntust.app.tigerduck.data.BulletinReadStateStore
 import org.ntust.app.tigerduck.data.cache.DataCache
@@ -95,10 +99,24 @@ class AuthService @Inject constructor(
      * Update on one made it vanish after each reboot or background kill until
      * the user signed in by hand.
      */
-    private val _authState = MutableStateFlow(demoMode || credentials.ntustStudentId != null)
-    val authState: StateFlow<Boolean> = _authState
+    private val signedInState = SignedInState(demoMode || credentials.ntustStudentId != null)
+    val authState: StateFlow<Boolean> = signedInState.signedIn
+
+    /** [authState] with its changes counted, for what must follow every one of them; see [AccountState]. */
+    val accountState: StateFlow<AccountState> = signedInState.counted
+
+    private fun setSignedIn(signedIn: Boolean) = signedInState.set(signedIn)
 
     private val loginMutex = Mutex()
+
+    private val _signIns = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * Each sign-in by hand the school took, whoever it is: another student
+     * signing in over this one leaves [authState] true throughout, so what
+     * follows an account, such as the in-app browser's data, follows this too.
+     */
+    val signIns: SharedFlow<Unit> = _signIns.asSharedFlow()
 
     // Held by a sign-out while it drops the stored account and moves the sign-in generation, and
     // by a sign-in while it checks that generation and stores what it got: one that started
@@ -166,10 +184,10 @@ class AuthService @Inject constructor(
         },
         latch = storedPasswordLatch,
         // The store-review account signs in without a server — see DemoAccount.
-        demoSignIn = { studentId, password ->
-            demoAccount.matches(studentId, password).also { matches -> if (matches) demoAccount.enter() }
-        },
-        markSignedIn = { _authState.value = true },
+        isDemoAccount = demoAccount::matches,
+        enterDemo = demoAccount::enter,
+        accountChanging = { BrowserCleanup.of(context).markPending() },
+        markSignedIn = { setSignedIn(true) },
     )
 
     /**
@@ -212,6 +230,7 @@ class AuthService @Inject constructor(
                 // last one imported, whether imported while signed out or left by a wipe that
                 // never ran.
                 prepareSignedIn = {
+                    _signIns.tryEmit(Unit)
                     importedClassTables.accountDidSignIn(normalizedId)
                     // After the store knows who signed in, which empties another account's leftovers.
                     if (demoAccount.isActive) demoAccount.importClassmates()
@@ -348,6 +367,9 @@ class AuthService @Inject constructor(
         // pushRegistration.unregister() below sends its DELETE afterwards, until
         // the server has it, and without the departing session it would find
         // none to go out with, and leak the device row.
+        // On disk before the account goes: the in-app browser's clearing is owed even if the
+        // process dies before it runs.
+        BrowserCleanup.of(context).markPending()
         val departing = synchronized(accountLock) {
             credentials.signOutSchoolAccount()
             authTokenManager.logout()
@@ -388,7 +410,7 @@ class AuthService @Inject constructor(
         // latches nothing for the next one.
         storedPasswordLatch.clear()
         _loginError.value = null
-        _authState.value = false
+        setSignedIn(false)
         pushRegistration.unregister(departing)
         // Last, so everything above still sees the demo account and keeps
         // its requests on the device.

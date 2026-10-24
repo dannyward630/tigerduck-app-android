@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kursused</string>
     <string name="class_table_import_enter_link">Sisesta link</string>
     <string name="class_table_import_failed">Tunniplaani ei õnnestunud importida</string>
+    <string name="class_table_import_flashlight">Taskulamp</string>
     <string name="class_table_import_invalid_message">Jagamiskood on rikutud või seda on muudetud.</string>
     <string name="class_table_import_link_placeholder">Jagamislink</string>
     <string name="class_table_import_lookup_failed">Kursuste üksikasju ei õnnestunud laadida</string>

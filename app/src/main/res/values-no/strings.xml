@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Emner</string>
     <string name="class_table_import_enter_link">Skriv inn lenke</string>
     <string name="class_table_import_failed">Kunne ikke importere timeplanen</string>
+    <string name="class_table_import_flashlight">Lommelykt</string>
     <string name="class_table_import_invalid_message">Delingskoden er skadet eller endret.</string>
     <string name="class_table_import_link_placeholder">Delingslenke</string>
     <string name="class_table_import_lookup_failed">Kunne ikke laste inn emnedetaljene</string>

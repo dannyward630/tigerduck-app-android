@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Курсы</string>
     <string name="class_table_import_enter_link">Ввести ссылку</string>
     <string name="class_table_import_failed">Не удалось импортировать расписание</string>
+    <string name="class_table_import_flashlight">Фонарик</string>
     <string name="class_table_import_invalid_message">Код для обмена повреждён или изменён.</string>
     <string name="class_table_import_link_placeholder">Ссылка для обмена</string>
     <string name="class_table_import_lookup_failed">Не удалось загрузить сведения о курсах</string>

@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">কোর্সের সংখ্যা</string>
     <string name="class_table_import_enter_link">লিংক লিখুন</string>
     <string name="class_table_import_failed">ক্লাস তালিকা আমদানি করা যায়নি</string>
+    <string name="class_table_import_flashlight">টর্চ</string>
     <string name="class_table_import_invalid_message">শেয়ার কোডটি নষ্ট বা পরিবর্তিত হয়েছে।</string>
     <string name="class_table_import_link_placeholder">শেয়ার লিংক</string>
     <string name="class_table_import_lookup_failed">কোর্সের বিবরণ লোড করা যায়নি</string>

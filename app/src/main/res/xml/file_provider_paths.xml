@@ -7,4 +7,6 @@
     <files-path name="moodle_downloads" path="moodle_files/" />
     <!-- Exported class table images (ClassTableExport.kt). -->
     <cache-path name="class_table_export" path="class_table_export/" />
+    <!-- Photos taken for a page's upload field in the TigerDuck browser (InAppBrowserActivity.UPLOADS_DIR). -->
+    <cache-path name="browser_uploads" path="browser_uploads/" />
 </paths>

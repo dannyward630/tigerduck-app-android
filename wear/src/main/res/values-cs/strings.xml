@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Kurzy</string>
     <string name="class_table_import_enter_link">Zadat odkaz</string>
     <string name="class_table_import_failed">Rozvrh se nepodařilo importovat</string>
+    <string name="class_table_import_flashlight">Svítilna</string>
     <string name="class_table_import_invalid_message">Kód pro sdílení je poškozený nebo byl změněn.</string>
     <string name="class_table_import_link_placeholder">Odkaz ke sdílení</string>
     <string name="class_table_import_lookup_failed">Podrobnosti kurzů se nepodařilo načíst</string>

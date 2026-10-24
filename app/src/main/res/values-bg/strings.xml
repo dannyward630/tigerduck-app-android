@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Курсове</string>
     <string name="class_table_import_enter_link">Въвеждане на връзка</string>
     <string name="class_table_import_failed">Разписанието не можа да бъде импортирано</string>
+    <string name="class_table_import_flashlight">Фенерче</string>
     <string name="class_table_import_invalid_message">Кодът за споделяне е повреден или е бил променен.</string>
     <string name="class_table_import_link_placeholder">Връзка за споделяне</string>
     <string name="class_table_import_lookup_failed">Подробностите за курсовете не можаха да се заредят</string>

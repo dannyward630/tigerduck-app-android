@@ -59,6 +59,7 @@ class FullResetTest {
         credentials = credentials,
         prefs = prefs,
         publishLibraryCredentialsToWatch = { watch += libraryCredentialsForWatch(credentials) },
+        clearBrowser = { steps += "browser" },
     )
 
     @Test
@@ -68,7 +69,7 @@ class FullResetTest {
         fullReset().start(this) { wiped = true }.join()
 
         assertTrue(wiped)
-        assertEquals(listOf("mail", "school", "caches"), steps)
+        assertEquals(listOf("mail", "school", "caches", "browser"), steps)
         assertEquals("B10000009" to "pw", watch.first())
         assertNull(watch.last())
         assertNull(credentials.libraryUsername)

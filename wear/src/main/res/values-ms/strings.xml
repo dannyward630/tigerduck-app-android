@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Bilangan kursus</string>
     <string name="class_table_import_enter_link">Masukkan pautan</string>
     <string name="class_table_import_failed">Tidak dapat mengimport jadual kelas</string>
+    <string name="class_table_import_flashlight">Lampu suluh</string>
     <string name="class_table_import_invalid_message">Kod perkongsian rosak atau telah diubah.</string>
     <string name="class_table_import_link_placeholder">Pautan perkongsian</string>
     <string name="class_table_import_lookup_failed">Tidak dapat memuatkan butiran kursus</string>

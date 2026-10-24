@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Vakken</string>
     <string name="class_table_import_enter_link">Link invoeren</string>
     <string name="class_table_import_failed">Kan rooster niet importeren</string>
+    <string name="class_table_import_flashlight">Zaklamp</string>
     <string name="class_table_import_invalid_message">De deelcode is beschadigd of gewijzigd.</string>
     <string name="class_table_import_link_placeholder">Deellink</string>
     <string name="class_table_import_lookup_failed">Kan vakgegevens niet laden</string>

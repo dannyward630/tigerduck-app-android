@@ -300,6 +300,7 @@
     <string name="class_table_import_course_count">Przedmioty</string>
     <string name="class_table_import_enter_link">Wpisz link</string>
     <string name="class_table_import_failed">Nie udało się zaimportować planu zajęć</string>
+    <string name="class_table_import_flashlight">Latarka</string>
     <string name="class_table_import_invalid_message">Kod udostępniania jest uszkodzony lub został zmieniony.</string>
     <string name="class_table_import_link_placeholder">Link do udostępniania</string>
     <string name="class_table_import_lookup_failed">Nie udało się wczytać szczegółów przedmiotów</string>
