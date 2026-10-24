@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,6 +25,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.East
 import androidx.compose.material.icons.filled.North
+import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material.icons.filled.NorthWest
 import androidx.compose.material.icons.filled.South
 import androidx.compose.material.icons.filled.SouthEast
 import androidx.compose.material.icons.filled.SouthWest
@@ -46,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -321,6 +325,8 @@ private val AccentGradientDirection.label: Int
         AccentGradientDirection.RightToLeft -> R.string.settings_accent_gradient_direction_right_to_left
         AccentGradientDirection.TopRightToBottomLeft -> R.string.settings_accent_gradient_direction_top_right_to_bottom_left
         AccentGradientDirection.TopLeftToBottomRight -> R.string.settings_accent_gradient_direction_top_left_to_bottom_right
+        AccentGradientDirection.BottomLeftToTopRight -> R.string.settings_accent_gradient_direction_bottom_left_to_top_right
+        AccentGradientDirection.BottomRightToTopLeft -> R.string.settings_accent_gradient_direction_bottom_right_to_top_left
     }
 
 // The screen's own sides, as the directions are: not mirrored for a
@@ -333,11 +339,15 @@ private val AccentGradientDirection.arrow: ImageVector
         AccentGradientDirection.RightToLeft -> Icons.Filled.West
         AccentGradientDirection.TopRightToBottomLeft -> Icons.Filled.SouthWest
         AccentGradientDirection.TopLeftToBottomRight -> Icons.Filled.SouthEast
+        AccentGradientDirection.BottomLeftToTopRight -> Icons.Filled.NorthEast
+        AccentGradientDirection.BottomRightToTopLeft -> Icons.Filled.NorthWest
     }
 
 /**
- * The six ways the gradient picked can run, each a tile of that gradient
- * running that way, with an arrow along it. The one picked is ringed.
+ * The eight ways the gradient picked can run, in two rows of four in the
+ * order of [AccentGradientDirection]: each direction above its reverse. Each
+ * is a tile of that gradient running that way, with an arrow along it. The
+ * one picked is ringed.
  */
 @Composable
 private fun DirectionChooser(
@@ -350,29 +360,68 @@ private fun DirectionChooser(
     val shape = RoundedCornerShape(12.dp)
     val ring = MaterialTheme.colorScheme.onSurface
     val arrowTint = checkOnGradient(startHex, endHex, isDark)
-    EvenLines(count = AccentGradientDirection.entries.size, itemSize = DirectionTileSize) {
-        AccentGradientDirection.entries.forEach { option ->
-            val name = stringResource(option.label)
-            val isSelected = option == selected
-            Box(
-                modifier = Modifier
-                    .size(DirectionTileSize)
-                    .clip(shape)
-                    .background(gradientSwatch(startHex, endHex, option, isDark))
-                    .then(if (isSelected) Modifier.border(3.dp, ring, shape) else Modifier)
-                    .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onPick(option) })
-                    .semantics { contentDescription = name },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = option.arrow,
-                    contentDescription = null,
-                    tint = arrowTint,
-                    modifier = Modifier.size(22.dp),
-                )
+    val density = LocalDensity.current
+    BoxWithConstraints {
+        // In pixels, as the row lays them out, so four always fit the card.
+        val grid = with(density) {
+            directionGrid(
+                widthPx = if (constraints.hasBoundedWidth) constraints.maxWidth else Int.MAX_VALUE,
+                tilePx = DirectionTileSize.roundToPx(),
+                minGapPx = DirectionMinGap.roundToPx(),
+                maxGapPx = AccentSwatchGap.roundToPx(),
+            )
+        }
+        val tile = with(density) { grid.tilePx.toDp() }
+        val gap = with(density) { grid.gapPx.toDp() }
+        Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+            AccentGradientDirection.entries.chunked(DirectionColumns).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                    row.forEach { option ->
+                        val name = stringResource(option.label)
+                        val isSelected = option == selected
+                        Box(
+                            modifier = Modifier
+                                .size(tile)
+                                .clip(shape)
+                                .background(gradientSwatch(startHex, endHex, option, isDark))
+                                .then(if (isSelected) Modifier.border(3.dp, ring, shape) else Modifier)
+                                .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onPick(option) })
+                                .semantics { contentDescription = name },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = option.arrow,
+                                contentDescription = null,
+                                tint = arrowTint,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
-private val DirectionTileSize = 44.dp
+private const val DirectionColumns = 4
+
+/** A tile a finger can tap. */
+private val DirectionTileSize = 48.dp
+private val DirectionMinGap = 4.dp
+
+internal data class DirectionGrid(val tilePx: Int, val gapPx: Int)
+
+/**
+ * The size of the direction tiles and the gap between them, for four tiles to
+ * a row in [widthPx]. The gap gives way first, from the swatches' own down to
+ * [minGapPx]; only a width too narrow for four whole tiles even then shrinks
+ * the tiles.
+ */
+internal fun directionGrid(widthPx: Int, tilePx: Int, minGapPx: Int, maxGapPx: Int): DirectionGrid {
+    val gaps = DirectionColumns - 1
+    val room = widthPx.toLong() - tilePx.toLong() * DirectionColumns
+    if (room >= minGapPx.toLong() * gaps) {
+        return DirectionGrid(tilePx, (room / gaps).coerceAtMost(maxGapPx.toLong()).toInt())
+    }
+    return DirectionGrid(((widthPx - minGapPx * gaps) / DirectionColumns).coerceAtLeast(1), minGapPx)
+}

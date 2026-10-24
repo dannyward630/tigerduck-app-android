@@ -88,6 +88,20 @@ class AppPreferencesAccentTest {
     }
 
     @Test
+    fun `the directions from a bottom corner are stored as their own codes and read back`() {
+        val prefs = AppPreferences(context)
+        prefs.accentGradientDirection = AccentGradientDirection.BottomLeftToTopRight
+        assertEquals(6, raw.getInt("accentGradientDirection", -1))
+        assertEquals(AccentGradientDirection.BottomLeftToTopRight, AppPreferences(context).accentGradientDirection)
+
+        prefs.accentGradientDirection = AccentGradientDirection.BottomRightToTopLeft
+        assertEquals(7, raw.getInt("accentGradientDirection", -1))
+        assertEquals(AccentGradientDirection.BottomRightToTopLeft, AppPreferences(context).accentGradientDirection)
+    }
+
+    // A build older than these two directions reads them this way too, through
+    // the same fromCode.
+    @Test
     fun `a stored direction this build does not know reads as top left to bottom right`() {
         raw.edit().putInt("accentGradientDirection", 99).commit()
         assertEquals(AccentGradientDirection.TopLeftToBottomRight, AppPreferences(context).accentGradientDirection)
