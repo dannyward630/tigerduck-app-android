@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Timeplankonflikt</string>
     <string name="a11y_class_table_share_qr">QR-kode for deling av timeplan</string>
     <string name="a11y_class_table_switch">Bytt timeplan</string>
+    <string name="a11y_color_picker_brightness">Lysstyrke</string>
+    <string name="a11y_color_picker_hue">Fargetone</string>
+    <string name="a11y_color_picker_saturation">Metning</string>
     <string name="a11y_course_card_open_details_hint">Dobbelttrykk for detaljer</string>
     <string name="a11y_course_color_swatch">Farge %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Åpne i Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Kameratilgang kreves for å skanne</string>
     <string name="class_table_import_choose_photo">Velg fra bilder</string>
     <string name="class_table_import_course_count">Emner</string>
+    <string name="class_table_import_enter_link">Skriv inn lenke</string>
     <string name="class_table_import_failed">Kunne ikke importere timeplanen</string>
     <string name="class_table_import_invalid_message">Delingskoden er skadet eller endret.</string>
+    <string name="class_table_import_link_placeholder">Delingslenke</string>
     <string name="class_table_import_lookup_failed">Kunne ikke laste inn emnedetaljene</string>
     <string name="class_table_import_no_code_message">Fant ingen delingskode for timeplan i bildet.</string>
     <string name="class_table_import_own_code_message">Dette er din egen timeplan.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semester</string>
     <string name="class_table_share">Del timeplan</string>
     <string name="class_table_share_all_semesters">Alle semestre</string>
+    <string name="class_table_share_copy_link">Kopier lenke</string>
+    <string name="class_table_share_link_copied">Lenke kopiert</string>
     <string name="class_table_share_tat_compatible">Kompatibel med TAT</string>
     <string name="class_table_sign_in_required_message">Logg inn for å se timeplanen din</string>
     <string name="class_table_total_credits_value">%1$s studiepoeng</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Logg på for å se oppgaver.</string>
     <string name="home_builtin_sections">Innebygde seksjoner</string>
     <string name="home_custom_section">Egendefinert seksjon</string>
+    <string name="home_edit">Rediger Hjem</string>
+    <string name="home_more_actions">Flere handlinger</string>
     <string name="home_no_courses_today">Ingen timer i dag</string>
     <string name="home_pending_assignments">Ventende oppgaver</string>
     <string name="home_section_add_quick_features">Legg til hurtighandlinger</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Aksentfarge</string>
     <string name="settings_accent_gradient_custom">Egendefinert fargeovergang</string>
     <string name="settings_accent_gradient_direction">Retning for fargeovergang</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Fra nederst til venstre mot øverst til høyre</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Fra nederst til høyre mot øverst til venstre</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Nedenfra og opp</string>
     <string name="settings_accent_gradient_direction_left_to_right">Fra venstre mot høyre</string>
     <string name="settings_accent_gradient_direction_right_to_left">Fra høyre mot venstre</string>

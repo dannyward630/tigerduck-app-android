@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Tímaárekstur</string>
     <string name="a11y_class_table_share_qr">QR-kóði til að deila stundaskrá</string>
     <string name="a11y_class_table_switch">Skipta um stundaskrá</string>
+    <string name="a11y_color_picker_brightness">Birtustig</string>
+    <string name="a11y_color_picker_hue">Litblær</string>
+    <string name="a11y_color_picker_saturation">Mettun</string>
     <string name="a11y_course_card_open_details_hint">Ýttu tvisvar fyrir upplýsingar</string>
     <string name="a11y_course_color_swatch">Litur %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Opna í Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Aðgangur að myndavél er nauðsynlegur til að skanna</string>
     <string name="class_table_import_choose_photo">Velja úr myndum</string>
     <string name="class_table_import_course_count">Námskeið</string>
+    <string name="class_table_import_enter_link">Slá inn tengil</string>
     <string name="class_table_import_failed">Ekki tókst að flytja inn stundaskrána</string>
     <string name="class_table_import_invalid_message">Deilikóðinn er skemmdur eða honum hefur verið breytt.</string>
+    <string name="class_table_import_link_placeholder">Deilingartengill</string>
     <string name="class_table_import_lookup_failed">Ekki tókst að hlaða inn upplýsingum um námskeið</string>
     <string name="class_table_import_no_code_message">Enginn deilikóði fyrir stundaskrá fannst í myndinni.</string>
     <string name="class_table_import_own_code_message">Þetta er þín eigin stundaskrá.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Misseri</string>
     <string name="class_table_share">Deila stundaskrá</string>
     <string name="class_table_share_all_semesters">Öll misseri</string>
+    <string name="class_table_share_copy_link">Afrita tengil</string>
+    <string name="class_table_share_link_copied">Tengill afritaður</string>
     <string name="class_table_share_tat_compatible">Samhæft við TAT</string>
     <string name="class_table_sign_in_required_message">Skráðu þig inn til að sjá stundaskrána þína</string>
     <string name="class_table_total_credits_value">%1$s einingar</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Skráðu þig inn til að sjá verkefni.</string>
     <string name="home_builtin_sections">Innbyggðir hlutar</string>
     <string name="home_custom_section">Sérsniðinn hluti</string>
+    <string name="home_edit">Breyta Heim</string>
+    <string name="home_more_actions">Fleiri aðgerðir</string>
     <string name="home_no_courses_today">Engir tímar í dag</string>
     <string name="home_pending_assignments">Óafgreidd verkefni</string>
     <string name="home_section_add_quick_features">Bæta við flýtiaðgerðum</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Áherslulitir</string>
     <string name="settings_accent_gradient_custom">Sérsniðinn litastigull</string>
     <string name="settings_accent_gradient_direction">Stefna litastiguls</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Frá neðra vinstra horni í efra hægra</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Frá neðra hægra horni í efra vinstra</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Neðan frá og upp</string>
     <string name="settings_accent_gradient_direction_left_to_right">Frá vinstri til hægri</string>
     <string name="settings_accent_gradient_direction_right_to_left">Frá hægri til vinstri</string>

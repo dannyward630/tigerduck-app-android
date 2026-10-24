@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">ತರಗತಿ ಸಂಘರ್ಷ</string>
     <string name="a11y_class_table_share_qr">ತರಗತಿ ವೇಳಾಪಟ್ಟಿ ಹಂಚಿಕೆ QR ಕೋಡ್</string>
     <string name="a11y_class_table_switch">ತರಗತಿ ವೇಳಾಪಟ್ಟಿ ಬದಲಿಸಿ</string>
+    <string name="a11y_color_picker_brightness">ಪ್ರಕಾಶ</string>
+    <string name="a11y_color_picker_hue">ವರ್ಣ</string>
+    <string name="a11y_color_picker_saturation">ಸಂತೃಪ್ತಿ</string>
     <string name="a11y_course_card_open_details_hint">ವಿವರಗಳಿಗಾಗಿ ಎರಡು ಬಾರಿ ಟ್ಯಾಪ್ ಮಾಡಿ</string>
     <string name="a11y_course_color_swatch">ಬಣ್ಣ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle ನಲ್ಲಿ ತೆರೆಯಿರಿ</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">ಸ್ಕ್ಯಾನ್ ಮಾಡಲು ಕ್ಯಾಮೆರಾ ಅನುಮತಿ ಅಗತ್ಯವಿದೆ</string>
     <string name="class_table_import_choose_photo">ಫೋಟೋಗಳಿಂದ ಆಯ್ಕೆಮಾಡಿ</string>
     <string name="class_table_import_course_count">ಕೋರ್ಸ್‌ಗಳ ಸಂಖ್ಯೆ</string>
+    <string name="class_table_import_enter_link">ಲಿಂಕ್ ನಮೂದಿಸಿ</string>
     <string name="class_table_import_failed">ತರಗತಿ ವೇಳಾಪಟ್ಟಿಯನ್ನು ಆಮದು ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
     <string name="class_table_import_invalid_message">ಹಂಚಿಕೆ ಕೋಡ್ ಹಾನಿಗೊಳಗಾಗಿದೆ ಅಥವಾ ಬದಲಾಯಿಸಲಾಗಿದೆ.</string>
+    <string name="class_table_import_link_placeholder">ಹಂಚಿಕೆ ಲಿಂಕ್</string>
     <string name="class_table_import_lookup_failed">ಕೋರ್ಸ್ ವಿವರಗಳನ್ನು ಲೋಡ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
     <string name="class_table_import_no_code_message">ಚಿತ್ರದಲ್ಲಿ ತರಗತಿ ವೇಳಾಪಟ್ಟಿ ಹಂಚಿಕೆ ಕೋಡ್ ಕಂಡುಬಂದಿಲ್ಲ.</string>
     <string name="class_table_import_own_code_message">ಇದು ನಿಮ್ಮದೇ ತರಗತಿ ವೇಳಾಪಟ್ಟಿ.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">ಸೆಮಿಸ್ಟರ್</string>
     <string name="class_table_share">ತರಗತಿ ವೇಳಾಪಟ್ಟಿ ಹಂಚಿಕೊಳ್ಳಿ</string>
     <string name="class_table_share_all_semesters">ಎಲ್ಲಾ ಸೆಮಿಸ್ಟರ್‌ಗಳು</string>
+    <string name="class_table_share_copy_link">ಲಿಂಕ್ ನಕಲಿಸಿ</string>
+    <string name="class_table_share_link_copied">ಲಿಂಕ್ ನಕಲಿಸಲಾಗಿದೆ</string>
     <string name="class_table_share_tat_compatible">TAT ಜೊತೆ ಹೊಂದಾಣಿಕೆ</string>
     <string name="class_table_sign_in_required_message">ನಿಮ್ಮ ತರಗತಿ ವೇಳಾಪಟ್ಟಿ ನೋಡಲು ಸೈನ್ ಇನ್ ಮಾಡಿ</string>
     <string name="class_table_total_credits_value">%1$s ಕ್ರೆಡಿಟ್‌ಗಳು</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">ಅಸೈನ್‌ಮೆಂಟ್‌ಗಳನ್ನು ನೋಡಲು ಸೈನ್-ಇನ್ ಮಾಡಿ.</string>
     <string name="home_builtin_sections">ಅಂತರ್ನಿರ್ಮಿತ ವಿಭಾಗಗಳು</string>
     <string name="home_custom_section">ಕಸ್ಟಮ್ ವಿಭಾಗ</string>
+    <string name="home_edit">ಮುಖಪುಟ ಸಂಪಾದಿಸಿ</string>
+    <string name="home_more_actions">ಹೆಚ್ಚಿನ ಕ್ರಿಯೆಗಳು</string>
     <string name="home_no_courses_today">ಇಂದು ಯಾವುದೇ ಕ್ಲಾಸ್‌ಗಳಿಲ್ಲ</string>
     <string name="home_pending_assignments">ಬಾಕಿ ಕಾರ್ಯಗಳು</string>
     <string name="home_section_add_quick_features">ತ್ವರಿತ ಕ್ರಿಯೆಗಳನ್ನು ಸೇರಿಸಿ</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">ಆಕ್ಸೆಂಟ್ ಬಣ್ಣ</string>
     <string name="settings_accent_gradient_custom">ಕಸ್ಟಮ್ ಗ್ರೇಡಿಯಂಟ್</string>
     <string name="settings_accent_gradient_direction">ಗ್ರೇಡಿಯಂಟ್ ದಿಕ್ಕು</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">ಕೆಳಗಿನ ಎಡದಿಂದ ಮೇಲಿನ ಬಲಕ್ಕೆ</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">ಕೆಳಗಿನ ಬಲದಿಂದ ಮೇಲಿನ ಎಡಕ್ಕೆ</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">ಕೆಳಗಿನಿಂದ ಮೇಲಕ್ಕೆ</string>
     <string name="settings_accent_gradient_direction_left_to_right">ಎಡದಿಂದ ಬಲಕ್ಕೆ</string>
     <string name="settings_accent_gradient_direction_right_to_left">ಬಲದಿಂದ ಎಡಕ್ಕೆ</string>

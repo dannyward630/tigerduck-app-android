@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">تعارض في المحاضرات</string>
     <string name="a11y_class_table_share_qr">QR Code مشاركة الجدول الدراسي</string>
     <string name="a11y_class_table_switch">تبديل الجدول الدراسي</string>
+    <string name="a11y_color_picker_brightness">السطوع</string>
+    <string name="a11y_color_picker_hue">درجة اللون</string>
+    <string name="a11y_color_picker_saturation">التشبع</string>
     <string name="a11y_course_card_open_details_hint">انقر مرتين للتفاصيل</string>
     <string name="a11y_course_color_swatch">اللون %1$lld</string>
     <string name="a11y_course_detail_open_moodle">فتح في Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">يلزم الوصول إلى الكاميرا للمسح</string>
     <string name="class_table_import_choose_photo">الاختيار من الصور</string>
     <string name="class_table_import_course_count">عدد المقررات</string>
+    <string name="class_table_import_enter_link">إدخال الرابط</string>
     <string name="class_table_import_failed">تعذّر استيراد الجدول الدراسي</string>
     <string name="class_table_import_invalid_message">رمز المشاركة تالف أو تم تعديله.</string>
+    <string name="class_table_import_link_placeholder">رابط المشاركة</string>
     <string name="class_table_import_lookup_failed">تعذّر تحميل تفاصيل المقررات</string>
     <string name="class_table_import_no_code_message">لم يتم العثور على رمز مشاركة جدول دراسي في الصورة.</string>
     <string name="class_table_import_own_code_message">هذا هو جدولك الدراسي.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">الفصل الدراسي</string>
     <string name="class_table_share">مشاركة الجدول الدراسي</string>
     <string name="class_table_share_all_semesters">جميع الفصول الدراسية</string>
+    <string name="class_table_share_copy_link">نسخ الرابط</string>
+    <string name="class_table_share_link_copied">تم نسخ الرابط</string>
     <string name="class_table_share_tat_compatible">متوافق مع TAT</string>
     <string name="class_table_sign_in_required_message">قم بتسجيل الدخول لعرض جدول صفك</string>
     <string name="class_table_total_credits_value">%1$s ساعات معتمدة</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">سجّل الدخول لعرض الواجبات.</string>
     <string name="home_builtin_sections">أقسام مدمجة</string>
     <string name="home_custom_section">قسم مخصص</string>
+    <string name="home_edit">تحرير الرئيسية</string>
+    <string name="home_more_actions">المزيد من الإجراءات</string>
     <string name="home_no_courses_today">لا توجد محاضرات اليوم</string>
     <string name="home_pending_assignments">واجبات معلّقة</string>
     <string name="home_section_add_quick_features">أضف إجراءات سريعة</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">اللون المميز</string>
     <string name="settings_accent_gradient_custom">تدرج مخصص</string>
     <string name="settings_accent_gradient_direction">اتجاه التدرج</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">من أسفل اليسار إلى أعلى اليمين</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">من أسفل اليمين إلى أعلى اليسار</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">من الأسفل إلى الأعلى</string>
     <string name="settings_accent_gradient_direction_left_to_right">من اليسار إلى اليمين</string>
     <string name="settings_accent_gradient_direction_right_to_left">من اليمين إلى اليسار</string>

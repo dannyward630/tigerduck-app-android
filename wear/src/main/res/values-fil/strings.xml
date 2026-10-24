@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Salungatan ng klase</string>
     <string name="a11y_class_table_share_qr">QR Code para i-share ang iskedyul ng klase</string>
     <string name="a11y_class_table_switch">Lumipat ng iskedyul ng klase</string>
+    <string name="a11y_color_picker_brightness">Liwanag</string>
+    <string name="a11y_color_picker_hue">Kulay</string>
+    <string name="a11y_color_picker_saturation">Saturasyon</string>
     <string name="a11y_course_card_open_details_hint">I-double tap para sa mga detalye</string>
     <string name="a11y_course_color_swatch">Kulay %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Buksan sa Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Kailangan ng access sa camera para mag-scan</string>
     <string name="class_table_import_choose_photo">Pumili mula sa mga larawan</string>
     <string name="class_table_import_course_count">Bilang ng kurso</string>
+    <string name="class_table_import_enter_link">Ilagay ang link</string>
     <string name="class_table_import_failed">Hindi ma-import ang iskedyul ng klase</string>
     <string name="class_table_import_invalid_message">Sira o binago ang share code.</string>
+    <string name="class_table_import_link_placeholder">Share link</string>
     <string name="class_table_import_lookup_failed">Hindi ma-load ang mga detalye ng kurso</string>
     <string name="class_table_import_no_code_message">Walang nakitang share code ng iskedyul ng klase sa larawan.</string>
     <string name="class_table_import_own_code_message">Ito ang sarili mong iskedyul ng klase.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semestre</string>
     <string name="class_table_share">I-share ang iskedyul ng klase</string>
     <string name="class_table_share_all_semesters">Lahat ng semestre</string>
+    <string name="class_table_share_copy_link">Kopyahin ang link</string>
+    <string name="class_table_share_link_copied">Nakopya ang link</string>
     <string name="class_table_share_tat_compatible">Compatible sa TAT</string>
     <string name="class_table_sign_in_required_message">Mag-sign in upang tingnan ang iyong talahanayan ng klase</string>
     <string name="class_table_total_credits_value">%1$s na credit</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Mag-sign in para tingnan ang mga takdang-aralin.</string>
     <string name="home_builtin_sections">Mga built-in na seksyon</string>
     <string name="home_custom_section">Custom na seksyon</string>
+    <string name="home_edit">I-edit ang Tahanan</string>
+    <string name="home_more_actions">Higit pang mga aksyon</string>
     <string name="home_no_courses_today">Walang klase ngayon</string>
     <string name="home_pending_assignments">Mga nakabinbing takdang-aralin</string>
     <string name="home_section_add_quick_features">Magdagdag ng mabilis na pagkilos</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Accent na kulay</string>
     <string name="settings_accent_gradient_custom">Pasadyang gradient</string>
     <string name="settings_accent_gradient_direction">Direksyon ng gradient</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Mula ibaba-kaliwa pataas-kanan</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Mula ibaba-kanan pataas-kaliwa</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Mula ibaba pataas</string>
     <string name="settings_accent_gradient_direction_left_to_right">Mula kaliwa pakanan</string>
     <string name="settings_accent_gradient_direction_right_to_left">Mula kanan pakaliwa</string>

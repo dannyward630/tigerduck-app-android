@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Xung đột lịch học</string>
     <string name="a11y_class_table_share_qr">QR Code chia sẻ thời khóa biểu</string>
     <string name="a11y_class_table_switch">Chuyển thời khóa biểu</string>
+    <string name="a11y_color_picker_brightness">Độ sáng</string>
+    <string name="a11y_color_picker_hue">Sắc độ</string>
+    <string name="a11y_color_picker_saturation">Độ bão hòa</string>
     <string name="a11y_course_card_open_details_hint">Nhấn đúp để xem chi tiết</string>
     <string name="a11y_course_color_swatch">Màu %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Mở trong Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Cần quyền truy cập camera để quét</string>
     <string name="class_table_import_choose_photo">Chọn từ ảnh</string>
     <string name="class_table_import_course_count">Số môn học</string>
+    <string name="class_table_import_enter_link">Nhập liên kết</string>
     <string name="class_table_import_failed">Không thể nhập thời khóa biểu</string>
     <string name="class_table_import_invalid_message">Mã chia sẻ bị hỏng hoặc đã bị thay đổi.</string>
+    <string name="class_table_import_link_placeholder">Liên kết chia sẻ</string>
     <string name="class_table_import_lookup_failed">Không thể tải thông tin môn học</string>
     <string name="class_table_import_no_code_message">Không tìm thấy mã chia sẻ thời khóa biểu trong ảnh.</string>
     <string name="class_table_import_own_code_message">Đây là thời khóa biểu của chính bạn.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Học kỳ</string>
     <string name="class_table_share">Chia sẻ thời khóa biểu</string>
     <string name="class_table_share_all_semesters">Tất cả học kỳ</string>
+    <string name="class_table_share_copy_link">Sao chép liên kết</string>
+    <string name="class_table_share_link_copied">Đã sao chép liên kết</string>
     <string name="class_table_share_tat_compatible">Tương thích với TAT</string>
     <string name="class_table_sign_in_required_message">Đăng nhập để xem thời khóa biểu</string>
     <string name="class_table_total_credits_value">%1$s tín chỉ</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Đăng nhập để xem bài tập.</string>
     <string name="home_builtin_sections">Mục có sẵn</string>
     <string name="home_custom_section">Mục tùy chỉnh</string>
+    <string name="home_edit">Chỉnh sửa Trang chủ</string>
+    <string name="home_more_actions">Thêm thao tác</string>
     <string name="home_no_courses_today">Hôm nay không có lớp</string>
     <string name="home_pending_assignments">Bài tập đang chờ</string>
     <string name="home_section_add_quick_features">Thêm thao tác nhanh</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Màu nhấn</string>
     <string name="settings_accent_gradient_custom">Chuyển màu tùy chỉnh</string>
     <string name="settings_accent_gradient_direction">Hướng chuyển màu</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Từ dưới trái lên trên phải</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Từ dưới phải lên trên trái</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Từ dưới lên trên</string>
     <string name="settings_accent_gradient_direction_left_to_right">Từ trái sang phải</string>
     <string name="settings_accent_gradient_direction_right_to_left">Từ phải sang trái</string>

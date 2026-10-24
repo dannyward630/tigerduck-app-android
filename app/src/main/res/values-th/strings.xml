@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">ตารางเรียนชนกัน</string>
     <string name="a11y_class_table_share_qr">QR Code แชร์ตารางเรียน</string>
     <string name="a11y_class_table_switch">สลับตารางเรียน</string>
+    <string name="a11y_color_picker_brightness">ความสว่าง</string>
+    <string name="a11y_color_picker_hue">เฉดสี</string>
+    <string name="a11y_color_picker_saturation">ความอิ่มตัว</string>
     <string name="a11y_course_card_open_details_hint">แตะสองครั้งเพื่อดูรายละเอียด</string>
     <string name="a11y_course_color_swatch">สีที่ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">เปิดใน Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">ต้องได้รับสิทธิ์เข้าถึงกล้องจึงจะสแกนได้</string>
     <string name="class_table_import_choose_photo">เลือกจากรูปภาพ</string>
     <string name="class_table_import_course_count">จำนวนรายวิชา</string>
+    <string name="class_table_import_enter_link">ป้อนลิงก์</string>
     <string name="class_table_import_failed">ไม่สามารถนำเข้าตารางเรียนได้</string>
     <string name="class_table_import_invalid_message">รหัสแชร์เสียหายหรือถูกแก้ไข</string>
+    <string name="class_table_import_link_placeholder">ลิงก์แชร์</string>
     <string name="class_table_import_lookup_failed">ไม่สามารถโหลดรายละเอียดรายวิชาได้</string>
     <string name="class_table_import_no_code_message">ไม่พบรหัสแชร์ตารางเรียนในรูปภาพ</string>
     <string name="class_table_import_own_code_message">นี่คือตารางเรียนของคุณเอง</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">ภาคการศึกษา</string>
     <string name="class_table_share">แชร์ตารางเรียน</string>
     <string name="class_table_share_all_semesters">ทุกภาคการศึกษา</string>
+    <string name="class_table_share_copy_link">คัดลอกลิงก์</string>
+    <string name="class_table_share_link_copied">คัดลอกลิงก์แล้ว</string>
     <string name="class_table_share_tat_compatible">เข้ากันได้กับ TAT</string>
     <string name="class_table_sign_in_required_message">เข้าสู่ระบบเพื่อดูตารางเรียนของคุณ</string>
     <string name="class_table_total_credits_value">%1$s หน่วยกิต</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">เข้าสู่ระบบเพื่อดูการบ้าน</string>
     <string name="home_builtin_sections">ส่วนในตัว</string>
     <string name="home_custom_section">ส่วนกำหนดเอง</string>
+    <string name="home_edit">แก้ไขหน้าแรก</string>
+    <string name="home_more_actions">การดำเนินการเพิ่มเติม</string>
     <string name="home_no_courses_today">วันนี้ไม่มีคาบเรียน</string>
     <string name="home_pending_assignments">การบ้านที่ค้างอยู่</string>
     <string name="home_section_add_quick_features">เพิ่มฟังก์ชันด่วน</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">สีหลัก</string>
     <string name="settings_accent_gradient_custom">ไล่สีกำหนดเอง</string>
     <string name="settings_accent_gradient_direction">ทิศทางการไล่สี</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">จากซ้ายล่างไปขวาบน</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">จากขวาล่างไปซ้ายบน</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">จากล่างขึ้นบน</string>
     <string name="settings_accent_gradient_direction_left_to_right">จากซ้ายไปขวา</string>
     <string name="settings_accent_gradient_direction_right_to_left">จากขวาไปซ้าย</string>

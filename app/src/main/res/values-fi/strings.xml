@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Tuntiristiriita</string>
     <string name="a11y_class_table_share_qr">QR-koodi lukujärjestyksen jakamiseen</string>
     <string name="a11y_class_table_switch">Vaihda lukujärjestystä</string>
+    <string name="a11y_color_picker_brightness">Kirkkaus</string>
+    <string name="a11y_color_picker_hue">Sävy</string>
+    <string name="a11y_color_picker_saturation">Kylläisyys</string>
     <string name="a11y_course_card_open_details_hint">Kaksoisnapauta tarkempia tietoja varten</string>
     <string name="a11y_course_color_swatch">Väri %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Avaa Moodlessa</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Skannaus vaatii kameran käyttöoikeuden</string>
     <string name="class_table_import_choose_photo">Valitse kuvista</string>
     <string name="class_table_import_course_count">Kurssit</string>
+    <string name="class_table_import_enter_link">Anna linkki</string>
     <string name="class_table_import_failed">Lukujärjestyksen tuonti epäonnistui</string>
     <string name="class_table_import_invalid_message">Jakokoodi on vioittunut tai sitä on muutettu.</string>
+    <string name="class_table_import_link_placeholder">Jakolinkki</string>
     <string name="class_table_import_lookup_failed">Kurssitietoja ei voitu ladata</string>
     <string name="class_table_import_no_code_message">Kuvasta ei löytynyt lukujärjestyksen jakokoodia.</string>
     <string name="class_table_import_own_code_message">Tämä on oma lukujärjestyksesi.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Lukukausi</string>
     <string name="class_table_share">Jaa lukujärjestys</string>
     <string name="class_table_share_all_semesters">Kaikki lukukaudet</string>
+    <string name="class_table_share_copy_link">Kopioi linkki</string>
+    <string name="class_table_share_link_copied">Linkki kopioitu</string>
     <string name="class_table_share_tat_compatible">TAT-yhteensopiva</string>
     <string name="class_table_sign_in_required_message">Kirjaudu sisään nähdäksesi luokkataulukkosi</string>
     <string name="class_table_total_credits_value">%1$s opintopistettä</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Kirjaudu sisään nähdäksesi tehtävät.</string>
     <string name="home_builtin_sections">Sisäänrakennetut osiot</string>
     <string name="home_custom_section">Mukautettu osio</string>
+    <string name="home_edit">Muokkaa etusivua</string>
+    <string name="home_more_actions">Lisää toimintoja</string>
     <string name="home_no_courses_today">Ei tunteja tänään</string>
     <string name="home_pending_assignments">Odottavat tehtävät</string>
     <string name="home_section_add_quick_features">Lisää nopeita toimintoja</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Korostusväri</string>
     <string name="settings_accent_gradient_custom">Mukautettu liukuväri</string>
     <string name="settings_accent_gradient_direction">Liukuvärin suunta</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Alavasemmalta yläoikealle</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Alaoikealta ylävasemmalle</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Alhaalta ylös</string>
     <string name="settings_accent_gradient_direction_left_to_right">Vasemmalta oikealle</string>
     <string name="settings_accent_gradient_direction_right_to_left">Oikealta vasemmalle</string>

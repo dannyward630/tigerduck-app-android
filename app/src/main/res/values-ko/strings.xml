@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">수업 충돌</string>
     <string name="a11y_class_table_share_qr">시간표 공유 QR 코드</string>
     <string name="a11y_class_table_switch">시간표 전환</string>
+    <string name="a11y_color_picker_brightness">밝기</string>
+    <string name="a11y_color_picker_hue">색조</string>
+    <string name="a11y_color_picker_saturation">채도</string>
     <string name="a11y_course_card_open_details_hint">두 번 탭하여 세부 정보 보기</string>
     <string name="a11y_course_color_swatch">색상 %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle에서 열기</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">스캔하려면 카메라 접근 권한이 필요합니다</string>
     <string name="class_table_import_choose_photo">사진에서 선택</string>
     <string name="class_table_import_course_count">과목 수</string>
+    <string name="class_table_import_enter_link">링크 입력</string>
     <string name="class_table_import_failed">시간표를 가져올 수 없습니다</string>
     <string name="class_table_import_invalid_message">공유 코드가 손상되었거나 변경되었습니다.</string>
+    <string name="class_table_import_link_placeholder">공유 링크</string>
     <string name="class_table_import_lookup_failed">강의 정보를 불러올 수 없습니다</string>
     <string name="class_table_import_no_code_message">이미지에서 시간표 공유 코드를 찾을 수 없습니다.</string>
     <string name="class_table_import_own_code_message">본인의 시간표입니다.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">학기</string>
     <string name="class_table_share">시간표 공유</string>
     <string name="class_table_share_all_semesters">전체 학기</string>
+    <string name="class_table_share_copy_link">링크 복사</string>
+    <string name="class_table_share_link_copied">링크 복사됨</string>
     <string name="class_table_share_tat_compatible">TAT 호환</string>
     <string name="class_table_sign_in_required_message">시간표를 보려면 로그인하세요</string>
     <string name="class_table_total_credits_value">%1$s 학점</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">과제를 보려면 로그인하세요.</string>
     <string name="home_builtin_sections">기본 섹션</string>
     <string name="home_custom_section">사용자 지정 섹션</string>
+    <string name="home_edit">홈 편집</string>
+    <string name="home_more_actions">기타 작업</string>
     <string name="home_no_courses_today">오늘 수업이 없습니다</string>
     <string name="home_pending_assignments">할 일 과제</string>
     <string name="home_section_add_quick_features">빠른 실행 추가</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">강조 색상</string>
     <string name="settings_accent_gradient_custom">사용자 지정 그라데이션</string>
     <string name="settings_accent_gradient_direction">그라데이션 방향</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">왼쪽 아래에서 오른쪽 위로</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">오른쪽 아래에서 왼쪽 위로</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">아래에서 위로</string>
     <string name="settings_accent_gradient_direction_left_to_right">왼쪽에서 오른쪽으로</string>
     <string name="settings_accent_gradient_direction_right_to_left">오른쪽에서 왼쪽으로</string>

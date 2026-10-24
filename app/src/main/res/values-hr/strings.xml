@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Sukob sati</string>
     <string name="a11y_class_table_share_qr">QR kod za dijeljenje rasporeda</string>
     <string name="a11y_class_table_switch">Promijeni raspored</string>
+    <string name="a11y_color_picker_brightness">Svjetlina</string>
+    <string name="a11y_color_picker_hue">Nijansa</string>
+    <string name="a11y_color_picker_saturation">Zasićenost</string>
     <string name="a11y_course_card_open_details_hint">Dvaput dodirnite za detalje</string>
     <string name="a11y_course_color_swatch">Boja %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Otvori u Moodleu</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Za skeniranje je potreban pristup kameri</string>
     <string name="class_table_import_choose_photo">Odaberi iz fotografija</string>
     <string name="class_table_import_course_count">Kolegiji</string>
+    <string name="class_table_import_enter_link">Unesi poveznicu</string>
     <string name="class_table_import_failed">Raspored nije moguće uvesti</string>
     <string name="class_table_import_invalid_message">Kod za dijeljenje oštećen je ili izmijenjen.</string>
+    <string name="class_table_import_link_placeholder">Poveznica za dijeljenje</string>
     <string name="class_table_import_lookup_failed">Nije moguće učitati pojedinosti o kolegijima</string>
     <string name="class_table_import_no_code_message">Na slici nije pronađen kod za dijeljenje rasporeda.</string>
     <string name="class_table_import_own_code_message">Ovo je vaš vlastiti raspored.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semestar</string>
     <string name="class_table_share">Podijeli raspored</string>
     <string name="class_table_share_all_semesters">Svi semestri</string>
+    <string name="class_table_share_copy_link">Kopiraj poveznicu</string>
+    <string name="class_table_share_link_copied">Poveznica kopirana</string>
     <string name="class_table_share_tat_compatible">Kompatibilno s TAT</string>
     <string name="class_table_sign_in_required_message">Prijavite se za pregled rasporeda nastave</string>
     <string name="class_table_total_credits_value">%1$s ECTS bodovi</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Prijavite se za prikaz zadataka.</string>
     <string name="home_builtin_sections">Ugrađeni odjeljci</string>
     <string name="home_custom_section">Prilagođeni odjeljak</string>
+    <string name="home_edit">Uredi Početnu</string>
+    <string name="home_more_actions">Više radnji</string>
     <string name="home_no_courses_today">Danas nema predavanja</string>
     <string name="home_pending_assignments">Zadaci na čekanju</string>
     <string name="home_section_add_quick_features">Dodaj brze radnje</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Naglasna boja</string>
     <string name="settings_accent_gradient_custom">Prilagođeni prijelaz</string>
     <string name="settings_accent_gradient_direction">Smjer prijelaza</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Od dolje lijevo prema gore desno</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Od dolje desno prema gore lijevo</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Odozdo prema gore</string>
     <string name="settings_accent_gradient_direction_left_to_right">Slijeva nadesno</string>
     <string name="settings_accent_gradient_direction_right_to_left">Zdesna nalijevo</string>

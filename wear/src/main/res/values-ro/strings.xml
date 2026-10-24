@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Conflict de curs</string>
     <string name="a11y_class_table_share_qr">Cod QR pentru distribuirea orarului</string>
     <string name="a11y_class_table_switch">Schimbă orarul</string>
+    <string name="a11y_color_picker_brightness">Luminozitate</string>
+    <string name="a11y_color_picker_hue">Nuanță</string>
+    <string name="a11y_color_picker_saturation">Saturație</string>
     <string name="a11y_course_card_open_details_hint">Atingeți de două ori pentru detalii</string>
     <string name="a11y_course_color_swatch">Culoarea %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Deschide în Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Pentru scanare este necesar accesul la cameră</string>
     <string name="class_table_import_choose_photo">Alege din poze</string>
     <string name="class_table_import_course_count">Cursuri</string>
+    <string name="class_table_import_enter_link">Introdu linkul</string>
     <string name="class_table_import_failed">Orarul nu a putut fi importat</string>
     <string name="class_table_import_invalid_message">Codul de distribuire este deteriorat sau a fost modificat.</string>
+    <string name="class_table_import_link_placeholder">Link de distribuire</string>
     <string name="class_table_import_lookup_failed">Detaliile cursurilor nu au putut fi încărcate</string>
     <string name="class_table_import_no_code_message">Nu s-a găsit niciun cod de distribuire a orarului în imagine.</string>
     <string name="class_table_import_own_code_message">Acesta este propriul tău orar.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semestru</string>
     <string name="class_table_share">Distribuie orarul</string>
     <string name="class_table_share_all_semesters">Toate semestrele</string>
+    <string name="class_table_share_copy_link">Copiază linkul</string>
+    <string name="class_table_share_link_copied">Link copiat</string>
     <string name="class_table_share_tat_compatible">Compatibil cu TAT</string>
     <string name="class_table_sign_in_required_message">Autentifică-te pentru a vedea orarul</string>
     <string name="class_table_total_credits_value">%1$s credite</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Autentifică-te pentru a vedea temele.</string>
     <string name="home_builtin_sections">Secțiuni integrate</string>
     <string name="home_custom_section">Secțiune personalizată</string>
+    <string name="home_edit">Editează Acasă</string>
+    <string name="home_more_actions">Mai multe acțiuni</string>
     <string name="home_no_courses_today">Niciun curs azi</string>
     <string name="home_pending_assignments">Teme în așteptare</string>
     <string name="home_section_add_quick_features">Adaugă acțiuni rapide</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Culoare accent</string>
     <string name="settings_accent_gradient_custom">Degrade personalizat</string>
     <string name="settings_accent_gradient_direction">Direcția degradeului</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Din stânga jos în dreapta sus</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Din dreapta jos în stânga sus</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">De jos în sus</string>
     <string name="settings_accent_gradient_direction_left_to_right">De la stânga la dreapta</string>
     <string name="settings_accent_gradient_direction_right_to_left">De la dreapta la stânga</string>

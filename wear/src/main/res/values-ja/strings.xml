@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">時間割の重複</string>
     <string name="a11y_class_table_share_qr">時間割共有 QR コード</string>
     <string name="a11y_class_table_switch">時間割を切り替える</string>
+    <string name="a11y_color_picker_brightness">明るさ</string>
+    <string name="a11y_color_picker_hue">色相</string>
+    <string name="a11y_color_picker_saturation">彩度</string>
     <string name="a11y_course_card_open_details_hint">ダブルタップで詳細を表示</string>
     <string name="a11y_course_color_swatch">色 %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle で開く</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">スキャンするにはカメラへのアクセスが必要です</string>
     <string name="class_table_import_choose_photo">写真から選択</string>
     <string name="class_table_import_course_count">授業数</string>
+    <string name="class_table_import_enter_link">リンクを入力</string>
     <string name="class_table_import_failed">時間割を読み込めませんでした</string>
     <string name="class_table_import_invalid_message">共有コードが破損しているか、変更されています。</string>
+    <string name="class_table_import_link_placeholder">共有リンク</string>
     <string name="class_table_import_lookup_failed">授業の詳細を取得できませんでした</string>
     <string name="class_table_import_no_code_message">画像に時間割の共有コードが見つかりませんでした。</string>
     <string name="class_table_import_own_code_message">これは自分の時間割です。</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">学期</string>
     <string name="class_table_share">時間割を共有する</string>
     <string name="class_table_share_all_semesters">すべての学期</string>
+    <string name="class_table_share_copy_link">リンクをコピー</string>
+    <string name="class_table_share_link_copied">リンクをコピーしました</string>
     <string name="class_table_share_tat_compatible">TAT 互換</string>
     <string name="class_table_sign_in_required_message">時間割を表示するにはサインインしてください</string>
     <string name="class_table_total_credits_value">%1$s 単位</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">課題を表示するにはサインインしてください。</string>
     <string name="home_builtin_sections">組み込みセクション</string>
     <string name="home_custom_section">カスタムセクション</string>
+    <string name="home_edit">ホームを編集</string>
+    <string name="home_more_actions">その他の操作</string>
     <string name="home_no_courses_today">今日は授業がありません</string>
     <string name="home_pending_assignments">未提出の課題</string>
     <string name="home_section_add_quick_features">クイックアクションを追加</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">アクセントカラー</string>
     <string name="settings_accent_gradient_custom">カスタムグラデーション</string>
     <string name="settings_accent_gradient_direction">グラデーションの方向</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">左下から右上</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">右下から左上</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">下から上</string>
     <string name="settings_accent_gradient_direction_left_to_right">左から右</string>
     <string name="settings_accent_gradient_direction_right_to_left">右から左</string>

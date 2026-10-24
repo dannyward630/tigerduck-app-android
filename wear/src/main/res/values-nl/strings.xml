@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Lesconflict</string>
     <string name="a11y_class_table_share_qr">QR Code voor het delen van het rooster</string>
     <string name="a11y_class_table_switch">Rooster wisselen</string>
+    <string name="a11y_color_picker_brightness">Helderheid</string>
+    <string name="a11y_color_picker_hue">Tint</string>
+    <string name="a11y_color_picker_saturation">Verzadiging</string>
     <string name="a11y_course_card_open_details_hint">Dubbeltik voor details</string>
     <string name="a11y_course_color_swatch">Kleur %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Openen in Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Cameratoegang is nodig om te scannen</string>
     <string name="class_table_import_choose_photo">Kiezen uit foto\'s</string>
     <string name="class_table_import_course_count">Vakken</string>
+    <string name="class_table_import_enter_link">Link invoeren</string>
     <string name="class_table_import_failed">Kan rooster niet importeren</string>
     <string name="class_table_import_invalid_message">De deelcode is beschadigd of gewijzigd.</string>
+    <string name="class_table_import_link_placeholder">Deellink</string>
     <string name="class_table_import_lookup_failed">Kan vakgegevens niet laden</string>
     <string name="class_table_import_no_code_message">Geen deelcode voor een rooster gevonden in de afbeelding.</string>
     <string name="class_table_import_own_code_message">Dit is je eigen rooster.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semester</string>
     <string name="class_table_share">Rooster delen</string>
     <string name="class_table_share_all_semesters">Alle semesters</string>
+    <string name="class_table_share_copy_link">Link kopiëren</string>
+    <string name="class_table_share_link_copied">Link gekopieerd</string>
     <string name="class_table_share_tat_compatible">Compatibel met TAT</string>
     <string name="class_table_sign_in_required_message">Meld je aan om je rooster te bekijken</string>
     <string name="class_table_total_credits_value">%1$s studiepunten</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Log in om opdrachten te bekijken.</string>
     <string name="home_builtin_sections">Ingebouwde secties</string>
     <string name="home_custom_section">Eigen sectie</string>
+    <string name="home_edit">Start bewerken</string>
+    <string name="home_more_actions">Meer acties</string>
     <string name="home_no_courses_today">Geen lessen vandaag</string>
     <string name="home_pending_assignments">Openstaande opdrachten</string>
     <string name="home_section_add_quick_features">Snelle acties toevoegen</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Accentkleur</string>
     <string name="settings_accent_gradient_custom">Aangepast kleurverloop</string>
     <string name="settings_accent_gradient_direction">Richting van het kleurverloop</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Van linksonder naar rechtsboven</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Van rechtsonder naar linksboven</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Van onder naar boven</string>
     <string name="settings_accent_gradient_direction_left_to_right">Van links naar rechts</string>
     <string name="settings_accent_gradient_direction_right_to_left">Van rechts naar links</string>

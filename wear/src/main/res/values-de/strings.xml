@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Stundenkonflikt</string>
     <string name="a11y_class_table_share_qr">QR Code zum Teilen des Stundenplans</string>
     <string name="a11y_class_table_switch">Stundenplan wechseln</string>
+    <string name="a11y_color_picker_brightness">Helligkeit</string>
+    <string name="a11y_color_picker_hue">Farbton</string>
+    <string name="a11y_color_picker_saturation">Sättigung</string>
     <string name="a11y_course_card_open_details_hint">Doppeltippen für Details</string>
     <string name="a11y_course_color_swatch">Farbe %1$lld</string>
     <string name="a11y_course_detail_open_moodle">In Moodle öffnen</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Zum Scannen ist Kamerazugriff erforderlich</string>
     <string name="class_table_import_choose_photo">Aus Fotos auswählen</string>
     <string name="class_table_import_course_count">Kurse</string>
+    <string name="class_table_import_enter_link">Link eingeben</string>
     <string name="class_table_import_failed">Stundenplan konnte nicht importiert werden</string>
     <string name="class_table_import_invalid_message">Der Freigabecode ist beschädigt oder wurde verändert.</string>
+    <string name="class_table_import_link_placeholder">Freigabelink</string>
     <string name="class_table_import_lookup_failed">Kursdetails konnten nicht geladen werden</string>
     <string name="class_table_import_no_code_message">Im Bild wurde kein Freigabecode für einen Stundenplan gefunden.</string>
     <string name="class_table_import_own_code_message">Das ist Ihr eigener Stundenplan.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semester</string>
     <string name="class_table_share">Stundenplan teilen</string>
     <string name="class_table_share_all_semesters">Alle Semester</string>
+    <string name="class_table_share_copy_link">Link kopieren</string>
+    <string name="class_table_share_link_copied">Link kopiert</string>
     <string name="class_table_share_tat_compatible">TAT-kompatibel</string>
     <string name="class_table_sign_in_required_message">Melden Sie sich an, um Ihre Klassentabelle anzuzeigen</string>
     <string name="class_table_total_credits_value">%1$s Leistungspunkte</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Anmelden, um Aufgaben anzuzeigen.</string>
     <string name="home_builtin_sections">Integrierte Bereiche</string>
     <string name="home_custom_section">Eigener Bereich</string>
+    <string name="home_edit">Startseite bearbeiten</string>
+    <string name="home_more_actions">Weitere Aktionen</string>
     <string name="home_no_courses_today">Heute kein Unterricht</string>
     <string name="home_pending_assignments">Offene Aufgaben</string>
     <string name="home_section_add_quick_features">Fügen Sie Schnellaktionen hinzu</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Akzentfarbe</string>
     <string name="settings_accent_gradient_custom">Eigener Verlauf</string>
     <string name="settings_accent_gradient_direction">Verlaufsrichtung</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Von unten links nach oben rechts</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Von unten rechts nach oben links</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Von unten nach oben</string>
     <string name="settings_accent_gradient_direction_left_to_right">Von links nach rechts</string>
     <string name="settings_accent_gradient_direction_right_to_left">Von rechts nach links</string>

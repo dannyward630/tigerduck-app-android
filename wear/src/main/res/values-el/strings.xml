@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Σύγκρουση μαθήματος</string>
     <string name="a11y_class_table_share_qr">QR Code κοινής χρήσης προγράμματος μαθημάτων</string>
     <string name="a11y_class_table_switch">Εναλλαγή προγράμματος μαθημάτων</string>
+    <string name="a11y_color_picker_brightness">Φωτεινότητα</string>
+    <string name="a11y_color_picker_hue">Απόχρωση</string>
+    <string name="a11y_color_picker_saturation">Κορεσμός</string>
     <string name="a11y_course_card_open_details_hint">Πατήστε δύο φορές για λεπτομέρειες</string>
     <string name="a11y_course_color_swatch">Χρώμα %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Άνοιγμα στο Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Απαιτείται πρόσβαση στην κάμερα για σάρωση</string>
     <string name="class_table_import_choose_photo">Επιλογή από φωτογραφίες</string>
     <string name="class_table_import_course_count">Μαθήματα</string>
+    <string name="class_table_import_enter_link">Εισαγωγή συνδέσμου</string>
     <string name="class_table_import_failed">Δεν ήταν δυνατή η εισαγωγή του προγράμματος μαθημάτων</string>
     <string name="class_table_import_invalid_message">Ο κωδικός κοινής χρήσης είναι κατεστραμμένος ή έχει τροποποιηθεί.</string>
+    <string name="class_table_import_link_placeholder">Σύνδεσμος κοινής χρήσης</string>
     <string name="class_table_import_lookup_failed">Δεν ήταν δυνατή η φόρτωση των στοιχείων των μαθημάτων</string>
     <string name="class_table_import_no_code_message">Δεν βρέθηκε κωδικός κοινής χρήσης προγράμματος μαθημάτων στην εικόνα.</string>
     <string name="class_table_import_own_code_message">Αυτό είναι το δικό σας πρόγραμμα μαθημάτων.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Ακαδημαϊκό εξάμηνο</string>
     <string name="class_table_share">Κοινή χρήση προγράμματος μαθημάτων</string>
     <string name="class_table_share_all_semesters">Όλα τα εξάμηνα</string>
+    <string name="class_table_share_copy_link">Αντιγραφή συνδέσμου</string>
+    <string name="class_table_share_link_copied">Ο σύνδεσμος αντιγράφηκε</string>
     <string name="class_table_share_tat_compatible">Συμβατό με TAT</string>
     <string name="class_table_sign_in_required_message">Συνδεθείτε για να δείτε τον πίνακα της τάξης σας</string>
     <string name="class_table_total_credits_value">%1$s πιστωτικές μονάδες</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Συνδεθείτε για να δείτε τις εργασίες.</string>
     <string name="home_builtin_sections">Ενσωματωμένες ενότητες</string>
     <string name="home_custom_section">Προσαρμοσμένη ενότητα</string>
+    <string name="home_edit">Επεξεργασία Αρχικής</string>
+    <string name="home_more_actions">Περισσότερες ενέργειες</string>
     <string name="home_no_courses_today">Δεν υπάρχουν μαθήματα σήμερα</string>
     <string name="home_pending_assignments">Εκκρεμείς εργασίες</string>
     <string name="home_section_add_quick_features">Προσθέστε γρήγορες ενέργειες</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Χρώμα έμφασης</string>
     <string name="settings_accent_gradient_custom">Προσαρμοσμένη διαβάθμιση</string>
     <string name="settings_accent_gradient_direction">Κατεύθυνση διαβάθμισης</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Από κάτω αριστερά προς πάνω δεξιά</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Από κάτω δεξιά προς πάνω αριστερά</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Από κάτω προς τα πάνω</string>
     <string name="settings_accent_gradient_direction_left_to_right">Από αριστερά προς τα δεξιά</string>
     <string name="settings_accent_gradient_direction_right_to_left">Από δεξιά προς τα αριστερά</string>

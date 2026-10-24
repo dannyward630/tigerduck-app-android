@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">התנגשות שיעורים</string>
     <string name="a11y_class_table_share_qr">QR Code לשיתוף מערכת השעות</string>
     <string name="a11y_class_table_switch">החלפת מערכת שעות</string>
+    <string name="a11y_color_picker_brightness">בהירות</string>
+    <string name="a11y_color_picker_hue">גוון</string>
+    <string name="a11y_color_picker_saturation">רוויה</string>
     <string name="a11y_course_card_open_details_hint">הקש פעמיים לפרטים</string>
     <string name="a11y_course_color_swatch">צבע %1$lld</string>
     <string name="a11y_course_detail_open_moodle">פתח ב-Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">נדרשת גישה למצלמה כדי לסרוק</string>
     <string name="class_table_import_choose_photo">בחירה מהתמונות</string>
     <string name="class_table_import_course_count">קורסים</string>
+    <string name="class_table_import_enter_link">הזנת קישור</string>
     <string name="class_table_import_failed">לא ניתן היה לייבא את מערכת השעות</string>
     <string name="class_table_import_invalid_message">קוד השיתוף פגום או שהוא שונה.</string>
+    <string name="class_table_import_link_placeholder">קישור לשיתוף</string>
     <string name="class_table_import_lookup_failed">לא ניתן היה לטעון את פרטי הקורסים</string>
     <string name="class_table_import_no_code_message">לא נמצא בתמונה קוד שיתוף של מערכת שעות.</string>
     <string name="class_table_import_own_code_message">זו מערכת השעות שלך.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">שנת הלימודים</string>
     <string name="class_table_share">שיתוף מערכת השעות</string>
     <string name="class_table_share_all_semesters">כל הסמסטרים</string>
+    <string name="class_table_share_copy_link">העתקת הקישור</string>
+    <string name="class_table_share_link_copied">הקישור הועתק</string>
     <string name="class_table_share_tat_compatible">תואם ל-TAT</string>
     <string name="class_table_sign_in_required_message">היכנס כדי להציג את טבלת הכיתה שלך</string>
     <string name="class_table_total_credits_value">%1$s נקודות זכות</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">התחבר כדי לראות מטלות.</string>
     <string name="home_builtin_sections">קטעים מובנים</string>
     <string name="home_custom_section">קטע מותאם אישית</string>
+    <string name="home_edit">עריכת הבית</string>
+    <string name="home_more_actions">פעולות נוספות</string>
     <string name="home_no_courses_today">אין שיעורים היום</string>
     <string name="home_pending_assignments">מטלות ממתינות</string>
     <string name="home_section_add_quick_features">הוספת פעולות מהירות</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">צבע הדגש</string>
     <string name="settings_accent_gradient_custom">מעבר צבע מותאם אישית</string>
     <string name="settings_accent_gradient_direction">כיוון מעבר הצבע</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">משמאל למטה לימין למעלה</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">מימין למטה לשמאל למעלה</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">מלמטה למעלה</string>
     <string name="settings_accent_gradient_direction_left_to_right">משמאל לימין</string>
     <string name="settings_accent_gradient_direction_right_to_left">מימין לשמאל</string>

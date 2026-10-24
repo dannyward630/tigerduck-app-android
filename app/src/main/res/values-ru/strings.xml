@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Конфликт занятий</string>
     <string name="a11y_class_table_share_qr">QR-код для обмена расписанием</string>
     <string name="a11y_class_table_switch">Переключить расписание</string>
+    <string name="a11y_color_picker_brightness">Яркость</string>
+    <string name="a11y_color_picker_hue">Оттенок</string>
+    <string name="a11y_color_picker_saturation">Насыщенность</string>
     <string name="a11y_course_card_open_details_hint">Дважды нажмите для просмотра деталей</string>
     <string name="a11y_course_color_swatch">Цвет %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Открыть в Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Для сканирования нужен доступ к камере</string>
     <string name="class_table_import_choose_photo">Выбрать из фото</string>
     <string name="class_table_import_course_count">Курсы</string>
+    <string name="class_table_import_enter_link">Ввести ссылку</string>
     <string name="class_table_import_failed">Не удалось импортировать расписание</string>
     <string name="class_table_import_invalid_message">Код для обмена повреждён или изменён.</string>
+    <string name="class_table_import_link_placeholder">Ссылка для обмена</string>
     <string name="class_table_import_lookup_failed">Не удалось загрузить сведения о курсах</string>
     <string name="class_table_import_no_code_message">На изображении не найден код для обмена расписанием.</string>
     <string name="class_table_import_own_code_message">Это ваше собственное расписание.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Семестр</string>
     <string name="class_table_share">Поделиться расписанием</string>
     <string name="class_table_share_all_semesters">Все семестры</string>
+    <string name="class_table_share_copy_link">Скопировать ссылку</string>
+    <string name="class_table_share_link_copied">Ссылка скопирована</string>
     <string name="class_table_share_tat_compatible">Совместимость с TAT</string>
     <string name="class_table_sign_in_required_message">Войдите, чтобы просмотреть расписание занятий</string>
     <string name="class_table_total_credits_value">%1$s кредитов</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Войдите, чтобы просмотреть задания.</string>
     <string name="home_builtin_sections">Встроенные разделы</string>
     <string name="home_custom_section">Пользовательский раздел</string>
+    <string name="home_edit">Редактировать Главную</string>
+    <string name="home_more_actions">Другие действия</string>
     <string name="home_no_courses_today">Сегодня нет занятий</string>
     <string name="home_pending_assignments">Ожидающие задания</string>
     <string name="home_section_add_quick_features">Добавить быстрые действия</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Акцентный цвет</string>
     <string name="settings_accent_gradient_custom">Свой градиент</string>
     <string name="settings_accent_gradient_direction">Направление градиента</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Из левого нижнего угла в правый верхний</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Из правого нижнего угла в левый верхний</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Снизу вверх</string>
     <string name="settings_accent_gradient_direction_left_to_right">Слева направо</string>
     <string name="settings_accent_gradient_direction_right_to_left">Справа налево</string>

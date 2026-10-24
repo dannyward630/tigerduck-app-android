@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">ਕਲਾਸ ਟਕਰਾਅ</string>
     <string name="a11y_class_table_share_qr">ਕਲਾਸ ਸਾਰਣੀ ਸ਼ੇਅਰ ਕਰਨ ਦਾ QR ਕੋਡ</string>
     <string name="a11y_class_table_switch">ਕਲਾਸ ਸਾਰਣੀ ਬਦਲੋ</string>
+    <string name="a11y_color_picker_brightness">ਚਮਕ</string>
+    <string name="a11y_color_picker_hue">ਰੰਗਤ</string>
+    <string name="a11y_color_picker_saturation">ਸੰਤ੍ਰਿਪਤਾ</string>
     <string name="a11y_course_card_open_details_hint">ਵੇਰਵਿਆਂ ਲਈ ਦੋ ਵਾਰ ਟੈਪ ਕਰੋ</string>
     <string name="a11y_course_color_swatch">ਰੰਗ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle ਵਿੱਚ ਖੋਲ੍ਹੋ</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">ਸਕੈਨ ਕਰਨ ਲਈ ਕੈਮਰੇ ਦੀ ਅਨੁਮਤੀ ਲੋੜੀਂਦੀ ਹੈ</string>
     <string name="class_table_import_choose_photo">ਫ਼ੋਟੋਆਂ ਵਿੱਚੋਂ ਚੁਣੋ</string>
     <string name="class_table_import_course_count">ਕੋਰਸਾਂ ਦੀ ਗਿਣਤੀ</string>
+    <string name="class_table_import_enter_link">ਲਿੰਕ ਦਰਜ ਕਰੋ</string>
     <string name="class_table_import_failed">ਕਲਾਸ ਸਾਰਣੀ ਆਯਾਤ ਨਹੀਂ ਹੋ ਸਕੀ</string>
     <string name="class_table_import_invalid_message">ਸ਼ੇਅਰ ਕੋਡ ਖਰਾਬ ਹੈ ਜਾਂ ਇਸ ਵਿੱਚ ਬਦਲਾਅ ਕੀਤਾ ਗਿਆ ਹੈ।</string>
+    <string name="class_table_import_link_placeholder">ਸ਼ੇਅਰ ਲਿੰਕ</string>
     <string name="class_table_import_lookup_failed">ਕੋਰਸ ਦੇ ਵੇਰਵੇ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੇ</string>
     <string name="class_table_import_no_code_message">ਤਸਵੀਰ ਵਿੱਚ ਕੋਈ ਕਲਾਸ ਸਾਰਣੀ ਸ਼ੇਅਰ ਕੋਡ ਨਹੀਂ ਮਿਲਿਆ।</string>
     <string name="class_table_import_own_code_message">ਇਹ ਤੁਹਾਡੀ ਆਪਣੀ ਕਲਾਸ ਸਾਰਣੀ ਹੈ।</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">ਸਮੈਸਟਰ</string>
     <string name="class_table_share">ਕਲਾਸ ਸਾਰਣੀ ਸ਼ੇਅਰ ਕਰੋ</string>
     <string name="class_table_share_all_semesters">ਸਾਰੇ ਸਮੈਸਟਰ</string>
+    <string name="class_table_share_copy_link">ਲਿੰਕ ਕਾਪੀ ਕਰੋ</string>
+    <string name="class_table_share_link_copied">ਲਿੰਕ ਕਾਪੀ ਹੋ ਗਿਆ</string>
     <string name="class_table_share_tat_compatible">TAT ਨਾਲ ਅਨੁਕੂਲ</string>
     <string name="class_table_sign_in_required_message">ਆਪਣੀ ਕਲਾਸ ਟੇਬਲ ਦੇਖਣ ਲਈ ਸਾਈਨ ਇਨ ਕਰੋ</string>
     <string name="class_table_total_credits_value">%1$s ਕ੍ਰੈਡਿਟ</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">ਅਸਾਈਨਮੈਂਟ ਦੇਖਣ ਲਈ ਸਾਈਨ ਇਨ ਕਰੋ।</string>
     <string name="home_builtin_sections">ਬਿਲਟ-ਇਨ ਭਾਗ</string>
     <string name="home_custom_section">ਕਸਟਮ ਭਾਗ</string>
+    <string name="home_edit">ਮੁੱਖ ਪੰਨਾ ਸੰਪਾਦਿਤ ਕਰੋ</string>
+    <string name="home_more_actions">ਹੋਰ ਕਾਰਵਾਈਆਂ</string>
     <string name="home_no_courses_today">ਅੱਜ ਕੋਈ ਕਲਾਸ ਨਹੀਂ</string>
     <string name="home_pending_assignments">ਲੰਬਿਤ ਅਸਾਈਨਮੈਂਟਾਂ</string>
     <string name="home_section_add_quick_features">ਤੁਰੰਤ ਕਿਰਿਆਵਾਂ ਜੋੜੋ</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">ਐਕਸੈਂਟ ਰੰਗ</string>
     <string name="settings_accent_gradient_custom">ਕਸਟਮ ਗ੍ਰੇਡੀਐਂਟ</string>
     <string name="settings_accent_gradient_direction">ਗ੍ਰੇਡੀਐਂਟ ਦੀ ਦਿਸ਼ਾ</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">ਹੇਠਾਂ ਖੱਬੇ ਤੋਂ ਉੱਪਰ ਸੱਜੇ</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">ਹੇਠਾਂ ਸੱਜੇ ਤੋਂ ਉੱਪਰ ਖੱਬੇ</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">ਹੇਠਾਂ ਤੋਂ ਉੱਪਰ</string>
     <string name="settings_accent_gradient_direction_left_to_right">ਖੱਬੇ ਤੋਂ ਸੱਜੇ</string>
     <string name="settings_accent_gradient_direction_right_to_left">ਸੱਜੇ ਤੋਂ ਖੱਬੇ</string>

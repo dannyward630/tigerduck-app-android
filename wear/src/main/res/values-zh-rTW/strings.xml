@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">衝堂</string>
     <string name="a11y_class_table_share_qr">課表分享 QR Code</string>
     <string name="a11y_class_table_switch">切換課表</string>
+    <string name="a11y_color_picker_brightness">亮度</string>
+    <string name="a11y_color_picker_hue">色相</string>
+    <string name="a11y_color_picker_saturation">飽和度</string>
     <string name="a11y_course_card_open_details_hint">點兩下查看詳情</string>
     <string name="a11y_course_color_swatch">顏色 %1$lld</string>
     <string name="a11y_course_detail_open_moodle">在 Moodle 中開啟</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">需要相機權限才能掃描</string>
     <string name="class_table_import_choose_photo">從照片選取</string>
     <string name="class_table_import_course_count">課程數</string>
+    <string name="class_table_import_enter_link">輸入連結</string>
     <string name="class_table_import_failed">無法匯入課表</string>
     <string name="class_table_import_invalid_message">分享碼已損毀或被修改。</string>
+    <string name="class_table_import_link_placeholder">分享連結</string>
     <string name="class_table_import_lookup_failed">無法取得課程資料</string>
     <string name="class_table_import_no_code_message">圖片裡找不到課表分享碼。</string>
     <string name="class_table_import_own_code_message">這是你自己的課表。</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">學期</string>
     <string name="class_table_share">分享課表</string>
     <string name="class_table_share_all_semesters">所有學期</string>
+    <string name="class_table_share_copy_link">複製連結</string>
+    <string name="class_table_share_link_copied">已複製連結</string>
     <string name="class_table_share_tat_compatible">相容於 TAT</string>
     <string name="class_table_sign_in_required_message">尚未登入，無法查看課表</string>
     <string name="class_table_total_credits_value">%1$s 學分</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">請登入以查看作業。</string>
     <string name="home_builtin_sections">內建區塊</string>
     <string name="home_custom_section">自訂區塊</string>
+    <string name="home_edit">編輯首頁</string>
+    <string name="home_more_actions">更多操作</string>
     <string name="home_no_courses_today">今日無課程</string>
     <string name="home_pending_assignments">待辦作業</string>
     <string name="home_section_add_quick_features">新增快速功能</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">主題色</string>
     <string name="settings_accent_gradient_custom">自訂漸層</string>
     <string name="settings_accent_gradient_direction">漸層方向</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">由左下到右上</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">由右下到左上</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">由下到上</string>
     <string name="settings_accent_gradient_direction_left_to_right">由左到右</string>
     <string name="settings_accent_gradient_direction_right_to_left">由右到左</string>

@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">تعارض کلاس</string>
     <string name="a11y_class_table_share_qr">کد QR اشتراک‌گذاری برنامه کلاس‌ها</string>
     <string name="a11y_class_table_switch">تغییر برنامه کلاس‌ها</string>
+    <string name="a11y_color_picker_brightness">روشنایی</string>
+    <string name="a11y_color_picker_hue">فام</string>
+    <string name="a11y_color_picker_saturation">اشباع</string>
     <string name="a11y_course_card_open_details_hint">دو بار ضربه بزنید برای جزئیات</string>
     <string name="a11y_course_color_swatch">رنگ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">باز کردن در Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">برای اسکن، دسترسی به دوربین لازم است</string>
     <string name="class_table_import_choose_photo">انتخاب از عکس‌ها</string>
     <string name="class_table_import_course_count">تعداد دروس</string>
+    <string name="class_table_import_enter_link">وارد کردن پیوند</string>
     <string name="class_table_import_failed">وارد کردن برنامه کلاس‌ها ممکن نشد</string>
     <string name="class_table_import_invalid_message">کد اشتراک‌گذاری آسیب دیده یا تغییر کرده است.</string>
+    <string name="class_table_import_link_placeholder">پیوند اشتراک‌گذاری</string>
     <string name="class_table_import_lookup_failed">بارگذاری جزئیات دروس ممکن نشد</string>
     <string name="class_table_import_no_code_message">هیچ کد اشتراک‌گذاری برنامه کلاس‌ها در تصویر پیدا نشد.</string>
     <string name="class_table_import_own_code_message">این برنامه کلاس‌های خودتان است.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">ترم</string>
     <string name="class_table_share">اشتراک‌گذاری برنامه کلاس‌ها</string>
     <string name="class_table_share_all_semesters">همه ترم‌ها</string>
+    <string name="class_table_share_copy_link">کپی پیوند</string>
+    <string name="class_table_share_link_copied">پیوند کپی شد</string>
     <string name="class_table_share_tat_compatible">سازگار با TAT</string>
     <string name="class_table_sign_in_required_message">برای مشاهده جدول کلاس خود وارد شوید</string>
     <string name="class_table_total_credits_value">%1$s واحد</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">برای دیدن تکالیف وارد شوید.</string>
     <string name="home_builtin_sections">بخش‌های داخلی</string>
     <string name="home_custom_section">بخش سفارشی</string>
+    <string name="home_edit">ویرایش خانه</string>
+    <string name="home_more_actions">اقدامات بیشتر</string>
     <string name="home_no_courses_today">امروز کلاسی نیست</string>
     <string name="home_pending_assignments">تکالیف در انتظار</string>
     <string name="home_section_add_quick_features">افزودن اقدامات سریع</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">رنگ تاکید</string>
     <string name="settings_accent_gradient_custom">گرادیان سفارشی</string>
     <string name="settings_accent_gradient_direction">جهت گرادیان</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">از پایین چپ به بالا راست</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">از پایین راست به بالا چپ</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">از پایین به بالا</string>
     <string name="settings_accent_gradient_direction_left_to_right">از چپ به راست</string>
     <string name="settings_accent_gradient_direction_right_to_left">از راست به چپ</string>

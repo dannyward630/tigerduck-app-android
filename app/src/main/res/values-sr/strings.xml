@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Конфликт часова</string>
     <string name="a11y_class_table_share_qr">QR код за дељење распореда</string>
     <string name="a11y_class_table_switch">Промени распоред</string>
+    <string name="a11y_color_picker_brightness">Осветљеност</string>
+    <string name="a11y_color_picker_hue">Нијанса</string>
+    <string name="a11y_color_picker_saturation">Засићеност</string>
     <string name="a11y_course_card_open_details_hint">Двапут тапните за детаље</string>
     <string name="a11y_course_color_swatch">Боја %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Отвори у Moodle-у</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">За скенирање је потребан приступ камери</string>
     <string name="class_table_import_choose_photo">Изабери из фотографија</string>
     <string name="class_table_import_course_count">Курсеви</string>
+    <string name="class_table_import_enter_link">Унеси везу</string>
     <string name="class_table_import_failed">Није могуће увести распоред</string>
     <string name="class_table_import_invalid_message">Код за дељење је оштећен или измењен.</string>
+    <string name="class_table_import_link_placeholder">Веза за дељење</string>
     <string name="class_table_import_lookup_failed">Није могуће учитати детаље курсева</string>
     <string name="class_table_import_no_code_message">На слици није пронађен код за дељење распореда.</string>
     <string name="class_table_import_own_code_message">Ово је ваш сопствени распоред.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Семестар</string>
     <string name="class_table_share">Подели распоред</string>
     <string name="class_table_share_all_semesters">Сви семестри</string>
+    <string name="class_table_share_copy_link">Копирај везу</string>
+    <string name="class_table_share_link_copied">Веза копирана</string>
     <string name="class_table_share_tat_compatible">Компатибилно са TAT</string>
     <string name="class_table_sign_in_required_message">Пријавите се да бисте видели свој распоред часова</string>
     <string name="class_table_total_credits_value">%1$s ЕСПБ бодова</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Пријавите се да бисте видели задатке.</string>
     <string name="home_builtin_sections">Уграђене секције</string>
     <string name="home_custom_section">Прилагођена секција</string>
+    <string name="home_edit">Уреди Почетну</string>
+    <string name="home_more_actions">Још радњи</string>
     <string name="home_no_courses_today">Нема часова данас</string>
     <string name="home_pending_assignments">Задаци на чекању</string>
     <string name="home_section_add_quick_features">Додај брзе радње</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Акцентна боја</string>
     <string name="settings_accent_gradient_custom">Прилагођени прелаз</string>
     <string name="settings_accent_gradient_direction">Смер прелаза</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Од доле лево до горе десно</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Од доле десно до горе лево</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Одоздо нагоре</string>
     <string name="settings_accent_gradient_direction_left_to_right">Слева надесно</string>
     <string name="settings_accent_gradient_direction_right_to_left">Здесна налево</string>

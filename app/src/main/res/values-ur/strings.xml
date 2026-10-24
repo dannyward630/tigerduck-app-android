@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">کلاس تنازع</string>
     <string name="a11y_class_table_share_qr">کلاس شیڈول شیئر کرنے کا QR Code</string>
     <string name="a11y_class_table_switch">کلاس شیڈول تبدیل کریں</string>
+    <string name="a11y_color_picker_brightness">چمک</string>
+    <string name="a11y_color_picker_hue">رنگت</string>
+    <string name="a11y_color_picker_saturation">سیرابی</string>
     <string name="a11y_course_card_open_details_hint">تفصیلات کے لیے دو بار ٹیپ کریں</string>
     <string name="a11y_course_color_swatch">رنگ %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle میں کھولیں</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">اسکین کرنے کے لیے کیمرے تک رسائی درکار ہے</string>
     <string name="class_table_import_choose_photo">تصاویر سے منتخب کریں</string>
     <string name="class_table_import_course_count">کورسز کی تعداد</string>
+    <string name="class_table_import_enter_link">لنک درج کریں</string>
     <string name="class_table_import_failed">کلاس شیڈول درآمد نہیں ہو سکا</string>
     <string name="class_table_import_invalid_message">شیئر کوڈ خراب ہے یا اس میں تبدیلی کی گئی ہے۔</string>
+    <string name="class_table_import_link_placeholder">شیئر لنک</string>
     <string name="class_table_import_lookup_failed">کورس کی تفصیلات لوڈ نہیں ہو سکیں</string>
     <string name="class_table_import_no_code_message">تصویر میں کلاس شیڈول کا کوئی شیئر کوڈ نہیں ملا۔</string>
     <string name="class_table_import_own_code_message">یہ آپ کا اپنا کلاس شیڈول ہے۔</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">سمیسٹر</string>
     <string name="class_table_share">کلاس شیڈول شیئر کریں</string>
     <string name="class_table_share_all_semesters">تمام سمیسٹر</string>
+    <string name="class_table_share_copy_link">لنک کاپی کریں</string>
+    <string name="class_table_share_link_copied">لنک کاپی ہو گیا</string>
     <string name="class_table_share_tat_compatible">TAT کے ساتھ ہم آہنگ</string>
     <string name="class_table_sign_in_required_message">اپنا کلاس ٹیبل دیکھنے کے لیے سائن ان کریں</string>
     <string name="class_table_total_credits_value">%1$s کریڈٹس</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">اسائنمنٹس دیکھنے کے لیے سائن ان کریں۔</string>
     <string name="home_builtin_sections">بلٹ ان سیکشنز</string>
     <string name="home_custom_section">کسٹم سیکشن</string>
+    <string name="home_edit">ہوم ترمیم کریں</string>
+    <string name="home_more_actions">مزید کارروائیاں</string>
     <string name="home_no_courses_today">آج کوئی کلاس نہیں</string>
     <string name="home_pending_assignments">زیر التواء اسائنمنٹس</string>
     <string name="home_section_add_quick_features">فوری اقدامات شامل کریں</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">ایکسنٹ رنگ</string>
     <string name="settings_accent_gradient_custom">کسٹم گریڈیئنٹ</string>
     <string name="settings_accent_gradient_direction">گریڈیئنٹ کی سمت</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">نیچے بائیں سے اوپر دائیں</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">نیچے دائیں سے اوپر بائیں</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">نیچے سے اوپر</string>
     <string name="settings_accent_gradient_direction_left_to_right">بائیں سے دائیں</string>
     <string name="settings_accent_gradient_direction_right_to_left">دائیں سے بائیں</string>

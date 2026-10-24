@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Pamokų konfliktas</string>
     <string name="a11y_class_table_share_qr">Tvarkaraščio bendrinimo QR kodas</string>
     <string name="a11y_class_table_switch">Perjungti tvarkaraštį</string>
+    <string name="a11y_color_picker_brightness">Ryškumas</string>
+    <string name="a11y_color_picker_hue">Atspalvis</string>
+    <string name="a11y_color_picker_saturation">Sodrumas</string>
     <string name="a11y_course_card_open_details_hint">Dukart bakstelėkite, kad peržiūrėtumėte išsamią informaciją</string>
     <string name="a11y_course_color_swatch">Spalva %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Atidaryti Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Norint nuskaityti, reikia prieigos prie kameros</string>
     <string name="class_table_import_choose_photo">Pasirinkti iš nuotraukų</string>
     <string name="class_table_import_course_count">Kursai</string>
+    <string name="class_table_import_enter_link">Įvesti nuorodą</string>
     <string name="class_table_import_failed">Nepavyko importuoti tvarkaraščio</string>
     <string name="class_table_import_invalid_message">Bendrinimo kodas sugadintas arba pakeistas.</string>
+    <string name="class_table_import_link_placeholder">Bendrinimo nuoroda</string>
     <string name="class_table_import_lookup_failed">Nepavyko įkelti kursų informacijos</string>
     <string name="class_table_import_no_code_message">Paveikslėlyje nerasta tvarkaraščio bendrinimo kodo.</string>
     <string name="class_table_import_own_code_message">Tai jūsų tvarkaraštis.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semestras</string>
     <string name="class_table_share">Bendrinti tvarkaraštį</string>
     <string name="class_table_share_all_semesters">Visi semestrai</string>
+    <string name="class_table_share_copy_link">Kopijuoti nuorodą</string>
+    <string name="class_table_share_link_copied">Nuoroda nukopijuota</string>
     <string name="class_table_share_tat_compatible">Suderinama su TAT</string>
     <string name="class_table_sign_in_required_message">Prisijunkite, kad matytumėte savo tvarkaraštį</string>
     <string name="class_table_total_credits_value">%1$s kreditai</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Prisijunkite, kad matytumėte užduotis.</string>
     <string name="home_builtin_sections">Integruoti skyriai</string>
     <string name="home_custom_section">Pasirinktinis skyrius</string>
+    <string name="home_edit">Redaguoti pradžią</string>
+    <string name="home_more_actions">Daugiau veiksmų</string>
     <string name="home_no_courses_today">Šiandien pamokų nėra</string>
     <string name="home_pending_assignments">Laukiančios užduotys</string>
     <string name="home_section_add_quick_features">Pridėti greitus valdiklius</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Akcentinė spalva</string>
     <string name="settings_accent_gradient_custom">Tinkintas gradientas</string>
     <string name="settings_accent_gradient_direction">Gradiento kryptis</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Iš apatinio kairiojo į viršutinį dešinįjį kampą</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Iš apatinio dešiniojo į viršutinį kairįjį kampą</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Iš apačios į viršų</string>
     <string name="settings_accent_gradient_direction_left_to_right">Iš kairės į dešinę</string>
     <string name="settings_accent_gradient_direction_right_to_left">Iš dešinės į kairę</string>

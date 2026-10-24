@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Conflitto di lezioni</string>
     <string name="a11y_class_table_share_qr">QR Code di condivisione dell\'orario</string>
     <string name="a11y_class_table_switch">Cambia orario</string>
+    <string name="a11y_color_picker_brightness">Luminosità</string>
+    <string name="a11y_color_picker_hue">Tonalità</string>
+    <string name="a11y_color_picker_saturation">Saturazione</string>
     <string name="a11y_course_card_open_details_hint">Tocca due volte per i dettagli</string>
     <string name="a11y_course_color_swatch">Colore %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Apri in Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Per eseguire la scansione serve l\'accesso alla fotocamera</string>
     <string name="class_table_import_choose_photo">Scegli dalle foto</string>
     <string name="class_table_import_course_count">Corsi</string>
+    <string name="class_table_import_enter_link">Inserisci link</string>
     <string name="class_table_import_failed">Impossibile importare l\'orario</string>
     <string name="class_table_import_invalid_message">Il codice di condivisione è danneggiato o è stato modificato.</string>
+    <string name="class_table_import_link_placeholder">Link di condivisione</string>
     <string name="class_table_import_lookup_failed">Impossibile caricare i dettagli dei corsi</string>
     <string name="class_table_import_no_code_message">Nessun codice di condivisione dell\'orario trovato nell\'immagine.</string>
     <string name="class_table_import_own_code_message">Questo è il tuo orario.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semestre</string>
     <string name="class_table_share">Condividi orario</string>
     <string name="class_table_share_all_semesters">Tutti i semestri</string>
+    <string name="class_table_share_copy_link">Copia link</string>
+    <string name="class_table_share_link_copied">Link copiato</string>
     <string name="class_table_share_tat_compatible">Compatibile con TAT</string>
     <string name="class_table_sign_in_required_message">Accedi per visualizzare il tuo orario delle lezioni</string>
     <string name="class_table_total_credits_value">%1$s crediti</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Accedi per visualizzare i compiti.</string>
     <string name="home_builtin_sections">Sezioni integrate</string>
     <string name="home_custom_section">Sezione personalizzata</string>
+    <string name="home_edit">Modifica Home</string>
+    <string name="home_more_actions">Altre azioni</string>
     <string name="home_no_courses_today">Nessuna lezione oggi</string>
     <string name="home_pending_assignments">Compiti in sospeso</string>
     <string name="home_section_add_quick_features">Aggiungi azioni rapide</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Colore di accento</string>
     <string name="settings_accent_gradient_custom">Sfumatura personalizzata</string>
     <string name="settings_accent_gradient_direction">Direzione della sfumatura</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Dal basso a sinistra all\'alto a destra</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Dal basso a destra all\'alto a sinistra</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Dal basso verso l\'alto</string>
     <string name="settings_accent_gradient_direction_left_to_right">Da sinistra a destra</string>
     <string name="settings_accent_gradient_direction_right_to_left">Da destra a sinistra</string>

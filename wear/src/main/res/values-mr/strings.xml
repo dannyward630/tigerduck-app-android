@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">वर्गवेळ संघर्ष</string>
     <string name="a11y_class_table_share_qr">वर्ग वेळापत्रक शेअर करण्याचा QR Code</string>
     <string name="a11y_class_table_switch">वर्ग वेळापत्रक बदला</string>
+    <string name="a11y_color_picker_brightness">उजळपणा</string>
+    <string name="a11y_color_picker_hue">रंगछटा</string>
+    <string name="a11y_color_picker_saturation">संपृक्तता</string>
     <string name="a11y_course_card_open_details_hint">तपशीलांसाठी दोनदा टॅप करा</string>
     <string name="a11y_course_color_swatch">रंग %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Moodle मध्ये उघडा</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">स्कॅन करण्यासाठी कॅमेरा परवानगी आवश्यक आहे</string>
     <string name="class_table_import_choose_photo">फोटोंमधून निवडा</string>
     <string name="class_table_import_course_count">अभ्यासक्रमांची संख्या</string>
+    <string name="class_table_import_enter_link">लिंक प्रविष्ट करा</string>
     <string name="class_table_import_failed">वर्ग वेळापत्रक आयात करता आले नाही</string>
     <string name="class_table_import_invalid_message">शेअर कोड खराब झाला आहे किंवा त्यात बदल केला आहे.</string>
+    <string name="class_table_import_link_placeholder">शेअर लिंक</string>
     <string name="class_table_import_lookup_failed">अभ्यासक्रमांचे तपशील लोड करता आले नाहीत</string>
     <string name="class_table_import_no_code_message">प्रतिमेत वर्ग वेळापत्रकाचा शेअर कोड सापडला नाही.</string>
     <string name="class_table_import_own_code_message">हे तुमचे स्वतःचे वर्ग वेळापत्रक आहे.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">सेमेस्टर</string>
     <string name="class_table_share">वर्ग वेळापत्रक शेअर करा</string>
     <string name="class_table_share_all_semesters">सर्व सेमेस्टर</string>
+    <string name="class_table_share_copy_link">लिंक कॉपी करा</string>
+    <string name="class_table_share_link_copied">लिंक कॉपी केली</string>
     <string name="class_table_share_tat_compatible">TAT शी सुसंगत</string>
     <string name="class_table_sign_in_required_message">तुमचा वर्ग तक्ता पाहण्यासाठी साइन इन करा</string>
     <string name="class_table_total_credits_value">%1$s क्रेडिट्स</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">असाइनमेंट पाहण्यासाठी साइन इन करा.</string>
     <string name="home_builtin_sections">अंगभूत विभाग</string>
     <string name="home_custom_section">सानुकूल विभाग</string>
+    <string name="home_edit">होम संपादित करा</string>
+    <string name="home_more_actions">आणखी क्रिया</string>
     <string name="home_no_courses_today">आज कोणतेही वर्ग नाहीत</string>
     <string name="home_pending_assignments">प्रलंबित असाइनमेंट</string>
     <string name="home_section_add_quick_features">द्रुत क्रिया जोडा</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">ॲक्सेंट रंग</string>
     <string name="settings_accent_gradient_custom">सानुकूल ग्रेडियंट</string>
     <string name="settings_accent_gradient_direction">ग्रेडियंटची दिशा</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">खाली डावीकडून वर उजवीकडे</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">खाली उजवीकडून वर डावीकडे</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">खालून वर</string>
     <string name="settings_accent_gradient_direction_left_to_right">डावीकडून उजवीकडे</string>
     <string name="settings_accent_gradient_direction_right_to_left">उजवीकडून डावीकडे</string>

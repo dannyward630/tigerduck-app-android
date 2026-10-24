@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Конфлікт занять</string>
     <string name="a11y_class_table_share_qr">QR-код для обміну розкладом</string>
     <string name="a11y_class_table_switch">Перемкнути розклад</string>
+    <string name="a11y_color_picker_brightness">Яскравість</string>
+    <string name="a11y_color_picker_hue">Відтінок</string>
+    <string name="a11y_color_picker_saturation">Насиченість</string>
     <string name="a11y_course_card_open_details_hint">Двічі торкніться для перегляду деталей</string>
     <string name="a11y_course_color_swatch">Колір %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Відкрити в Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Для сканування потрібен доступ до камери</string>
     <string name="class_table_import_choose_photo">Вибрати з фото</string>
     <string name="class_table_import_course_count">Курси</string>
+    <string name="class_table_import_enter_link">Ввести посилання</string>
     <string name="class_table_import_failed">Не вдалося імпортувати розклад</string>
     <string name="class_table_import_invalid_message">Код для обміну пошкоджено або змінено.</string>
+    <string name="class_table_import_link_placeholder">Посилання для обміну</string>
     <string name="class_table_import_lookup_failed">Не вдалося завантажити відомості про курси</string>
     <string name="class_table_import_no_code_message">На зображенні не знайдено коду для обміну розкладом.</string>
     <string name="class_table_import_own_code_message">Це ваш власний розклад.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Семестр</string>
     <string name="class_table_share">Поділитися розкладом</string>
     <string name="class_table_share_all_semesters">Усі семестри</string>
+    <string name="class_table_share_copy_link">Скопіювати посилання</string>
+    <string name="class_table_share_link_copied">Посилання скопійовано</string>
     <string name="class_table_share_tat_compatible">Сумісність із TAT</string>
     <string name="class_table_sign_in_required_message">Увійдіть, щоб переглянути розклад занять</string>
     <string name="class_table_total_credits_value">%1$s кредитів</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Увійдіть, щоб переглянути завдання.</string>
     <string name="home_builtin_sections">Вбудовані розділи</string>
     <string name="home_custom_section">Власний розділ</string>
+    <string name="home_edit">Редагувати Головну</string>
+    <string name="home_more_actions">Інші дії</string>
     <string name="home_no_courses_today">Сьогодні занять немає</string>
     <string name="home_pending_assignments">Завдання, що очікують</string>
     <string name="home_section_add_quick_features">Додати швидкі дії</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Акцентний колір</string>
     <string name="settings_accent_gradient_custom">Власний градієнт</string>
     <string name="settings_accent_gradient_direction">Напрямок градієнта</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">З нижнього лівого кута у верхній правий</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">З нижнього правого кута у верхній лівий</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Знизу вгору</string>
     <string name="settings_accent_gradient_direction_left_to_right">Зліва направо</string>
     <string name="settings_accent_gradient_direction_right_to_left">Справа наліво</string>

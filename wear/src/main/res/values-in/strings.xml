@@ -10,6 +10,9 @@
     <string name="a11y_class_table_conflict_prefix">Konflik kelas</string>
     <string name="a11y_class_table_share_qr">QR Code untuk membagikan jadwal kuliah</string>
     <string name="a11y_class_table_switch">Ganti jadwal kuliah</string>
+    <string name="a11y_color_picker_brightness">Kecerahan</string>
+    <string name="a11y_color_picker_hue">Rona</string>
+    <string name="a11y_color_picker_saturation">Saturasi</string>
     <string name="a11y_course_card_open_details_hint">Ketuk dua kali untuk detail</string>
     <string name="a11y_course_color_swatch">Warna %1$lld</string>
     <string name="a11y_course_detail_open_moodle">Buka di Moodle</string>
@@ -294,8 +297,10 @@
     <string name="class_table_import_camera_denied">Akses kamera diperlukan untuk memindai</string>
     <string name="class_table_import_choose_photo">Pilih dari foto</string>
     <string name="class_table_import_course_count">Jumlah mata kuliah</string>
+    <string name="class_table_import_enter_link">Masukkan tautan</string>
     <string name="class_table_import_failed">Tidak dapat mengimpor jadwal kuliah</string>
     <string name="class_table_import_invalid_message">Kode berbagi rusak atau telah diubah.</string>
+    <string name="class_table_import_link_placeholder">Tautan berbagi</string>
     <string name="class_table_import_lookup_failed">Tidak dapat memuat detail mata kuliah</string>
     <string name="class_table_import_no_code_message">Tidak ada kode berbagi jadwal kuliah yang ditemukan di gambar.</string>
     <string name="class_table_import_own_code_message">Ini adalah jadwal kuliah Anda sendiri.</string>
@@ -314,6 +319,8 @@
     <string name="class_table_semester_picker_label">Semester</string>
     <string name="class_table_share">Bagikan jadwal kuliah</string>
     <string name="class_table_share_all_semesters">Semua semester</string>
+    <string name="class_table_share_copy_link">Salin tautan</string>
+    <string name="class_table_share_link_copied">Tautan disalin</string>
     <string name="class_table_share_tat_compatible">Kompatibel dengan TAT</string>
     <string name="class_table_sign_in_required_message">Masuk untuk melihat jadwal kelas Anda</string>
     <string name="class_table_total_credits_value">%1$s SKS</string>
@@ -623,6 +630,8 @@
     <string name="home_assignments_sign_in_required_message">Masuk untuk melihat tugas.</string>
     <string name="home_builtin_sections">Bagian bawaan</string>
     <string name="home_custom_section">Bagian kustom</string>
+    <string name="home_edit">Edit Beranda</string>
+    <string name="home_more_actions">Tindakan lainnya</string>
     <string name="home_no_courses_today">Tidak ada kelas hari ini</string>
     <string name="home_pending_assignments">Tugas tertunda</string>
     <string name="home_section_add_quick_features">Tambah tindakan cepat</string>
@@ -1019,6 +1028,8 @@
     <string name="settings_accent_color">Warna aksen</string>
     <string name="settings_accent_gradient_custom">Gradien kustom</string>
     <string name="settings_accent_gradient_direction">Arah gradien</string>
+    <string name="settings_accent_gradient_direction_bottom_left_to_top_right">Dari kiri bawah ke kanan atas</string>
+    <string name="settings_accent_gradient_direction_bottom_right_to_top_left">Dari kanan bawah ke kiri atas</string>
     <string name="settings_accent_gradient_direction_bottom_to_top">Dari bawah ke atas</string>
     <string name="settings_accent_gradient_direction_left_to_right">Dari kiri ke kanan</string>
     <string name="settings_accent_gradient_direction_right_to_left">Dari kanan ke kiri</string>
