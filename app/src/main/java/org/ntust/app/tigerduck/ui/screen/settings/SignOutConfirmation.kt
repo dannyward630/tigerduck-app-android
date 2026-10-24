@@ -5,6 +5,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.sharing.ImportedClassTableStore
+import org.ntust.app.tigerduck.shared.Course
 import javax.inject.Inject
 
 /**
@@ -40,9 +41,11 @@ data class LocalEdits(
  * Edits the server has not confirmed, which a sign-out deletes even with their kind synced: a
  * course added by hand that has not been uploaded or whose add still waits (PendingCourseAdds),
  * a removal whose DELETE still waits (PendingCourseDeletes), a colour or name still waiting to go
- * up (PendingCourseOverrides), a holiday choice still waiting to go up (PendingHolidayOverrides),
- * an ignore not yet confirmed, a done or ignored mark still waiting to be sent (UnsentMarks), and
- * edits whose upload the re-enable check holds back (the sign-out drops the hold).
+ * up (PendingCourseOverrides), a name on a course with no Moodle ID, which never goes up
+ * ([holdsLocalOnlyCourseNames]), a holiday choice still waiting to go up
+ * (PendingHolidayOverrides), an ignore not yet confirmed, a done or ignored mark still waiting to
+ * be sent (UnsentMarks), and edits whose upload the re-enable check holds back (the sign-out
+ * drops the hold).
  */
 data class Unconfirmed(
     val courses: Boolean = false,
@@ -95,6 +98,20 @@ fun signOutLosses(
 }
 
 /**
+ * Whether a name the user gave a course in [courses] stays on this phone alone. A name goes up
+ * under its course's Moodle ID (`ClassTableViewModel.syncCourseOverride`), and the course upload
+ * carries none, so a course without one, as every course added by hand is, keeps its name here
+ * whatever the course_names switch says. Each course by its own ID: a rename goes up through the
+ * course renamed alone, so another term's course of that number with a Moodle ID has not sent it.
+ * As iOS's holdsLocalOnlyCourseNames (tigerduck-app/tigerduck-app#744).
+ */
+internal fun holdsLocalOnlyCourseNames(names: Map<String, Map<String, String>>, courses: List<Course>): Boolean =
+    courses.any { course ->
+        course.moodleIdNumber == null &&
+            (course.customCourseName != null || names[course.courseNo].orEmpty().values.any { it.isNotEmpty() })
+    }
+
+/**
  * Reads what this phone holds for [signOutLosses]. Off the main thread: it reads every term's
  * cached courses.
  */
@@ -106,10 +123,10 @@ class SignOutLossCheck @Inject constructor(
     suspend fun losses(): Set<SignOutLoss> {
         val terms = dataCache.loadEveryTermCourses()
         val courses = terms.values.flatten()
+        val names = dataCache.loadCourseCustomNames()
         val edits = LocalEdits(
             courses = courses.any { it.isManual } || dataCache.loadDeletedCourseNos().isNotEmpty(),
-            courseNames = courses.any { it.customCourseName != null } ||
-                dataCache.loadCourseCustomNames().values.any { it.isNotEmpty() },
+            courseNames = courses.any { it.customCourseName != null } || names.values.any { it.isNotEmpty() },
             courseColours = courses.any { it.customColorHex != null },
             assignmentMarks = dataCache.loadIgnoredAssignments().isNotEmpty() ||
                 dataCache.loadMarkedCompletedAssignments().isNotEmpty(),
@@ -138,7 +155,8 @@ class SignOutLossCheck @Inject constructor(
                         it.courseNo in adds[semester].orEmpty()
                 }
             } || dataCache.loadPendingCourseDeletes().values.any { it.isNotEmpty() },
-            courseNames = (edits.courseNames && "course_names" in held) || overrides.any { it.customName != null },
+            courseNames = (edits.courseNames && "course_names" in held) || overrides.any { it.customName != null } ||
+                holdsLocalOnlyCourseNames(names, courses),
             courseColours = (edits.courseColours && "course_colors" in held) || overrides.any { it.colorHex != null },
             assignments = ((edits.assignmentMarks || edits.ignoredCourses) && "assignments" in held) ||
                 dataCache.loadPendingCourseIgnores().isNotEmpty() ||
