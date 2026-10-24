@@ -51,6 +51,10 @@ class ClassTableShareCodeTest {
         const val TAT2 = "HTTPS://NTUST-TAT.WEB.APP/S/TAT21151B11300001CS1010001.267-EE1010002.13.5N-MA1010003"
         const val TAT1 = "HTTPS://NTUST-TAT.WEB.APP/S/TAT11142B11300002CS1010004-PE1010005"
 
+        /** [ONE_TERM]'s content, what follows the type, and [TAT2]'s code after its prefix. */
+        const val PACKED = "1KNTO5SJB234O09283J89PYINHMLGU86XQH3K2WVREW0CHIZS78"
+        const val TAT2_BODY = "TAT21151B11300001CS1010001.267-EE1010002.13.5N-MA1010003"
+
         fun code(studentId: String, sharedAt: Instant, vararg terms: Pair<String, String>) = ClassTableShareCode(
             Format.TIGER_DUCK, studentId, sharedAt,
             terms.map { (semester, courses) -> Term(semester, courses.split(' ').sorted()) },
@@ -372,7 +376,100 @@ class ClassTableShareCodeTest {
         val table = TABLES.getValue(ONE_TERM)
         assertEquals(table, ClassTableShareCode.decode(" ${ONE_TERM.lowercase()}\n"))
         assertEquals(table, ClassTableShareCode.decode("\u00A0\t$ONE_TERM\u0085\u3000"))
-        assertRefused<ClassTableShareCodeError.UnknownPrefix>("\uFEFF$ONE_TERM")
+        // Not trimmed, as iOS does not trim it either; the whole code after it still reads, as
+        // the end of any text does.
+        assertEquals(table, ClassTableShareCode.decode("\uFEFF$ONE_TERM"))
+        assertRefused<ClassTableShareCodeError.UnknownPrefix>("\uFEFF")
+    }
+
+    // --- Lenient forms (decision record 0023, "Reading a share code"; iOS tigerduck-app#818) ---
+
+    @Test
+    fun `our link and TAT's read in any case, with http, https or no scheme, a query, fragment or trailing slash, on any host, or as the code alone`() {
+        val ours = ClassTableShareCode.decode(ONE_TERM)
+        val lower = PACKED.lowercase()
+        for (text in listOf(
+            "http://share.tigerduck.app/classtable/$lower",
+            "share.tigerduck.app/CLASSTABLE/$PACKED",
+            "HTTPS://SHARE.TIGERDUCK.APP/CLASSTABLE/$PACKED/",
+            "https://share.tigerduck.app/classtable/$lower?fbclid=IwAR0abc",
+            "https://share.tigerduck.app/CLASSTABLE/$PACKED/?from=mail#top",
+            "https://share.tigerduck.app/CLASSTABLE/$PACKED#",
+            "https://whatever.example.tld/$PACKED",
+            "https://whatever.example.tld/CLASSTABLE/$lower/",
+            "whatever.example.tld/classtable/$PACKED?x=1",
+            "HTTPS://TIGERDUCK.APP/CLASSTABLE/$PACKED",
+            "HTTPS://SHARE.TIGERDUCK.APP.EXAMPLE.COM/CLASSTABLE/$PACKED",
+            "HTTPS://SHARE.TIGERDUCK.APP@EXAMPLE.COM/CLASSTABLE/$PACKED",
+            "HTTPS://SHARE.TIGERDUCK.APP:443/CLASSTABLE/$PACKED",
+            PACKED,
+            " \n$lower\t",
+        )) {
+            assertEquals(text, ours, ClassTableShareCode.decode(text))
+        }
+
+        val tat = ClassTableShareCode.decode(TAT2)
+        for (text in listOf(
+            "https://ntust-tat.web.app/s/${TAT2_BODY.lowercase()}",
+            "http://ntust-tat.web.app/s/$TAT2_BODY",
+            "ntust-tat.web.app/S/$TAT2_BODY/",
+            "https://ntust-tat.web.app/s/$TAT2_BODY?openExternalBrowser=1",
+            "https://whatever.example.tld/S/$TAT2_BODY",
+            "https://whatever.example.tld/${TAT2_BODY.lowercase()}",
+            TAT2_BODY,
+            " ${TAT2_BODY.lowercase()}\n",
+        )) {
+            assertEquals(text, tat, ClassTableShareCode.decode(text))
+        }
+
+        // A pasted TAT link carries the spaces that pad a short student ID as `%20`.
+        val padded = ClassTableShareCode.decode("HTTPS://NTUST-TAT.WEB.APP/S/TAT2114HB000     GE1010001.6AB")
+        for (text in listOf(
+            "https://ntust-tat.web.app/s/TAT2114HB000%20%20%20%20%20GE1010001.6AB",
+            "https://whatever.example.tld/s/tat2114hb000%20%20%20%20%20ge1010001.6ab",
+            "TAT2114HB000%20%20%20%20%20GE1010001.6AB",
+        )) {
+            assertEquals(text, padded, ClassTableShareCode.decode(text))
+        }
+    }
+
+    @Test
+    fun `our host and TAT's keep their errors in every form they read in`() {
+        assertRefused<ClassTableShareCodeError.UnknownType>("share.tigerduck.app/friend/1abc")
+        assertRefused<ClassTableShareCodeError.UnknownType>("http://share.tigerduck.app/friend/")
+        assertRefused<ClassTableShareCodeError.UnknownVersion>("http://share.tigerduck.app/classtable/9")
+        assertRefused<ClassTableShareCodeError.ChecksumMismatch>(
+            "share.tigerduck.app/CLASSTABLE/1KNTO5SJB234O09283J89PYINHMLGU86XQH3K2WVREW0CHIZA78",
+        )
+        assertRefused<ClassTableShareCodeError.Malformed>("https://share.tigerduck.app/classtable/hello?x=1")
+        assertRefused<ClassTableShareCodeError.Malformed>("http://share.tigerduck.app")
+        assertRefused<ClassTableShareCodeError.Malformed>("http://ntust-tat.web.app/s/TAT2115")
+        assertRefused<ClassTableShareCodeError.UnknownVersion>("ntust-tat.web.app/s/tat31151b11300001cs1010001")
+    }
+
+    @Test
+    fun `other QR codes, broken codes off our host and TAT's, and words are not share codes`() {
+        for (text in listOf(
+            "https://example.com/",
+            "https://example.com/menu",
+            "hello world",
+            "100% sure",
+            "%E0%A4",
+            "12345",
+            "1ABC",
+            "https://example.com/1ABC",
+            "https://example.com/CLASSTABLE/1KNTO5SJB234O09283J89PYINHMLGU86XQH3K2WVREW0CHIZA78",
+            "https://example.com/S/TAT2115",
+            "TAT2115",
+            "TATTOO",
+            "TAT31151B11300001CS1010001",
+            "SHARE.TIGERDUCK.APP.EXAMPLE.COM/FRIEND/1ABC",
+            "ftp://share.tigerduck.app/friend/1abc",
+            "https://ntust-tat.web.app/",
+            "/",
+        )) {
+            assertRefused<ClassTableShareCodeError.UnknownPrefix>(text)
+        }
     }
 
     @Test
