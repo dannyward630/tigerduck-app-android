@@ -14,6 +14,7 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.push.ServerCourse
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.screen.home.CourseSyncReconciler
+import org.ntust.app.tigerduck.ui.screen.home.commitReconciledTerm
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
@@ -97,12 +98,9 @@ class ClassTableHandAddedHideTest {
         )
         beforeCommit()
         cache.restoredCoursesListed(TERM, serverNos.toList(), fetchedAtMs)
-        cache.updateDeletedCourseNos(stored, outcome.tombstones)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
-        val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones) ?: localCourses
-        cache.updateCourses(TERM) { current, hidden ->
-            CourseSyncReconciler.committedCourses(current, localCourses, kept, outcome.merged, hidden)
-        }
+        val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones)
+        commitReconciledTerm(cache, TERM, stored, outcome.tombstones, localCourses, kept, outcome.merged)
     }
 
     /**
@@ -333,6 +331,20 @@ class ClassTableHandAddedHideTest {
 
         assertEquals(setOf(handAdded.courseNo), hidden())
         assertEquals(listOf(enrolled.courseNo, MERGED), cache.loadCourses(TERM).map { it.courseNo }.sorted())
+    }
+
+    @Test
+    fun `a course hidden here that another device adds back returns with one sync`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        delete(enrolled)
+        syncListing(handAdded.courseNo)
+
+        // Another device adds the course back, and the next snapshot lists it.
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+
+        assertEquals(emptySet<String>(), hidden())
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo).sorted(), cache.loadCourses(TERM).map { it.courseNo }.sorted())
     }
 
     @Test

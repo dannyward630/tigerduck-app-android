@@ -6,8 +6,8 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Home's sync reads the hides when it starts and commits what its reconcile made of them when it
- * ends, while a course selection answer may lift a deleted hand-added course's hide in between
+ * Home's sync reads the hides when it starts and commits what its reconcile made of them term by
+ * term, while a course selection answer may lift a deleted hand-added course's hide in between
  * (`DataCache.updateDeletedCourseNos`). Every write of the hides it makes goes through that
  * commit, so its older read cannot hide the course again.
  *

@@ -481,7 +481,6 @@ class HomeBackendSync @Inject constructor(
         val serverKnown = dataCache.loadServerKnownNos()
         val updatedKnown = serverKnown.toMutableMap()
         var tombstones = migratedTombstones(semesters)
-        var tombstonesBefore = tombstones
         val currentSemester = courseService.currentSemesterCode()
         var touchedCurrent = false
 
@@ -490,7 +489,7 @@ class HomeBackendSync @Inject constructor(
             // After the courses: see CourseSyncReconciler.withoutRestored.
             val restored = dataCache.restoredCoursesIn(semester, result.fetchedAtMs)
             tombstones = CourseSyncReconciler.withoutRestored(semester, tombstones, restored)
-            tombstonesBefore = CourseSyncReconciler.withoutRestored(semester, tombstonesBefore, restored)
+            val read = tombstones
             val tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones)
             val outcome = CourseSyncReconciler.reconcileSemester(
                 semester = semester,
@@ -522,11 +521,15 @@ class HomeBackendSync @Inject constructor(
             pruned?.let { kept ->
                 pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
             }
+            if (outcome.merged.isNotEmpty()) {
+                Log.i(TAG, "[Sync] $semester: merged from server ${outcome.merged.map { it.courseNo }}")
+            }
+            if (commitReconciledTerm(dataCache, semester, read, tombstones, localCourses, pruned, outcome.merged) &&
+                semester == currentSemester
+            ) {
+                touchedCurrent = true
+            }
             if (outcome.uploadLocal) {
-                pruned?.let { kept ->
-                    dataCache.updateCourses(semester) { current, _ -> CourseSyncReconciler.committedCourses(current, localCourses, kept) }
-                    if (semester == currentSemester) touchedCurrent = true
-                }
                 // Sent whatever the upload ledger remembers (resend): the
                 // server has nothing for the term, so a reset elsewhere took
                 // the list it last accepted, and that same list has to go again.
@@ -543,24 +546,9 @@ class HomeBackendSync @Inject constructor(
                     }
                     .onFailure { e -> Log.w(TAG, "[Sync] $semester: auto-upload failed: ${e.logSummary()}") }
                 Log.i(TAG, "[Sync] $semester: server empty, uploaded ${outcome.toUpload.size} local courses")
-                continue
-            }
-            if (pruned != null || outcome.merged.isNotEmpty()) {
-                if (outcome.merged.isNotEmpty()) {
-                    Log.i(TAG, "[Sync] $semester: merged from server ${outcome.merged.map { it.courseNo }}")
-                }
-                // Onto the list as it stands: a delete or fetch saved since the load stays.
-                dataCache.updateCourses(semester) { current, hidden ->
-                    CourseSyncReconciler.committedCourses(current, localCourses, pruned ?: localCourses, outcome.merged, hidden)
-                }
-                if (semester == currentSemester) touchedCurrent = true
             }
         }
 
-        if (tombstones != tombstonesBefore) {
-            // Only what the reconcile changed: a hide lifted or written meanwhile stands.
-            dataCache.updateDeletedCourseNos(tombstonesBefore, tombstones)
-        }
         if (updatedKnown != serverKnown) {
             dataCache.saveServerKnownNos(updatedKnown)
         }
@@ -596,6 +584,35 @@ class HomeBackendSync @Inject constructor(
     private companion object {
         const val TAG = "HomeViewModel"
     }
+}
+
+/**
+ * A term's reconcile committed to [dataCache]: the hides it changed, from [read], the hides it
+ * was handed, to [hides], and the term's courses, without those it pruned from [localCourses],
+ * its own load ([kept] says which stay, null when it pruned none), and with the rows it
+ * [merged] down. Each is applied to the store as it stands, so a delete, a fetch or a hide
+ * lifted while the sync ran stays. Returns whether it wrote the courses.
+ *
+ * The hides first: the courses keep out every merged row the store hides when they are written,
+ * and a course another device added back has its row merged and its hide lifted by the same
+ * reconcile, so written the other way round it stays missing until the next sync. A hide a
+ * delete wrote since the read is no change of this reconcile's, and still keeps its row out.
+ */
+internal suspend fun commitReconciledTerm(
+    dataCache: DataCache,
+    semester: String,
+    read: Set<String>,
+    hides: Set<String>,
+    localCourses: List<Course>,
+    kept: List<Course>?,
+    merged: List<Course>,
+): Boolean {
+    if (hides != read) dataCache.updateDeletedCourseNos(read, hides)
+    if (kept == null && merged.isEmpty()) return false
+    dataCache.updateCourses(semester) { current, hidden ->
+        CourseSyncReconciler.committedCourses(current, localCourses, kept ?: localCourses, merged, hidden)
+    }
+    return true
 }
 
 /**
