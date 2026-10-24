@@ -68,6 +68,7 @@ class WearScheduleBridge @Inject constructor(
             emptyList()
         }
         val accentHex = wearAccentHex(appPreferences)
+        val accentGradient = wearAccentGradient(appPreferences)
         val payload = gson.toJson(courses.map { it.toDto() }).toByteArray()
         val gzipped = ByteArrayOutputStream().also { bos ->
             GZIPOutputStream(bos).use { it.write(payload) }
@@ -95,6 +96,12 @@ class WearScheduleBridge @Inject constructor(
         val request = PutDataMapRequest.create(WearProtocol.Schedule.PATH).apply {
             dataMap.putByteArray(WearProtocol.Schedule.KEY_COURSES, gzipped)
             dataMap.putString(WearProtocol.Schedule.KEY_ACCENT, accentHex)
+            // Left out for a single color: each publish is a whole new item,
+            // so the watch then reads no gradient.
+            if (accentGradient != null) {
+                dataMap.putString(WearProtocol.Schedule.KEY_ACCENT_END, accentGradient.endHex)
+                dataMap.putInt(WearProtocol.Schedule.KEY_ACCENT_DIRECTION, accentGradient.directionCode)
+            }
             dataMap.putLong(WearProtocol.Schedule.KEY_SYNCED_AT, System.currentTimeMillis())
             dataMap.putBoolean(WearProtocol.Schedule.KEY_LOGGED_IN, loggedIn)
             dataMap.putString(WearProtocol.Schedule.KEY_LANGUAGE, languageTag)
@@ -198,16 +205,35 @@ class WearScheduleBridge @Inject constructor(
 }
 
 /**
- * The accent the watch is sent, as `#RRGGBB`: the swatch last picked, also
- * while the phone follows the wallpaper, as the watch has no wallpaper colors
- * of its own to follow (see [AccentPolicy]). A preset goes as it always has;
- * a color of the user's own goes as dark mode draws it, as the watch draws on
- * black, where a dark one would leave its rings and guides invisible. Only the
- * start of a gradient goes: the watch draws no gradient.
+ * The accent the watch is sent, as `#RRGGBB`: the swatch last picked, or the
+ * start of the gradient last picked (see [wearAccentGradient] for the rest of
+ * it), also while the phone follows the wallpaper, as the watch has no
+ * wallpaper colors of its own to follow (see [AccentPolicy]).
  */
-internal fun wearAccentHex(prefs: AppPreferences): String {
-    val hex = prefs.accentColorHex
-    val sent = if (AccentPolicy.isPreset(hex)) hex else AccentPolicy.darkHex(hex)
+internal fun wearAccentHex(prefs: AppPreferences): String = wearHex(prefs.accentColorHex)
+
+/** The rest of the accent gradient the watch is sent: its end as `#RRGGBB` and its direction's code. */
+internal data class WearAccentGradient(val endHex: String, val directionCode: Int)
+
+/**
+ * The end and direction of the gradient picked, which the watch draws from
+ * [wearAccentHex], or null for a single color. A gradient counts by the rule
+ * the phone's own screens follow, so one an older build picked over goes no
+ * more.
+ */
+internal fun wearAccentGradient(prefs: AppPreferences): WearAccentGradient? {
+    val end = AccentPolicy.gradientEnd(prefs.accentColorHex, prefs.accentGradientStartHex, prefs.accentGradientEndHex)
+        ?: return null
+    return WearAccentGradient(wearHex(end), prefs.accentGradientDirection.code)
+}
+
+/**
+ * [lightHex] as the watch draws it: a preset as it always has gone, and a
+ * color of the user's own as dark mode draws it, as the watch draws on black,
+ * where a dark one would leave its rings and guides invisible.
+ */
+private fun wearHex(lightHex: Int): String {
+    val sent = if (AccentPolicy.isPreset(lightHex)) lightHex else AccentPolicy.darkHex(lightHex)
     return "#%06X".format(0xFFFFFF and sent)
 }
 

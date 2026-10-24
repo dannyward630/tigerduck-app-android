@@ -6,8 +6,10 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import androidx.datastore.preferences.core.preferencesOf
 import androidx.datastore.preferences.core.stringPreferencesKey
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import java.time.LocalDate
 
 class SchedulePersistenceTest {
@@ -20,10 +22,14 @@ class SchedulePersistenceTest {
           "isManual":false}]
     """.trimIndent()
 
-    private fun write(quietDays: List<String>?) = mutablePreferencesOf().also {
+    private fun write(
+        quietDays: List<String>?,
+        accentEndHex: String? = null,
+        accentDirectionCode: Int? = null,
+    ) = mutablePreferencesOf().also {
         SchedulePersistence.writeSnapshot(
-            it, coursesJson, "#112233", syncedAtMs = 1_000L, loggedIn = true,
-            languageTag = "zh-Hant-TW", disableScreenCaptureProtection = false,
+            it, coursesJson, "#112233", accentEndHex, accentDirectionCode, syncedAtMs = 1_000L,
+            loggedIn = true, languageTag = "zh-Hant-TW", disableScreenCaptureProtection = false,
             quietDays = quietDays,
         )
     }
@@ -39,8 +45,9 @@ class SchedulePersistenceTest {
     fun `a payload from a phone that predates quiet days clears the earlier ones`() {
         val prefs = write(listOf("2026-10-09"))
         SchedulePersistence.writeSnapshot(
-            prefs, coursesJson, "#112233", syncedAtMs = 2_000L, loggedIn = true,
-            languageTag = null, disableScreenCaptureProtection = false, quietDays = null,
+            prefs, coursesJson, "#112233", accentEndHex = null, accentDirectionCode = null,
+            syncedAtMs = 2_000L, loggedIn = true, languageTag = null,
+            disableScreenCaptureProtection = false, quietDays = null,
         )
         val snapshot = SchedulePersistence.readSnapshot(prefs)
         assertTrue(snapshot.quietDays.isEmpty())
@@ -69,5 +76,48 @@ class SchedulePersistenceTest {
         assertEquals(true, snapshot.loggedIn)
         assertEquals("zh-Hant-TW", snapshot.languageTag)
         assertTrue(snapshot.quietDays.isEmpty())
+        // Nor a gradient: the accent draws alone until the phone's next publish.
+        assertNull(snapshot.accentEndHex)
+        assertNull(snapshot.accentDirection)
+    }
+
+    @Test
+    fun `the gradient the phone sends is stored and read back`() {
+        val snapshot = SchedulePersistence.readSnapshot(write(null, "#AF52DE", 2))
+        assertEquals("#112233", snapshot.accentHex)
+        assertEquals("#AF52DE", snapshot.accentEndHex)
+        assertEquals(AccentGradientDirection.LeftToRight, snapshot.accentDirection)
+    }
+
+    @Test
+    fun `a single color the phone sends next clears the gradient`() {
+        val prefs = write(null, "#AF52DE", 2)
+        SchedulePersistence.writeSnapshot(
+            prefs, coursesJson, "#112233", accentEndHex = null, accentDirectionCode = null,
+            syncedAtMs = 2_000L, loggedIn = true, languageTag = null,
+            disableScreenCaptureProtection = false, quietDays = null,
+        )
+        val snapshot = SchedulePersistence.readSnapshot(prefs)
+        assertNull(snapshot.accentEndHex)
+        assertNull(snapshot.accentDirection)
+    }
+
+    @Test
+    fun `a gradient without a direction, or with one this build does not know, runs top left to bottom right`() {
+        assertEquals(
+            AccentGradientDirection.TopLeftToBottomRight,
+            SchedulePersistence.readSnapshot(write(null, "#AF52DE", null)).accentDirection,
+        )
+        assertEquals(
+            AccentGradientDirection.TopLeftToBottomRight,
+            SchedulePersistence.readSnapshot(write(null, "#AF52DE", 99)).accentDirection,
+        )
+    }
+
+    @Test
+    fun `a direction sent without an end is no gradient`() {
+        val snapshot = SchedulePersistence.readSnapshot(write(null, null, 2))
+        assertNull(snapshot.accentEndHex)
+        assertNull(snapshot.accentDirection)
     }
 }

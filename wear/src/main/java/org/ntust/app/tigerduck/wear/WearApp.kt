@@ -42,6 +42,7 @@ import org.ntust.app.tigerduck.wear.ui.SettingsListScreen
 import org.ntust.app.tigerduck.wear.ui.TodayScreen
 import org.ntust.app.tigerduck.wear.ui.theme.WearTheme
 import org.ntust.app.tigerduck.wear.ui.theme.parseAccent
+import org.ntust.app.tigerduck.wear.ui.theme.wearAccentGradient
 
 @Composable
 fun WearApp() {
@@ -78,7 +79,11 @@ fun WearApp() {
 
     val navController = rememberSwipeDismissableNavController()
 
-    WearTheme(accent = parseAccent(snapshot.accentHex), paddingDp = paddingDp) {
+    WearTheme(
+        accent = parseAccent(snapshot.accentHex),
+        accentGradient = wearAccentGradient(snapshot.accentEndHex, snapshot.accentDirection),
+        paddingDp = paddingDp,
+    ) {
         AppScaffold {
             SwipeDismissableNavHost(
                 navController = navController,
