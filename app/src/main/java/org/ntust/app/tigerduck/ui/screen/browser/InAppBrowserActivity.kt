@@ -55,6 +55,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
@@ -68,6 +69,7 @@ import org.ntust.app.tigerduck.browser.BrowserColors
 import org.ntust.app.tigerduck.browser.BrowserDownload
 import org.ntust.app.tigerduck.browser.BrowserDownloadPlans
 import org.ntust.app.tigerduck.browser.BrowserDownloads
+import org.ntust.app.tigerduck.browser.BrowserPageScripts
 import org.ntust.app.tigerduck.browser.BrowserRouting
 import org.ntust.app.tigerduck.browser.BrowserSession
 import org.ntust.app.tigerduck.browser.BrowserSettings
@@ -164,6 +166,9 @@ class InAppBrowserActivity : AppCompatActivity() {
     /** The scheme the page was last told; see [tellPage]. */
     private var toldDark: Boolean? = null
     private var schemePokePending = false
+
+    /** Whether the WebView adds [BrowserPageScripts] to each page as it starts. */
+    private var pagesGetScriptsAtStart = false
 
     private lateinit var loads: BrowserLoads
     private lateinit var signInFlow: BrowserSignInFlow
@@ -370,6 +375,9 @@ class InAppBrowserActivity : AppCompatActivity() {
             state.find = state.find?.copy(ordinal = if (count == 0) 0 else ordinal + 1, count = count, done = done)
         }
         setOnLongClickListener { onLongPress() }
+        // Before the page's own scripts, in every page; else as each page finishes, in onPageDone.
+        pagesGetScriptsAtStart = WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT) &&
+            runCatching { WebViewCompat.addDocumentStartJavaScript(this, BrowserPageScripts.TOUCH_PAN, setOf("*")) }.isSuccess
     }
 
     /** Opens [target]: signed in first where its site signs the browser in and no session is kept. */
@@ -448,6 +456,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     private fun onPageDone(url: String) {
+        if (!pagesGetScriptsAtStart) webView.evaluateJavascript(BrowserPageScripts.TOUCH_PAN, null)
         loads.finished(url)
         state.loading = false
         state.url = loads.address(url)
