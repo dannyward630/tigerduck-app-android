@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -59,6 +60,7 @@ import org.ntust.app.tigerduck.review.ReviewPrompt
 import org.ntust.app.tigerduck.serverpush.ServerPopupRequest
 import org.ntust.app.tigerduck.serverpush.ServerPushIntentToken
 import org.ntust.app.tigerduck.serverpush.ServerPushPopupCoordinator
+import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
 import org.ntust.app.tigerduck.ui.BrowserPreference
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
@@ -155,6 +157,12 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var mailAccount: MailAccount
 
+    /** The display and text sizes this Activity was made at; see [AppScale]. */
+    private var appScale = AppScale.DEFAULT
+
+    /** The phone's configuration it was made from, to tell when a change it handles leaves [appScale] stale. */
+    private var attachedConfiguration: Configuration? = null
+
     private val widgetStartRoute = mutableStateOf<String?>(null)
     private val whatsNewFlow = mutableStateOf<WhatsNewFlow?>(null)
 
@@ -166,6 +174,14 @@ class MainActivity : AppCompatActivity() {
             appState.systemPermissions.recordLaunchPromptResult(granted)
             if (granted) liveActivityManager.refresh()
         }
+
+    // The sizes picked on the Display and text size page, over the phone's
+    // own. Read from the file here, before Hilt has injected anything.
+    override fun attachBaseContext(newBase: Context) {
+        appScale = AppScale.stored(newBase)
+        attachedConfiguration = Configuration(newBase.resources.configuration)
+        super.attachBaseContext(appScale.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -222,6 +238,10 @@ class MainActivity : AppCompatActivity() {
             // from within the app — Settings lives inside this Activity, so
             // onResume never fires on return.
             LaunchedEffect(appState.rotationMode) { applyRotationPreference() }
+            // A new display or text size, or a reset to the phone's own, takes
+            // a new Activity: the sizes are its configuration.
+            val pickedScale = appState.appScale
+            LaunchedEffect(pickedScale) { if (pickedScale != appScale) recreate() }
 
             val systemDark = isSystemInDarkTheme()
             val dark = when (appState.themeMode) {
@@ -402,6 +422,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        // The screen's size in dp laid over this one is the old screen's.
+        if (attachedConfiguration?.let { appScale.isStale(it, newConfig) } == true) {
+            recreate()
+            return
+        }
         // A language change lands here, as the manifest handles locale: relabel the shortcut.
         LibraryQrShortcut.publish(this)
         // Foldable unfold / external display attach changes smallestScreenWidthDp.

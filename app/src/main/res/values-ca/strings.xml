@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">Mostra traducció</string>
     <string name="settings_color_theme">Tema de color</string>
     <string name="settings_delete_account">Elimina el compte</string>
+    <string name="settings_display_size_app_footer">Ajusta les mides de l\'aplicació a partir de la mida de visualització i de lletra del telèfon.</string>
+    <string name="settings_display_size_app_section">A l\'aplicació</string>
+    <string name="settings_display_size_preview_footer">L\'aplicació canvia a la mida nova quan deixes anar el control lliscant.</string>
+    <string name="settings_display_size_text">Mida del text</string>
+    <string name="settings_display_size_title">Mida de visualització i del text</string>
+    <string name="settings_display_size_ui">Mida de visualització</string>
+    <string name="settings_display_size_widget_footer">La pantalla d\'inici decideix la mida de cada widget. Aquestes mides canvien el que s\'hi mostra a dins.</string>
+    <string name="settings_display_size_widget_section">Widgets</string>
     <string name="settings_feedback_bug_report">Comentaris / Informeu d\'un problema</string>
     <string name="settings_flip_to_library_summary">Gira el telèfon amb la pantalla cap avall per obrir el QR de la biblioteca.</string>
     <string name="settings_flip_to_library_title">Gira per mostrar el QR de la biblioteca</string>

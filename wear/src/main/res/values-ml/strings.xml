@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">വിവർത്തനം കാണിക്കുക</string>
     <string name="settings_color_theme">നിറ തീം</string>
     <string name="settings_delete_account">അക്കൗണ്ട് ഇല്ലാതാക്കുക</string>
+    <string name="settings_display_size_app_footer">ഫോണിന്റെ ഡിസ്‌പ്ലേ, ഫോണ്ട് വലുപ്പങ്ങൾക്ക് പുറമേ ആപ്പിന്റെ വലുപ്പങ്ങൾ മാറ്റുന്നു.</string>
+    <string name="settings_display_size_app_section">ആപ്പിൽ</string>
+    <string name="settings_display_size_preview_footer">സ്ലൈഡർ വിടുമ്പോൾ ആപ്പ് പുതിയ വലുപ്പത്തിലേക്ക് മാറും.</string>
+    <string name="settings_display_size_text">ടെക്സ്റ്റ് വലുപ്പം</string>
+    <string name="settings_display_size_title">ഡിസ്‌പ്ലേയുടെയും ടെക്സ്റ്റിന്റെയും വലുപ്പം</string>
+    <string name="settings_display_size_ui">ഡിസ്‌പ്ലേ വലുപ്പം</string>
+    <string name="settings_display_size_widget_footer">ഓരോ വിജറ്റിന്റെയും വലുപ്പം ഹോം സ്ക്രീനാണ് തീരുമാനിക്കുന്നത്. ഈ വലുപ്പങ്ങൾ വിജറ്റിനുള്ളിൽ കാണിക്കുന്നവ മാറ്റുന്നു.</string>
+    <string name="settings_display_size_widget_section">വിജറ്റുകൾ</string>
     <string name="settings_feedback_bug_report">ഫീഡ്‌ബാക്ക് / പ്രശ്‌നം റിപ്പോർട്ട് ചെയ്യുക</string>
     <string name="settings_flip_to_library_summary">ലൈബ്രറി QR തുറക്കാൻ ഫോൺ സ്ക്രീൻ താഴ്ത്തി മറിക്കുക.</string>
     <string name="settings_flip_to_library_title">ലൈബ്രറി QR കാണിക്കാൻ മറിക്കുക</string>

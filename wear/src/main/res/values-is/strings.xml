@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">Sýna þýðingu</string>
     <string name="settings_color_theme">Litaþema</string>
     <string name="settings_delete_account">Eyða reikningi</string>
+    <string name="settings_display_size_app_footer">Breytir stærðum forritsins ofan á skjá- og leturstærð símans.</string>
+    <string name="settings_display_size_app_section">Í forritinu</string>
+    <string name="settings_display_size_preview_footer">Forritið skiptir yfir í nýju stærðina þegar þú sleppir sleðanum.</string>
+    <string name="settings_display_size_text">Textastærð</string>
+    <string name="settings_display_size_title">Skjá- og textastærð</string>
+    <string name="settings_display_size_ui">Skjástærð</string>
+    <string name="settings_display_size_widget_footer">Heimaskjárinn ræður hversu stór hver græja er. Þessar stærðir breyta því sem birtist inni í henni.</string>
+    <string name="settings_display_size_widget_section">Græjur</string>
     <string name="settings_feedback_bug_report">Endurgjöf / Tilkynna villu</string>
     <string name="settings_flip_to_library_summary">Snúðu símann með skjánum niður til að opna QR kóða bókasafnsins.</string>
     <string name="settings_flip_to_library_title">Snúa til að sýna QR kóða bókasafnsins</string>

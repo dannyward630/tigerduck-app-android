@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">Приказ превода</string>
     <string name="settings_color_theme">Тема боја</string>
     <string name="settings_delete_account">Брисање налога</string>
+    <string name="settings_display_size_app_footer">Мења величине у апликацији поврх величине приказа и фонта на телефону.</string>
+    <string name="settings_display_size_app_section">У апликацији</string>
+    <string name="settings_display_size_preview_footer">Апликација прелази на нову величину када пустите клизач.</string>
+    <string name="settings_display_size_text">Величина текста</string>
+    <string name="settings_display_size_title">Величина приказа и текста</string>
+    <string name="settings_display_size_ui">Величина приказа</string>
+    <string name="settings_display_size_widget_footer">Величину сваког виџета одређује почетни екран. Ове величине мењају оно што се приказује у њему.</string>
+    <string name="settings_display_size_widget_section">Виџети</string>
     <string name="settings_feedback_bug_report">Повратне информације / Пријави проблем</string>
     <string name="settings_flip_to_library_summary">Окрените телефон екраном надоле да отворите QR библиотеке.</string>
     <string name="settings_flip_to_library_title">Окрени за приказ QR-а библиотеке</string>

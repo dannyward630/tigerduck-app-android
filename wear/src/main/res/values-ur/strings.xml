@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">ترجمہ دکھائیں</string>
     <string name="settings_color_theme">رنگ تھیم</string>
     <string name="settings_delete_account">اکاؤنٹ حذف کرنا</string>
+    <string name="settings_display_size_app_footer">فون کے ڈسپلے اور فونٹ کے سائز کے علاوہ ایپ کے سائز تبدیل کرتا ہے۔</string>
+    <string name="settings_display_size_app_section">ایپ میں</string>
+    <string name="settings_display_size_preview_footer">سلائیڈر چھوڑتے ہی ایپ نئے سائز پر آ جاتی ہے۔</string>
+    <string name="settings_display_size_text">متن کا سائز</string>
+    <string name="settings_display_size_title">ڈسپلے اور متن کا سائز</string>
+    <string name="settings_display_size_ui">ڈسپلے کا سائز</string>
+    <string name="settings_display_size_widget_footer">ہر ویجٹ کا سائز ہوم اسکرین طے کرتی ہے۔ یہ سائز ویجٹ کے اندر دکھائی دینے والی چیزوں کو بدلتے ہیں۔</string>
+    <string name="settings_display_size_widget_section">ویجٹس</string>
     <string name="settings_feedback_bug_report">رائے / مسئلہ رپورٹ کریں</string>
     <string name="settings_flip_to_library_summary">لائبریری QR کھولنے کے لیے فون کو اسکرین نیچے کر کے پلٹائیں۔</string>
     <string name="settings_flip_to_library_title">لائبریری QR دکھانے کے لیے پلٹائیں</string>

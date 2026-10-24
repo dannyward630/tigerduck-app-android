@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">Übersetzung anzeigen</string>
     <string name="settings_color_theme">Farbschema</string>
     <string name="settings_delete_account">Konto löschen</string>
+    <string name="settings_display_size_app_footer">Passt die Größen der App zusätzlich zur Anzeige- und Schriftgröße deines Telefons an.</string>
+    <string name="settings_display_size_app_section">In der App</string>
+    <string name="settings_display_size_preview_footer">Die App wechselt zur neuen Größe, sobald du den Schieberegler loslässt.</string>
+    <string name="settings_display_size_text">Textgröße</string>
+    <string name="settings_display_size_title">Anzeige- und Textgröße</string>
+    <string name="settings_display_size_ui">Anzeigegröße</string>
+    <string name="settings_display_size_widget_footer">Wie groß ein Widget ist, legt dein Startbildschirm fest. Diese Größen ändern, was darin angezeigt wird.</string>
+    <string name="settings_display_size_widget_section">Widgets</string>
     <string name="settings_feedback_bug_report">Feedback / Fehler melden</string>
     <string name="settings_flip_to_library_summary">Lege das Handy mit dem Display nach unten, um den Bibliotheks-QR zu öffnen.</string>
     <string name="settings_flip_to_library_title">Bibliotheks-QR per Umdrehen anzeigen</string>

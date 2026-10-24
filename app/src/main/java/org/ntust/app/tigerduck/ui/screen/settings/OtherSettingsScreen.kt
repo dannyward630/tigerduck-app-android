@@ -41,8 +41,8 @@ import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 
 /**
- * 其他設定, one card per group: 課程字體大小, 反轉滑條方向, 螢幕翻轉, 震動,
- * API 端點, 顏色主題 with 重新分配課表顏色, Moodle 教材 (the downloaded Moodle
+ * 其他設定, one card per group: 顯示與文字大小 (課程字體大小 is on its page),
+ * 反轉滑條方向, 螢幕翻轉, 震動, API 端點, 顏色主題 with 重新分配課表顏色, Moodle 教材 (the downloaded Moodle
  * files' size and clearing them), 使用分析. iOS has the same page without 震動,
  * 螢幕翻轉, 顏色主題 and 使用分析, which it does not offer.
  * The library switches live on [LibrarySettingsScreen], the other entry in
@@ -54,7 +54,7 @@ fun OtherSettingsScreen(
     onBack: () -> Unit,
     onNavigateToApiEndpoint: () -> Unit,
     onNavigateToVibration: () -> Unit,
-    onNavigateToCourseNameSize: () -> Unit,
+    onNavigateToDisplaySize: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
     moodleFiles: MoodleFilesCacheViewModel = hiltViewModel(),
 ) {
@@ -68,7 +68,6 @@ fun OtherSettingsScreen(
     val invertSlider = viewModel.appState.invertSliderDirection
     val themeMode = viewModel.appState.themeMode
     val rotationMode = viewModel.appState.rotationMode
-    val courseNameScale = viewModel.appState.courseNameScale
 
     var showResetColorsConfirm by remember { mutableStateOf(false) }
 
@@ -98,24 +97,13 @@ fun OtherSettingsScreen(
         ) {
             item {
                 ContentCard {
-                    SettingsLinkRowWithValue(
-                        label = stringResource(R.string.settings_font_size_title),
-                        value = "%.2f×".format(courseNameScale),
-                        onClick = onNavigateToCourseNameSize,
-                    )
+                    SettingsLinkRow(stringResource(R.string.settings_display_size_title)) {
+                        onNavigateToDisplaySize()
+                    }
                 }
             }
-            item {
-                Text(
-                    stringResource(R.string.settings_font_size_summary),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurface
-                        .copy(alpha = ContentAlpha.SECONDARY),
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
-                )
-            }
 
-            item { Spacer(Modifier.height(8.dp)) }
+            item { Spacer(Modifier.height(24.dp)) }
 
             item {
                 ContentCard {

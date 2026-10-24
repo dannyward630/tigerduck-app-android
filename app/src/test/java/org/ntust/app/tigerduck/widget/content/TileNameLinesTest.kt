@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.widget.content
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.ntust.app.tigerduck.widget.WidgetScale
 
 /**
  * Covers [tileNameLines]: a TAT period tile on the Week widget names its
@@ -27,6 +28,17 @@ class TileNameLinesTest {
     fun `a larger name or system font leaves room for fewer lines`() {
         assertEquals(1, tileNameLines(36.dp, courseNameScale = 1.6f, fontScale = 1f))
         assertEquals(1, tileNameLines(36.dp, courseNameScale = 1f, fontScale = 1.3f))
+    }
+
+    @Test
+    fun `a larger widget text size leaves room for fewer lines`() {
+        assertEquals(1, tileNameLines(36.dp, courseNameScale = 1f, fontScale = 1f, scale = WidgetScale(text = 1.3f)))
+    }
+
+    @Test
+    fun `a larger widget display size takes more of the tile in padding`() {
+        assertEquals(1, tileNameLines(36.dp, courseNameScale = 1f, fontScale = 1f, scale = WidgetScale(ui = 1.3f)))
+        assertEquals(2, tileNameLines(36.dp, courseNameScale = 1f, fontScale = 1f, scale = WidgetScale(ui = 0.75f)))
     }
 
     @Test

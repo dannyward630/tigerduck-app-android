@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">نمایش ترجمه شده</string>
     <string name="settings_color_theme">تم رنگ</string>
     <string name="settings_delete_account">حذف حساب</string>
+    <string name="settings_display_size_app_footer">اندازه‌های برنامه را علاوه بر اندازه نمایش و قلم تلفن تغییر می‌دهد.</string>
+    <string name="settings_display_size_app_section">در برنامه</string>
+    <string name="settings_display_size_preview_footer">وقتی لغزنده را رها کنید، برنامه به اندازه جدید می‌رود.</string>
+    <string name="settings_display_size_text">اندازه متن</string>
+    <string name="settings_display_size_title">اندازه نمایش و متن</string>
+    <string name="settings_display_size_ui">اندازه نمایش</string>
+    <string name="settings_display_size_widget_footer">اندازه هر ویجت را صفحه اصلی تعیین می‌کند. این اندازه‌ها محتوای داخل آن را تغییر می‌دهند.</string>
+    <string name="settings_display_size_widget_section">ویجت‌ها</string>
     <string name="settings_feedback_bug_report">بازخورد / گزارش مشکل</string>
     <string name="settings_flip_to_library_summary">گوشی را صفحه‌رو به پایین برگردانید تا QR کتابخانه باز شود.</string>
     <string name="settings_flip_to_library_title">برگرداندن برای نمایش QR کتابخانه</string>

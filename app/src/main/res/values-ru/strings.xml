@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">Показать перевод</string>
     <string name="settings_color_theme">Цветовая тема</string>
     <string name="settings_delete_account">Удаление аккаунта</string>
+    <string name="settings_display_size_app_footer">Меняет размеры в приложении в дополнение к масштабу изображения и размеру шрифта на телефоне.</string>
+    <string name="settings_display_size_app_section">В приложении</string>
+    <string name="settings_display_size_preview_footer">Приложение переключится на новый размер, когда вы отпустите ползунок.</string>
+    <string name="settings_display_size_text">Размер текста</string>
+    <string name="settings_display_size_title">Размер интерфейса и текста</string>
+    <string name="settings_display_size_ui">Размер интерфейса</string>
+    <string name="settings_display_size_widget_footer">Размер каждого виджета задаёт главный экран. Эти настройки меняют то, что отображается внутри него.</string>
+    <string name="settings_display_size_widget_section">Виджеты</string>
     <string name="settings_feedback_bug_report">Отзыв / Сообщить о проблеме</string>
     <string name="settings_flip_to_library_summary">Переверните телефон экраном вниз, чтобы открыть QR библиотеки.</string>
     <string name="settings_flip_to_library_title">Перевернуть для отображения QR библиотеки</string>

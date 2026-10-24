@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">Аударманы көрсету</string>
     <string name="settings_color_theme">Түс тақырыбы</string>
     <string name="settings_delete_account">Тіркелгіні жою</string>
+    <string name="settings_display_size_app_footer">Телефонның экран масштабы мен қаріп өлшеміне қоса, қолданбаның өлшемдерін өзгертеді.</string>
+    <string name="settings_display_size_app_section">Қолданбада</string>
+    <string name="settings_display_size_preview_footer">Жүгірткіні жібергенде, қолданба жаңа өлшемге ауысады.</string>
+    <string name="settings_display_size_text">Мәтін өлшемі</string>
+    <string name="settings_display_size_title">Интерфейс пен мәтін өлшемі</string>
+    <string name="settings_display_size_ui">Интерфейс өлшемі</string>
+    <string name="settings_display_size_widget_footer">Әр виджеттің өлшемін негізгі экран анықтайды. Бұл өлшемдер оның ішінде көрсетілетін мазмұнды өзгертеді.</string>
+    <string name="settings_display_size_widget_section">Виджеттер</string>
     <string name="settings_feedback_bug_report">Пікір / Мәселені хабарлау</string>
     <string name="settings_flip_to_library_summary">Кітапхана QR-ын ашу үшін телефонды экраны төмен қаратып аудар.</string>
     <string name="settings_flip_to_library_title">Кітапхана QR-ын көрсету үшін аудар</string>

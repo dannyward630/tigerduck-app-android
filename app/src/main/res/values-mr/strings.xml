@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">भाषांतर दर्शवा</string>
     <string name="settings_color_theme">रंग थीम</string>
     <string name="settings_delete_account">खाते हटवा</string>
+    <string name="settings_display_size_app_footer">फोनच्या डिस्प्ले आणि फॉन्ट आकारावर आधारित ॲपचे आकार बदलते.</string>
+    <string name="settings_display_size_app_section">ॲपमध्ये</string>
+    <string name="settings_display_size_preview_footer">स्लायडर सोडताच ॲप नवीन आकारात बदलते.</string>
+    <string name="settings_display_size_text">मजकुराचा आकार</string>
+    <string name="settings_display_size_title">डिस्प्ले आणि मजकुराचा आकार</string>
+    <string name="settings_display_size_ui">डिस्प्लेचा आकार</string>
+    <string name="settings_display_size_widget_footer">प्रत्येक विजेट किती मोठे असेल ते होम स्क्रीन ठरवते. हे आकार विजेटमध्ये दिसणारा मजकूर बदलतात.</string>
+    <string name="settings_display_size_widget_section">विजेट्स</string>
     <string name="settings_feedback_bug_report">अभिप्राय / समस्या अहवाल</string>
     <string name="settings_flip_to_library_summary">लायब्ररी QR उघडण्यासाठी फोन स्क्रीन खाली करून फ्लिप करा.</string>
     <string name="settings_flip_to_library_title">लायब्ररी QR दाखवण्यासाठी फ्लिप करा</string>

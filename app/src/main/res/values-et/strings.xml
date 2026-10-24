@@ -976,6 +976,14 @@
     <string name="settings_classroom_mandarin_display_translated">Kuva tõlge</string>
     <string name="settings_color_theme">Värvi teema</string>
     <string name="settings_delete_account">Konto kustutamine</string>
+    <string name="settings_display_size_app_footer">Muudab rakenduse suurusi lisaks telefoni kuvasuurusele ja fondisuurusele.</string>
+    <string name="settings_display_size_app_section">Rakenduses</string>
+    <string name="settings_display_size_preview_footer">Rakendus läheb uuele suurusele üle, kui liuguri lahti lased.</string>
+    <string name="settings_display_size_text">Teksti suurus</string>
+    <string name="settings_display_size_title">Kuva- ja tekstisuurus</string>
+    <string name="settings_display_size_ui">Kuvasuurus</string>
+    <string name="settings_display_size_widget_footer">Iga vidina suuruse määrab avakuva. Need suurused muudavad seda, mida vidinas näidatakse.</string>
+    <string name="settings_display_size_widget_section">Vidinad</string>
     <string name="settings_feedback_bug_report">Tagasiside / Vea aruanne</string>
     <string name="settings_flip_to_library_summary">Pööra telefon ekraaniga allapoole, et avada raamatukogu QR.</string>
     <string name="settings_flip_to_library_title">Pööra raamatukogu QR-i näitamiseks</string>
