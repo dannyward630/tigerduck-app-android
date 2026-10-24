@@ -48,6 +48,9 @@ class FakeMailServer {
 
     /** How many times a session listed a folder's UIDs, which the search index does before it fetches. */
     var undeletedUidsCalls = 0
+
+    /** Fires inside a UID listing, before it answers: a test reads what is on screen while a download plans. */
+    var onUndeletedUids: (() -> Unit)? = null
     var expungeOnMove = true
 
     /** Every name a session was asked to CREATE, in order — what a test asserts on to prove nothing is created speculatively. */
@@ -216,6 +219,7 @@ class FakeMailServer {
 
         override fun undeletedUids(folder: String) = call {
             undeletedUidsCalls++
+            onUndeletedUids?.invoke()
             list(folder).filterNot { it.summary.flags.deleted }.map { it.summary.uid }
         }
 

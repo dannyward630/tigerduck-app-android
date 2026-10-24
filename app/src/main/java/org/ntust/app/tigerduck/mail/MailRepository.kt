@@ -840,26 +840,29 @@ class MailRepository @Inject constructor(
 
     /** One pass over every folder, planned once a search had found [gaps] gaps ([gapsFound]). */
     private suspend fun downloadEveryFolder(owner: MailIndexer.Owner, gaps: Int, stillWanted: () -> Boolean) {
-        val folders = folders(stillWanted)
-        val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
-        // Every folder's count first, for the progress to have one total from the start.
-        val names = first + (folders.special.values + folders.others).filter { it !in first }
-        val plans = names.mapNotNull { indexer.plan(it, stillWanted = stillWanted) }
-        var whole = plans.size == names.size
-        // Mail read, answered or deleted elsewhere since it was downloaded. A folder recreated
-        // since its plan is cut short, and the download with it.
-        for (plan in plans) {
-            val refreshed = indexer.refreshFlags(plan, stillWanted)
-            whole = whole && refreshed
-        }
-        val total = plans.sumOf { it.missing.size }
-        if (total == 0) {
-            if (whole) lastWhole = WholeDownload(owner, clock(), gaps)
-            return
-        }
-        var done = 0
-        _searchIndexProgress.value = MailIndexProgress(done, total)
+        // Under way from the first folder listed: counting what every folder lacks takes seconds
+        // on a large mailbox, and the sync dot used to say "OK" through all of it.
+        _searchIndexProgress.value = MailIndexProgress.COUNTING
         try {
+            val folders = folders(stillWanted)
+            val first = listOfNotNull(folders.nameOf(SpecialFolder.INBOX), folders.nameOf(SpecialFolder.SENT))
+            // Every folder's count first, for the progress to have one total from the start.
+            val names = first + (folders.special.values + folders.others).filter { it !in first }
+            val plans = names.mapNotNull { indexer.plan(it, stillWanted = stillWanted) }
+            var whole = plans.size == names.size
+            // Mail read, answered or deleted elsewhere since it was downloaded. A folder recreated
+            // since its plan is cut short, and the download with it.
+            for (plan in plans) {
+                val refreshed = indexer.refreshFlags(plan, stillWanted)
+                whole = whole && refreshed
+            }
+            val total = plans.sumOf { it.missing.size }
+            if (total == 0) {
+                if (whole) lastWhole = WholeDownload(owner, clock(), gaps)
+                return
+            }
+            var done = 0
+            _searchIndexProgress.value = MailIndexProgress(done, total)
             for (plan in plans) {
                 val through = indexer.fill(plan, stillWanted = stillWanted) { added ->
                     done += added
