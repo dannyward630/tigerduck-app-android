@@ -46,9 +46,9 @@ fun FirstTriggerPromptHost(controller: FirstTriggerPromptController) {
  * Whether the [pending] first-trigger prompt may show now: not over What's New
  * or the update prompt, which it waits for rather than stacking on, as on the
  * iPhone. The flip-to-library one also waits while the Library page shows,
- * where it would cover the code someone just signed in to show, however it
- * got there: the library shortcut can open the page right after the offer.
- * Held, it stays pending, and shows once the page is left.
+ * where it would cover the code: a flip there does not ask, but the debug
+ * Triggers screen's replay can come due on it. Held, it stays pending, and
+ * shows once the page is left.
  */
 internal fun firstTriggerPromptMayShow(
     whatsNewShowing: Boolean,
@@ -69,8 +69,8 @@ internal data class FirstTriggerStrings(
 )
 
 /**
- * The flip-to-library question asks after a library sign-in, in the words of
- * its switch in Settings, whether to turn the gesture on.
+ * The flip-to-library question asks on a flip, in the words of its switch in
+ * Settings, whether to turn the gesture on.
  */
 internal fun stringsFor(key: FirstTriggerPromptKey): FirstTriggerStrings = when (key) {
     FirstTriggerPromptKey.FLIP_TO_LIBRARY -> FirstTriggerStrings(

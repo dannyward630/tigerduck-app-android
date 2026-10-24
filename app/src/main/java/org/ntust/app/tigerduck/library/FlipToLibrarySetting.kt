@@ -29,8 +29,8 @@ class FlipToLibrarySetting(private val prefs: AppPreferences) {
         }
 
     /**
-     * The switch in Settings. A change there answers the question the app asks
-     * after a library sign-in, which then is not asked.
+     * The switch in Settings. A change there answers the question a flip asks
+     * with the switch off, which then is not asked.
      */
     fun setFromSettings(value: Boolean) {
         prefs.setFirstTriggerPromptSeen(FirstTriggerPromptKey.FLIP_TO_LIBRARY.storageKey, true)

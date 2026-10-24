@@ -244,7 +244,6 @@ fun MainNavigation(
     FlipToLibraryEffect(
         navController = navController,
         appState = appState,
-        startRoutePending = widgetStartRoute != null,
     )
     // Hoist Home / ClassTable / Calendar VMs to the activity scope so they
     // exist from app open and survive tab switches. load() is called once

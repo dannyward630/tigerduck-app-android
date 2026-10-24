@@ -9,9 +9,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * The Library pages on screen. The flip-to-library offer waits while one is
- * up, since the prompt would cover the code someone just signed in to show,
- * and shows once the page is left. Each page counts once however often it
+ * The Library pages on screen. A pending flip-to-library offer waits while
+ * one is up, since the prompt would cover the code, and shows once the page
+ * is left. Each page counts once however often it
  * appears, and a tab switch can show one page before it hides another.
  * Mirrors the Apple app's `LibraryPagePresence`. A page counts while its back
  * stack entry is resumed; see [observer].

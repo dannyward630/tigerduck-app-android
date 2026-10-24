@@ -4,10 +4,10 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptKey
 
 /**
- * One-shot for the update where flip-to-library turns off by default and is
- * offered after a library sign-in, no longer on the first flip. A user who
- * kept the gesture at that first flip stored no value, as it defaulted on,
- * and would lose it with the new default, so it is stored on. Anyone who
+ * One-shot for the update where flip-to-library turns off by default, to be
+ * offered rather than on from the start. A user who kept the gesture at the
+ * old first-flip prompt stored no value, as it defaulted on, and would lose
+ * it with the new default, so it is stored on. Anyone who
  * chose either way, at that prompt or in Settings, is not asked again.
  * Mirrors the Apple app's `FlipToLibraryDefaultOffMigration`.
  */
