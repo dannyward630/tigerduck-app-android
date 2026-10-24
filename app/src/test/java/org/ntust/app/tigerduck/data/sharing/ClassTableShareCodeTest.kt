@@ -434,6 +434,18 @@ class ClassTableShareCodeTest {
     }
 
     @Test
+    fun `an escape is two ASCII hex digits, as Foundation reads one, or the text is read as it came`() {
+        // Fullwidth digits after `%`: no escape, so TAT's code starts with `%` and is malformed.
+        assertRefused<ClassTableShareCodeError.Malformed>("https://ntust-tat.web.app/s/%\uFF15\uFF14AT21151B11300001CS1010001")
+        assertEquals("T", ClassTableShareCode.percentDecoded("%54"))
+        assertEquals("Z", ClassTableShareCode.percentDecoded("%5a"))
+        assertNull(ClassTableShareCode.percentDecoded("%\uFF15\uFF14"))
+        assertNull(ClassTableShareCode.percentDecoded("%5"))
+        assertNull(ClassTableShareCode.percentDecoded("%E0%A4"))
+        assertEquals("\u00E9", ClassTableShareCode.percentDecoded("%c3%A9"))
+    }
+
+    @Test
     fun `our host and TAT's keep their errors in every form they read in`() {
         assertRefused<ClassTableShareCodeError.UnknownType>("share.tigerduck.app/friend/1abc")
         assertRefused<ClassTableShareCodeError.UnknownType>("http://share.tigerduck.app/friend/")

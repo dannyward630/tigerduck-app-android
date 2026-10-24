@@ -214,6 +214,30 @@ class ClassTableImportPageTest {
     }
 
     @Test
+    fun `the scanner asks for the user's terms to share as it opens, once`() {
+        var refreshed = 0
+        composeRule.setContent {
+            ClassTableImportPage(model, onClose = {}, onFinished = {}, onPickPicture = {}, refreshShare = { refreshed++ })
+        }
+        composeRule.waitForIdle()
+        composeRule.runOnIdle { model.imageRead(listOf(fakeCode)) }
+        composeRule.waitForIdle()
+
+        assertEquals(1, refreshed)
+    }
+
+    @Test
+    fun `a link's page asks for no terms to share`() {
+        var refreshed = 0
+        composeRule.setContent {
+            ClassTableImportPage(linkedModel(), onClose = {}, onFinished = {}, onPickPicture = {}, refreshShare = { refreshed++ })
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(0, refreshed)
+    }
+
+    @Test
     fun `a link's page offers neither the share button nor Enter link`() {
         composeRule.setContent {
             ClassTableImportPage(linkedModel(), onClose = {}, onFinished = {}, onPickPicture = {}, onShare = {})

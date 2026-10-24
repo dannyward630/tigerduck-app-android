@@ -86,6 +86,14 @@ data class ClassTableShareCode(
 
         private fun withoutTrailingSlash(text: String) = text.removeSuffix("/")
 
+        /** [char]'s value as an ASCII hex digit; null for anything else, fullwidth digits included. */
+        private fun asciiHexDigit(char: Char): Int? = when (char) {
+            in '0'..'9' -> char - '0'
+            in 'a'..'f' -> char - 'a' + 10
+            in 'A'..'F' -> char - 'A' + 10
+            else -> null
+        }
+
         /** What follows the share host when the host ends there; null for another host, including one that only starts the same. */
         private fun shareHostPath(address: String): String? {
             if (!address.startsWith(SHARE_HOST_NAME)) return null
@@ -112,8 +120,8 @@ data class ClassTableShareCode(
             while (index < text.length) {
                 val char = text[index]
                 if (char == '%') {
-                    val high = text.getOrNull(index + 1)?.digitToIntOrNull(16) ?: return null
-                    val low = text.getOrNull(index + 2)?.digitToIntOrNull(16) ?: return null
+                    val high = text.getOrNull(index + 1)?.let(::asciiHexDigit) ?: return null
+                    val low = text.getOrNull(index + 2)?.let(::asciiHexDigit) ?: return null
                     bytes.write(high * 16 + low)
                     index += 3
                 } else {

@@ -86,7 +86,12 @@ import java.util.Date
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClassTableImportHost(viewModel: ClassTableImportViewModel, onImported: () -> Unit, onShare: (() -> Unit)? = null) {
+fun ClassTableImportHost(
+    viewModel: ClassTableImportViewModel,
+    onImported: () -> Unit,
+    onShare: (() -> Unit)? = null,
+    refreshShare: () -> Unit = {},
+) {
     val model = viewModel.session.collectAsStateWithLifecycle().value ?: return
     val latestOnImported by rememberUpdatedState(onImported)
     val pickPicture = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -104,6 +109,7 @@ fun ClassTableImportHost(viewModel: ClassTableImportViewModel, onImported: () ->
             pickPicture.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         },
         onShare = onShare,
+        refreshShare = refreshShare,
     )
 }
 
@@ -111,8 +117,8 @@ fun ClassTableImportHost(viewModel: ClassTableImportViewModel, onImported: () ->
  * [model]'s import page, confirm dialog and prompts. [onClose] is the user leaving, which nothing
  * offers while the person is being saved; [onFinished] is the import done, saved or called off by
  * a sign-in change. [onShare], null when the user has no class table to share, closes the page
- * for the user's own share sheet, as the iOS scanner's QR button does. [camera] is the scanner's,
- * which tests replace.
+ * for the user's own share sheet, as the iOS scanner's QR button does; [refreshShare] reads what
+ * there is to share, once as a scanner opens. [camera] is the scanner's, which tests replace.
  */
 @Composable
 internal fun ClassTableImportPage(
@@ -121,12 +127,13 @@ internal fun ClassTableImportPage(
     onFinished: () -> Unit,
     onPickPicture: () -> Unit,
     onShare: (() -> Unit)? = null,
+    refreshShare: () -> Unit = {},
     camera: @Composable (onScanned: (String) -> Boolean, torch: ScannerTorch, modifier: Modifier) -> Unit =
         { onScanned, torch, modifier -> QrScannerCamera(onScanned = onScanned, torch = torch, modifier = modifier) },
 ) {
     // Keyed by the import: a link's import takes the place of the one on screen, and read for a
     // frame through the old one's state, called off, the new one would be closed with it.
-    key(model) { ImportPage(model, onClose, onFinished, onPickPicture, onShare, camera) }
+    key(model) { ImportPage(model, onClose, onFinished, onPickPicture, onShare, refreshShare, camera) }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -137,9 +144,13 @@ private fun ImportPage(
     onFinished: () -> Unit,
     onPickPicture: () -> Unit,
     onShare: (() -> Unit)?,
+    refreshShare: () -> Unit,
     camera: @Composable (onScanned: (String) -> Boolean, torch: ScannerTorch, modifier: Modifier) -> Unit,
 ) {
     val state by model.state.collectAsStateWithLifecycle()
+    // The terms the share button offers are read as the scanner opens: the class table reads them
+    // only as its ⋯ menu opens, and the tab's menu can open the scanner before that.
+    LaunchedEffect(Unit) { if (!model.state.value.fromLink) refreshShare() }
     var enteringLink by rememberSaveable { mutableStateOf(false) }
     val torch = remember { ScannerTorch() }
     val latestOnFinished by rememberUpdatedState(onFinished)

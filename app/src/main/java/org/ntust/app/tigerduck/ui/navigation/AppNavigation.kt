@@ -876,6 +876,7 @@ fun MainNavigation(
                 classTableImportViewModel.end()
             }
         },
+        refreshShare = classTableViewModel::refreshShareTerms,
     )
     shareFromScanner?.let { share ->
         ClassTableShareSheet(
