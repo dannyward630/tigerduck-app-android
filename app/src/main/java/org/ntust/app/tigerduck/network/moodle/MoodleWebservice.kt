@@ -214,13 +214,20 @@ class MoodleWebservice internal constructor(
         const val WEBSERVICE_URL = "$SITE/webservice/rest/server.php"
         const val SITE_INFO_FUNCTION = "core_webservice_get_site_info"
 
-        /** The web-service URL for [function] under [token]; the parameters go in the form body. */
-        fun url(function: String, token: String): String =
-            "$WEBSERVICE_URL?moodlewsrestformat=json&wsfunction=$function&wstoken=$token"
+        /**
+         * The web-service URL for [function]. The token and the parameters go in the form body,
+         * never here: a URL ends up in access logs, and the token is the account's Moodle access.
+         * Moodle's REST server reads `wstoken` from the body as from the query.
+         */
+        fun url(function: String): String = "$WEBSERVICE_URL?moodlewsrestformat=json&wsfunction=$function"
 
+        /** [function]'s request under [token]: the token first in the form, then [params]. */
         internal fun request(function: String, token: String, params: List<Pair<String, String>>): Request {
-            val form = FormBody.Builder().apply { params.forEach { (k, v) -> add(k, v) } }.build()
-            return Request.Builder().url(url(function, token)).post(form).build()
+            val form = FormBody.Builder()
+                .add("wstoken", token)
+                .apply { params.forEach { (k, v) -> add(k, v) } }
+                .build()
+            return Request.Builder().url(url(function)).post(form).build()
         }
 
         /**

@@ -61,10 +61,13 @@ class SubmissionStatusProbeTest {
 
         assertEquals("new", status?.lastattempt?.submission?.status)
         val request = sent.single()
-        assertEquals("stored-token", request.url.queryParameter("wstoken"))
+        assertEquals(false, "stored-token" in request.url.toString())
         assertEquals("mod_assign_get_submission_status", request.url.queryParameter("wsfunction"))
         val form = request.body as FormBody
-        assertEquals(listOf("assignid" to "20977"), (0 until form.size).map { form.name(it) to form.value(it) })
+        assertEquals(
+            listOf("wstoken" to "stored-token", "assignid" to "20977"),
+            (0 until form.size).map { form.name(it) to form.value(it) },
+        )
     }
 
     @Test
