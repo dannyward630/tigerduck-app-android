@@ -27,12 +27,14 @@ import org.ntust.app.tigerduck.mail.RecordingScheduler
 import org.ntust.app.tigerduck.mail.SentCopyNotices
 import org.ntust.app.tigerduck.mail.cancelAndJoinBlocking
 import org.ntust.app.tigerduck.mail.schoolMailSite
+import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.testApplicationScope
 import org.ntust.app.tigerduck.ui.navigation.LeaveGuard
 import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
 
 /**
  * The compose screen around a held send (tigerduck-app#555): the bar with Undo while it is held,
@@ -63,6 +65,7 @@ class SchoolMailComposeUndoTest {
         vm = SchoolMailComposeViewModel(
             SavedStateHandle(mapOf("mode" to "NEW", "folder" to "", "uid" to -1L, "to" to "amy@mail.ntust.edu.tw")),
             repo, account, cache, PickedAttachmentReader { null }, SentCopyNotices(account, appScope), main.dispatcher,
+            HeldSendStore(File(tmp.root, "held")),
         )
         composeRule.setContent {
             TigerDuckAppTheme(darkTheme = false) {
