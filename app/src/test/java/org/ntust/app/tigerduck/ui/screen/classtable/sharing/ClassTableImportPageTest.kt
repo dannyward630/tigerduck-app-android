@@ -227,6 +227,25 @@ class ClassTableImportPageTest {
     }
 
     @Test
+    fun `the scanner asks again once the class table it shares from changes, as when its first load ends`() {
+        var refreshed = 0
+        var source by mutableStateOf<Any?>(emptyList<String>())
+        composeRule.setContent {
+            ClassTableImportPage(
+                model, onClose = {}, onFinished = {}, onPickPicture = {},
+                refreshShare = { refreshed++ }, shareSource = source,
+            )
+        }
+        composeRule.waitForIdle()
+        assertEquals(1, refreshed)
+
+        composeRule.runOnIdle { source = listOf("MA1010001") }
+        composeRule.waitForIdle()
+
+        assertEquals(2, refreshed)
+    }
+
+    @Test
     fun `a link's page asks for no terms to share`() {
         var refreshed = 0
         composeRule.setContent {

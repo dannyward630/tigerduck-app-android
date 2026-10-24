@@ -328,6 +328,9 @@ fun MainNavigation(
     val openTab: (String) -> Unit = { route -> leaveGuard.leave { goToTab(route) } }
     // The same instance NtustSignInSheetHost shows, both held at the activity.
     val ntustSignInViewModel: NtustSignInViewModel = hiltViewModel()
+    // The user's own share sheet, which the scanner's QR button opens in its place, as iOS's
+    // root presents both: shown once the scanner is gone. The class table's ⋯ menu keeps its own.
+    var shareFromScanner by remember { mutableStateOf<ClassTableShare?>(null) }
     // What a link closes over the pages on its way to another page.
     val linkOverlays =remember(classTableViewModel, ntustSignInViewModel, classTableImportViewModel) {
         LinkOverlays(
@@ -335,6 +338,7 @@ fun MainNavigation(
             closeTabMenu = { showClassTableSwitcher = false },
             closeSignInSheet = ntustSignInViewModel::closeForLink,
             closeImport = classTableImportViewModel::closeForLink,
+            closeShareSheet = { shareFromScanner = null },
         )
     }
 
@@ -853,13 +857,13 @@ fun MainNavigation(
         }
     }
 
-    // The user's own share sheet, which the scanner's QR button opens in its place, as iOS's
-    // root presents both: shown once the scanner is gone. The class table's ⋯ menu keeps its own.
+    // What the scanner's QR button shares, read again as the class table's courses load.
     val signedIn by classTableViewModel.isLoggedIn.collectAsStateWithLifecycle()
     val shareTerms by classTableViewModel.shareTerms.collectAsStateWithLifecycle()
+    val shownCourses by classTableViewModel.courses.collectAsStateWithLifecycle()
+    val semesters by classTableViewModel.availableSemesters.collectAsStateWithLifecycle()
     val ownStudentId = classTableViewModel.studentId
         ?.takeIf { signedIn && shareTerms.isNotEmpty() && ClassTableShare.canName(it) }
-    var shareFromScanner by remember { mutableStateOf<ClassTableShare?>(null) }
 
     // Over every page: the tab's menu can start an import from any of them.
     ClassTableImportHost(
@@ -877,6 +881,7 @@ fun MainNavigation(
             }
         },
         refreshShare = classTableViewModel::refreshShareTerms,
+        shareSource = shownCourses to semesters,
     )
     shareFromScanner?.let { share ->
         ClassTableShareSheet(
