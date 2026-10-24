@@ -2,10 +2,9 @@ package org.ntust.app.tigerduck.network
 
 import android.util.Base64
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Cookie
@@ -249,21 +248,20 @@ class MoodleTokenService internal constructor(
         studentId: String,
         password: String,
         posting: PasswordPosting,
-    ): List<Cookie> = coroutineScope {
+    ): List<Cookie> {
         val calls = RunningCalls()
-        // A blocking call does not stop for a cancelled coroutine: cancelled (at the run's deadline,
-        // say), the run cancels its calls, so it ends, and lets the sign-in lock go, at once.
-        val stopper = launch(Dispatchers.Default) {
-            try {
-                awaitCancellation()
-            } finally {
-                calls.cancelAll()
-            }
-        }
-        try {
-            withContext(Dispatchers.IO) { walkWebsiteSignIn(studentId, password, posting, calls) }
-        } finally {
-            stopper.cancel()
+        // Apart from the caller, which stops waiting the moment it is cancelled (at the run's
+        // deadline, say) and lets the sign-in lock go then: a blocking call does not stop for a
+        // cancelled coroutine, and one stuck where Call.cancel cannot reach (an address lookup)
+        // would hold the lock. Cancelled, the run's calls are cancelled at once, and any it would
+        // make after, so it ends without another request going out, its password post among them.
+        val run = CoroutineScope(Dispatchers.IO).async { walkWebsiteSignIn(studentId, password, posting, calls) }
+        return try {
+            run.await()
+        } catch (e: CancellationException) {
+            calls.cancelAll()
+            run.cancel()
+            throw e
         }
     }
 
@@ -276,11 +274,8 @@ class MoodleTokenService internal constructor(
         val jar = newCookieJar()
         val client = tokenClient.newBuilder()
             .cookieJar(jar)
-            // Each call as it is made, whatever its interceptors do with it.
-            .eventListenerFactory { call ->
-                calls.track(call)
-                EventListener.NONE
-            }
+            // Each call as it starts, whatever its interceptors do with it.
+            .eventListener(calls)
             .build()
         val entry = moodleBaseUrl.resolve(WEBSITE_SIGN_IN_ENTRY)!!
         Log.i("MoodleTokenService", "website sign-in GET ${entry.redactForLog()}")
@@ -308,13 +303,16 @@ class MoodleTokenService internal constructor(
             ?: throw MoodleWebserviceError.MalformedResponse("Moodle set no session cookie")
     }
 
-    /** The calls one sign-in has made, to cancel together; one made after [cancelAll] is cancelled as it starts. */
-    private class RunningCalls {
+    /**
+     * The calls one sign-in has started, to cancel together; one started after [cancelAll] is
+     * cancelled as it starts. Told of each as it starts ([callStart]), once the call is whole.
+     */
+    private class RunningCalls : EventListener() {
         private val calls = mutableListOf<Call>()
         private var cancelled = false
 
         @Synchronized
-        fun track(call: Call) {
+        override fun callStart(call: Call) {
             if (cancelled) call.cancel() else calls += call
         }
 

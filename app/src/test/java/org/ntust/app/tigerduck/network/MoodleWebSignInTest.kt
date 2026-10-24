@@ -62,6 +62,9 @@ class MoodleWebSignInTest {
     /** Whether SSO holds the next password post until the call is cancelled, as a server that never answers. */
     private var ssoHangs = false
 
+    /** How long Moodle's OIDC entry blocks, cancelled or not, as a stuck lookup of its address does. */
+    private var entryBlocksMs = 0L
+
     private val school = OkHttpClient.Builder().addInterceptor { chain -> answer(chain) }.build()
 
     /** The time the latch and the pause read. */
@@ -241,6 +244,20 @@ class MoodleWebSignInTest {
         assertEquals("made-up-renewed-wstoken", onTheClock { withTimeout(10_000) { service.renewToken("made-up-wstoken") } })
     }
 
+    @Test
+    fun `a website sign-in stuck where a cancel cannot reach lets go at its deadline all the same`() = runTest(UnconfinedTestDispatcher()) {
+        val service = service(websiteDeadlineMs = 300)
+        entryBlocksMs = 4_000
+
+        val started = System.nanoTime()
+        val failed = onTheClock { withTimeout(10_000) { runCatching { service.signInToWebsite() } } }
+        val tookMs = (System.nanoTime() - started) / 1_000_000
+
+        assertTrue(failed.exceptionOrNull() is MoodleWebserviceError.TransientNetwork)
+        assertTrue("let go at the deadline, not after the stuck call ($tookMs ms)", tookMs < 2_000)
+        assertTrue("nothing posted", posts.isEmpty())
+    }
+
     /** [block] timed on the clock rather than the test's virtual time, as the run is. */
     private suspend fun <T> onTheClock(block: suspend kotlinx.coroutines.CoroutineScope.() -> T): T =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Default.limitedParallelism(1), block)
@@ -283,6 +300,11 @@ class MoodleWebSignInTest {
             // A token renewal's launch, which lands on the sign-in form as the website's entry does.
             url.startsWith("$MOODLE/admin/tool/mobile/launch.php") -> Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
             url.startsWith("$MOODLE/auth/oidc/") -> {
+                if (entryBlocksMs > 0) {
+                    Thread.sleep(entryBlocksMs)
+                    entryBlocksMs = 0
+                    if (chain.call().isCanceled()) throw java.io.IOException("Canceled")
+                }
                 onEntry()
                 Triple(SSO_LOGIN_URL, LOGIN_PAGE, emptyList())
             }
