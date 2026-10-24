@@ -9,9 +9,11 @@ import org.ntust.app.tigerduck.network.moodle.MoodleWebservice
  * nothing of any site itself. Moodle's ([MoodleBrowserSignIn]) is the only one
  * now; the school's SSO sites would add theirs to [BrowserSignIns].
  *
- * A provider never copies the app's own cookies into the browser and never
- * fills a password into a page: it either hands the browser a link the site
- * signs it in with, or leaves the student to sign in on the page themselves.
+ * A provider never fills a password into a page. It hands the browser a link
+ * the site signs it in with; where none can be had now, it may sign the
+ * browser in itself ([signInWithoutLink]), with nothing of the app's but the
+ * site's session from a sign-in run for this browser alone; or it leaves the
+ * student to sign in on the page themselves.
  */
 interface BrowserSignIn {
     /** The site's name as the sign-in screen shows it. */
@@ -50,19 +52,34 @@ interface BrowserSignIn {
 
     /** Where "Sign in on the web page" goes for [target], where the student signs in themselves; null for none. */
     fun webSignInUrl(target: String): String?
+
+    /** Whether [signInWithoutLink] can sign the browser in; most sites have no such way. */
+    val signsInWithoutLink: Boolean get() = false
+
+    /**
+     * Signs the browser in to the site without a link, for when [signedInUrl] has none to give: the
+     * app signs in itself, out of the browser, and hands it only the site's session. True once the
+     * browser holds one.
+     */
+    suspend fun signInWithoutLink(): Boolean = false
 }
 
 /**
  * Moodle's sign-in: Moodle's own one-time autologin link ([MoodleAutologin]),
  * which signs the browser in under Moodle's session cookie; the browser keeps
- * that cookie, so later opens need no new key.
+ * that cookie, so later opens need no new key. Moodle gives a key every 6
+ * minutes; in between, the app signs in to Moodle's website itself
+ * ([webSession]) and the browser gets that session.
  *
  * Moodle's `/login/` page is never shown: it offers the local password form,
  * which counts each failure and locks the account after about ten (see
  * `MoodleTokenService`). The sign-in screen goes to the school's SSO instead,
  * through Moodle's OIDC entry, which comes back to the page Moodle kept.
  */
-class MoodleBrowserSignIn(private val autologin: MoodleAutologin) : BrowserSignIn {
+class MoodleBrowserSignIn(
+    private val autologin: MoodleAutologin,
+    private val webSession: MoodleWebSessionSignIn? = null,
+) : BrowserSignIn {
     override val siteName: String = "Moodle"
 
     override fun handles(url: String): Boolean = isMoodle(url)
@@ -80,6 +97,10 @@ class MoodleBrowserSignIn(private val autologin: MoodleAutologin) : BrowserSignI
     override fun msUntilRetry(): Long = autologin.msUntilKeyDue()
 
     override fun webSignInUrl(target: String): String = WEB_SIGN_IN_URL
+
+    override val signsInWithoutLink: Boolean get() = webSession != null
+
+    override suspend fun signInWithoutLink(): Boolean = webSession?.signIn() ?: false
 
     companion object {
         /** Moodle's OIDC entry, the school SSO's sign-in for Moodle. */

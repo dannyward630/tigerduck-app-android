@@ -14,6 +14,7 @@ import org.junit.Test
 import org.ntust.app.tigerduck.browser.BrowserSignIn
 import org.ntust.app.tigerduck.browser.BrowserSignIns
 import org.ntust.app.tigerduck.browser.MoodleBrowserSignIn
+import org.ntust.app.tigerduck.ui.AppProcessing
 
 /** The sign-in screen: when it signs in by itself, and which page a sign-in goes on to. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -31,9 +32,13 @@ class BrowserSignInFlowTest {
         var works: Boolean = true,
         /** How long a link takes to come. */
         val takesMs: Long = 0,
+        /** The app's own sign-in to the site, where it has one: whether it worked. */
+        var appSignIn: (suspend () -> Boolean)? = null,
     ) : BrowserSignIn {
         lateinit var clock: () -> Long
         val asked = mutableListOf<String>()
+        /** When the app's own sign-in ran. */
+        val appRuns = mutableListOf<Long>()
         private var dueAt = firstDueAtMs
 
         override val siteName = "Moodle"
@@ -51,17 +56,30 @@ class BrowserSignInFlowTest {
         }
         override fun msUntilRetry() = (dueAt - clock()).coerceAtLeast(0)
         override fun webSignInUrl(target: String) = WEB_SIGN_IN
+        override val signsInWithoutLink get() = appSignIn != null
+        override suspend fun signInWithoutLink(): Boolean {
+            appRuns += clock()
+            return appSignIn!!()
+        }
     }
+
+    private val processing = AppProcessing()
 
     private fun TestScope.flow(site: Site): BrowserSignInFlow {
         site.clock = { testScheduler.currentTime }
         val signIns = BrowserSignIns(listOf(site))
         loads = BrowserLoads(state, signIns)
-        return BrowserSignInFlow(state, loads, signIns, backgroundScope, load = { url ->
-            // As the activity's load: the browser asks the page to go.
-            loads.requested(url)
-            loaded += url
-        }) { stops++ }
+        return BrowserSignInFlow(
+            state, loads, signIns, backgroundScope,
+            load = { url ->
+                // As the activity's load: the browser asks the page to go.
+                loads.requested(url)
+                loaded += url
+            },
+            stopLoading = { stops++ },
+            processing = processing,
+            now = { testScheduler.currentTime },
+        )
     }
 
     @Test
@@ -259,6 +277,106 @@ class BrowserSignInFlowTest {
         runCurrent()
 
         assertEquals(listOf(PAGE), site.asked)
+    }
+
+    // --- the app's own sign-in, when no link can be had ---
+
+    @Test
+    fun `with a link due, the app never signs in itself`() = runTest {
+        val site = Site(appSignIn = { true })
+        val flow = flow(site)
+
+        flow.signIn(site, PAGE)
+        runCurrent()
+
+        assertEquals(listOf("$SIGNED_IN$PAGE"), loaded)
+        assertTrue(site.appRuns.isEmpty())
+    }
+
+    @Test
+    fun `with no link to be had, the app signs in itself behind the spinner, then loads the page`() = runTest {
+        val site = Site(firstDueAtMs = 300_000, appSignIn = { delay(2_000); true })
+        val flow = flow(site)
+
+        flow.signIn(site, PAGE)
+        runCurrent()
+        assertEquals("the spinner is held while it runs", 1, processing.holds.value)
+        assertEquals(emptyList<String>(), loaded)
+
+        advanceTimeBy(2_001)
+        runCurrent()
+
+        assertEquals(listOf(PAGE), loaded)
+        assertNull(state.signIn)
+        assertEquals(0, processing.holds.value)
+    }
+
+    @Test
+    fun `Moodle's sign-in page with no link due tries the app's own sign-in`() = runTest {
+        val site = Site(firstDueAtMs = 300_000, appSignIn = { true })
+        val flow = flow(site)
+        loads.requested(OTHER_PAGE)
+
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        assertEquals(listOf(OTHER_PAGE), loaded)
+        assertEquals(1, site.appRuns.size)
+    }
+
+    @Test
+    fun `an app sign-in that fails shows the screen, and is not tried again by itself`() = runTest {
+        val site = Site(firstDueAtMs = 300_000, appSignIn = { false })
+        val flow = flow(site)
+        loads.requested(PAGE)
+
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+        assertEquals(PAGE, state.signIn?.target)
+        assertEquals(false, state.signIn?.working)
+        assertEquals(0, processing.holds.value)
+
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        advanceTimeBy(60_000)
+        runCurrent()
+
+        assertEquals(1, site.appRuns.size)
+        assertEquals(emptyList<String>(), loaded)
+    }
+
+    @Test
+    fun `a page that bounces back after the app's sign-in shows the screen rather than loop`() = runTest {
+        val site = Site(firstDueAtMs = 300_000, appSignIn = { true })
+        val flow = flow(site)
+        flow.signIn(site, PAGE)
+        runCurrent()
+        assertEquals(listOf(PAGE), loaded)
+
+        // Moodle did not keep the session: the page starts, then sends the browser to sign in.
+        loads.started(PAGE)
+        loads.finished(PAGE)
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        assertEquals(1, site.appRuns.size)
+        assertEquals(PAGE, state.signIn?.target)
+        assertEquals(listOf(PAGE), loaded)
+    }
+
+    @Test
+    fun `Sign in again by hand may try the app's own sign-in once more`() = runTest {
+        val site = Site(firstDueAtMs = 300_000, appSignIn = { false })
+        val flow = flow(site)
+        loads.requested(PAGE)
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        site.appSignIn = { true }
+        flow.signInAgain()
+        runCurrent()
+
+        assertEquals(2, site.appRuns.size)
+        assertEquals(listOf(PAGE), loaded)
     }
 
     private companion object {
