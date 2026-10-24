@@ -17,8 +17,11 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.browser.BrowserCleanup
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
 import org.ntust.app.tigerduck.ui.AppProcessing
+import org.ntust.app.tigerduck.ui.screen.browser.InAppBrowser
+import org.ntust.app.tigerduck.ui.screen.browser.InAppBrowserActivity
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
@@ -282,5 +285,78 @@ class MoodleWebPagesTest {
 
         assertEquals(listOf("https://moodle2.ntust.edu.tw/mod/assign/view.php?id=890" to null), routed)
         assertTrue(started.isEmpty())
+    }
+
+    // --- the TigerDuck browser first ---
+
+    private val inApp = mutableListOf<String>()
+
+    private fun inAppFirst(opens: Boolean) = InAppFirstMoodleWebPages(
+        openInApp = { _, url -> inApp += url; opens },
+        fallback = recording,
+    )
+
+    @Test
+    fun `a Moodle page opens in the TigerDuck browser whatever the Browser setting says`() {
+        listOf("system", "inApp", null).forEach { inAppFirst(opens = true).open(context, page, it) }
+
+        assertEquals(List(3) { page }, inApp)
+        assertTrue("nothing opens it elsewhere", routed.isEmpty())
+        assertTrue(started.isEmpty())
+    }
+
+    @Test
+    fun `where the TigerDuck browser declines, the page opens as before, by the setting`() {
+        inAppFirst(opens = false).open(context, page, "system")
+
+        assertEquals(listOf(page), inApp)
+        assertEquals(listOf(page to "system"), routed)
+    }
+
+    @Test
+    fun `a page off the Moodle site never goes to the TigerDuck browser this way`() {
+        listOf("https://example.com/course/view.php?id=5", "https://moodle2.ntust.edu.tw.evil.example/x", "nonsense").forEach {
+            inAppFirst(opens = true).open(context, it, "system")
+        }
+
+        assertTrue(inApp.isEmpty())
+        assertEquals(3, routed.size)
+    }
+
+    @Test
+    fun `without the Moodle app, Open in Moodle opens the TigerDuck browser`() {
+        InAppBrowser.canClearEverything = { true }
+        BrowserCleanup(app).run { markDone(markPending()) }
+        try {
+            val noMoodleApp = object : ContextWrapper(app) {
+                override fun startActivity(intent: Intent) {
+                    if (intent.data?.scheme == "moodlemobile") throw ActivityNotFoundException()
+                    started += intent
+                }
+            }
+
+            openMoodlePage(noMoodleApp, "/course/view.php?id=5") { MoodleWebPages.inAppFirst(fallback = recording) }
+
+            assertEquals(InAppBrowserActivity::class.java.name, started.single().component?.className)
+            assertEquals(page, started.single().getStringExtra(InAppBrowser.EXTRA_URL))
+            assertTrue(routed.isEmpty())
+        } finally {
+            InAppBrowser.canClearEverything = { false }
+        }
+    }
+
+    @Test
+    fun `while the browser's clearing is owed, Open in Moodle opens the page as before`() {
+        InAppBrowser.canClearEverything = { true }
+        BrowserCleanup(app).markPending()
+        try {
+            MoodleWebPages.inAppFirst(fallback = recording).open(context, page, null)
+
+            assertTrue(started.isEmpty())
+            assertEquals(listOf(page to null), routed)
+        } finally {
+            BrowserCleanup(app).run { markDone(markPending()) }
+            InAppBrowser.canClearEverything = { false }
+        }
     }
 }

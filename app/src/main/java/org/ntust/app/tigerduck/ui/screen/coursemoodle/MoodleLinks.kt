@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.di.ApplicationScope
 import org.ntust.app.tigerduck.mail.resolveAttachmentMimeType
@@ -25,6 +26,7 @@ import org.ntust.app.tigerduck.network.moodle.SHARED_NOT_VIEWED_EXTENSIONS
 import org.ntust.app.tigerduck.network.moodle.MoodleWebservice
 import org.ntust.app.tigerduck.ui.AppProcessing
 import org.ntust.app.tigerduck.ui.openLink
+import org.ntust.app.tigerduck.ui.screen.browser.InAppBrowser
 import org.ntust.app.tigerduck.util.fileProviderAuthority
 import org.ntust.app.tigerduck.util.logSummary
 import java.io.File
@@ -73,8 +75,8 @@ object MoodlePage {
 
 /**
  * Opens [path] in the Moodle app through its `moodlemobile://` link, or, when no app takes it, on
- * the website in the browser the Browser setting picks, signed in through a one-time key as iOS
- * opens it. A link the Moodle app takes asks for no key.
+ * the website in the TigerDuck browser, signed in; see [MoodleWebPages.of]. A link the Moodle app
+ * takes asks for no key.
  */
 fun openMoodlePage(
     context: Context,
@@ -89,8 +91,8 @@ fun openMoodlePage(
 }
 
 /**
- * Opens [url], a page on the Moodle site, in the browser [browserPreference] picks (the Browser
- * setting when null), signed in where it may be; see [SignedInMoodleWebPages].
+ * Opens [url], a page on the Moodle site, in the TigerDuck browser, or where it does not open in
+ * the browser [browserPreference] picks (the Browser setting when null); see [MoodleWebPages.of].
  */
 fun openMoodleWebPage(
     context: Context,
@@ -107,7 +109,21 @@ fun interface MoodleWebPages {
     fun open(context: Context, url: String, browserPreference: String?)
 
     companion object {
-        fun of(context: Context): MoodleWebPages {
+        /** The TigerDuck browser first ([InAppFirstMoodleWebPages]), else [fallback]. */
+        fun inAppFirst(fallback: MoodleWebPages): MoodleWebPages =
+            InAppFirstMoodleWebPages({ c, url -> InAppBrowser.open(c, url) }, fallback)
+
+        /**
+         * The app's: a Moodle page in the TigerDuck browser, which keeps Moodle's session until
+         * TigerDuck signs out, whatever "Open links with" says; [SignedInMoodleWebPages] where the
+         * browser does not open. [inApp] false skips the browser, for a caller that tried it.
+         */
+        fun of(context: Context, inApp: Boolean = true): MoodleWebPages {
+            val outside = outside(context)
+            return if (inApp) inAppFirst(outside) else outside
+        }
+
+        private fun outside(context: Context): MoodleWebPages {
             val links = EntryPointAccessors.fromApplication(context.applicationContext, MoodleLinksEntryPoint::class.java)
             val autologin = links.autologin()
             return SignedInMoodleWebPages(
@@ -118,6 +134,25 @@ fun interface MoodleWebPages {
             )
         }
     }
+}
+
+/**
+ * A page on the Moodle site in the TigerDuck browser ([openInApp]), whatever the Browser setting
+ * says: its session there lasts until TigerDuck signs out, where a Custom Tab or another browser
+ * keeps one the app can neither see nor clear. Where the browser declines (a WebView too old to
+ * clear, a clearing owed), and for any other site, [fallback] opens it as the setting asks.
+ */
+internal class InAppFirstMoodleWebPages(
+    private val openInApp: (Context, String) -> Boolean,
+    private val fallback: MoodleWebPages,
+) : MoodleWebPages {
+    override fun open(context: Context, url: String, browserPreference: String?) {
+        if (isMoodleSite(url) && openInApp(context, url)) return
+        fallback.open(context, url, browserPreference)
+    }
+
+    private fun isMoodleSite(url: String): Boolean =
+        url.toHttpUrlOrNull()?.host?.equals(MoodleWebservice.SITE_HOST, ignoreCase = true) == true
 }
 
 /**

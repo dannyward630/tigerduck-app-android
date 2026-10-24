@@ -22,34 +22,72 @@ import java.security.MessageDigest
  * does not cancel a sign-in others wait on. Which credentials SSO refused is kept in [refusal].
  */
 internal class MoodleTokenRenewal(
-    private val storedToken: () -> String?,
+    storedToken: () -> String?,
     /** The stored student ID and password, or null with none stored. */
-    private val credentials: () -> Pair<String, String>?,
+    credentials: () -> Pair<String, String>?,
     /** Signs in for a token in place of the rejected one it is handed. */
-    private val harvest: suspend (rejected: String?) -> String,
+    harvest: suspend (rejected: String?) -> String,
+    now: () -> Long,
+    scope: CoroutineScope,
+    pauseMs: Long,
+    refusal: StoredPasswordRefusal = StoredPasswordRefusal.InMemory(),
+) {
+    private val gate = MoodleSignInGate(
+        kept = { storedToken()?.takeIf { it.isNotEmpty() } },
+        credentials = credentials,
+        signIn = harvest,
+        now = now,
+        scope = scope,
+        pauseMs = pauseMs,
+        refusal = refusal,
+    )
+
+    /** A token in place of [rejected], which is null when none was stored. */
+    suspend fun renew(rejected: String?): String = gate.take(rejected)
+
+    /** Forgets what failed, for a sign-in the user made by hand. */
+    suspend fun reset() = gate.reset()
+}
+
+/**
+ * The rules every automatic SSO sign-in with the stored password keeps, whatever it signs in for
+ * (a Moodle token, [MoodleTokenRenewal], or Moodle's website for the TigerDuck browser):
+ * - one at a time, whose answer, a failure included, every caller waiting shares;
+ * - none for [pauseMs] after one that failed for a reason other than the network, whose error
+ *   is handed back instead;
+ * - none at all with credentials SSO refused, until they change.
+ *
+ * [kept] is what an earlier sign-in left that a caller may take instead of signing in, unless it
+ * is the one the caller was refused ([take]'s `rejected`); null for nothing. [signIn] runs in
+ * [scope], so a caller that goes away does not cancel a sign-in others wait on.
+ */
+internal class MoodleSignInGate<T : Any>(
+    private val kept: () -> T?,
+    private val credentials: () -> Pair<String, String>?,
+    private val signIn: suspend (rejected: T?) -> T,
     private val now: () -> Long,
     private val scope: CoroutineScope,
     private val pauseMs: Long,
-    private val refusal: StoredPasswordRefusal = StoredPasswordRefusal.InMemory(),
+    private val refusal: StoredPasswordRefusal,
 ) {
     private val lock = Mutex()
     /**
      * The sign-in under way. It completes with its failure as a value rather than failing, so it
      * never cancels the scope it runs in, whatever kind of scope that is.
      */
-    private var inFlight: Deferred<Result<String>>? = null
+    private var inFlight: Deferred<Result<T>>? = null
 
     /** The last failure that was not the network's, with when and for which credentials. */
     private var lastFailure: Failure? = null
 
     private class Failure(val atMs: Long, val error: Throwable, val credentials: String)
 
-    /** A token in place of [rejected], which is null when none was stored. */
-    suspend fun renew(rejected: String?): String {
+    /** What [kept] holds unless it is [rejected], else a sign-in's answer. */
+    suspend fun take(rejected: T?): T {
         val pending = lock.withLock {
             inFlight?.takeIf { it.isActive } ?: run {
-                val stored = storedToken()
-                if (!stored.isNullOrEmpty() && stored != rejected) return stored
+                val stored = kept()
+                if (stored != null && stored != rejected) return stored
                 val key = credentials()?.let(::fingerprint)
                     ?: throw MoodleWebserviceError.MissingStoredCredentials()
                 if (refusal.isRefused(key)) throw MoodleWebserviceError.SsoLoginRejected(null)
@@ -60,7 +98,7 @@ internal class MoodleTokenRenewal(
                 }
                 scope.async {
                     try {
-                        Result.success(signIn(key, rejected))
+                        Result.success(signInFor(key, rejected))
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -78,8 +116,8 @@ internal class MoodleTokenRenewal(
         refusal.clear()
     }
 
-    private suspend fun signIn(key: String, rejected: String?): String = try {
-        harvest(rejected).also {
+    private suspend fun signInFor(key: String, rejected: T?): T = try {
+        signIn(rejected).also {
             lock.withLock { lastFailure = null }
         }
     } catch (e: CancellationException) {
