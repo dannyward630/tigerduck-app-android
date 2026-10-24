@@ -183,14 +183,17 @@ internal fun FlipToLibraryEffect(
     } ?: return // No rotation-vector sensor on this phone.
 
     // The question's Turn on, taken by the page on screen when it is given:
-    // the activity that asked may have been made anew under the question.
+    // the activity that asked may have been made anew under the question. The
+    // switch and the sign-in are checked again, as at a flip: the sign-in can
+    // be refused while the question is up. A request that fails them is
+    // dropped rather than kept for later.
     if (openRequest != null) {
         val requested by openRequest.pending.collectAsStateWithLifecycle()
         val hasPage = navController.currentBackStackEntryAsState().value != null
         LaunchedEffect(requested, hasPage) {
-            if (requested && hasPage && openRequest.take() && navigateToLibrary(navController)) {
-                currentOnNavigated()
-            }
+            if (!requested || !hasPage || !openRequest.take()) return@LaunchedEffect
+            if (!currentFlipEnabled() || !currentStillSignedIn()) return@LaunchedEffect
+            if (navigateToLibrary(navController)) currentOnNavigated()
         }
     }
 

@@ -60,6 +60,12 @@ class FlipToLibraryEffectTest {
     /** Moved on to rebuild the page with a new NavController, as an activity recreation does. */
     private var generation by mutableStateOf(0)
 
+    /** The switch, which a Turn on stores on. */
+    private var switchOn by mutableStateOf(true)
+
+    /** Whether the library session still holds when checked again, as at a flip. */
+    private var sessionValid = true
+
     @Before
     fun setUp() {
         sensor = SensorBuilder.newBuilder().setType(Sensor.TYPE_ROTATION_VECTOR).build()
@@ -78,13 +84,14 @@ class FlipToLibraryEffectTest {
         signedIn: Boolean = true,
         offerUnanswered: () -> Boolean = { false },
     ) {
+        switchOn = enabled
         composeRule.setContent { key(generation) {
             navController = rememberNavController()
             FlipToLibraryEffect(
                 navController = navController,
-                flipToLibraryEnabled = { enabled },
+                flipToLibraryEnabled = { switchOn },
                 signedInToLibrary = { signedIn },
-                stillSignedInToLibrary = { signedIn },
+                stillSignedInToLibrary = { signedIn && sessionValid },
                 onNavigated = { haptics++ },
                 offerUnanswered = offerUnanswered,
                 onOffer = { offers++ },
@@ -114,9 +121,12 @@ class FlipToLibraryEffectTest {
         composeRule.waitForIdle()
     }
 
-    /** The question's Turn on, as FlipToLibraryPrompt gives it. */
+    /** The question's Turn on, as FlipToLibraryPrompt gives it: the switch on, then the request. */
     private fun turnOn() {
-        composeRule.runOnUiThread { openRequest.request() }
+        composeRule.runOnUiThread {
+            switchOn = true
+            openRequest.request()
+        }
         composeRule.waitForIdle()
     }
 
@@ -234,6 +244,19 @@ class FlipToLibraryEffectTest {
         assertEquals(Screen.Library.route, route())
         assertEquals(1, haptics)
         assertEquals("home", asked.currentDestination?.route)
+    }
+
+    /** The sign-in can be refused between the question and its answer. */
+    @Test
+    fun `a Turn on after the library session ends opens nothing`() {
+        show(enabled = false, offerUnanswered = { true })
+        focusWindow(true)
+        flip()
+        sessionValid = false
+        turnOn()
+        assertEquals("home", route())
+        assertEquals(0, haptics)
+        assertFalse(openRequest.take())
     }
 
     @Test
