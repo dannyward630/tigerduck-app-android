@@ -13,6 +13,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.Buffer
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import org.ntust.app.tigerduck.network.MoodleWebserviceError
@@ -76,8 +77,9 @@ class MoodlePictureChangeTest {
 
         val update = requests[1]
         assertEquals(MoodleCourseApi.UPDATE_PICTURE_FUNCTION, update.url.queryParameter("wsfunction"))
+        assertNull(update.url.queryParameter("wstoken"))
         val params = (update.body as FormBody).let { body -> (0 until body.size).associate { body.name(it) to body.value(it) } }
-        assertEquals(mapOf("draftitemid" to "4242", "delete" to "0"), params)
+        assertEquals(mapOf("wstoken" to "t1", "draftitemid" to "4242", "delete" to "0"), params)
     }
 
     @Test
