@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.di
 
 import android.content.Context
-import android.webkit.CookieManager
 import android.webkit.WebSettings
 import dagger.Module
 import dagger.Provides
@@ -18,6 +17,7 @@ import org.ntust.app.tigerduck.browser.BrowserSettings
 import org.ntust.app.tigerduck.browser.BrowserSignIns
 import org.ntust.app.tigerduck.browser.MediaStoreDownloadTransfer
 import org.ntust.app.tigerduck.browser.MoodleBrowserSignIn
+import org.ntust.app.tigerduck.browser.webViewCookies
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
 import javax.inject.Singleton
 
@@ -45,7 +45,7 @@ object BrowserModule {
         transfer = MediaStoreDownloadTransfer(
             context = context,
             allowlist = { allowlist.allowlist.value },
-            cookieFor = { url -> CookieManager.getInstance().getCookie(url) },
+            browserCookies = ::webViewCookies,
             userAgent = { runCatching { WebSettings.getDefaultUserAgent(context) }.getOrNull() },
         ),
     )

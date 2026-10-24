@@ -11,6 +11,9 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import okhttp3.Cookie
+import okhttp3.HttpUrl
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -184,10 +187,15 @@ class BrowserDownloadsTest {
         })
         .build()
 
-    private fun transfer(hops: Map<String, Hop>, sent: MutableList<Pair<String, String?>>, saved: MutableList<String>) = MediaStoreDownloadTransfer(
+    private fun transfer(
+        hops: Map<String, Hop>,
+        sent: MutableList<Pair<String, String?>>,
+        saved: MutableList<String>,
+        browser: ((HttpUrl) -> List<Cookie>)? = null,
+    ) = MediaStoreDownloadTransfer(
         context = RuntimeEnvironment.getApplication(),
         allowlist = { BrowserAllowlist.DEFAULT },
-        cookieFor = { url -> if (url.contains("moodle2")) "MoodleSession=abc" else "Other=1" },
+        browserCookies = browser ?: { url -> cookiesFromHeader(url, if (url.host.contains("moodle2")) "MoodleSession=abc" else "Other=1") },
         userAgent = { "UA" },
         client = client(hops, sent),
         save = { _, _, input, _ ->
@@ -233,7 +241,7 @@ class BrowserDownloadsTest {
         assertEquals(
             listOf(
                 "https://moodle2.ntust.edu.tw/a.pdf" to "MoodleSession=abc",
-                "https://moodle2.ntust.edu.tw/b.pdf" to "dl=1; MoodleSession=new",
+                "https://moodle2.ntust.edu.tw/b.pdf" to "MoodleSession=new; dl=1",
                 "https://files.ntust.edu.tw/real.pdf" to "Other=1",
             ),
             sent,
@@ -267,7 +275,7 @@ class BrowserDownloadsTest {
 
         transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
 
-        assertEquals("MoodleSession=abc; here=1", sent.last().second)
+        assertEquals("here=1; MoodleSession=abc", sent.last().second)
     }
 
     @Test
@@ -284,7 +292,56 @@ class BrowserDownloadsTest {
 
         transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
 
-        assertEquals("MoodleSession=abc; sid=download; sid=outer", sent.last().second)
+        assertEquals("sid=download; MoodleSession=abc; sid=outer", sent.last().second)
+    }
+
+    @Test
+    fun `a redirect's cookie replaces only the browser's of its name, host and path`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/files/report.pdf", setCookies = listOf("sid=rotated; Path=/")),
+            "https://moodle2.ntust.edu.tw/files/report.pdf" to Hop(200, body = "PDF"),
+        )
+        // The browser's, as the WebView tells them with their paths.
+        val browser = { url: HttpUrl ->
+            listOfNotNull(
+                Cookie.parse(url, "sid=download; Path=/files")?.takeIf { it.matches(url) },
+                Cookie.parse(url, "sid=outer; Path=/"),
+            )
+        }
+
+        transfer(hops, sent, mutableListOf(), browser).download(save) { _, _ -> }
+
+        assertEquals("sid=download; sid=rotated", sent.last().second)
+    }
+
+    @Test
+    fun `a cookie a later redirect refreshes keeps its place among those of its path`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(
+                302,
+                "https://moodle2.ntust.edu.tw/b.pdf",
+                setCookies = listOf("first=1; Path=/", "second=1; Path=/"),
+            ),
+            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/c.pdf", setCookies = listOf("first=2; Path=/")),
+            "https://moodle2.ntust.edu.tw/c.pdf" to Hop(200, body = "PDF"),
+        )
+
+        transfer(hops, sent, mutableListOf()).download(save) { _, _ -> }
+
+        assertEquals("MoodleSession=abc; first=2; second=1", sent.last().second)
+    }
+
+    @Test
+    fun `a Cookie header becomes cookies for the host and the whole site`() {
+        val url = "https://moodle2.ntust.edu.tw/files/a.pdf".toHttpUrl()
+
+        val cookies = cookiesFromHeader(url, "a=1; b = 2 ;; =x; c=")
+
+        assertEquals(listOf("a" to "1", "b" to "2", "c" to ""), cookies.map { it.name to it.value })
+        assertTrue(cookies.all { it.hostOnly && it.domain == "moodle2.ntust.edu.tw" && it.path == "/" })
+        assertEquals(emptyList<Cookie>(), cookiesFromHeader(url, null))
     }
 
     @Test
@@ -351,7 +408,7 @@ class BrowserDownloadsTest {
         val transfer = MediaStoreDownloadTransfer(
             context = RuntimeEnvironment.getApplication(),
             allowlist = { BrowserAllowlist.DEFAULT },
-            cookieFor = { "MoodleSession=abc" },
+            browserCookies = { url -> cookiesFromHeader(url, "MoodleSession=abc") },
             userAgent = { null },
             client = client,
             save = { _, _, _, _ -> Uri.parse("content://downloads/1") },
@@ -393,7 +450,7 @@ class BrowserDownloadsTest {
         val transfer = MediaStoreDownloadTransfer(
             context = RuntimeEnvironment.getApplication(),
             allowlist = { BrowserAllowlist.DEFAULT },
-            cookieFor = { null },
+            browserCookies = { emptyList() },
             userAgent = { null },
             client = client,
             save = { _, _, input, _ ->

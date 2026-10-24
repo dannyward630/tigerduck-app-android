@@ -5,6 +5,9 @@ import android.content.Context
 import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
+import android.webkit.CookieManager
+import androidx.webkit.CookieManagerCompat
+import androidx.webkit.WebViewFeature
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -163,33 +166,63 @@ class BrowserDownloads(
  * ([Cookie.parseAll], [Cookie.matches]); one that a redirect expires takes the browser's of that
  * name off the next hops too.
  */
+/**
+ * [header], a Cookie header the WebView gave for [url], as cookies: each for [url]'s host and the
+ * whole site, which is all such a header says of them.
+ */
+internal fun cookiesFromHeader(url: HttpUrl, header: String?): List<Cookie> =
+    header.orEmpty().split(';').mapNotNull { pair ->
+        val name = pair.substringBefore('=', "").trim()
+        if (name.isEmpty()) return@mapNotNull null
+        runCatching {
+            Cookie.Builder().name(name).value(pair.substringAfter('=').trim()).hostOnlyDomain(url.host).path("/").build()
+        }.getOrNull()
+    }
+
 internal class DownloadCookies(private val now: () -> Long = System::currentTimeMillis) {
     private val kept = mutableListOf<Cookie>()
 
     /** Keeps what a redirect set, each over the one of its name, host and path it replaces; an expired one as its removal. */
     fun keep(cookies: List<Cookie>) {
-        for (cookie in cookies) {
-            kept.removeAll { it.name == cookie.name && it.domain == cookie.domain && it.path == cookie.path }
-            kept += cookie
-        }
+        for (cookie in cookies) kept.putOver(cookie)
     }
 
-    /** The Cookie header for [url]: the browser's ([browser], as CookieManager gives it), with this download's over it. */
-    fun header(url: HttpUrl, browser: String?): String? {
-        val mine = kept.filter { it.matches(url) }
-        val replaced = mine.mapTo(HashSet()) { it.name }
-        val fromBrowser = browser.orEmpty().split(';').map { it.trim() }
-            .filter { it.isNotEmpty() && it.substringBefore('=').trim() !in replaced }
-        // Longest path first, as a browser sends them (RFC 6265, 5.4); a server often takes the first of a name.
-        val live = mine.filter { it.expiresAt > now() }.sortedByDescending { it.path.length }.map { "${it.name}=${it.value}" }
-        return (fromBrowser + live).joinToString("; ").takeIf { it.isNotEmpty() }
+    /** The Cookie header for [url]: the browser's cookies for it ([browser], in the order it sends them), with this download's over them. */
+    fun header(url: HttpUrl, browser: List<Cookie>): String? {
+        val merged = browser.toMutableList()
+        for (cookie in kept) if (cookie.matches(url)) merged.putOver(cookie)
+        // Longest path first, then oldest first, as a browser sends them (RFC 6265, 5.4): a server
+        // often takes the first of a name.
+        return merged.filter { it.expiresAt > now() }
+            .sortedByDescending { it.path.length }
+            .joinToString("; ") { "${it.name}=${it.value}" }
+            .takeIf { it.isNotEmpty() }
     }
+
+    // In the place of the one of its name, host and path, which keeps its age; else after the rest.
+    private fun MutableList<Cookie>.putOver(cookie: Cookie) {
+        val at = indexOfFirst { it.name == cookie.name && it.domain == cookie.domain && it.path == cookie.path }
+        if (at >= 0) set(at, cookie) else add(cookie)
+    }
+}
+
+/**
+ * The WebView's cookies for [url], in the order it sends them: with their hosts and paths where the
+ * WebView tells them ([CookieManagerCompat.getCookieInfo]), else as its Cookie header alone says.
+ */
+fun webViewCookies(url: HttpUrl): List<Cookie> {
+    val manager = CookieManager.getInstance()
+    val fromHeader = { cookiesFromHeader(url, manager.getCookie(url.toString())) }
+    if (!WebViewFeature.isFeatureSupported(WebViewFeature.GET_COOKIE_INFO)) return fromHeader()
+    val told = runCatching { CookieManagerCompat.getCookieInfo(manager, url.toString()).map { Cookie.parse(url, it) } }.getOrNull()
+    // One it cannot read would go missing: then the header, which has them all.
+    return if (told == null || told.any { it == null }) fromHeader() else told.filterNotNull()
 }
 
 /**
  * Fetches with a client of its own, which holds no cookies of the app's: each
  * request carries only the browser's cookies for its own host
- * ([cookieFor], `CookieManager.getCookie`) with those the download's own
+ * ([browserCookies], the WebView's) with those the download's own
  * redirects set ([DownloadCookies]), and the browser's user agent.
  * Redirects are followed here, one at a time, so a cookie never goes to a
  * host it is not for and a redirect off the allowlist stops the download.
@@ -199,7 +232,8 @@ internal class DownloadCookies(private val now: () -> Long = System::currentTime
 class MediaStoreDownloadTransfer(
     private val context: Context,
     private val allowlist: () -> BrowserAllowlist,
-    private val cookieFor: (String) -> String?,
+    /** The browser's cookies for a URL, in the order it sends them ([webViewCookies]). */
+    private val browserCookies: (HttpUrl) -> List<Cookie>,
     private val userAgent: () -> String?,
     private val client: OkHttpClient = DEFAULT_CLIENT,
     /** Where the body goes; MediaStore's Downloads, a stand-in in tests. */
@@ -216,7 +250,7 @@ class MediaStoreDownloadTransfer(
             if (!allowlist().allows(url)) throw IOException("download left the allowlist")
             val httpUrl = url.toHttpUrlOrNull() ?: throw IOException("not a web address")
             val request = Request.Builder().url(httpUrl).apply {
-                cookies.header(httpUrl, cookieFor(url))?.let { header("Cookie", it) }
+                cookies.header(httpUrl, browserCookies(httpUrl))?.let { header("Cookie", it) }
                 userAgent()?.let { header("User-Agent", it) }
             }.build()
             when (val hop = hop(client.newCall(request), plan, progress)) {
