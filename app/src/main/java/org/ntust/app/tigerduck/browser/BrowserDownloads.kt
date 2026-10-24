@@ -104,13 +104,14 @@ class BrowserDownloads(
     val items: StateFlow<List<BrowserDownload>> = state.asStateFlow()
 
     /**
-     * Starts saving [plan]'s file; null, saving nothing, while the browser is
-     * cleared ([BrowserSession.clearing]): a page of the departing student's,
-     * not yet closed, may still ask. The download is registered before it
-     * runs, so a clearing stops it whenever it began.
+     * Starts saving [plan]'s file, for a page of browser [session]; null,
+     * saving nothing, while the browser is cleared ([BrowserSession.clearing])
+     * or for a page from before a clearing: the departing student's, not yet
+     * closed, may still ask. The download is registered before it runs, so a
+     * clearing stops it whenever it began.
      */
-    fun start(plan: DownloadPlan.Save): Long? = synchronized(jobs) {
-        if (BrowserSession.clearing.value) return null
+    fun start(plan: DownloadPlan.Save, session: Int = BrowserSession.generation.value): Long? = synchronized(jobs) {
+        if (BrowserSession.clearing.value || session != BrowserSession.generation.value) return null
         val id = ids.incrementAndGet()
         state.update { listOf(BrowserDownload(id, plan.fileName, plan.mimeType)) + it }
         val job = scope.launch(start = CoroutineStart.LAZY) {

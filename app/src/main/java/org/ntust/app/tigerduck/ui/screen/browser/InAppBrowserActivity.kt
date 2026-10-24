@@ -521,7 +521,8 @@ class InAppBrowserActivity : AppCompatActivity() {
             mimeOfExtension = { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) },
         )
         when (plan) {
-            is DownloadPlan.Save -> if (downloads.start(plan) == null) return
+            // The page's own session: a page from before a clearing, not yet gone, starts nothing.
+            is DownloadPlan.Save -> if (downloads.start(plan, session = loadedSession ?: return) == null) return
             DownloadPlan.Refused -> Toast.makeText(this, R.string.browser_download_refused, Toast.LENGTH_SHORT).show()
         }
     }

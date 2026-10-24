@@ -130,6 +130,19 @@ class BrowserDownloadsTest {
     }
 
     @Test
+    fun `a page from before a clearing starts no download`() = runTest {
+        val downloads = BrowserDownloads(this) { _, _ -> CompletableDeferred<Uri>().await() }
+        // The departing student's page, not yet gone, asking after the clearing ended.
+        val before = BrowserSession.generation.value
+        BrowserSession.end()
+
+        assertNull(downloads.start(save, session = before))
+        assertTrue(downloads.items.value.isEmpty())
+        assertTrue(downloads.start(save, session = BrowserSession.generation.value) != null)
+        downloads.clear()
+    }
+
+    @Test
     fun `a clearing waits for a download cancelled just before it to finish stopping`() = runTest {
         val never = CompletableDeferred<Uri>()
         val tidied = CompletableDeferred<Unit>()
