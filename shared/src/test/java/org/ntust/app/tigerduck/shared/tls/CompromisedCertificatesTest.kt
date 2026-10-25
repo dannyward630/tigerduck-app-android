@@ -66,6 +66,17 @@ class CompromisedCertificatesTest {
     }
 
     @Test
+    fun `the eight are exactly OkHttp's own blocklist`() {
+        // Every hash, not only the fixture's: read from OkHttp's internal list, so a mistyped
+        // hash fails here, and so does a later OkHttp that blocks more.
+        val blocklist = Class.forName("okhttp3.internal.tls.CertificateBlocklist")
+        val field = blocklist.getDeclaredField("blockedCertificateSha256s").apply { isAccessible = true }
+        val okhttps = (field.get(null) as Set<*>).map { (it as okio.ByteString).hex() }.toSet()
+
+        assertEquals(okhttps, CompromisedCertificates.spkiSha256Hex)
+    }
+
+    @Test
     fun `an unpinned host's chain through one is refused, though the platform trusts it`() {
         assertThrows(CompromisedCertificateException::class.java) {
             manager().checkServerTrusted(arrayOf(forgedLeaf, compromised), "ECDHE_ECDSA", engineFor("api.example.com"))
