@@ -100,18 +100,39 @@ internal object PretendMissingApps {
             if (!isMissing(app)) return intent
             return Intent(intent).putExtra(Intent.EXTRA_INTENT, Intent(Intent.ACTION_VIEW, NOTHING))
         }
+        // With no browser, a link an app also takes goes to that app, as it would with no browser to choose.
+        if (isMissing(OutsideApp.BROWSER) && packageManager != null) appOnly(intent, packageManager)?.let { return it }
         val app = needs(intent, ownPackage, packageManager) ?: return intent
         if (isMissing(app)) throw ActivityNotFoundException("No Activity found to handle $intent (pretending: ${app.missing})")
         return intent
     }
 
-    /** Whether a package other than a browser (one that takes any https link) takes [intent]. */
-    private fun opensInAnApp(intent: Intent, packageManager: PackageManager): Boolean {
-        val handlers = packageManager.queryIntentActivities(intent, 0).map { it.activityInfo.packageName }.toSet()
-        if (handlers.isEmpty()) return false
+    /** Whether a package other than a browser takes [intent]. */
+    private fun opensInAnApp(intent: Intent, packageManager: PackageManager): Boolean =
+        appHandlers(intent, packageManager).isNotEmpty()
+
+    /**
+     * The packages other than browsers (those that take any https link) that a launch of
+     * [intent] could open: as Android resolves an implicit launch, so an unapproved App Link
+     * isn't counted.
+     */
+    private fun appHandlers(intent: Intent, packageManager: PackageManager): Set<String> {
+        if (intent.data?.scheme?.lowercase() !in setOf("http", "https")) return emptySet()
+        val handlers = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            .map { it.activityInfo.packageName }.toSet()
+        if (handlers.isEmpty()) return emptySet()
         val anyLink = Intent(Intent.ACTION_VIEW, "https://example.com/".toUri()).addCategory(Intent.CATEGORY_BROWSABLE)
-        val browsers = packageManager.queryIntentActivities(anyLink, 0).map { it.activityInfo.packageName }.toSet()
-        return (handlers - browsers).isNotEmpty()
+        // Every browser, the ones that aren't the default too.
+        val browsers = packageManager.queryIntentActivities(anyLink, PackageManager.MATCH_ALL)
+            .map { it.activityInfo.packageName }.toSet()
+        return handlers - browsers
+    }
+
+    /** [intent] sent to the one app, not a browser, that takes it; null when there isn't exactly one, or it already names one. */
+    private fun appOnly(intent: Intent, packageManager: PackageManager): Intent? {
+        if (intent.action != Intent.ACTION_VIEW || intent.`package` != null || intent.component != null) return null
+        val apps = appHandlers(intent, packageManager)
+        return apps.singleOrNull()?.let { Intent(intent).setPackage(it) }
     }
 
     private fun Intent.chosen(): Intent? =

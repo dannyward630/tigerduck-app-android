@@ -78,7 +78,8 @@ class PretendMissingAppsTest {
         PretendMissingApps.setMissing(OutsideApp.BROWSER, true)
 
         assertNull(PretendMissingApps.needs(shareLink, own, context.packageManager))
-        assertSame(shareLink, PretendMissingApps.filter(shareLink, own, context.packageManager))
+        // With no browser, the link goes to the one app that takes it, not to a choice with browsers in it.
+        assertEquals(own, PretendMissingApps.filter(shareLink, own, context.packageManager).`package`)
         // A link only browsers take still needs one.
         val page = view("https://www.ntust.edu.tw/")
         pm.addResolveInfoForIntent(page, browser)
