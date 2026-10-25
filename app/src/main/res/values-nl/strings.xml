@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Lesuur %1$s</string>
     <string name="a11y_empty_classroom_same_room">Hetzelfde lokaal</string>
     <string name="a11y_empty_classroom_walk_minutes">Ongeveer %1$d min lopen</string>
+    <string name="a11y_file_viewer_page">Pagina %1$d van %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA-trend per semester</string>
     <string name="a11y_rankings_trend_no_selection">Geen semester geselecteerd</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Sluiten</string>
     <string name="action_confirm">Bevestigen</string>
     <string name="action_continue">Doorgaan</string>
+    <string name="action_delete">Verwijderen</string>
     <string name="action_done">Klaar</string>
     <string name="action_go_to_settings">Ga naar instellingen</string>
     <string name="action_got_it">Begrepen</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Cijfers</string>
     <string name="feature_settings">Instellingen</string>
     <string name="feature_settings_short">Instellingen</string>
+    <string name="file_viewer_cannot_show">Dit bestand kan hier niet worden weergegeven.</string>
+    <string name="file_viewer_open_elsewhere">Openen in andere app</string>
+    <string name="file_viewer_text_truncated">De eerste %1$s van dit bestand worden getoond.</string>
     <string name="first_trigger_flip_to_library_keep">Ingeschakeld houden</string>
     <string name="first_trigger_flip_to_library_message">Het lijkt erop dat je je telefoon hebt omgedraaid. Dit gebaar kan snel de bibliotheek-QR openen. Wil je deze functie behouden?</string>
     <string name="first_trigger_flip_to_library_title">Omdraaien om bibliotheek-QR te openen</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Weergave- en tekstgrootte</string>
     <string name="settings_display_size_ui">Weergavegrootte</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Alle gedownloade bestanden verwijderen</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-bestanden en bijlagen van e-mail worden opnieuw gedownload als je ze de volgende keer opent.</string>
+    <string name="settings_downloaded_files_delete_all_title">Alle gedownloade bestanden verwijderen?</string>
+    <string name="settings_downloaded_files_footer">Bestanden die je in de TigerDuck-browser downloadt, worden opgeslagen in de map Downloads van je telefoon en worden hier niet verwijderd.</string>
+    <string name="settings_downloaded_files_images">Afbeeldingen van het rooster</string>
+    <string name="settings_downloaded_files_mail">Bijlagen van e-mail</string>
+    <string name="settings_downloaded_files_moodle">Moodle-bestanden</string>
+    <string name="settings_downloaded_files_title">Gedownloade bestanden</string>
     <string name="settings_feedback_bug_report">Feedback / Probleem melden</string>
     <string name="settings_flip_to_library_summary">Leg je telefoon met het scherm naar beneden om de bibliotheek-QR te openen.</string>
     <string name="settings_flip_to_library_title">Omdraaien om bibliotheek-QR te tonen</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Lokalen tonen in het rooster</string>
     <string name="settings_sign_out_imported_tables">Geïmporteerde roosters worden ook verwijderd.</string>
     <string name="settings_sign_out_unsynced_data">Gegevens die niet met TigerSync zijn gesynchroniseerd, worden verwijderd.</string>
+    <string name="settings_storage_browser_data">Websitegegevens</string>
+    <string name="settings_storage_browser_data_delete_message">Sites die je in de TigerDuck-browser hebt bezocht, kunnen je vragen opnieuw in te loggen.</string>
+    <string name="settings_storage_browser_data_delete_title">Websitegegevens verwijderen?</string>
+    <string name="settings_storage_delete_kind">%@ verwijderen</string>
+    <string name="settings_storage_title">Opslag</string>
+    <string name="settings_storage_total">Totaal</string>
     <string name="settings_sync_brief_description">TigerSync synchroniseert je gekozen informatie op al je apparaten. Niet-ingeschakelde informatie blijft alleen op dit apparaat.</string>
     <string name="settings_sync_disabled_note">Als synchronisatie uit staat, ontvangt de TigerDuck-server nog steeds je studentnummer, je Moodle-token en de push-inloggegevens van dit apparaat om opdrachtherinneringen te sturen</string>
     <string name="settings_sync_status_off">Uit</string>

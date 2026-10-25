@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">പിരീഡ് %1$s</string>
     <string name="a11y_empty_classroom_same_room">അതേ ക്ലാസ്മുറി</string>
     <string name="a11y_empty_classroom_walk_minutes">നടന്നാൽ ഏകദേശം %1$d മിനിറ്റ്</string>
+    <string name="a11y_file_viewer_page">%2$d-ൽ %1$d-ാം പേജ്</string>
     <string name="a11y_rankings_trend_chart">സെമസ്റ്ററനുസരിച്ച് GPA ട്രെൻഡ്</string>
     <string name="a11y_rankings_trend_no_selection">സെമസ്റ്റർ തിരഞ്ഞെടുത്തിട്ടില്ല</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">അടക്കുക</string>
     <string name="action_confirm">സ്ഥിരീകരിക്കുക</string>
     <string name="action_continue">തുടരുക</string>
+    <string name="action_delete">ഇല്ലാതാക്കുക</string>
     <string name="action_done">പൂർത്തിയായി</string>
     <string name="action_go_to_settings">ക്രമീകരണങ്ങളിലേക്ക് പോകുക</string>
     <string name="action_got_it">മനസ്സിലായി</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">ഗ്രേഡുകൾ</string>
     <string name="feature_settings">ക്രമീകരണങ്ങൾ</string>
     <string name="feature_settings_short">ക്രമീകരണങ്ങൾ</string>
+    <string name="file_viewer_cannot_show">ഈ ഫയൽ ഇവിടെ കാണിക്കാനാകില്ല.</string>
+    <string name="file_viewer_open_elsewhere">മറ്റൊരു ആപ്പിൽ തുറക്കുക</string>
+    <string name="file_viewer_text_truncated">ഈ ഫയലിന്റെ ആദ്യ %1$s കാണിക്കുന്നു.</string>
     <string name="first_trigger_flip_to_library_keep">പ്രവർത്തനക്ഷമമായി നിലനിർത്തുക</string>
     <string name="first_trigger_flip_to_library_message">നിങ്ങൾ ഫോൺ മറിച്ചിട്ടതായി ഞങ്ങൾ ശ്രദ്ധിച്ചു. ഈ ആംഗ്യം ലൈബ്രറി QR വേഗത്തിൽ തുറക്കാൻ സഹായിക്കും. ഈ ഫീച്ചർ നിലനിർത്തണോ?</string>
     <string name="first_trigger_flip_to_library_title">ലൈബ്രറി QR തുറക്കാൻ മറിക്കുക</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">ഡിസ്‌പ്ലേയുടെയും ടെക്സ്റ്റിന്റെയും വലുപ്പം</string>
     <string name="settings_display_size_ui">ഡിസ്‌പ്ലേ വലുപ്പം</string>
     <string name="settings_display_size_widget_section">വിജറ്റുകൾ</string>
+    <string name="settings_downloaded_files_delete_all">ഡൗൺലോഡ് ചെയ്ത എല്ലാ ഫയലുകളും ഇല്ലാതാക്കുക</string>
+    <string name="settings_downloaded_files_delete_all_message">അടുത്ത തവണ തുറക്കുമ്പോൾ Moodle ഫയലുകളും മെയിൽ അറ്റാച്ച്‌മെന്റുകളും വീണ്ടും ഡൗൺലോഡ് ചെയ്യും.</string>
+    <string name="settings_downloaded_files_delete_all_title">ഡൗൺലോഡ് ചെയ്ത എല്ലാ ഫയലുകളും ഇല്ലാതാക്കണോ?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck ബ്രൗസറിൽ ഡൗൺലോഡ് ചെയ്ത ഫയലുകൾ ഫോണിലെ Downloads ഫോൾഡറിൽ സേവ് ചെയ്യും, അവ ഇവിടെനിന്ന് ഇല്ലാതാക്കില്ല.</string>
+    <string name="settings_downloaded_files_images">ക്ലാസ് ടൈംടേബിൾ ചിത്രങ്ങൾ</string>
+    <string name="settings_downloaded_files_mail">മെയിൽ അറ്റാച്ച്‌മെന്റുകൾ</string>
+    <string name="settings_downloaded_files_moodle">Moodle ഫയലുകൾ</string>
+    <string name="settings_downloaded_files_title">ഡൗൺലോഡ് ചെയ്ത ഫയലുകൾ</string>
     <string name="settings_feedback_bug_report">ഫീഡ്‌ബാക്ക് / പ്രശ്‌നം റിപ്പോർട്ട് ചെയ്യുക</string>
     <string name="settings_flip_to_library_summary">ലൈബ്രറി QR തുറക്കാൻ ഫോൺ സ്ക്രീൻ താഴ്ത്തി മറിക്കുക.</string>
     <string name="settings_flip_to_library_title">ലൈബ്രറി QR കാണിക്കാൻ മറിക്കുക</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">ടൈംടേബിളിൽ ക്ലാസ് മുറി കാണിക്കുക</string>
     <string name="settings_sign_out_imported_tables">ഇമ്പോർട്ട് ചെയ്ത ക്ലാസ് ടൈംടേബിളുകളും ഇല്ലാതാക്കും.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync-മായി സിങ്ക് ചെയ്യാത്ത ഡാറ്റ ഇല്ലാതാക്കും.</string>
+    <string name="settings_storage_browser_data">വെബ്‌സൈറ്റ് ഡാറ്റ</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck ബ്രൗസറിൽ നിങ്ങൾ സന്ദർശിച്ച സൈറ്റുകൾ വീണ്ടും സൈൻ ഇൻ ചെയ്യാൻ ആവശ്യപ്പെട്ടേക്കാം.</string>
+    <string name="settings_storage_browser_data_delete_title">വെബ്‌സൈറ്റ് ഡാറ്റ ഇല്ലാതാക്കണോ?</string>
+    <string name="settings_storage_delete_kind">%@ ഇല്ലാതാക്കുക</string>
+    <string name="settings_storage_title">സ്റ്റോറേജ്</string>
+    <string name="settings_storage_total">ആകെ</string>
     <string name="settings_sync_brief_description">TigerSync നിങ്ങളുടെ എല്ലാ ഉപകരണങ്ങളിലും വിവരങ്ങൾ സമന്വയിപ്പിക്കാൻ അനുവദിക്കുന്നു. സിങ്കിന് പ്രാപ്തമാക്കാത്ത വിവരങ്ങൾ ഈ ഉപകരണത്തിൽ മാത്രം നിലനിൽക്കും.</string>
     <string name="settings_sync_disabled_note">സിങ്ക് ഓഫായിരിക്കുമ്പോഴും, അസൈൻമെന്റ് ഓർമ്മപ്പെടുത്തലുകൾ അയയ്ക്കാൻ TigerDuck സെർവറിന് നിങ്ങളുടെ വിദ്യാർത്ഥി ID, Moodle ടോക്കൺ, ഈ ഉപകരണത്തിന്റെ പുഷ് ക്രെഡൻഷ്യലുകൾ എന്നിവ ലഭിക്കും</string>
     <string name="settings_sync_status_off">ഓഫ്</string>

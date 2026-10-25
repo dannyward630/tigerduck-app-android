@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Sat %1$s</string>
     <string name="a11y_empty_classroom_same_room">Ista učionica</string>
     <string name="a11y_empty_classroom_walk_minutes">Oko %1$d min hoda</string>
+    <string name="a11y_file_viewer_page">Stranica %1$d od %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend GPA-a po semestru</string>
     <string name="a11y_rankings_trend_no_selection">Nije odabran semestar</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Zatvori</string>
     <string name="action_confirm">Potvrdi</string>
     <string name="action_continue">Nastavi</string>
+    <string name="action_delete">Obriši</string>
     <string name="action_done">Gotovo</string>
     <string name="action_go_to_settings">Idi na postavke</string>
     <string name="action_got_it">Razumijem</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Ocjene</string>
     <string name="feature_settings">Postavke</string>
     <string name="feature_settings_short">Postavke</string>
+    <string name="file_viewer_cannot_show">Ova se datoteka ne može prikazati ovdje.</string>
+    <string name="file_viewer_open_elsewhere">Otvori u drugoj aplikaciji</string>
+    <string name="file_viewer_text_truncated">Prikazuje se prvih %1$s ove datoteke.</string>
     <string name="first_trigger_flip_to_library_keep">Zadrži uključeno</string>
     <string name="first_trigger_flip_to_library_message">Primijetili smo da si preokrenuo telefon. Ovaj pokret može brzo otvoriti QR knjižnice. Želiš zadržati ovu značajku?</string>
     <string name="first_trigger_flip_to_library_title">Preokrenite za otvaranje QR knjižnice</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Veličina prikaza i teksta</string>
     <string name="settings_display_size_ui">Veličina prikaza</string>
     <string name="settings_display_size_widget_section">Widgeti</string>
+    <string name="settings_downloaded_files_delete_all">Obriši sve preuzete datoteke</string>
+    <string name="settings_downloaded_files_delete_all_message">Datoteke s Moodlea i privici e-pošte ponovno će se preuzeti kad ih sljedeći put otvorite.</string>
+    <string name="settings_downloaded_files_delete_all_title">Obrisati sve preuzete datoteke?</string>
+    <string name="settings_downloaded_files_footer">Datoteke preuzete u pregledniku TigerDuck spremaju se u mapu Preuzimanja na telefonu i ovdje se ne brišu.</string>
+    <string name="settings_downloaded_files_images">Slike rasporeda</string>
+    <string name="settings_downloaded_files_mail">Privici e-pošte</string>
+    <string name="settings_downloaded_files_moodle">Datoteke s Moodlea</string>
+    <string name="settings_downloaded_files_title">Preuzete datoteke</string>
     <string name="settings_feedback_bug_report">Povratne informacije / Prijava problema</string>
     <string name="settings_flip_to_library_summary">Preokrenite telefon zaslonom prema dolje da otvorite QR knjižnice.</string>
     <string name="settings_flip_to_library_title">Preokreni za prikaz QR-a knjižnice</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Prikaži učionice u rasporedu</string>
     <string name="settings_sign_out_imported_tables">Uvezeni rasporedi također će biti obrisani.</string>
     <string name="settings_sign_out_unsynced_data">Podaci koji nisu sinkronizirani s TigerSyncom bit će obrisani.</string>
+    <string name="settings_storage_browser_data">Podaci web-mjesta</string>
+    <string name="settings_storage_browser_data_delete_message">Web-mjesta koja ste posjetili u pregledniku TigerDuck mogu tražiti da se ponovno prijavite.</string>
+    <string name="settings_storage_browser_data_delete_title">Obrisati podatke web-mjesta?</string>
+    <string name="settings_storage_delete_kind">Obriši: %@</string>
+    <string name="settings_storage_title">Pohrana</string>
+    <string name="settings_storage_total">Ukupno</string>
     <string name="settings_sync_brief_description">TigerSync omogućuje sinkronizaciju odabranih podataka na svim uređajima. Podaci bez sinkronizacije ostaju samo na ovom uređaju.</string>
     <string name="settings_sync_disabled_note">Kad je sinkronizacija isključena, TigerDuck poslužitelj i dalje prima vaš studentski ID, Moodle token i push vjerodajnice ovog uređaja kako bi slao podsjetnike za zadatke</string>
     <string name="settings_sync_status_off">Isključeno</string>

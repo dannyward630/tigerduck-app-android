@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Periods %1$s</string>
     <string name="a11y_empty_classroom_same_room">Tā pati auditorija</string>
     <string name="a11y_empty_classroom_walk_minutes">Apmēram %1$d min kājām</string>
+    <string name="a11y_file_viewer_page">%1$d. lapa no %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA tendence pa semestriem</string>
     <string name="a11y_rankings_trend_no_selection">Semestris nav izvēlēts</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Aizvērt</string>
     <string name="action_confirm">Apstiprināt</string>
     <string name="action_continue">Turpināt</string>
+    <string name="action_delete">Dzēst</string>
     <string name="action_done">Gatavs</string>
     <string name="action_go_to_settings">Doties uz iestatījumiem</string>
     <string name="action_got_it">Sapratu</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Atzīmes</string>
     <string name="feature_settings">Iestatījumi</string>
     <string name="feature_settings_short">Iestatījumi</string>
+    <string name="file_viewer_cannot_show">Šo failu šeit nevar parādīt.</string>
+    <string name="file_viewer_open_elsewhere">Atvērt citā lietotnē</string>
+    <string name="file_viewer_text_truncated">Tiek rādīti šī faila pirmie %1$s.</string>
     <string name="first_trigger_flip_to_library_keep">Atstāt ieslēgtu</string>
     <string name="first_trigger_flip_to_library_message">Pamanījām, ka apgāzāt tālruni. Šis žests var ātri atvērt bibliotēkas QR. Vai vēlaties paturēt šo funkciju?</string>
     <string name="first_trigger_flip_to_library_title">Apgāziet, lai atvērtu bibliotēkas QR</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Displeja un teksta lielums</string>
     <string name="settings_display_size_ui">Displeja lielums</string>
     <string name="settings_display_size_widget_section">Logrīki</string>
+    <string name="settings_downloaded_files_delete_all">Dzēst visus lejupielādētos failus</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle faili un e-pasta pielikumi tiks lejupielādēti vēlreiz, kad nākamreiz tos atvērsiet.</string>
+    <string name="settings_downloaded_files_delete_all_title">Vai dzēst visus lejupielādētos failus?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck pārlūkā lejupielādētie faili tiek saglabāti tālruņa mapē Lejupielādes, un šeit tie netiek dzēsti.</string>
+    <string name="settings_downloaded_files_images">Stundu plāna attēli</string>
+    <string name="settings_downloaded_files_mail">E-pasta pielikumi</string>
+    <string name="settings_downloaded_files_moodle">Moodle faili</string>
+    <string name="settings_downloaded_files_title">Lejupielādētie faili</string>
     <string name="settings_feedback_bug_report">Atsauksme / Ziņot par problēmu</string>
     <string name="settings_flip_to_library_summary">Apvērs tālruni ar ekrānu uz leju, lai atvērtu bibliotēkas QR.</string>
     <string name="settings_flip_to_library_title">Apvērst, lai parādītu bibliotēkas QR</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Rādīt auditorijas stundu sarakstā</string>
     <string name="settings_sign_out_imported_tables">Tiks dzēsti arī importētie stundu plāni.</string>
     <string name="settings_sign_out_unsynced_data">Ar TigerSync nesinhronizētie dati tiks dzēsti.</string>
+    <string name="settings_storage_browser_data">Vietņu dati</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck pārlūkā apmeklētās vietnes var lūgt jums pierakstīties vēlreiz.</string>
+    <string name="settings_storage_browser_data_delete_title">Vai dzēst vietņu datus?</string>
+    <string name="settings_storage_delete_kind">Dzēst: %@</string>
+    <string name="settings_storage_title">Krātuve</string>
+    <string name="settings_storage_total">Kopā</string>
     <string name="settings_sync_brief_description">TigerSync ļauj sinhronizēt izvēlēto informāciju visās ierīcēs. Nesinhronizēta informācija paliek tikai šajā ierīcē.</string>
     <string name="settings_sync_disabled_note">Kad sinhronizācija ir izslēgta, TigerDuck serveris joprojām saņem jūsu studenta ID, Moodle žetonu un šīs ierīces push akreditācijas datus, lai sūtītu uzdevumu atgādinājumus</string>
     <string name="settings_sync_status_off">Izslēgts</string>

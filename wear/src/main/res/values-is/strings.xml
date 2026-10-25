@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Tími %1$s</string>
     <string name="a11y_empty_classroom_same_room">Sama kennslustofa</string>
     <string name="a11y_empty_classroom_walk_minutes">Um %1$d mín. gangur</string>
+    <string name="a11y_file_viewer_page">Síða %1$d af %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA þróun eftir önn</string>
     <string name="a11y_rankings_trend_no_selection">Engin önn valin</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Loka</string>
     <string name="action_confirm">Staðfesta</string>
     <string name="action_continue">Halda áfram</string>
+    <string name="action_delete">Eyða</string>
     <string name="action_done">Lokið</string>
     <string name="action_go_to_settings">Fara í stillingar</string>
     <string name="action_got_it">Skil</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Einkunnir</string>
     <string name="feature_settings">Stillingar</string>
     <string name="feature_settings_short">Stillingar</string>
+    <string name="file_viewer_cannot_show">Ekki er hægt að sýna þessa skrá hér.</string>
+    <string name="file_viewer_open_elsewhere">Opna í öðru forriti</string>
+    <string name="file_viewer_text_truncated">Sýni fyrstu %1$s af þessari skrá.</string>
     <string name="first_trigger_flip_to_library_keep">Halda virkjað</string>
     <string name="first_trigger_flip_to_library_message">Við tókum eftir því að þú snérir símanum. Þetta bendingarmynstur getur opnað bókasafns-QR á augnabragði. Viltu halda þessum eiginleika?</string>
     <string name="first_trigger_flip_to_library_title">Snúðu til að opna bókasafns-QR</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Skjá- og textastærð</string>
     <string name="settings_display_size_ui">Skjástærð</string>
     <string name="settings_display_size_widget_section">Græjur</string>
+    <string name="settings_downloaded_files_delete_all">Eyða öllum sóttum skrám</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-skrár og viðhengi úr pósti verða sótt aftur næst þegar þú opnar þau.</string>
+    <string name="settings_downloaded_files_delete_all_title">Eyða öllum sóttum skrám?</string>
+    <string name="settings_downloaded_files_footer">Skrár sem sóttar eru í vafra TigerDuck eru vistaðar í niðurhalsmöppu símans og þeim er ekki eytt hér.</string>
+    <string name="settings_downloaded_files_images">Myndir af stundaskrá</string>
+    <string name="settings_downloaded_files_mail">Viðhengi úr pósti</string>
+    <string name="settings_downloaded_files_moodle">Moodle-skrár</string>
+    <string name="settings_downloaded_files_title">Sóttar skrár</string>
     <string name="settings_feedback_bug_report">Endurgjöf / Tilkynna villu</string>
     <string name="settings_flip_to_library_summary">Snúðu símann með skjánum niður til að opna QR kóða bókasafnsins.</string>
     <string name="settings_flip_to_library_title">Snúa til að sýna QR kóða bókasafnsins</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Sýna stofur í stundatöflunni</string>
     <string name="settings_sign_out_imported_tables">Innfluttum stundaskrám verður líka eytt.</string>
     <string name="settings_sign_out_unsynced_data">Gögnum sem ekki eru samstillt við TigerSync verður eytt.</string>
+    <string name="settings_storage_browser_data">Gögn vefsvæða</string>
+    <string name="settings_storage_browser_data_delete_message">Vefsvæði sem þú heimsóttir í vafra TigerDuck gætu beðið þig að skrá þig inn aftur.</string>
+    <string name="settings_storage_browser_data_delete_title">Eyða gögnum vefsvæða?</string>
+    <string name="settings_storage_delete_kind">Eyða: %@</string>
+    <string name="settings_storage_title">Geymsla</string>
+    <string name="settings_storage_total">Samtals</string>
     <string name="settings_sync_brief_description">TigerSync gerir þér kleift að samstilla valdar upplýsingar á öllum tækjum. Upplýsingar sem ekki eru virkar eru aðeins á þessu tæki.</string>
     <string name="settings_sync_disabled_note">Þegar slökkt er á samstillingu fær TigerDuck netþjónninn samt nemandanúmerið þitt, Moodle táknið og push-skilríki þessa tækis til að senda áminningar um verkefni</string>
     <string name="settings_sync_status_off">Slökkt</string>

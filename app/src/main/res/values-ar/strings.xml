@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">الحصة %1$s</string>
     <string name="a11y_empty_classroom_same_room">القاعة نفسها</string>
     <string name="a11y_empty_classroom_walk_minutes">نحو %1$d دقيقة سيرًا</string>
+    <string name="a11y_file_viewer_page">الصفحة %1$d من %2$d</string>
     <string name="a11y_rankings_trend_chart">اتجاه المعدل التراكمي حسب الفصل</string>
     <string name="a11y_rankings_trend_no_selection">لم يتم تحديد فصل</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">إغلاق</string>
     <string name="action_confirm">تأكيد</string>
     <string name="action_continue">متابعة</string>
+    <string name="action_delete">حذف</string>
     <string name="action_done">تم</string>
     <string name="action_go_to_settings">الانتقال إلى الإعدادات</string>
     <string name="action_got_it">حسنًا</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">الدرجات</string>
     <string name="feature_settings">الإعدادات</string>
     <string name="feature_settings_short">الإعدادات</string>
+    <string name="file_viewer_cannot_show">لا يمكن عرض هذا الملف هنا.</string>
+    <string name="file_viewer_open_elsewhere">فتح في تطبيق آخر</string>
+    <string name="file_viewer_text_truncated">يُعرض أول %1$s من هذا الملف.</string>
     <string name="first_trigger_flip_to_library_keep">الإبقاء مفعّلاً</string>
     <string name="first_trigger_flip_to_library_message">يبدو أنك قلبت هاتفك. هذه الإيماءة تتيح فتح QR المكتبة بسرعة. هل تريد الإبقاء على هذه الميزة؟</string>
     <string name="first_trigger_flip_to_library_title">اقلب الهاتف لفتح QR المكتبة</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">حجم العرض والنص</string>
     <string name="settings_display_size_ui">حجم العرض</string>
     <string name="settings_display_size_widget_section">الأدوات</string>
+    <string name="settings_downloaded_files_delete_all">حذف كل الملفات التي تم تنزيلها</string>
+    <string name="settings_downloaded_files_delete_all_message">يُعاد تنزيل ملفات Moodle ومرفقات البريد في المرة التالية التي تفتحها فيها.</string>
+    <string name="settings_downloaded_files_delete_all_title">هل تريد حذف كل الملفات التي تم تنزيلها؟</string>
+    <string name="settings_downloaded_files_footer">تُحفظ الملفات التي تنزّلها في متصفح TigerDuck في مجلد التنزيلات على هاتفك، ولا تُحذف من هنا.</string>
+    <string name="settings_downloaded_files_images">صور الجدول الدراسي</string>
+    <string name="settings_downloaded_files_mail">مرفقات البريد</string>
+    <string name="settings_downloaded_files_moodle">ملفات Moodle</string>
+    <string name="settings_downloaded_files_title">الملفات التي تم تنزيلها</string>
     <string name="settings_feedback_bug_report">ملاحظات / الإبلاغ عن مشكلة</string>
     <string name="settings_flip_to_library_summary">اقلب هاتفك بحيث يكون الشاشة لأسفل لفتح رمز QR للمكتبة.</string>
     <string name="settings_flip_to_library_title">اقلب لعرض رمز QR للمكتبة</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">إظهار القاعات في الجدول الدراسي</string>
     <string name="settings_sign_out_imported_tables">سيتم حذف الجداول الدراسية المستوردة أيضًا.</string>
     <string name="settings_sign_out_unsynced_data">سيتم حذف البيانات غير المتزامنة مع TigerSync.</string>
+    <string name="settings_storage_browser_data">بيانات المواقع</string>
+    <string name="settings_storage_browser_data_delete_message">قد تطلب منك المواقع التي زرتها في متصفح TigerDuck تسجيل الدخول مرة أخرى.</string>
+    <string name="settings_storage_browser_data_delete_title">هل تريد حذف بيانات المواقع؟</string>
+    <string name="settings_storage_delete_kind">حذف %@</string>
+    <string name="settings_storage_title">التخزين</string>
+    <string name="settings_storage_total">الإجمالي</string>
     <string name="settings_sync_brief_description">يتيح لك TigerSync مزامنة معلوماتك المختارة عبر جميع أجهزتك التي تم تفعيل TigerSync عليها. المعلومات غير المفعّلة للمزامنة تبقى على هذا الجهاز فقط.</string>
     <string name="settings_sync_disabled_note">عند إيقاف المزامنة، يظل خادم TigerDuck يتلقى رقم الطالب ورمز Moodle وبيانات الإشعارات لهذا الجهاز لإرسال تذكيرات الواجبات</string>
     <string name="settings_sync_status_off">معطّل</string>

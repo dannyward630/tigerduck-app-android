@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Hodina %1$s</string>
     <string name="a11y_empty_classroom_same_room">Stejná učebna</string>
     <string name="a11y_empty_classroom_walk_minutes">Asi %1$d min chůze</string>
+    <string name="a11y_file_viewer_page">Strana %1$d z %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend GPA podle semestru</string>
     <string name="a11y_rankings_trend_no_selection">Není vybrán žádný semestr</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Zavřít</string>
     <string name="action_confirm">Potvrdit</string>
     <string name="action_continue">Pokračovat</string>
+    <string name="action_delete">Smazat</string>
     <string name="action_done">Hotovo</string>
     <string name="action_go_to_settings">Přejít do nastavení</string>
     <string name="action_got_it">Rozumím</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Známky</string>
     <string name="feature_settings">Nastavení</string>
     <string name="feature_settings_short">Nastavení</string>
+    <string name="file_viewer_cannot_show">Tento soubor zde nelze zobrazit.</string>
+    <string name="file_viewer_open_elsewhere">Otevřít v jiné aplikaci</string>
+    <string name="file_viewer_text_truncated">Zobrazuje se prvních %1$s tohoto souboru.</string>
     <string name="first_trigger_flip_to_library_keep">Ponechat zapnuté</string>
     <string name="first_trigger_flip_to_library_message">Vypadá to, že jsi otočil telefon. Tímto gestem lze rychle otevřít QR knihovny. Chceš tuto funkci zachovat?</string>
     <string name="first_trigger_flip_to_library_title">Otoč pro otevření QR knihovny</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Velikost zobrazení a textu</string>
     <string name="settings_display_size_ui">Velikost zobrazení</string>
     <string name="settings_display_size_widget_section">Widgety</string>
+    <string name="settings_downloaded_files_delete_all">Smazat všechny stažené soubory</string>
+    <string name="settings_downloaded_files_delete_all_message">Soubory z Moodlu a přílohy e-mailů se při dalším otevření stáhnou znovu.</string>
+    <string name="settings_downloaded_files_delete_all_title">Smazat všechny stažené soubory?</string>
+    <string name="settings_downloaded_files_footer">Soubory stažené v prohlížeči TigerDuck se ukládají do složky Stažené soubory v telefonu a tady se nemažou.</string>
+    <string name="settings_downloaded_files_images">Obrázky rozvrhu</string>
+    <string name="settings_downloaded_files_mail">Přílohy e-mailů</string>
+    <string name="settings_downloaded_files_moodle">Soubory z Moodlu</string>
+    <string name="settings_downloaded_files_title">Stažené soubory</string>
     <string name="settings_feedback_bug_report">Zpětná vazba / Nahlásit problém</string>
     <string name="settings_flip_to_library_summary">Otočte telefon obrazovkou dolů pro zobrazení QR kódu knihovny.</string>
     <string name="settings_flip_to_library_title">Otočit pro zobrazení QR kódu knihovny</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Zobrazovat učebny v rozvrhu</string>
     <string name="settings_sign_out_imported_tables">Importované rozvrhy budou také smazány.</string>
     <string name="settings_sign_out_unsynced_data">Data nesynchronizovaná s TigerSync budou smazána.</string>
+    <string name="settings_storage_browser_data">Data webů</string>
+    <string name="settings_storage_browser_data_delete_message">Weby, které jste navštívili v prohlížeči TigerDuck, vás mohou požádat o nové přihlášení.</string>
+    <string name="settings_storage_browser_data_delete_title">Smazat data webů?</string>
+    <string name="settings_storage_delete_kind">Smazat: %@</string>
+    <string name="settings_storage_title">Úložiště</string>
+    <string name="settings_storage_total">Celkem</string>
     <string name="settings_sync_brief_description">TigerSync umožňuje synchronizovat vybrané informace mezi všemi zařízeními se zapnutým TigerSync. Informace bez synchronizace zůstávají pouze na tomto zařízení.</string>
     <string name="settings_sync_disabled_note">Když je synchronizace vypnutá, server TigerDuck stále dostává vaše studentské ID, token Moodle a push přihlašovací údaje tohoto zařízení, aby mohl posílat připomínky úkolů</string>
     <string name="settings_sync_status_off">Vypnuto</string>

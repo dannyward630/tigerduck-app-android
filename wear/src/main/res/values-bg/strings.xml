@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Период %1$s</string>
     <string name="a11y_empty_classroom_same_room">Същата класна стая</string>
     <string name="a11y_empty_classroom_walk_minutes">Около %1$d мин пеша</string>
+    <string name="a11y_file_viewer_page">Страница %1$d от %2$d</string>
     <string name="a11y_rankings_trend_chart">Тенденция на GPA по семестри</string>
     <string name="a11y_rankings_trend_no_selection">Не е избран семестър</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Затвори</string>
     <string name="action_confirm">Потвърди</string>
     <string name="action_continue">Продължи</string>
+    <string name="action_delete">Изтриване</string>
     <string name="action_done">Готово</string>
     <string name="action_go_to_settings">Към настройките</string>
     <string name="action_got_it">Разбрах</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Оценки</string>
     <string name="feature_settings">Настройки</string>
     <string name="feature_settings_short">Настройки</string>
+    <string name="file_viewer_cannot_show">Този файл не може да се покаже тук.</string>
+    <string name="file_viewer_open_elsewhere">Отваряне в друго приложение</string>
+    <string name="file_viewer_text_truncated">Показани са първите %1$s от този файл.</string>
     <string name="first_trigger_flip_to_library_keep">Запази включено</string>
     <string name="first_trigger_flip_to_library_message">Изглежда, че обърна телефона. Този жест може бързо да отвори QR на библиотеката. Искаш ли да запазиш тази функция?</string>
     <string name="first_trigger_flip_to_library_title">Обърни за QR на библиотеката</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Размер на показване и текст</string>
     <string name="settings_display_size_ui">Размер на показване</string>
     <string name="settings_display_size_widget_section">Уиджети</string>
+    <string name="settings_downloaded_files_delete_all">Изтриване на всички изтеглени файлове</string>
+    <string name="settings_downloaded_files_delete_all_message">Файловете от Moodle и прикачените файлове от пощата ще се изтеглят отново, когато ги отворите следващия път.</string>
+    <string name="settings_downloaded_files_delete_all_title">Изтриване на всички изтеглени файлове?</string>
+    <string name="settings_downloaded_files_footer">Файловете, изтеглени в браузъра на TigerDuck, се записват в папката „Изтегляния“ на телефона и не се изтриват оттук.</string>
+    <string name="settings_downloaded_files_images">Изображения на разписанието</string>
+    <string name="settings_downloaded_files_mail">Прикачени файлове от пощата</string>
+    <string name="settings_downloaded_files_moodle">Файлове от Moodle</string>
+    <string name="settings_downloaded_files_title">Изтеглени файлове</string>
     <string name="settings_feedback_bug_report">Обратна връзка / Докладване на проблем</string>
     <string name="settings_flip_to_library_summary">Обърни телефона с екрана надолу, за да отвориш QR на библиотеката.</string>
     <string name="settings_flip_to_library_title">Обърни за показване на QR на библиотеката</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Показване на залите в графика</string>
     <string name="settings_sign_out_imported_tables">Импортираните разписания също ще бъдат изтрити.</string>
     <string name="settings_sign_out_unsynced_data">Данните, които не са синхронизирани с TigerSync, ще бъдат изтрити.</string>
+    <string name="settings_storage_browser_data">Данни от уебсайтове</string>
+    <string name="settings_storage_browser_data_delete_message">Сайтовете, които сте отваряли в браузъра на TigerDuck, може да поискат да влезете отново.</string>
+    <string name="settings_storage_browser_data_delete_title">Изтриване на данните от уебсайтове?</string>
+    <string name="settings_storage_delete_kind">Изтриване: %@</string>
+    <string name="settings_storage_title">Хранилище</string>
+    <string name="settings_storage_total">Общо</string>
     <string name="settings_sync_brief_description">TigerSync ви позволява да синхронизирате избраната информация между всички устройства с включен TigerSync. Информацията, която не е включена, остава само на това устройство.</string>
     <string name="settings_sync_disabled_note">Когато синхронизацията е изключена, сървърът на TigerDuck пак получава студентския ви номер, токена за Moodle и данните за push известия на това устройство, за да изпраща напомняния за задачи</string>
     <string name="settings_sync_status_off">Изкл.</string>

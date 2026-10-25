@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">%1$s pamoka</string>
     <string name="a11y_empty_classroom_same_room">Ta pati auditorija</string>
     <string name="a11y_empty_classroom_walk_minutes">Apie %1$d min. pėsčiomis</string>
+    <string name="a11y_file_viewer_page">%1$d psl. iš %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA tendencija pagal semestrą</string>
     <string name="a11y_rankings_trend_no_selection">Semestras nepasirinktas</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Uždaryti</string>
     <string name="action_confirm">Patvirtinti</string>
     <string name="action_continue">Tęsti</string>
+    <string name="action_delete">Ištrinti</string>
     <string name="action_done">Atlikta</string>
     <string name="action_go_to_settings">Eiti į nustatymus</string>
     <string name="action_got_it">Supratau</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Pažymiai</string>
     <string name="feature_settings">Nustatymai</string>
     <string name="feature_settings_short">Nustatymai</string>
+    <string name="file_viewer_cannot_show">Šio failo čia parodyti negalima.</string>
+    <string name="file_viewer_open_elsewhere">Atidaryti kitoje programoje</string>
+    <string name="file_viewer_text_truncated">Rodomi pirmieji šio failo %1$s.</string>
     <string name="first_trigger_flip_to_library_keep">Palikti įjungtą</string>
     <string name="first_trigger_flip_to_library_message">Pastebėjome, kad apvertėte telefoną. Šis gestas gali greitai atidaryti bibliotekos QR. Norite palikti šią funkciją?</string>
     <string name="first_trigger_flip_to_library_title">Apverskite, kad atidarytumėte bibliotekos QR</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Ekrano ir teksto dydis</string>
     <string name="settings_display_size_ui">Ekrano dydis</string>
     <string name="settings_display_size_widget_section">Valdikliai</string>
+    <string name="settings_downloaded_files_delete_all">Ištrinti visus atsisiųstus failus</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle failai ir laiškų priedai bus atsisiųsti iš naujo, kai kitą kartą juos atidarysite.</string>
+    <string name="settings_downloaded_files_delete_all_title">Ištrinti visus atsisiųstus failus?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck naršyklėje atsisiųsti failai išsaugomi telefono aplanke „Atsisiuntimai“ ir čia netrinami.</string>
+    <string name="settings_downloaded_files_images">Tvarkaraščio vaizdai</string>
+    <string name="settings_downloaded_files_mail">Laiškų priedai</string>
+    <string name="settings_downloaded_files_moodle">Moodle failai</string>
+    <string name="settings_downloaded_files_title">Atsisiųsti failai</string>
     <string name="settings_feedback_bug_report">Atsiliepimai / Pranešti apie klaidą</string>
     <string name="settings_flip_to_library_summary">Apverskite telefoną ekranu žemyn, kad atidarytumėte bibliotekos QR.</string>
     <string name="settings_flip_to_library_title">Apversti, kad rodytų bibliotekos QR</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Rodyti auditorijas tvarkaraštyje</string>
     <string name="settings_sign_out_imported_tables">Importuoti tvarkaraščiai taip pat bus ištrinti.</string>
     <string name="settings_sign_out_unsynced_data">Su TigerSync nesinchronizuoti duomenys bus ištrinti.</string>
+    <string name="settings_storage_browser_data">Svetainių duomenys</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck naršyklėje lankytos svetainės gali paprašyti prisijungti iš naujo.</string>
+    <string name="settings_storage_browser_data_delete_title">Ištrinti svetainių duomenis?</string>
+    <string name="settings_storage_delete_kind">Ištrinti: %@</string>
+    <string name="settings_storage_title">Saugykla</string>
+    <string name="settings_storage_total">Iš viso</string>
     <string name="settings_sync_brief_description">TigerSync leidžia sinchronizuoti pasirinktą informaciją visuose įrenginiuose. Nesinchronizuota informacija lieka tik šiame įrenginyje.</string>
     <string name="settings_sync_disabled_note">Kai sinchronizavimas išjungtas, TigerDuck serveris vis tiek gauna jūsų studento ID, Moodle prieigos raktą ir šio įrenginio push kredencialus, kad galėtų siųsti užduočių priminimus</string>
     <string name="settings_sync_status_off">Išjungta</string>
