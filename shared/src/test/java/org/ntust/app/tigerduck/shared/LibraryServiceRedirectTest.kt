@@ -31,7 +31,8 @@ class LibraryServiceRedirectTest {
         override var libraryPassword: String? = null
         override var libraryToken: String? = null
         override var libraryTokenExpiry: Long = 0L
-        override var libraryPasswordRefused: Boolean = false
+        override var libraryPasswordRefusals: Int = 0
+        override var libraryPasswordRefusedAt: Long = 0L
         override val isLibraryTokenValid: Boolean
             get() = libraryToken != null && System.currentTimeMillis() < libraryTokenExpiry
         override val libraryAccountGeneration: Int get() = account.current
@@ -49,13 +50,15 @@ class LibraryServiceRedirectTest {
             libraryPassword = password
             libraryToken = token
             libraryTokenExpiry = tokenExpiry
-            libraryPasswordRefused = false
+            libraryPasswordRefusals = 0
+            libraryPasswordRefusedAt = 0L
         }
 
-        override fun refuseLibraryPassword(generation: Int, password: String): Boolean =
+        override fun refuseLibraryPassword(generation: Int, password: String, at: Long): Boolean =
             account.whileCurrent(generation) {
                 if (libraryPassword != password) return@whileCurrent false
-                libraryPasswordRefused = true
+                libraryPasswordRefusals++
+                libraryPasswordRefusedAt = at
                 true
             } ?: false
     }
@@ -145,6 +148,24 @@ class LibraryServiceRedirectTest {
         assertFalse(store.libraryPasswordRefused)
         assertTrue(service.canSignInWithStoredCredentials)
         assertTrue(requests.none { it.contains("elsewhere.example") })
+    }
+
+    /**
+     * As on the iPhone, where a redirect refused ends in a network error: no answer to the
+     * password, so the retry of a refused one goes again a step further down the schedule rather
+     * than counting another refusal (tigerduck-app/tigerduck-app#769).
+     */
+    @Test
+    fun `a retry of a refused password that stops at a 307 is no answer, and no refusal`() = runBlocking {
+        store.libraryPasswordRefusals = 1
+        store.libraryPasswordRefusedAt = 1L
+        signInAnswer = { redirect(it, 307, ELSEWHERE) }
+
+        assertFalse(service.retryStoredPassword())
+
+        assertEquals(1, store.libraryPasswordRefusals)
+        assertEquals(1L, store.libraryPasswordRefusedAt)
+        assertEquals(listOf("POST $SIGN_IN_URL"), posts)
     }
 
     @Test

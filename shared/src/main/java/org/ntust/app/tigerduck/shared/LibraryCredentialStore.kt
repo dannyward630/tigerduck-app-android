@@ -46,21 +46,28 @@ interface LibraryCredentialStore {
     ): Boolean
 
     /**
-     * Whether the library refused the stored password in a sign-in the app made
-     * on its own. Each refusal counts toward the account's lockout, so
-     * [LibraryService.ensureToken] does not send that password again. Kept
-     * across launches, and cleared by a sign-in that saves credentials and by a
-     * sign-out. A store that does not keep it reads false, as the watch's does:
-     * the phone takes the watch's copy of the password away instead.
+     * How many times in a row the library refused the stored password in a
+     * sign-in the app made on its own; 0 with none. Each refusal counts toward
+     * the account's lockout, so [LibraryService.ensureToken] waits
+     * [StoredPasswordSchedule.delayMs] after the last, [libraryPasswordRefusedAt],
+     * before it sends that password again. Kept across launches, and cleared by
+     * a sign-in that saves credentials and by a sign-out. A store that does not
+     * keep it reads 0.
      */
-    val libraryPasswordRefused: Boolean get() = false
+    val libraryPasswordRefusals: Int get() = 0
+
+    /** Wall-clock ms of the last of [libraryPasswordRefusals]; 0 with none. */
+    val libraryPasswordRefusedAt: Long get() = 0L
+
+    /** Whether the library refused the stored password, and has not taken it since. */
+    val libraryPasswordRefused: Boolean get() = libraryPasswordRefusals > 0
 
     /**
-     * Records that the library refused [password], if it is still the stored
+     * Counts a refusal of [password] [at] that time, if it is still the stored
      * one and the account has not changed since [generation] was read; says
      * whether it did.
      */
-    fun refuseLibraryPassword(generation: Int, password: String): Boolean = false
+    fun refuseLibraryPassword(generation: Int, password: String, at: Long): Boolean = false
 }
 
 /**

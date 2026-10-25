@@ -64,14 +64,12 @@ import androidx.wear.remote.interactions.RemoteActivityHelper
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.shared.LibraryApi
-import org.ntust.app.tigerduck.shared.LibraryService
-import org.ntust.app.tigerduck.wear.BuildConfig
 import org.ntust.app.tigerduck.wear.R
 import org.ntust.app.tigerduck.wear.data.LibraryQRController
 import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
 import org.ntust.app.tigerduck.wear.data.WatchLibraryCredentialStore
-import org.ntust.app.tigerduck.wear.data.WatchTlsPins
+import org.ntust.app.tigerduck.wear.data.WatchLibraryServiceHolder
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentGradient
 import org.ntust.app.tigerduck.wear.ui.theme.LocalScreenPadding
@@ -161,9 +159,8 @@ private fun LoggedInState(username: String?) {
     val qrSidePx = with(density) { qrSideDp.dp.roundToPx() }
 
     val store = remember(context) { WatchLibraryCredentialStore.get(context) }
-    val service = remember(store) {
-        LibraryService(store, isDebugBuild = BuildConfig.DEBUG, tls = WatchTlsPins.get(context).tls)
-    }
+    // The process's one: a sign-in still out from the last time the page was open is joined.
+    val service = remember(context) { WatchLibraryServiceHolder.get(context) }
     val scope = rememberCoroutineScope()
     val accountChanged = stringResource(R.string.watch_open_phone_to_sync)
     val controller = remember(service, accountChanged) {
