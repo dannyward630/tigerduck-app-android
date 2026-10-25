@@ -70,7 +70,7 @@ class AppStorage internal constructor(
         classTableImages = { File(context.cacheDir, CLASS_TABLE_EXPORT_DIR) },
         cachedMail = cachedMailStore(mailCache, Dispatchers.IO),
         downloadedMail = Store(bytes = mail::searchIndexBytes, clear = mail::deleteSearchIndex),
-        websiteData = websiteDataStore(context.dataDir, context.cacheDir, Dispatchers.IO, clear = browser::clear),
+        websiteData = websiteDataStore(context.dataDir, context.cacheDir, Dispatchers.IO, clear = browser::clearWebsiteData),
     )
 
     /** Something kept as a whole, measured and cleared through its owner. */
@@ -184,8 +184,9 @@ class AppStorage internal constructor(
 
         /**
          * What the app's WebViews keep: their profile under [dataDir] (cookies and site storage)
-         * and their pages' cache under [cacheDir]. [clear] is the browser's own clearing
-         * ([BrowserDataCleaner]), which closes it first and also forgets each site's zoom.
+         * and their pages' cache under [cacheDir]. [clear] is the browser's own
+         * ([BrowserDataCleaner.clearWebsiteData]), which closes its screens first and leaves its
+         * downloads and each site's zoom and desktop choice.
          */
         internal fun websiteDataStore(dataDir: File, cacheDir: File, io: CoroutineDispatcher, clear: suspend () -> Unit): Store = Store(
             bytes = { withContext(io) { bytes(File(dataDir, WEBVIEW_PROFILE_DIR)) + bytes(File(cacheDir, WEBVIEW_CACHE_DIR)) } },

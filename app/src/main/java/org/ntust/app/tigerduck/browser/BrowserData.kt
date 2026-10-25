@@ -164,6 +164,25 @@ class BrowserDataCleaner(
         }
     }
 
+    /**
+     * The WebView's stores alone: cookies, site storage and the pages' cache, for Settings'
+     * Storage page. The screens open close first, as for [clear], since what they show goes; the
+     * downloads go on, and each site's zoom and desktop choice stay. Not an account change, so
+     * nothing is marked to clear again at the next start: a clearing cut short leaves only some of
+     * the user's own sites' data.
+     */
+    suspend fun clearWebsiteData() = lock.withLock {
+        BrowserSession.setClearing(true)
+        try {
+            BrowserSession.end()
+            runCatching { storage.clear() }
+                .onFailure { Log.w(TAG, "browser storage not cleared: ${it.javaClass.simpleName}") }
+        } finally {
+            BrowserSession.end()
+            BrowserSession.setClearing(false)
+        }
+    }
+
     private val lock = Mutex()
 
     private companion object {

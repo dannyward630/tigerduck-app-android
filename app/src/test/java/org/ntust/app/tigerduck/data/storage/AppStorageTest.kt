@@ -226,6 +226,7 @@ class AppStorageTest {
         fill()
         write(staged, 4_000)
         mailCache.saveBody("INBOX", 1, 1, MailBody(null, "x".repeat(2_000), emptyList(), emptyMap()))
+        mailCache.saveSource("INBOX", 1, 1, "From: a@b\r\n\r\nHello")
         val downloaded = downloaded(backgroundScope)
         val cached = downloaded.measure()[Kind.CACHED_MAIL]!!
         assertTrue("the body is counted", cached >= 2_000)
@@ -235,6 +236,7 @@ class AppStorageTest {
 
         assertEquals(0L, downloaded.measure()[Kind.CACHED_MAIL])
         assertEquals(null, mailCache.loadBody("INBOX", 1, 1))
+        assertEquals(null, mailCache.loadSource("INBOX", 1, 1))
         assertEquals(3_000L, downloaded.measure()[Kind.MAIL_ATTACHMENTS])
         assertTrue(staged.exists())
     }
