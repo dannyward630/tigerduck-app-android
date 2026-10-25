@@ -124,7 +124,7 @@ fun PaddingSettingsScreen(onBack: () -> Unit) {
                         )
                     }
                     PaddingBar(
-                        valueDp = { current },
+                        valueDp = current,
                         minDp = SchedulePersistence.MIN_PADDING_DP,
                         maxDp = SchedulePersistence.MAX_PADDING_DP,
                         modifier = Modifier

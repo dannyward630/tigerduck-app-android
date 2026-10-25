@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.wear.ui
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -10,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.MaterialTheme
@@ -46,7 +47,7 @@ class PaddingBarTest {
     fun `the bar follows the value to either end, not only its first`() {
         var dp by mutableIntStateOf(12)
         rule.setContent {
-            MaterialTheme { PaddingBar({ dp }, minDp = 0, maxDp = 24, modifier = Modifier.size(200.dp, 8.dp).testTag("bar")) }
+            MaterialTheme { PaddingBar(dp, minDp = 0, maxDp = 24, modifier = Modifier.size(200.dp, 8.dp).testTag("bar")) }
         }
 
         dp = 24
@@ -58,6 +59,20 @@ class PaddingBarTest {
         dp = 0
         rule.waitForIdle()
         assertFalse("not filled at 40% when empty", bar().at(0.4f).near(fill))
+    }
+
+    @Test
+    fun `an indicator handed a plain number follows it as it changes`() {
+        // Now & Next's bar through a class: a value recomputed each minute, not a state of its own.
+        var fraction by mutableFloatStateOf(0.5f)
+        rule.setContent {
+            MaterialTheme { FollowingProgressIndicator(fraction, modifier = Modifier.size(200.dp, 8.dp).testTag("bar")) }
+        }
+
+        fraction = 1f
+        rule.waitForIdle()
+        val full = bar()
+        assertTrue("filled at 85% when full", full.at(0.85f).near(full.at(0.05f)))
     }
 
     @Test

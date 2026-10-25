@@ -131,7 +131,7 @@ fun QRPaddingSettingsScreen(onBack: () -> Unit) {
                         )
                     }
                     PaddingBar(
-                        valueDp = { current },
+                        valueDp = current,
                         minDp = SchedulePersistence.MIN_QR_PADDING_DP,
                         maxDp = SchedulePersistence.MAX_QR_PADDING_DP,
                         modifier = Modifier
