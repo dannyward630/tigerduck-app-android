@@ -43,13 +43,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import org.ntust.app.tigerduck.ui.component.CurrentClassCardWidth
 import org.ntust.app.tigerduck.ui.component.CourseCardWidth
@@ -90,6 +88,8 @@ import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.sharing.ClassTableShare
 import org.ntust.app.tigerduck.data.sharing.ImportedClassTables
+import org.ntust.app.tigerduck.ui.component.DetentSheet
+import org.ntust.app.tigerduck.ui.component.rememberDetentSheetState
 import org.ntust.app.tigerduck.data.sharing.ImportedPerson
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherEntry
 import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherMenuItems
@@ -904,10 +904,11 @@ fun ClassTableScreen(
     LaunchedEffect(isLoggedIn) { if (!isLoggedIn) sharing = null }
 
     if (showAddCourse) {
-        val addCourseSheetState = rememberModalBottomSheetState()
-        ModalBottomSheet(
-            onDismissRequest = { showAddCourse = false },
-            sheetState = addCourseSheetState
+        val addCourseSheetState = rememberDetentSheetState()
+        DetentSheet(
+            onDismissed = { showAddCourse = false },
+            state = addCourseSheetState,
+            halfHeight = true,
         ) {
             val currentSemester by viewModel.currentSemester.collectAsStateWithLifecycle()
             AddCourseSheet(

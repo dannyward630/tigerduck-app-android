@@ -34,10 +34,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -101,7 +99,6 @@ fun ColorPickerSheet(
     onApply: (Color) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val style = LocalVisualStylePolicy.current
 
     val initialHsv = remember(currentColor) {
@@ -146,9 +143,8 @@ fun ColorPickerSheet(
         code.show(android.graphics.Color.HSVToColor(floatArrayOf(h, s, v)))
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
+    DetentSheet(
+        onDismissed = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         Column(

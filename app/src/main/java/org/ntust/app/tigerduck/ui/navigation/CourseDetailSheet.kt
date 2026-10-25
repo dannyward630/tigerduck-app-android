@@ -1,19 +1,15 @@
 // The class table's selected course as iOS presents it: a sheet that opens at
-// half height and drags to full. The Moodle pages it opens, and a member's mail,
-// are pages of the app's own navigation (coursePages), full screen over the page
-// the sheet is on: the sheet steps aside while they show, and a back to that page
-// brings it back.
+// half height, drags to full and moves as iOS's does (DetentSheet). The Moodle
+// pages it opens, and a member's mail, are pages of the app's own navigation
+// (coursePages), full screen over the page the sheet is on: the sheet steps
+// aside while they show, and a back to that page brings it back.
 
 package org.ntust.app.tigerduck.ui.navigation
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -39,7 +35,9 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.flow.first
+import org.ntust.app.tigerduck.ui.component.DetentSheet
+import org.ntust.app.tigerduck.ui.component.DetentSheetValue
+import org.ntust.app.tigerduck.ui.component.rememberDetentSheetState
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.CourseDetailSheetPage
 import org.ntust.app.tigerduck.ui.screen.coursemoodle.MoodleRoutes
@@ -122,7 +120,6 @@ internal fun CourseDetailSheetHost(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CourseDetailSheet(
     classTable: ClassTableViewModel,
@@ -132,20 +129,21 @@ private fun CourseDetailSheet(
     onOpenPage: (String) -> Unit,
     onClosed: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
-    // Up as high as it was left, once it has risen to half the screen as a sheet always first does.
+    val sheetState = rememberDetentSheetState()
     LaunchedEffect(sheetState) {
-        if (place.expanded) {
-            snapshotFlow { sheetState.currentValue }.first { it != SheetValue.Hidden }
-            sheetState.expand()
-        }
         snapshotFlow { sheetState.currentValue }.collect {
-            if (it != SheetValue.Hidden) place.expanded = it == SheetValue.Expanded
+            if (it != DetentSheetValue.Hidden) place.expanded = it == DetentSheetValue.Full
         }
     }
-    ModalBottomSheet(
-        onDismissRequest = onClosed,
-        sheetState = sheetState,
+    DetentSheet(
+        onDismissed = onClosed,
+        state = sheetState,
+        halfHeight = true,
+        // The full height whatever the page, so the sheet opens at half the screen as iOS's
+        // medium detent does, and a short page doesn't shrink it.
+        fillHeight = true,
+        // Up as high as it was left.
+        openAt = if (place.expanded) DetentSheetValue.Full else DetentSheetValue.Half,
         containerColor = MaterialTheme.colorScheme.background,
     ) {
         // A navigation of the course detail alone: its entry gives the page's view models a home
@@ -154,8 +152,8 @@ private fun CourseDetailSheet(
             NavHost(
                 navController = place.navController,
                 startDestination = MoodleRoutes.COURSE_DETAIL,
-                // The full height whatever the page, so the sheet opens at half the screen as iOS's
-                // medium detent does, and a short page does not shrink it.
+                // The rest of the sheet's height whatever the page, so a short page doesn't leave
+                // the sheet's lower part empty of it.
                 modifier = Modifier.fillMaxSize(),
             ) {
                 page(MoodleRoutes.COURSE_DETAIL) {

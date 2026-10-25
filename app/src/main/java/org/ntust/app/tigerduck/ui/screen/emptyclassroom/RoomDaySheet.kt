@@ -28,9 +28,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -49,6 +47,8 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.emptyclassroom.EmptyClassroomSchedule
 import org.ntust.app.tigerduck.emptyclassroom.RoomSlotUse
 import org.ntust.app.tigerduck.emptyclassroom.RoomUsage
+import org.ntust.app.tigerduck.ui.component.DetentSheet
+import org.ntust.app.tigerduck.ui.component.rememberDetentSheetState
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 
 /**
@@ -68,11 +68,12 @@ internal fun RoomDaySheet(
     nowPeriod: Int?,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberDetentSheetState()
     val scope = rememberCoroutineScope()
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
+    DetentSheet(
+        onDismissed = onDismiss,
+        state = sheetState,
+        halfHeight = true,
         containerColor = MaterialTheme.colorScheme.background,
     ) {
         Column(
@@ -105,7 +106,7 @@ internal fun RoomDaySheet(
                     }
                 }
                 IconButton(onClick = {
-                    scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+                    scope.launch { sheetState.hide() }
                 }) {
                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.action_close))
                 }

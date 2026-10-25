@@ -6,6 +6,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -16,6 +18,8 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -29,6 +33,7 @@ import org.ntust.app.tigerduck.shared.Course
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import androidx.compose.material3.R as M3R
 
 /** The share sheet's Copy link, and its way to the import scanner (#490), as the iOS sheet has them. */
 @RunWith(RobolectricTestRunner::class)
@@ -85,6 +90,59 @@ class ClassTableShareSheetTest {
         composeRule.onNodeWithContentDescription(app.getString(R.string.class_table_import))
             .assertWidthIsAtLeast(48.dp)
             .performClick()
+        composeRule.waitForIdle()
+
+        assertEquals(listOf("dismiss", "scan"), calls)
+    }
+
+    @Test
+    fun `a scan whose close was caught and pulled back doesn't open the scanner at a later Done`() {
+        val calls = mutableListOf<String>()
+        var shown by mutableStateOf(true)
+        composeRule.setContent {
+            if (shown) {
+                ClassTableShareSheet(
+                    share,
+                    labelFor = { it },
+                    onDismiss = { calls += "dismiss"; shown = false },
+                    onScan = { calls += "scan" },
+                )
+            }
+        }
+        composeRule.waitForIdle()
+        composeRule.mainClock.autoAdvance = false
+        composeRule.onNodeWithContentDescription(app.getString(R.string.class_table_import)).performClick()
+        composeRule.mainClock.advanceTimeBy(96)
+        // A finger catches the sheet by its handle on the way down and pulls it back up.
+        composeRule.onNodeWithContentDescription(app.getString(M3R.string.m3c_bottom_sheet_drag_handle_description)).performTouchInput {
+            down(center)
+            repeat(12) { moveBy(Offset(0f, -100f), delayMillis = 16) }
+            // Held still before the lift: no fling, only where it was let go.
+            repeat(8) { moveBy(Offset(0f, 0f), delayMillis = 16) }
+            up()
+        }
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+        assertEquals("it closed anyway", emptyList<String>(), calls)
+
+        composeRule.onNodeWithText(app.getString(R.string.action_done)).performClick()
+        composeRule.waitForIdle()
+        assertEquals(listOf("dismiss"), calls)
+    }
+
+    @Test
+    fun `the scanner button twice before the sheet has closed still opens the scanner once`() {
+        val calls = mutableListOf<String>()
+        composeRule.setContent {
+            ClassTableShareSheet(share, labelFor = { it }, onDismiss = { calls += "dismiss" }, onScan = { calls += "scan" })
+        }
+        composeRule.waitForIdle()
+        composeRule.mainClock.autoAdvance = false
+        val scanner = composeRule.onNodeWithContentDescription(app.getString(R.string.class_table_import))
+        scanner.performSemanticsAction(SemanticsActions.OnClick)
+        composeRule.mainClock.advanceTimeBy(48)
+        scanner.performSemanticsAction(SemanticsActions.OnClick)
+        composeRule.mainClock.autoAdvance = true
         composeRule.waitForIdle()
 
         assertEquals(listOf("dismiss", "scan"), calls)

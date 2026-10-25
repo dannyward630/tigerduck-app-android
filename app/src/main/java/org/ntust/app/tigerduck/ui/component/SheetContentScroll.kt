@@ -13,13 +13,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Velocity
 
 /**
- * The scrolling content of a Material3 bottom sheet, kept inside the sheet. Put [modifier] before
- * the content's `verticalScroll(scroll)`.
+ * The scrolling content of a bottom sheet, kept inside the sheet. Put [modifier] before the
+ * content's `verticalScroll(scroll)`.
  *
- * Material3's sheet takes whatever a downward drag or fling leaves over once the content reaches
- * its top: a hard fling from the bottom scrolled the content up in a moment and then pulled the
- * sheet down with the rest. Here a gesture that starts with the content scrolled away from its top
- * stops at the top, and only the next one, started there, moves the sheet.
+ * A sheet takes whatever a downward drag or fling leaves over once the content reaches its top, as
+ * Material3's does and [DetentSheet] does after it: a hard fling from the bottom scrolled the
+ * content up in a moment and then pulled the sheet down with the rest. Here a gesture that starts
+ * with the content scrolled away from its top stops at the top, and only the next one, started
+ * there, moves the sheet.
  */
 internal class SheetContentScroll(private val scroll: ScrollState) {
 
@@ -37,9 +38,9 @@ internal class SheetContentScroll(private val scroll: ScrollState) {
             }
 
         // Up, left over at the bottom, too: the sheet is at its top by then (an upward fling below
-        // it moves the sheet, not the content), and would only bounce there. While a sheet
-        // animates it takes the next touch outright, so a quick fling back down moved the sheet
-        // and left the content where it was.
+        // it moves the sheet, not the content), and has nowhere to go. Material's sheet bounced
+        // there, and while a sheet animates it takes the next touch outright, so a quick fling
+        // back down moved the sheet and left the content where it was.
         override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
             if (available.y < 0f || !startedAtTop && available.y > 0f) {
                 Velocity(0f, available.y)

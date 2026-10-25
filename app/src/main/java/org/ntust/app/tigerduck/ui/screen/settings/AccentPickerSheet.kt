@@ -15,13 +15,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -37,6 +35,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.ui.component.ColorCodeField
 import org.ntust.app.tigerduck.ui.component.ColorCodeState
+import org.ntust.app.tigerduck.ui.component.DetentSheet
 import org.ntust.app.tigerduck.ui.component.HueSlider
 import org.ntust.app.tigerduck.ui.component.SatValSquare
 
@@ -78,7 +77,6 @@ internal fun AccentPickerSheet(
     onApply: (start: Int, end: Int?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val colors = remember {
         mutableStateListOf(EditedColor.of(initialStart)).apply { if (initialEnd != null) add(EditedColor.of(initialEnd)) }
     }
@@ -101,9 +99,8 @@ internal fun AccentPickerSheet(
         code.show(colors[index].hex)
     }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
+    DetentSheet(
+        onDismissed = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
