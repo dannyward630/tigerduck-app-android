@@ -24,6 +24,7 @@ import org.ntust.app.tigerduck.demo.DemoAccount
 import org.ntust.app.tigerduck.network.MoodleTokenService
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
 import javax.inject.Singleton
+import org.ntust.app.tigerduck.shared.tls.PinnedTls
 
 /** The TigerDuck browser's stores and its sign-in providers. */
 @Module
@@ -44,6 +45,7 @@ object BrowserModule {
         @ApplicationContext context: Context,
         @ApplicationScope scope: CoroutineScope,
         allowlist: BrowserAllowlistStore,
+        tls: PinnedTls,
     ): BrowserDownloads = BrowserDownloads(
         scope = scope,
         transfer = MediaStoreDownloadTransfer(
@@ -53,6 +55,7 @@ object BrowserModule {
             // Synchronous: done inside the download, which a clearing waits for.
             keepCookie = { url, value -> CookieManager.getInstance().setCookie(url, value) },
             userAgent = { runCatching { WebSettings.getDefaultUserAgent(context) }.getOrNull() },
+            client = MediaStoreDownloadTransfer.client(tls),
         ),
     )
 

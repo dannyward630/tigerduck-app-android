@@ -2,12 +2,14 @@ package org.ntust.app.tigerduck.ui.component
 
 import android.app.Application
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -31,12 +33,13 @@ class AppProcessingHostTest {
     val rule = createAndroidComposeRule<ComponentActivity>()
 
     private val processing = AppProcessing()
+    private val questionShowing = MutableStateFlow(false)
     private val line = RuntimeEnvironment.getApplication().getString(R.string.app_processing_keep_open)
 
     @Before
     fun setUp() {
         rule.mainClock.autoAdvance = false
-        rule.setContent { AppProcessingHost(processing) }
+        rule.setContent { AppProcessingHost(processing, questionShowing = questionShowing.collectAsState().value) }
     }
 
     private fun advance(ms: Long) {
@@ -132,5 +135,20 @@ class AppProcessingHostTest {
     private companion object {
         /** A couple of frames: the hold's change reaches the host, which draws without the spinner. */
         const val FRAME_MS = 48L
+    }
+
+    @Test
+    fun `a question the work waits on keeps the spinner down until it is answered`() {
+        val hold = processing.newHold()
+        hold.start()
+        // A pin-mismatch prompt a sign-in's request waits on: the spinner would cover its buttons.
+        questionShowing.value = true
+        advance(PROCESSING_GRACE_MS + 100L)
+        assertFalse(shown())
+
+        questionShowing.value = false
+        advance(100L)
+        assertTrue(shown())
+        hold.stop()
     }
 }

@@ -38,10 +38,11 @@ import org.ntust.app.tigerduck.ui.AppProcessing
  * [processing]'s holds is started. It comes up only once work has run [graceMs], so a wait that
  * ends at once never flashes it, and goes the moment the last hold stops. Collected for as long as
  * it is composed, not only while the app is in front, so coming back from a page opened meanwhile
- * never shows a spinner left from before.
+ * never shows a spinner left from before. While [questionShowing], a question the work may be
+ * waiting on such as a pin-mismatch prompt, it stays down, so nothing covers the answer.
  */
 @Composable
-fun AppProcessingHost(processing: AppProcessing, graceMs: Long = PROCESSING_GRACE_MS) {
+fun AppProcessingHost(processing: AppProcessing, graceMs: Long = PROCESSING_GRACE_MS, questionShowing: Boolean = false) {
     val busy = processing.holds.collectAsState().value > 0
     var graceOver by remember { mutableStateOf(false) }
     LaunchedEffect(busy) {
@@ -51,7 +52,7 @@ fun AppProcessingHost(processing: AppProcessing, graceMs: Long = PROCESSING_GRAC
             graceOver = true
         }
     }
-    if (busy && graceOver) ProcessingOverlay()
+    if (busy && graceOver && !questionShowing) ProcessingOverlay()
 }
 
 /**

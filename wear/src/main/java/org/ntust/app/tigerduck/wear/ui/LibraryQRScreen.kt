@@ -71,6 +71,7 @@ import org.ntust.app.tigerduck.wear.data.LibraryQRController
 import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
 import org.ntust.app.tigerduck.wear.data.WatchLibraryCredentialStore
+import org.ntust.app.tigerduck.wear.data.WatchTlsPins
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentGradient
 import org.ntust.app.tigerduck.wear.ui.theme.LocalScreenPadding
@@ -160,7 +161,9 @@ private fun LoggedInState(username: String?) {
     val qrSidePx = with(density) { qrSideDp.dp.roundToPx() }
 
     val store = remember(context) { WatchLibraryCredentialStore.get(context) }
-    val service = remember(store) { LibraryService(store, isDebugBuild = BuildConfig.DEBUG) }
+    val service = remember(store) {
+        LibraryService(store, isDebugBuild = BuildConfig.DEBUG, tls = WatchTlsPins.get(context).tls)
+    }
     val scope = rememberCoroutineScope()
     val accountChanged = stringResource(R.string.watch_open_phone_to_sync)
     val controller = remember(service, accountChanged) {

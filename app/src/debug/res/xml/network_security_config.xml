@@ -3,7 +3,7 @@
     to main/res/xml/network_security_config.xml except the base-config below
     permits cleartext so the Settings → Developer → API endpoint override
     can point at any LAN dev backend (e.g. http://192.168.X.X:40000/v2)
-    without rejecting at the OS layer. Pinned NTUST hosts further down still
+    without rejecting at the OS layer. The NTUST hosts further down still
     require HTTPS — the base only applies to hosts without a domain-config.
     Release builds use the locked-down main/ variant.
 -->
@@ -11,52 +11,21 @@
     <base-config cleartextTrafficPermitted="true" />
 
     <!--
-        Pinned hosts receive NTUST SSO credentials and a long-lived Moodle wstoken.
-        Pins are SHA-256 of SubjectPublicKeyInfo. Each set includes the leaf SPKI
-        plus the CA SPKIs a renewal may come from as rotation-safe backups.
-
-        Rotation before expiration is MANDATORY — after the expiration date the
-        pins stop enforcing and fall back to system CA trust. Each pin-set has
-        its own date; NetworkSecurityConfigTest fails 45 days before any of
-        them, and PIN_EXPIRY_EPOCH in app/build.gradle.kts is the earliest.
-
-        To re-pin, run (replace host as needed):
-            echo | openssl s_client -servername HOST -connect HOST:443 -showcerts \
-              | openssl x509 -noout -pubkey | openssl pkey -pubin -outform der \
-              | openssl dgst -sha256 -binary | openssl enc -base64
+        Certificate pins are no longer here: TigerSync publishes them as a signed
+        document that can change at runtime, so :shared's PinnedTrustManager
+        applies them on top of this config's system trust, with BuiltInPins as
+        the fallback (TLS pins spec, A9). This file keeps only the cleartext
+        rules and the system-only trust anchors.
     -->
 
-    <!-- *.ntust.edu.tw wildcard leaf + TWCA Secure SSL intermediate, plus the
-         TWCA SSL intermediate (TWCA CYBER Root CA) that NTUST's newer
-         certificates, such as cardsystem's, come from, and as backups the two
-         roots, TWCA Global Root CA and TWCA CYBER Root CA, so a renewal through
-         any intermediate TWCA issues under them keeps working. Leaf cert
-         expires 2027-02-18; pins expire six months later, so the intermediates
-         and roots carry them through its renewal. -->
+    <!-- NTUST's hosts receive SSO credentials and a long-lived Moodle wstoken:
+         HTTPS only. Pinned in code, BuiltInPins' "ntust" set. -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">ntust.edu.tw</domain>
-        <pin-set expiration="2027-08-18">
-            <pin digest="SHA-256">Nz3wUtBXZ+2HPXuSyx4enXs62i/PH4MKtayV9N4X0PE=</pin>
-            <pin digest="SHA-256">9VZ7Yd685RTXsE6rL/puuMbnejYaXwaZasGL7c+Uolc=</pin>
-            <pin digest="SHA-256">BxOmElsPeD54MBOb5h+TPNJnBlsAk6spRc/wLnko0cc=</pin>
-            <pin digest="SHA-256">xES1tmzl1x4bXkDyc4XJXL/SSgW1b3DKwJkvD1DDN5w=</pin>
-            <pin digest="SHA-256">BmALlMAxi7aWfwx3h8yKEDKhecTpXjxXYLMuKQ9/7Js=</pin>
-        </pin-set>
     </domain-config>
 
-    <!-- api.lib.ntust.edu.tw leaf + Sectigo DV E36 intermediate, plus Sectigo
-         Public Server Authentication Root E46 (ECC) and Root R46 (RSA). Every
-         renewal since 2022 changed the key and the issuer, once from ECC to RSA,
-         and Sectigo issues new public TLS certificates only under these two
-         roots, so a renewal through any of their intermediates keeps working.
-         Leaf cert expires 2026-11-04; pins expire six months later. -->
+    <!-- The library: HTTPS only. Pinned in code, BuiltInPins' "library" set. -->
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">api.lib.ntust.edu.tw</domain>
-        <pin-set expiration="2027-05-04">
-            <pin digest="SHA-256">m8Epf0KqJFv9abCXfipePZ79hfOMjddCKxz+RSZIDKY=</pin>
-            <pin digest="SHA-256">ZSagvDzjltLkewXEBuDxIzpW/dpVw1Juvvmd0hhkzdY=</pin>
-            <pin digest="SHA-256">sLVjNUaFYfW7n6EtgBeEpjOlcnBdNPMrZDRF36iwBdE=</pin>
-            <pin digest="SHA-256">Douxi77vs4G+Ib/BogbTFymEYq0QSFXwSgVCaZcI09Q=</pin>
-        </pin-set>
     </domain-config>
 </network-security-config>

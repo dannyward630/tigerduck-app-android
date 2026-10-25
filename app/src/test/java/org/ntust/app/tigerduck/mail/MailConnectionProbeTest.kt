@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 import java.io.IOException
@@ -13,7 +14,10 @@ import java.net.ConnectException
 import java.net.ServerSocket
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
+import java.security.Security
 import java.util.UUID
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLSocket
 
 /**
  * Developer -> Email's "Test connection": that each stage is reported on its own, that the
@@ -26,10 +30,31 @@ import java.util.UUID
 class MailConnectionProbeTest {
     @get:Rule val server = MailTestServer()
 
+    companion object {
+        /**
+         * Robolectric tests run earlier in this JVM leave Conscrypt first among the security
+         * providers, and the JDK's TLS reads its EC groups once, from the first provider that
+         * has them: Conscrypt can't describe the binary-field curves, so a first JDK TLS socket
+         * made after it fails for the rest of the run, whichever test makes it. Which test that
+         * is depends on the run's class order, so it is made here, with the JDK's own providers.
+         */
+        @BeforeClass
+        @JvmStatic
+        fun startJdkTlsWithoutConscrypt() {
+            val conscrypt = Security.getProviders().withIndex().filter { it.value.name.startsWith("Conscrypt") }
+            conscrypt.forEach { Security.removeProvider(it.value.name) }
+            try {
+                (SSLContext.getDefault().socketFactory.createSocket() as SSLSocket).close()
+            } finally {
+                conscrypt.forEach { (index, provider) -> Security.insertProviderAt(provider, index + 1) }
+            }
+        }
+    }
+
     private val store = InMemoryMailDevServerStore()
     private val site = MailSite(store)
     private val credentials = InMemoryCredentialStore()
-    private val probe = SocketMailConnectionProbe(credentials, site)
+    private val probe = SocketMailConnectionProbe(credentials, site, javax.net.ssl.SSLSocketFactory.getDefault() as javax.net.ssl.SSLSocketFactory)
 
     /**
      * The invented third-party account the override points at: not the school's, by construction.

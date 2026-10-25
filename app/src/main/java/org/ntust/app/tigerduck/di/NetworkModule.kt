@@ -12,9 +12,12 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
 import org.ntust.app.tigerduck.network.ApiVersionInterceptor
+import org.ntust.app.tigerduck.network.tls.PinManager
 import org.ntust.app.tigerduck.push.OwedUnregister
 import org.ntust.app.tigerduck.push.PushIdentity
 import org.ntust.app.tigerduck.shared.LibraryService
+import org.ntust.app.tigerduck.shared.tls.PinnedTls
+import org.ntust.app.tigerduck.shared.tls.pinnedClientBuilder
 import org.ntust.app.tigerduck.ui.component.ServerFailureInterceptor
 import org.ntust.app.tigerduck.ui.component.ServerKind
 import java.util.concurrent.TimeUnit
@@ -30,13 +33,22 @@ object NetworkModule {
      * the NTUST / Moodle / library traffic that shares this client is
      * unaffected.
      */
+    /**
+     * The trust every HTTPS client of the app's uses, the library's and School Mail's among
+     * them: the platform's system trust with [PinManager]'s pins on top (TLS pins spec, A9).
+     */
+    @Provides
+    @Singleton
+    fun providePinnedTls(pins: PinManager): PinnedTls = PinnedTls.forPlatform(pins.state, pins::onMismatch, pins)
+
     @Provides
     @Singleton
     fun provideOkHttpClient(
         prefs: AppPreferences,
         demoMode: DemoModeInterceptor,
+        tls: PinnedTls,
     ): OkHttpClient =
-        OkHttpClient.Builder()
+        pinnedClientBuilder(tls)
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
@@ -58,10 +70,12 @@ object NetworkModule {
     fun provideLibraryService(
         credentials: CredentialManager,
         demoMode: DemoModeInterceptor,
+        tls: PinnedTls,
     ): LibraryService = LibraryService(
         credentials,
         isDebugBuild = BuildConfig.DEBUG,
         extraInterceptors = libraryInterceptors(demoMode, debug = BuildConfig.DEBUG),
+        tls = tls,
     )
 
     /**

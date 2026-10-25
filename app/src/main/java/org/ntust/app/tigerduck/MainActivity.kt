@@ -52,6 +52,7 @@ import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.network.ApiVersionGate
 import org.ntust.app.tigerduck.network.MoodleTokenService
 import org.ntust.app.tigerduck.network.NetworkChecker
+import org.ntust.app.tigerduck.network.tls.PinManager
 import org.ntust.app.tigerduck.notification.BackgroundSyncWorker
 import org.ntust.app.tigerduck.push.FcmBootstrap
 import org.ntust.app.tigerduck.push.PushApiClient
@@ -65,6 +66,7 @@ import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
 import org.ntust.app.tigerduck.ui.BrowserPreference
 import org.ntust.app.tigerduck.ui.component.AppProcessingHost
+import org.ntust.app.tigerduck.ui.component.PinMismatchHost
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptController
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptHost
@@ -131,6 +133,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var appProcessing: AppProcessing
+
+    @Inject
+    lateinit var pinManager: PinManager
 
     @Inject
     lateinit var networkChecker: NetworkChecker
@@ -352,13 +357,14 @@ class MainActivity : AppCompatActivity() {
                         val needsReset by appState.needsUserReset.collectAsStateWithLifecycle()
                         val apiRetired by ApiVersionGate.isRetired.collectAsStateWithLifecycle()
                         val processingHolds by appProcessing.holds.collectAsStateWithLifecycle()
+                        val pinPrompt by pinManager.prompts.pending.collectAsStateWithLifecycle()
                         ReviewPromptHost(
                             reviewPrompt = reviewPrompt,
                             inAppReview = inAppReview,
                             otherPromptShowing = whatsNewFlow.value != null || updatePending != null ||
                                 pendingPrompt != null || popupPending != null || permissionWarning ||
                                 needsReset || apiRetired || appState.ntustSignInSheetRequested ||
-                                processingHolds > 0,
+                                processingHolds > 0 || pinPrompt != null,
                         )
 
                         // Operator-issued popup: rendered over whatever screen
@@ -366,11 +372,15 @@ class MainActivity : AppCompatActivity() {
                         // Coordinator's dedupe set short-circuits replays.
                         ServerPushPopupHost(serverPushPopupCoordinator)
 
+                        // A school site's certificate stopped matching its pins (TLS pins
+                        // spec, A6): asked here, in the foreground, whichever request met it.
+                        PinMismatchHost(pinManager.prompts)
+
                         // "Processing… Please don't close the app.": work the
                         // user waits on, such as the sign-in a Moodle page
                         // opened in the browser waits for. Last, so it comes
                         // up over anything above.
-                        AppProcessingHost(appProcessing)
+                        AppProcessingHost(appProcessing, questionShowing = pinPrompt != null)
                     }
                 }
             }
