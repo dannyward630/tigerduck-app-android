@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
@@ -17,6 +18,7 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import org.junit.Assert.assertEquals
@@ -126,6 +128,24 @@ class ClassTableShareSheetTest {
         composeRule.onNodeWithText(app.getString(R.string.action_done)).performClick()
         composeRule.waitForIdle()
         assertEquals(listOf("dismiss"), calls)
+    }
+
+    @Test
+    fun `the scanner button twice before the sheet has closed still opens the scanner once`() {
+        val calls = mutableListOf<String>()
+        composeRule.setContent {
+            ClassTableShareSheet(share, labelFor = { it }, onDismiss = { calls += "dismiss" }, onScan = { calls += "scan" })
+        }
+        composeRule.waitForIdle()
+        composeRule.mainClock.autoAdvance = false
+        val scanner = composeRule.onNodeWithContentDescription(app.getString(R.string.class_table_import))
+        scanner.performSemanticsAction(SemanticsActions.OnClick)
+        composeRule.mainClock.advanceTimeBy(48)
+        scanner.performSemanticsAction(SemanticsActions.OnClick)
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+
+        assertEquals(listOf("dismiss", "scan"), calls)
     }
 
     @Test

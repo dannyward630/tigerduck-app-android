@@ -98,11 +98,12 @@ internal object DetentSheetMotion {
     /**
      * How long the sheet takes to get where it's going. Material3's sheet settles with a spring
      * (damping 0.9, stiffness 700) in about 250 ms, and with a fling behind it, past its top and
-     * back. This one takes longer and eases out on a curve that never passes its end, and it is done
-     * when its time is up: a spring's tail, still moving by fractions of a pixel long after it looks
-     * still, would leave the sheet taking every tap meant for what's on it as a grab of its own.
+     * back. This one takes a little longer and eases out on a curve that never passes its end, and
+     * it is done when its time is up: a spring's tail, still moving by fractions of a pixel long
+     * after it looks still, would leave the sheet taking every tap meant for what's on it as a grab
+     * of its own.
      */
-    const val DURATION_MILLIS = 400
+    const val DURATION_MILLIS = 300
 
     /** A fling at least this fast moves the sheet on to the next height. Material's is 125 dp/s. */
     val VelocityThreshold: Dp = 80.dp

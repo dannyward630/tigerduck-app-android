@@ -130,7 +130,10 @@ internal fun ClassTableShareSheet(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = {
+                    onClick = onClick@{
+                        // Once: a second request would cancel the first's close, whose clean-up
+                        // would then clear the flag for both.
+                        if (scanOnceClosed) return@onClick
                         scanOnceClosed = true
                         scope.launch {
                             try {
