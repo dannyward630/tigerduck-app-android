@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.push
 
-import okhttp3.ResponseBody
-import retrofit2.Call
+import okhttp3.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
@@ -13,16 +12,16 @@ import retrofit2.http.Query
 internal interface SyncApi {
 
     @GET("sync/revision")
-    fun revision(@Header("Authorization") auth: String): Call<ResponseBody>
+    fun revision(@Header("Authorization") auth: String): Call
 
     @GET("sync")
     fun changes(
         @Header("Authorization") auth: String,
         @Query("since_revision", encoded = true) sinceRevision: Long,
-    ): Call<ResponseBody>
+    ): Call
 
     @GET("sync/full")
-    fun full(@Header("Authorization") auth: String): Call<ResponseBody>
+    fun full(@Header("Authorization") auth: String): Call
 }
 
 /** The backend's per-namespace settings documents, relative to its base (`…/v3`), for [SettingsDocumentApiClient]. */
@@ -33,7 +32,7 @@ internal interface SettingsDocumentApi {
     fun document(
         @Header("Authorization") auth: String,
         @Path("namespace", encoded = true) namespace: String,
-    ): Call<ResponseBody>
+    ): Call
 
     /** [payload] is `schema_version`, `document` and `base_revision`, left out when null. */
     @PUT("settings/{namespace}")
@@ -41,5 +40,5 @@ internal interface SettingsDocumentApi {
         @Header("Authorization") auth: String,
         @Path("namespace", encoded = true) namespace: String,
         @Body payload: Map<String, Any?>,
-    ): Call<ResponseBody>
+    ): Call
 }

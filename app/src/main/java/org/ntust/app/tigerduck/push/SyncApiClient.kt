@@ -10,7 +10,6 @@ import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.BackendServices
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.ntust.app.tigerduck.network.text
 import org.ntust.app.tigerduck.shared.Course
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -151,12 +150,13 @@ class SyncApiClient @Inject constructor(
 
     suspend fun fetchRevision(): Long = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
-        val response = api.at(baseUrl).revision(authHeader).execute()
-        if (!response.isSuccessful) {
-            throw PushApiException("sync/revision failed: HTTP ${response.code()}", response.code())
+        api.at(baseUrl).revision(authHeader).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw PushApiException("sync/revision failed: HTTP ${response.code}", response.code)
+            }
+            val json = JSONObject(response.body.string())
+            json.optLong("revision", 0)
         }
-        val json = JSONObject(response.text())
-        json.optLong("revision", 0)
     }
 
     /**
@@ -166,23 +166,25 @@ class SyncApiClient @Inject constructor(
      */
     suspend fun fetchChanges(sinceRevision: Long): SyncChangesPage? = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
-        val response = api.at(baseUrl).changes(authHeader, sinceRevision).execute()
-        if (response.code() == HTTP_GONE) return@withContext null
-        if (!response.isSuccessful) {
-            throw PushApiException("sync changes failed: HTTP ${response.code()}", response.code())
+        api.at(baseUrl).changes(authHeader, sinceRevision).execute().use { response ->
+            if (response.code == HTTP_GONE) return@withContext null
+            if (!response.isSuccessful) {
+                throw PushApiException("sync changes failed: HTTP ${response.code}", response.code)
+            }
+            parseChangesPage(JSONObject(response.body.string()))
         }
-        parseChangesPage(JSONObject(response.text()))
     }
 
     suspend fun fetchFullSync(): BackendSyncResult = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
         val fetchedAtMs = System.currentTimeMillis()
-        val response = api.at(baseUrl).full(authHeader).execute()
-        if (!response.isSuccessful) {
-            throw PushApiException("sync/full failed: HTTP ${response.code()}")
+        api.at(baseUrl).full(authHeader).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw PushApiException("sync/full failed: HTTP ${response.code}")
+            }
+            val json = JSONObject(response.body.string())
+            parseFullSync(json).copy(fetchedAtMs = fetchedAtMs)
         }
-        val json = JSONObject(response.text())
-        parseFullSync(json).copy(fetchedAtMs = fetchedAtMs)
     }
 
     private fun parseFullSync(json: JSONObject): BackendSyncResult {

@@ -1,8 +1,7 @@
 package org.ntust.app.tigerduck.auth
 
+import okhttp3.Call
 import okhttp3.RequestBody
-import okhttp3.ResponseBody
-import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST
 
@@ -16,5 +15,5 @@ internal interface AuthApi {
 
     /** [body] is the login JSON the manager writes, `moodle_private_token` left out when null. */
     @POST("auth/login")
-    fun login(@Body body: RequestBody): Call<ResponseBody>
+    fun login(@Body body: RequestBody): Call
 }

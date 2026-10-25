@@ -29,7 +29,6 @@ import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.BackendServices
 import org.ntust.app.tigerduck.network.canonicalBackend
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.ntust.app.tigerduck.network.text
 import org.ntust.app.tigerduck.push.OwedUnregister
 import org.ntust.app.tigerduck.push.currentDeviceModel
 import org.ntust.app.tigerduck.util.logSummary
@@ -444,20 +443,21 @@ class AuthTokenManager(
             })
         }
         val body = json.toString().toRequestBody(jsonType)
-        val response = signIns.at(issuer).login(body).execute()
-        if (!response.isSuccessful) throw AuthException("login failed: ${response.code()}", response.code())
-        val result = JSONObject(response.text())
-        val accessToken = result.getString("access_token")
-        val refreshToken = result.getString("refresh_token")
-        val expiresIn = result.getInt("expires_in")
-        val expiresAt = now() + expiresIn * 1000L
-        if (!saveIfSignedIn(signInGeneration, accessToken, refreshToken, expiresAt, issuer, studentId)) {
-            throw AuthException("signed out during login")
+        return signIns.at(issuer).login(body).execute().use { response ->
+            if (!response.isSuccessful) throw AuthException("login failed: ${response.code}", response.code)
+            val result = JSONObject(response.body.string())
+            val accessToken = result.getString("access_token")
+            val refreshToken = result.getString("refresh_token")
+            val expiresIn = result.getInt("expires_in")
+            val expiresAt = now() + expiresIn * 1000L
+            if (!saveIfSignedIn(signInGeneration, accessToken, refreshToken, expiresAt, issuer, studentId)) {
+                throw AuthException("signed out during login")
+            }
+            LoginResult(
+                accessToken = accessToken,
+                deviceId = result.getString("device_id"),
+            )
         }
-        return LoginResult(
-            accessToken = accessToken,
-            deviceId = result.getString("device_id"),
-        )
     }
 
     /**

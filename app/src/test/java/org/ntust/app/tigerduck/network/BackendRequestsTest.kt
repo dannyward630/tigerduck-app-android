@@ -18,13 +18,12 @@ import org.ntust.app.tigerduck.push.HolidayOverrideRequest
 import org.ntust.app.tigerduck.push.PushApi
 import org.ntust.app.tigerduck.push.SettingsDocumentApi
 import org.ntust.app.tigerduck.push.SyncApi
-import retrofit2.Call
 
 /**
  * The backend services make the requests the clients wrote by hand before
  * Retrofit, byte for byte: method, URL, headers, the body's type, length and
  * bytes. Each expectation below is built as the client built it then.
- * Nothing is sent: a Retrofit call makes its request without executing.
+ * Nothing is sent: the services hand their calls back unsent.
  */
 class BackendRequestsTest {
 
@@ -38,7 +37,7 @@ class BackendRequestsTest {
 
     private fun json(value: Any) = gson.toJson(value).toRequestBody(jsonType)
 
-    private fun assertSameRequest(expected: Request, call: Call<*>) {
+    private fun assertSameRequest(expected: Request, call: okhttp3.Call) {
         val actual = call.request()
         assertEquals(expected.method, actual.method)
         assertEquals(expected.url.toString(), actual.url.toString())

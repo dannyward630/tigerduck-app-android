@@ -5,8 +5,9 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.ResponseBody
+import retrofit2.Call
+import retrofit2.CallAdapter
 import retrofit2.Converter
-import retrofit2.Response
 import retrofit2.Retrofit
 import java.lang.reflect.Type
 import java.util.concurrent.ConcurrentHashMap
@@ -18,7 +19,9 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * Every service sends through [calls], the client the call went through
  * before Retrofit, with its pins, interceptors and timeouts: a Retrofit given
- * no client would make one of its own, unpinned.
+ * no client would make one of its own, unpinned. A service method gives back
+ * the OkHttp call unsent ([OkHttpCalls]); the client executes it and reads
+ * the response as it always has.
  */
 internal class BackendServices<T : Any>(
     private val service: Class<T>,
@@ -34,17 +37,37 @@ internal class BackendServices<T : Any>(
             .baseUrl("${base.trimEnd('/')}/")
             .callFactory(calls)
             .addConverterFactory(JsonBodies)
+            .addCallAdapterFactory(OkHttpCalls(calls))
             .build()
             .create(service)
     }
 }
 
 /**
+ * Gives a service method's request back as an OkHttp [okhttp3.Call] of
+ * [calls], unsent: the client executes it and reads the [okhttp3.Response]
+ * as it always has, its status before its body and its body only where it
+ * needs it. Retrofit's own `Call.execute()` reads every body first, a
+ * failure's too, so a reply cut short would throw where the client had its
+ * status, and a landed upload whose answer can't be read would fail.
+ */
+private class OkHttpCalls(private val calls: okhttp3.Call.Factory) : CallAdapter.Factory() {
+    override fun get(returnType: Type, annotations: Array<out Annotation>, retrofit: Retrofit): CallAdapter<*, *>? {
+        if (getRawType(returnType) != okhttp3.Call::class.java) return null
+        return object : CallAdapter<ResponseBody, okhttp3.Call> {
+            override fun responseType(): Type = ResponseBody::class.java
+
+            // Retrofit makes the request; the call that sends it is the client's own.
+            override fun adapt(call: Call<ResponseBody>): okhttp3.Call = calls.newCall(call.request())
+        }
+    }
+}
+
+/**
  * Request bodies as the clients made them before Retrofit: plain [Gson]
  * (nulls left out), as `application/json; charset=utf-8`. A [RequestBody]
- * parameter goes as it is, through Retrofit's own converter. Answers are
- * read as they come ([ResponseBody], or nothing for [Unit]) and parsed by
- * the clients themselves, with the messages and status codes callers read.
+ * parameter goes as it is, through Retrofit's own converter. Answers are the
+ * clients' own to read ([OkHttpCalls]).
  */
 internal object JsonBodies : Converter.Factory() {
     private val gson = Gson()
@@ -64,6 +87,3 @@ internal object JsonBodies : Converter.Factory() {
  * plain `@DELETE` would send none, and so no `Content-Length` either.
  */
 internal val EmptyBody: RequestBody = ByteArray(0).toRequestBody()
-
-/** The answer's body as text, a success's or an error's alike, as OkHttp's `response.body.string()` read it. */
-internal fun Response<ResponseBody>.text(): String = (if (isSuccessful) body() else errorBody())?.string().orEmpty()

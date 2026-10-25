@@ -1,9 +1,8 @@
 package org.ntust.app.tigerduck.network
 
+import okhttp3.Call
 import okhttp3.RequestBody
-import okhttp3.ResponseBody
 import org.ntust.app.tigerduck.network.model.SubscriptionRuleRequest
-import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.HTTP
@@ -22,7 +21,7 @@ import retrofit2.http.Query
 internal interface BulletinApi {
 
     @GET("bulletins/taxonomy")
-    fun taxonomy(): Call<ResponseBody>
+    fun taxonomy(): Call
 
     /** [includeDeleted] is `true`, or null to leave it out. */
     @GET("bulletins")
@@ -30,28 +29,28 @@ internal interface BulletinApi {
         @Query("limit") limit: Int,
         @Query("cursor") cursor: Int?,
         @Query("include_deleted") includeDeleted: String?,
-    ): Call<ResponseBody>
+    ): Call
 
     @GET("bulletins/{id}")
-    fun bulletin(@Path("id", encoded = true) id: Int): Call<ResponseBody>
+    fun bulletin(@Path("id", encoded = true) id: Int): Call
 
     @GET("bulletin-subscriptions")
-    fun subscriptions(@Header("Authorization") auth: String): Call<ResponseBody>
+    fun subscriptions(@Header("Authorization") auth: String): Call
 
     @POST("bulletin-subscriptions")
-    fun newSubscription(@Header("Authorization") auth: String, @Body rule: SubscriptionRuleRequest): Call<ResponseBody>
+    fun newSubscription(@Header("Authorization") auth: String, @Body rule: SubscriptionRuleRequest): Call
 
     @PATCH("bulletin-subscriptions/{id}")
     fun subscription(
         @Header("Authorization") auth: String,
         @Path("id", encoded = true) id: Int,
         @Body rule: SubscriptionRuleRequest,
-    ): Call<ResponseBody>
+    ): Call
 
     @HTTP(method = "DELETE", path = "bulletin-subscriptions/{id}", hasBody = true)
     fun removeSubscription(
         @Header("Authorization") auth: String,
         @Path("id", encoded = true) id: Int,
         @Body empty: RequestBody,
-    ): Call<Unit>
+    ): Call
 }

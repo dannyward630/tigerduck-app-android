@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.academic
 
-import okhttp3.ResponseBody
-import retrofit2.Call
+import okhttp3.Call
 import retrofit2.http.GET
 import retrofit2.http.Header
 
@@ -13,5 +12,5 @@ internal interface AcademicCalendarApi {
     fun semesters(
         @Header("Accept") accept: String,
         @Header("If-None-Match") etag: String?,
-    ): Call<ResponseBody>
+    ): Call
 }

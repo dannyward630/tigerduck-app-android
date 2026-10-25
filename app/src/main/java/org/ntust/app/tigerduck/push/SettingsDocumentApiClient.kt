@@ -12,7 +12,6 @@ import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.BackendServices
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.ntust.app.tigerduck.network.text
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -106,16 +105,17 @@ class SettingsDocumentApiClient @Inject constructor(
     suspend fun <T> read(namespace: String, type: Class<T>): SettingsDocumentEnvelope<T>? =
         withContext(Dispatchers.IO) {
             val service = api.at(baseUrl)
-            val response = service.document(authHeader(), namespace).execute()
-            if (response.code() == 404) return@withContext null
-            val text = response.text()
-            if (!response.isSuccessful) {
-                throw SettingsDocumentApiException(
-                    "read $namespace failed: HTTP ${response.code()} $text"
-                )
+            service.document(authHeader(), namespace).execute().use { response ->
+                if (response.code == 404) return@use null
+                val text = response.body.string()
+                if (!response.isSuccessful) {
+                    throw SettingsDocumentApiException(
+                        "read $namespace failed: HTTP ${response.code} $text"
+                    )
+                }
+                if (text.isBlank()) throw SettingsDocumentApiException("read $namespace: empty body")
+                parseEnvelope(text, type, gson::fromJson)
             }
-            if (text.isBlank()) throw SettingsDocumentApiException("read $namespace: empty body")
-            parseEnvelope(text, type, gson::fromJson)
         }
 
     /** Reified convenience for [write] — see that overload for behaviour. */
@@ -158,20 +158,21 @@ class SettingsDocumentApiClient @Inject constructor(
         val service = api.at(baseUrl)
         val call = service.putDocument(authHeader(), namespace, payload)
         if (!isCurrent()) return@withContext SettingsWriteResult.Abandoned
-        val response = call.execute()
-        val text = response.text()
-        if (response.code() == 409) {
-            if (text.isBlank()) throw SettingsDocumentApiException("write $namespace: empty conflict body")
-            val serverJson = extractConflictServerJson(text, namespace)
-            return@withContext SettingsWriteResult.Conflict(parseEnvelope(serverJson, type, gson::fromJson))
+        call.execute().use { response ->
+            val text = response.body.string()
+            if (response.code == 409) {
+                if (text.isBlank()) throw SettingsDocumentApiException("write $namespace: empty conflict body")
+                val serverJson = extractConflictServerJson(text, namespace)
+                return@use SettingsWriteResult.Conflict(parseEnvelope(serverJson, type, gson::fromJson))
+            }
+            if (!response.isSuccessful) {
+                throw SettingsDocumentApiException(
+                    "write $namespace failed: HTTP ${response.code} $text"
+                )
+            }
+            if (text.isBlank()) throw SettingsDocumentApiException("write $namespace: empty body")
+            SettingsWriteResult.Written(parseEnvelope(text, type, gson::fromJson).revision)
         }
-        if (!response.isSuccessful) {
-            throw SettingsDocumentApiException(
-                "write $namespace failed: HTTP ${response.code()} $text"
-            )
-        }
-        if (text.isBlank()) throw SettingsDocumentApiException("write $namespace: empty body")
-        SettingsWriteResult.Written(parseEnvelope(text, type, gson::fromJson).revision)
     }
 }
 

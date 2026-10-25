@@ -22,7 +22,6 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.network.BackendServices
 import org.ntust.app.tigerduck.network.model.AcademicCalendarDto
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.ntust.app.tigerduck.network.text
 import org.ntust.app.tigerduck.ui.component.ServerStatusTracker
 import org.ntust.app.tigerduck.util.logSummary
 import javax.inject.Inject
@@ -110,34 +109,35 @@ class AcademicCalendarStore @Inject constructor(
             val call = api.at(base).semesters("application/json", prefs.getString(KEY_ETAG, null))
 
             runCatching {
-                val response = call.execute()
-                // This GET carries no account and runs on every app open
-                // whatever the sync setting is, which makes it the one
-                // signal that can tell the status dot whether the backend
-                // is alive for a device that does not sync. 304 counts as
-                // reachable — it is a served answer, just an empty one.
-                ServerStatusTracker.noteBackendReachable(
-                    response.isSuccessful || response.code() == HTTP_NOT_MODIFIED
-                )
-                when {
-                    response.code() == HTTP_NOT_MODIFIED -> true
-                    response.isSuccessful -> {
-                        val body = response.text()
-                        val parsed = AcademicCalendar.from(
-                            gson.fromJson(body, AcademicCalendarDto::class.java)
-                        )
-                        // Read before the write below: a first read loads
-                        // the payload from disk and would see the new one.
-                        val previous = _calendar.value
-                        prefs.edit()
-                            .putString(KEY_PAYLOAD, body)
-                            .putString(KEY_ETAG, response.headers()["ETag"])
-                            .apply()
-                        _calendar.value = parsed
-                        if (parsed != previous) _changes.tryEmit(Unit)
-                        true
+                call.execute().use { response ->
+                    // This GET carries no account and runs on every app open
+                    // whatever the sync setting is, which makes it the one
+                    // signal that can tell the status dot whether the backend
+                    // is alive for a device that does not sync. 304 counts as
+                    // reachable — it is a served answer, just an empty one.
+                    ServerStatusTracker.noteBackendReachable(
+                        response.isSuccessful || response.code == HTTP_NOT_MODIFIED
+                    )
+                    when {
+                        response.code == HTTP_NOT_MODIFIED -> true
+                        response.isSuccessful -> {
+                            val body = response.body.string()
+                            val parsed = AcademicCalendar.from(
+                                gson.fromJson(body, AcademicCalendarDto::class.java)
+                            )
+                            // Read before the write below: a first read loads
+                            // the payload from disk and would see the new one.
+                            val previous = _calendar.value
+                            prefs.edit()
+                                .putString(KEY_PAYLOAD, body)
+                                .putString(KEY_ETAG, response.header("ETag"))
+                                .apply()
+                            _calendar.value = parsed
+                            if (parsed != previous) _changes.tryEmit(Unit)
+                            true
+                        }
+                        else -> false
                     }
-                    else -> false
                 }
             }.getOrElse { e ->
                 if (e is CancellationException) throw e
