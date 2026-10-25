@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,7 +23,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.debug.OutsideApp
 import org.ntust.app.tigerduck.debug.PretendMissingApps
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
@@ -40,7 +44,7 @@ fun OutsideAppsDebugScreen(onBack: () -> Unit) {
                 title = { Text("Missing apps") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
             )
@@ -59,15 +63,23 @@ fun OutsideAppsDebugScreen(onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
             )
             OutsideApp.entries.forEach { app ->
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                val checked = app in missing
+                // The whole row is the switch, so TalkBack reads which app with its state.
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .toggleable(
+                            value = checked,
+                            role = Role.Switch,
+                            onValueChange = { PretendMissingApps.setMissing(app, it) },
+                        ),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Column(Modifier.weight(1f)) {
                         Text(app.missing, style = MaterialTheme.typography.titleSmall)
                         Text(app.detail, style = MaterialTheme.typography.bodySmall)
                     }
-                    Switch(
-                        checked = app in missing,
-                        onCheckedChange = { PretendMissingApps.setMissing(app, it) },
-                    )
+                    Switch(checked = checked, onCheckedChange = null)
                 }
             }
         }
