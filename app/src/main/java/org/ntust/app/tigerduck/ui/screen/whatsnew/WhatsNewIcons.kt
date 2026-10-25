@@ -3,11 +3,13 @@ package org.ntust.app.tigerduck.ui.screen.whatsnew
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Campaign
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Notifications
@@ -33,6 +35,7 @@ object WhatsNewIcons {
     private val byName: Map<String, ImageVector> = mapOf(
         "announcement" to Icons.Filled.Campaign,
         "calendar" to Icons.Filled.CalendarMonth,
+        "classroom" to Icons.Filled.Business,
         "classtable" to Icons.Filled.TableChart,
         "grades" to Icons.Filled.School,
         "language" to Icons.Filled.Language,
@@ -49,6 +52,7 @@ object WhatsNewIcons {
         "speed" to Icons.Filled.Speed,
         "sync" to Icons.Filled.Sync,
         "cloud" to Icons.Filled.CloudSync,
+        "textsize" to Icons.Filled.FormatSize,
         "theme" to Icons.Filled.Palette,
         "widget" to Icons.Filled.Widgets,
     )
@@ -57,4 +61,7 @@ object WhatsNewIcons {
     val fallback: ImageVector = Icons.Filled.AutoAwesome
 
     fun named(name: String?): ImageVector = name?.let { byName[it.lowercase()] } ?: fallback
+
+    /** Whether [name] has a glyph of its own, rather than landing on [fallback]. */
+    fun knows(name: String): Boolean = name.lowercase() in byName
 }
