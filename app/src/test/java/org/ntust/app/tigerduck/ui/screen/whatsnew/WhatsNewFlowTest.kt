@@ -3,7 +3,6 @@ package org.ntust.app.tigerduck.ui.screen.whatsnew
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import androidx.compose.material.icons.filled.Info
 import org.ntust.app.tigerduck.data.model.WhatsNewSummary
 import org.ntust.app.tigerduck.data.model.WhatsNewSummaryItem
 import org.ntust.app.tigerduck.update.WhatsNewGate.Plan
@@ -23,28 +22,6 @@ class WhatsNewFlowTest {
         title = "What's new",
         items = listOf(WhatsNewSummaryItem(title = "Row", body = null, icon = null)),
     )
-
-    @Test
-    fun `a page kept from replays shows after an upgrade but not from Settings`() {
-        val catalog = mapOf(
-            29 to listOf(
-                WhatsNewPage.Feature(
-                    id = "where-again",
-                    visual = WhatsNewVisual.Icon(androidx.compose.material.icons.Icons.Filled.Info),
-                    title = WhatsNewText(en = "Again?", zhHant = "Again?"),
-                    body = WhatsNewText(en = "In Settings.", zhHant = "In Settings."),
-                    showsOnReplay = false,
-                ),
-                page("c"),
-            ),
-        )
-
-        val upgrade = WhatsNewFlow.from(Plan.Show(listOf(29), summaryVersion = 29, replay = false), catalog, mapOf(29 to summary))
-        val replay = WhatsNewFlow.from(Plan.Show(listOf(29), summaryVersion = 29, replay = true), catalog, mapOf(29 to summary))
-
-        assertEquals(listOf("where-again", "c"), upgrade?.pageIds)
-        assertEquals(listOf("c"), replay?.pageIds)
-    }
 
     @Test
     fun `drops pages that do not apply after an upgrade`() {

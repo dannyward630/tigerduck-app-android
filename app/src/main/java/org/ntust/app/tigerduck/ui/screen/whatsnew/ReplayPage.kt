@@ -44,8 +44,6 @@ import org.ntust.app.tigerduck.R
  */
 internal fun replayPage() = WhatsNewPage.Feature(
     id = "whats-new-replay",
-    // Opened from Settings › What's new, it would be telling the user where they are.
-    showsOnReplay = false,
     visual = WhatsNewVisual.Custom { animate -> ReplayDemo(animate) },
     title = WhatsNewText(
         en = "Want to see these again?",

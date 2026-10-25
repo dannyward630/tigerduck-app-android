@@ -86,9 +86,6 @@ sealed class WhatsNewPage {
     abstract val id: String
     abstract val isApplicable: () -> Boolean
 
-    /** Whether the page shows when Settings › What's new replays its version. */
-    open val showsOnReplay: Boolean get() = true
-
     /** Demo + title + body. The primary button advances. */
     class Feature(
         override val id: String,
@@ -96,7 +93,6 @@ sealed class WhatsNewPage {
         val title: WhatsNewText,
         val body: WhatsNewText,
         override val isApplicable: () -> Boolean = { true },
-        override val showsOnReplay: Boolean = true,
     ) : WhatsNewPage()
 
     /**

@@ -42,7 +42,6 @@ class WhatsNewFlow(
             val pages = WhatsNewGate.collectPages(plan.pageVersions, catalog) { page ->
                 when {
                     restoredPageIds != null -> page.id in restoredPageIds
-                    plan.replay && !page.showsOnReplay -> false
                     else -> page.isApplicable()
                 }
             }
