@@ -42,8 +42,8 @@ import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 
 /**
  * 其他設定, one card per group: 顯示與文字大小 (課程字體大小 is on its page),
- * 反轉滑條方向, 螢幕翻轉, 震動, API 端點, 顏色主題 with 重新分配課表顏色, Moodle 教材 (the downloaded Moodle
- * files' size and clearing them), 使用分析. iOS has the same page without 震動,
+ * 反轉滑條方向, 螢幕翻轉, 震動, API 端點, 顏色主題 with 重新分配課表顏色, 已下載的檔案 (on its page),
+ * Moodle 教材 (the downloaded Moodle files' size and clearing them), 使用分析. iOS has the same page without 震動,
  * 螢幕翻轉, 顏色主題 and 使用分析, which it does not offer.
  * The library switches live on [LibrarySettingsScreen], the other entry in
  * Settings' 其他設定 section, and the links out on [AboutOthersScreen].
@@ -55,6 +55,7 @@ fun OtherSettingsScreen(
     onNavigateToApiEndpoint: () -> Unit,
     onNavigateToVibration: () -> Unit,
     onNavigateToDisplaySize: () -> Unit,
+    onNavigateToDownloadedFiles: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
     moodleFiles: MoodleFilesCacheViewModel = hiltViewModel(),
 ) {
@@ -193,6 +194,16 @@ fun OtherSettingsScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                             )
                         }
+                    }
+                }
+            }
+
+            item { Spacer(Modifier.height(24.dp)) }
+
+            item {
+                ContentCard {
+                    SettingsLinkRow(stringResource(R.string.settings_downloaded_files_title)) {
+                        onNavigateToDownloadedFiles()
                     }
                 }
             }

@@ -100,6 +100,7 @@ import org.ntust.app.tigerduck.ui.screen.settings.AssignmentReminderSettingsScre
 import org.ntust.app.tigerduck.ui.screen.settings.ClassReminderSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.CourseNameSizeSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.DisplaySizeSettingsScreen
+import org.ntust.app.tigerduck.ui.screen.settings.DownloadedFilesScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LibrarySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LiveActivitySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.NotificationPermissionSettingsScreen
@@ -167,6 +168,7 @@ sealed class Screen(val route: String) {
     }
     object CourseNameSizeSettings : Screen("courseNameSizeSettings")
     object DisplaySizeSettings : Screen("displaySizeSettings")
+    object DownloadedFiles : Screen("downloadedFiles")
     object CloudSync : Screen("cloudSync")
     object SyncContent : Screen("syncContent")
     object VibrationSettings : Screen("vibrationSettings")
@@ -759,7 +761,11 @@ fun MainNavigation(
                     },
                     onNavigateToVibration = { navController.navigate(Screen.VibrationSettings.route) },
                     onNavigateToDisplaySize = { navController.navigate(Screen.DisplaySizeSettings.route) },
+                    onNavigateToDownloadedFiles = { navController.navigate(Screen.DownloadedFiles.route) },
                 )
+            }
+            page(Screen.DownloadedFiles.route) {
+                DownloadedFilesScreen(onBack = { navController.popBackStack() })
             }
             page(Screen.AboutOthers.route) {
                 AboutOthersScreen(
