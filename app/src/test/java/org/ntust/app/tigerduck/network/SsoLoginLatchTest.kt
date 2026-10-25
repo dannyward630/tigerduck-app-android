@@ -16,6 +16,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.PersistedStoredPasswordLatch
+import org.ntust.app.tigerduck.auth.RetrySettlement
 import org.ntust.app.tigerduck.auth.guardAutomaticHarvest
 import org.ntust.app.tigerduck.auth.retryStoredPasswordChain
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
@@ -43,6 +44,9 @@ class SsoLoginLatchTest {
 
     /** Whether the school takes the password posted to it. */
     private var accepts = false
+
+    /** Whether a visit to the service answers without the school's sign-in form. */
+    private var visitPassesSso = false
 
     /** Runs as each visit to the service arrives, with how many came before it. */
     private var onVisit: (Int) -> Unit = {}
@@ -240,11 +244,12 @@ class SsoLoginLatchTest {
             val due = latch.retryAt()!!
             gaps += due - clock
             clock = due
-            val generation = latch.generation
+            val settlement = RetrySettlement(latch, STUDENT, PASSWORD)
             retryStoredPasswordChain(
                 signInToSchool = {
-                    runCatching { service.signInAgain(SERVICE, STUDENT, PASSWORD) { latch.refusals.value > 0 } }
-                        .getOrDefault(false)
+                    runCatching {
+                        service.signInAgain(SERVICE, STUDENT, PASSWORD, settlement::schoolAccepted) { latch.refusals.value > 0 }
+                    }.getOrDefault(false)
                 },
                 moodleTokenMissing = { true },
                 renewMoodleToken = {
@@ -252,7 +257,7 @@ class SsoLoginLatchTest {
                         posting.post<Unit> { throw MoodleWebserviceError.SsoLoginRejected(REASON) }
                     }
                 },
-                settle = { latch.markAccepted(generation, STUDENT, PASSWORD) },
+                settle = settlement::settle,
                 signInToBackend = { true },
             )
         }
@@ -265,15 +270,15 @@ class SsoLoginLatchTest {
         accepts = true
         latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
         clock = latch.retryAt()!!
-        val generation = latch.generation
+        val settlement = RetrySettlement(latch, STUDENT, PASSWORD)
         var refusalsAtBackend = -1
 
         assertTrue(
             retryStoredPasswordChain(
-                signInToSchool = { service.signInAgain(SERVICE, STUDENT, PASSWORD) { latch.refusals.value > 0 } },
+                signInToSchool = { service.signInAgain(SERVICE, STUDENT, PASSWORD, settlement::schoolAccepted) { latch.refusals.value > 0 } },
                 moodleTokenMissing = { false },
                 renewMoodleToken = {},
-                settle = { latch.markAccepted(generation, STUDENT, PASSWORD) },
+                settle = settlement::settle,
                 signInToBackend = { refusalsAtBackend = latch.refusals.value; true },
             ),
         )
@@ -282,16 +287,57 @@ class SsoLoginLatchTest {
         assertFalse(latch.isRejected)
     }
 
+    /** Another automatic post was refused after the school took the retry's, while its token step ran. */
+    @Test
+    fun `a retry does not settle a refusal counted after the school took its post`() = runTest {
+        accepts = true
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        clock = latch.retryAt()!!
+        val settlement = RetrySettlement(latch, STUDENT, PASSWORD)
+
+        retryStoredPasswordChain(
+            signInToSchool = { service.signInAgain(SERVICE, STUDENT, PASSWORD, settlement::schoolAccepted) { latch.refusals.value > 0 } },
+            moodleTokenMissing = { true },
+            // The token from a live session, no post; meanwhile another sign-in is refused.
+            renewMoodleToken = { latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON) },
+            settle = settlement::settle,
+            signInToBackend = { true },
+        )
+
+        assertTrue(latch.isRejected)
+    }
+
+    /** The service let the visit through after the jar was emptied, so no password went out. */
+    @Test
+    fun `a retry that posted no password settles nothing`() = runTest {
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        clock = latch.retryAt()!!
+        visitPassesSso = true
+        val settlement = RetrySettlement(latch, STUDENT, PASSWORD)
+
+        retryStoredPasswordChain(
+            signInToSchool = { service.signInAgain(SERVICE, STUDENT, PASSWORD, settlement::schoolAccepted) { latch.refusals.value > 0 } },
+            moodleTokenMissing = { false },
+            renewMoodleToken = {},
+            settle = settlement::settle,
+            signInToBackend = { true },
+        )
+
+        assertEquals(0, posts.size)
+        assertTrue(latch.isRejected)
+    }
+
     private fun answer(request: Request): Response {
         val (url, html) = when {
             request.method == "POST" -> {
                 posts += request.url.toString()
                 if (accepts) SERVICE to SERVICE_PAGE else LOGIN_URL to LOGIN_PAGE_REFUSED
             }
-            // Every visit to the service lands on the school's sign-in form.
+            // Every visit to the service lands on the school's sign-in form, unless the service
+            // answers without one.
             else -> {
                 onVisit(visits++)
-                LOGIN_URL to LOGIN_PAGE
+                if (visitPassesSso) SERVICE to SERVICE_PAGE else LOGIN_URL to LOGIN_PAGE
             }
         }
         return Response.Builder()

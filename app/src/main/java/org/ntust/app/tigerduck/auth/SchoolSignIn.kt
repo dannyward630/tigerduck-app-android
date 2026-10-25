@@ -12,7 +12,12 @@ internal class SchoolSignIn(
     /** The SSO step; see [org.ntust.app.tigerduck.network.SsoLoginService.ensureServiceLogin]. */
     private val signInToSchool: suspend (studentId: String, password: String) -> Boolean,
     /** The SSO step past a warm session; see [org.ntust.app.tigerduck.network.SsoLoginService.signInAgain]. */
-    private val signInAgainToSchool: suspend (studentId: String, password: String, stillRefused: () -> Boolean) -> Boolean,
+    private val signInAgainToSchool: suspend (
+        studentId: String,
+        password: String,
+        accepted: () -> Unit,
+        stillRefused: () -> Boolean,
+    ) -> Boolean,
 ) {
     /**
      * The stored account again: false without one, and true at once while the
@@ -30,12 +35,13 @@ internal class SchoolSignIn(
      * The stored account posted to the school whatever the session: the retry of a refused
      * password, which a warm session says nothing about, as only the school's answer to a post
      * does. False without one. True without a post once [stillRefused] says the refusal is gone,
-     * as a sign-in by hand the retry waited behind settles it.
+     * as a sign-in by hand the retry waited behind settles it. [accepted] hears of the school
+     * taking the password posted.
      */
-    suspend fun storedAgain(stillRefused: () -> Boolean): Boolean {
+    suspend fun storedAgain(accepted: () -> Unit = {}, stillRefused: () -> Boolean): Boolean {
         if (!stillRefused()) return true
         val studentId = studentId() ?: return false
         val password = password() ?: return false
-        return signInAgainToSchool(studentId.trim().uppercase(), password, stillRefused)
+        return signInAgainToSchool(studentId.trim().uppercase(), password, accepted, stillRefused)
     }
 }

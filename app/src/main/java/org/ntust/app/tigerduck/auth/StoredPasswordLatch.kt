@@ -83,6 +83,14 @@ interface StoredPasswordLatch {
      */
     fun markAccepted(generation: Int, studentId: String, password: String)
 
+    /**
+     * [markAccepted] for the retry of a refused password ([RetrySettlement]), which settles the
+     * count only after its Moodle token step too: nothing ends unless [changes] still reads
+     * [changesSeen], what it read as the school took the retry's post. A refusal counted since,
+     * another sign-in's say, stands, and so does an end of the count.
+     */
+    fun settle(generation: Int, changesSeen: Int, studentId: String, password: String)
+
     /** When a sign-in the user made stores the password the school took, and on sign-out. */
     fun clear()
 
@@ -273,6 +281,14 @@ class PersistedStoredPasswordLatch internal constructor(
     override fun markAccepted(generation: Int, studentId: String, password: String) {
         synchronized(lock) {
             if (generation != currentGeneration) return
+            if (!isStoredAccount(studentId, password)) return
+            forget()
+        }
+    }
+
+    override fun settle(generation: Int, changesSeen: Int, studentId: String, password: String) {
+        synchronized(lock) {
+            if (generation != currentGeneration || _changes.value != changesSeen) return
             if (!isStoredAccount(studentId, password)) return
             forget()
         }

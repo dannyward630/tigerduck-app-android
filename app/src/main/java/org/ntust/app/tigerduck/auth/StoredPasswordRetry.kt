@@ -82,7 +82,7 @@ internal suspend fun retryWhenDue(
  * [settle] ends the refusals once the school and the Moodle token step are both through, before
  * the backend's step, not on the school's yes alone: a renewal refused every time would otherwise
  * start the count again at its first step after each yes, and the retry would post every 10
- * seconds for good. As on the iPhone.
+ * seconds for good. As on the iPhone. See [RetrySettlement] for what it ends.
  */
 internal suspend fun retryStoredPasswordChain(
     signInToSchool: suspend () -> Boolean,
@@ -104,4 +104,30 @@ internal suspend fun retryStoredPasswordChain(
     }
     settle()
     return signInToBackend(renewed)
+}
+
+/**
+ * What one try of the stored password settles once its chain is through ([retryStoredPasswordChain]):
+ * the refusals counted up to the school taking the password this try posted, and nothing if none
+ * was posted, or a refusal was counted, or the count ended, since. The account, and the latch's
+ * generation, are the ones the try began with: a sign-in by hand or a sign-out meanwhile leaves
+ * nothing to settle.
+ */
+internal class RetrySettlement(
+    private val latch: StoredPasswordLatch,
+    private val studentId: String,
+    private val password: String,
+) {
+    private val generation = latch.generation
+    private var acceptedAt: Int? = null
+
+    /** The school took this try's post. Called as its answer is read, under [StoredPasswordLatch.automaticPosts]. */
+    fun schoolAccepted() {
+        acceptedAt = latch.changes.value
+    }
+
+    fun settle() {
+        val seen = acceptedAt ?: return
+        latch.settle(generation, seen, studentId, password)
+    }
 }
