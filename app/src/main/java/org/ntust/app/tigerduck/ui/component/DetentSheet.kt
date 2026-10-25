@@ -46,6 +46,7 @@ import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
@@ -70,6 +72,7 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
@@ -104,6 +107,9 @@ internal object DetentSheetMotion {
      * of its own.
      */
     const val DURATION_MILLIS = 300
+
+    /** How long the sheet takes to fade see-through, or back. */
+    const val SEE_THROUGH_MILLIS = 150
 
     /** A fling at least this fast moves the sheet on to the next height. Material's is 125 dp/s. */
     val VelocityThreshold: Dp = 80.dp
@@ -341,6 +347,10 @@ internal fun rememberDetentSheetState(): DetentSheetState {
  * taller than half the window stop there on the way up and down, as Material's sheet does. It opens
  * at [openAt], or by default as high as the first height it can stop at.
  *
+ * [seeThrough] fades its background, its handle and the scrim away, so what is under it shows: the
+ * content then draws what of itself should stay, as the browser's zoom controls do while the page
+ * they zoom shows through.
+ *
  * Material's [ModalBottomSheet] is only its window here: full screen, see-through, its own gestures,
  * scrim and back handling off. The sheet inside moves itself.
  */
@@ -354,6 +364,7 @@ internal fun DetentSheet(
     openAt: DetentSheetValue? = null,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
     dismissOnBack: Boolean = true,
+    seeThrough: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // Up from the start and never moved: it only holds the window.
@@ -387,6 +398,7 @@ internal fun DetentSheet(
             openAt = openAt,
             containerColor = containerColor,
             dismissOnBack = dismissOnBack,
+            seeThrough = seeThrough,
             content = content,
         )
     }
@@ -404,6 +416,7 @@ internal fun DetentSheetLayer(
     openAt: DetentSheetValue? = null,
     containerColor: Color = BottomSheetDefaults.ContainerColor,
     dismissOnBack: Boolean = true,
+    seeThrough: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -411,6 +424,12 @@ internal fun DetentSheetLayer(
     val close: () -> Unit = remember(state, scope) { { scope.launch { state.hide() } } }
     val open by rememberUpdatedState(openAt)
     val flingBehavior = remember(state, scope) { state.flingBehavior(scope) }
+    // 1 shown, 0 see-through. Read while drawing, so the fade doesn't recompose the sheet.
+    val solid = animateFloatAsState(
+        if (seeThrough) 0f else 1f,
+        animationSpec = tween(DetentSheetMotion.SEE_THROUGH_MILLIS),
+        label = "see-through",
+    )
 
     // Rises once laid out; one that comes back with the activity is already up.
     LaunchedEffect(state) {
@@ -440,7 +459,7 @@ internal fun DetentSheetLayer(
     Layout(
         modifier = modifier.fillMaxSize(),
         content = {
-            Scrim(visible = state.targetValue != DetentSheetValue.Hidden, onClose = close)
+            Scrim(visible = state.targetValue != DetentSheetValue.Hidden, onClose = close, solid = solid)
             Column(
                 modifier = Modifier
                     .widthIn(max = BottomSheetDefaults.SheetMaxWidth)
@@ -448,11 +467,11 @@ internal fun DetentSheetLayer(
                     .nestedScroll(state.nestedScroll)
                     .anchoredDraggable(state.draggable, Orientation.Vertical, flingBehavior = flingBehavior)
                     .clip(BottomSheetDefaults.ExpandedShape)
-                    .background(containerColor)
+                    .drawBehind { drawRect(containerColor, alpha = solid.value) }
                     .belowStatusBar(state, statusBarTop)
                     .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
             ) {
-                Handle(state, onClose = close)
+                Handle(state, onClose = close, solid = solid, seeThrough = seeThrough)
                 content()
             }
         },
@@ -496,7 +515,7 @@ private fun Modifier.belowStatusBar(state: DetentSheetState, statusBarTop: Int):
 /** Material's scrim: dims what's under the sheet, and a tap on it closes the sheet. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Scrim(visible: Boolean, onClose: () -> Unit) {
+private fun Scrim(visible: Boolean, onClose: () -> Unit, solid: State<Float>) {
     // In step with the sheet it dims for.
     val alpha by animateFloatAsState(
         if (visible) 1f else 0f,
@@ -507,7 +526,7 @@ private fun Scrim(visible: Boolean, onClose: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .graphicsLayer { this.alpha = alpha }
+            .graphicsLayer { this.alpha = alpha * solid.value }
             .background(BottomSheetDefaults.ScrimColor)
             .then(
                 if (visible) {
@@ -532,12 +551,19 @@ private fun Scrim(visible: Boolean, onClose: () -> Unit) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Handle(state: DetentSheetState, onClose: () -> Unit) {
+private fun Handle(state: DetentSheetState, onClose: () -> Unit, solid: State<Float>, seeThrough: Boolean) {
     val scope = rememberCoroutineScope()
     val expand = { scope.launch { state.expand() }; Unit }
     val collapse = { scope.launch { state.partialExpand() }; Unit }
     val canCollapse = state.currentValue == DetentSheetValue.Full && state.hasHalf
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .graphicsLayer { alpha = solid.value }
+            // Out of sight, and out of TalkBack's way, while the sheet is see-through.
+            .then(if (seeThrough) Modifier.clearAndSetSemantics {} else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
         Box(
             modifier = Modifier
                 .clickable {

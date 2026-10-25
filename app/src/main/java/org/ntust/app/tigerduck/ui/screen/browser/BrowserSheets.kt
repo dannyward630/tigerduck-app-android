@@ -3,6 +3,8 @@ package org.ntust.app.tigerduck.ui.screen.browser
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -10,6 +12,8 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,24 +82,35 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
@@ -108,6 +123,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.browser.BrowserAppearance
 import org.ntust.app.tigerduck.browser.BrowserDownload
@@ -115,6 +131,7 @@ import org.ntust.app.tigerduck.browser.BrowserZoom
 import org.ntust.app.tigerduck.browser.CertificateInfo
 import org.ntust.app.tigerduck.browser.UploadSource
 import org.ntust.app.tigerduck.ui.component.DetentSheet
+import org.ntust.app.tigerduck.ui.component.DetentSheetMotion
 import org.ntust.app.tigerduck.ui.component.rememberDetentSheetState
 import org.ntust.app.tigerduck.util.replaceIosArg
 import java.text.DateFormat
@@ -128,6 +145,71 @@ private fun BrowserSheetFrame(onDismiss: () -> Unit, skipPartial: Boolean = true
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
             content()
         }
+    }
+}
+
+/**
+ * The menu stepping out of the way of the page while its zoom changes, so the change can be
+ * watched: [active] from each change ([poke]) until a second after the last, or until a tap where
+ * the menu was ([end]). The sheet goes see-through and only the zoom controls stay.
+ */
+@Stable
+internal class ZoomPeek {
+    var active by mutableStateOf(false)
+        private set
+
+    /** Counts the changes, so each one starts the second again. */
+    internal var changes by mutableIntStateOf(0)
+        private set
+
+    fun poke() {
+        active = true
+        changes++
+    }
+
+    fun end() {
+        active = false
+    }
+
+    companion object {
+        const val HOLD_MILLIS = 1_000L
+    }
+}
+
+@Composable
+private fun ZoomPeek.EndASecondAfterTheLastChange() {
+    LaunchedEffect(changes) {
+        if (active) {
+            delay(ZoomPeek.HOLD_MILLIS)
+            end()
+        }
+    }
+}
+
+internal val LocalZoomPeek = staticCompositionLocalOf<ZoomPeek?> { null }
+
+/**
+ * What of the menu steps aside while [peek] holds: faded with the sheet, out of TalkBack's way, and
+ * no longer taking taps. A tap where it was brings the menu back at once.
+ */
+private fun Modifier.stepsAside(peek: ZoomPeek?, solid: State<Float>): Modifier {
+    if (peek == null) return this
+    val faded = graphicsLayer { alpha = solid.value }
+    return if (!peek.active) {
+        faded
+    } else {
+        faded
+            .clearAndSetSemantics {}
+            .pointerInput(peek) {
+                awaitEachGesture {
+                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial).consume()
+                    do {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        event.changes.forEach { it.consume() }
+                    } while (event.changes.any { it.pressed })
+                    peek.end()
+                }
+            }
     }
 }
 
@@ -147,6 +229,8 @@ internal fun BrowserPagesSheet(
 ) {
     val sheetState = rememberDetentSheetState()
     val scope = rememberCoroutineScope()
+    val zoomPeek = remember { ZoomPeek() }
+    zoomPeek.EndASecondAfterTheLastChange()
     // Each page's own state, its scroll above all, kept while it is in the stack: back on a page,
     // it is as it was left. A page gone from the stack starts afresh when opened again.
     val pageStates = rememberSaveableStateHolder()
@@ -161,11 +245,13 @@ internal fun BrowserPagesSheet(
         state = sheetState,
         // Back is the pages' first: on the first page, it closes the sheet as the sheet's own would.
         dismissOnBack = false,
+        seeThrough = zoomPeek.active,
     ) {
         BackHandler {
             if (pages.size > 1) onBack() else scope.launch { sheetState.hide() }
         }
         val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+        CompositionLocalProvider(LocalZoomPeek provides zoomPeek) {
         Box(Modifier.fillMaxWidth().testTag(BROWSER_SHEET_TAG)) {
             AnimatedContent(
                 targetState = pages.size to pages.last(),
@@ -199,6 +285,7 @@ internal fun BrowserPagesSheet(
                     }
                 }
             }
+        }
         }
     }
 }
@@ -321,38 +408,62 @@ internal fun BrowserMenuPage(
         onDismiss()
         block()
     }
+    val peek = LocalZoomPeek.current
+    // 1 shown, 0 stepped aside, in step with the sheet's own fade.
+    val solid = animateFloatAsState(
+        if (peek?.active == true) 0f else 1f,
+        animationSpec = tween(DetentSheetMotion.SEE_THROUGH_MILLIS),
+        label = "zoom peek",
+    )
+    val aside = Modifier.stepsAside(peek, solid)
+    fun zoom(change: () -> Unit) {
+        change()
+        peek?.poke()
+    }
     Column(Modifier.fillMaxWidth()) {
-        PageHeader(state, onCertificate = onCertificate.takeIf { state.shownCertificate != null })
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
+        Box(aside) { PageHeader(state, onCertificate = onCertificate.takeIf { state.shownCertificate != null }) }
+        Row(Modifier.fillMaxWidth().then(aside).padding(horizontal = 8.dp)) {
             QuickAction(Icons.Filled.ContentCopy, stringResource(R.string.browser_copy), enabled = url != null, onClick = { act { url?.let(actions::copy) } }, modifier = Modifier.weight(1f))
             QuickAction(Icons.Filled.Share, stringResource(R.string.browser_share), enabled = url != null, onClick = { act { url?.let(actions::share) } }, modifier = Modifier.weight(1f))
             QuickAction(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.browser_open_external_short), enabled = url != null, onClick = { act { url?.let(actions::openExternal) } }, modifier = Modifier.weight(1f))
             QuickAction(Icons.Filled.Refresh, stringResource(R.string.browser_reload), onClick = { act(actions::reload) }, modifier = Modifier.weight(1f))
         }
-        HorizontalDivider(Modifier.padding(horizontal = 20.dp, vertical = 4.dp))
+        HorizontalDivider(aside.padding(horizontal = 20.dp, vertical = 4.dp))
 
-        // Zoom: − and + only; the percentage puts it back to 100%.
+        // Zoom: − and + only; the percentage puts it back to 100%. While the zoom changes, the rest
+        // of the menu steps aside and these keep a pill of their own over the page.
         val locale = LocalConfiguration.current.locales[0]
         val percent = remember(state.zoom, locale) { NumberFormat.getPercentInstance(locale).format(state.zoom / 100.0) }
+        val pill = MaterialTheme.colorScheme.surfaceContainerHigh
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 20.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.ZoomIn, contentDescription = null)
-            Spacer(Modifier.width(16.dp))
-            Text(stringResource(R.string.browser_zoom), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            OutlinedIconButton(onClick = actions::zoomOut, enabled = BrowserZoom.canZoomOut(state.zoom)) {
-                Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.browser_zoom_out))
+            Row(aside.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.ZoomIn, contentDescription = null)
+                Spacer(Modifier.width(16.dp))
+                Text(stringResource(R.string.browser_zoom), style = MaterialTheme.typography.bodyLarge)
             }
-            TextButton(onClick = actions::zoomReset, colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current)) {
-                // As wide as it is, and no narrower than 48dp, so it stays put from 50% to 200%.
-                Text(percent, modifier = Modifier.widthIn(min = 48.dp).width(IntrinsicSize.Max), maxLines = 1, textAlign = TextAlign.Center)
-            }
-            OutlinedIconButton(onClick = actions::zoomIn, enabled = BrowserZoom.canZoomIn(state.zoom)) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.browser_zoom_in))
+            Row(
+                Modifier.drawBehind {
+                    drawRoundRect(pill, alpha = 1f - solid.value, cornerRadius = CornerRadius(size.height / 2))
+                },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OutlinedIconButton(onClick = { zoom(actions::zoomOut) }, enabled = BrowserZoom.canZoomOut(state.zoom)) {
+                    Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.browser_zoom_out))
+                }
+                TextButton(onClick = { zoom(actions::zoomReset) }, colors = ButtonDefaults.textButtonColors(contentColor = LocalContentColor.current)) {
+                    // As wide as it is, and no narrower than 48dp, so it stays put from 50% to 200%.
+                    Text(percent, modifier = Modifier.widthIn(min = 48.dp).width(IntrinsicSize.Max), maxLines = 1, textAlign = TextAlign.Center)
+                }
+                OutlinedIconButton(onClick = { zoom(actions::zoomIn) }, enabled = BrowserZoom.canZoomIn(state.zoom)) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.browser_zoom_in))
+                }
             }
         }
 
         Row(
             Modifier
                 .fillMaxWidth()
+                .then(aside)
                 .heightIn(min = 56.dp)
                 .clickable(role = Role.Switch) { actions.setDesktopSite(!state.desktopSite) }
                 .padding(horizontal = 20.dp),
@@ -364,7 +475,7 @@ internal fun BrowserMenuPage(
             Switch(checked = state.desktopSite, onCheckedChange = null)
         }
 
-        Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.fillMaxWidth().then(aside).padding(horizontal = 20.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.DarkMode, contentDescription = null)
                 Spacer(Modifier.width(16.dp))
@@ -386,16 +497,18 @@ internal fun BrowserMenuPage(
             }
         }
 
-        MenuRow(Icons.Filled.Search, stringResource(R.string.browser_find), enabled = state.error == null && state.signIn == null) { act(actions::startFind) }
-        MenuRow(Icons.Filled.Print, stringResource(R.string.browser_print), enabled = url != null && state.error == null && state.signIn == null) { act(actions::print) }
-        MenuRow(Icons.Filled.Download, stringResource(R.string.browser_downloads), showArrow = true, onClick = onDownloads)
-        MenuRow(
-            if (state.certificateRefused) Icons.Filled.GppBad else Icons.Filled.VerifiedUser,
-            stringResource(R.string.browser_security),
-            enabled = url != null,
-            showArrow = true,
-            onClick = onAddress,
-        )
+        Column(aside) {
+            MenuRow(Icons.Filled.Search, stringResource(R.string.browser_find), enabled = state.error == null && state.signIn == null) { act(actions::startFind) }
+            MenuRow(Icons.Filled.Print, stringResource(R.string.browser_print), enabled = url != null && state.error == null && state.signIn == null) { act(actions::print) }
+            MenuRow(Icons.Filled.Download, stringResource(R.string.browser_downloads), showArrow = true, onClick = onDownloads)
+            MenuRow(
+                if (state.certificateRefused) Icons.Filled.GppBad else Icons.Filled.VerifiedUser,
+                stringResource(R.string.browser_security),
+                enabled = url != null,
+                showArrow = true,
+                onClick = onAddress,
+            )
+        }
     }
 }
 
