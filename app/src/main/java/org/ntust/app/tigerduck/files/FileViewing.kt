@@ -10,7 +10,7 @@ import java.nio.charset.CodingErrorAction
 import kotlin.math.roundToInt
 
 /** What the in-app viewer shows a file as. */
-enum class ViewerKind { PDF, IMAGE, VIDEO, AUDIO, TEXT, MARKDOWN, DOCX, PPTX }
+enum class ViewerKind { PDF, IMAGE, VIDEO, AUDIO, TEXT, MARKDOWN, DOCX, PPTX, ARCHIVE }
 
 /** Where a downloaded file opens. */
 sealed interface FileOpening {
@@ -28,7 +28,8 @@ sealed interface FileOpening {
  * Which downloaded files the app shows itself. The declared type decides, as it does for a mail
  * attachment ([org.ntust.app.tigerduck.mail.resolveAttachmentMimeType]): the name's extension only
  * when the type says nothing, so a file sent as something else never opens here by its name alone.
- * A file named or typed as a web page, an SVG or other XML goes to the share sheet, by either.
+ * A file named or typed as a web page, an SVG or other XML goes to the share sheet, by either. A
+ * Word or PowerPoint file sent as a zip, which inside it is, opens as the document its name says.
  */
 object FileViewing {
 
@@ -38,7 +39,11 @@ object FileViewing {
         if (isWebOrXml(type) || extension in SHARED_NOT_VIEWED_EXTENSIONS || extension in XML_EXTENSIONS) {
             return FileOpening.ShareOnly
         }
-        val kind = if (type.isEmpty() || type in GENERIC_TYPES) kindOfExtension(extension) else kindOfType(type)
+        val kind = when {
+            type.isEmpty() || type in GENERIC_TYPES -> kindOfExtension(extension)
+            type in ZIP_TYPES && extension in ZIPPED_DOCUMENTS -> kindOfExtension(extension)
+            else -> kindOfType(type)
+        }
         return kind?.let(FileOpening::InApp) ?: FileOpening.OtherApp
     }
 
@@ -54,6 +59,7 @@ object FileViewing {
         type.startsWith("text/") || type in TEXT_TYPES -> ViewerKind.TEXT
         type == DOCX_TYPE -> ViewerKind.DOCX
         type == PPTX_TYPE -> ViewerKind.PPTX
+        type in ZIP_TYPES || type in ARCHIVE_TYPES -> ViewerKind.ARCHIVE
         else -> null
     }
 
@@ -66,6 +72,7 @@ object FileViewing {
         in TEXT_EXTENSIONS -> ViewerKind.TEXT
         "docx" -> ViewerKind.DOCX
         "pptx" -> ViewerKind.PPTX
+        in ARCHIVE_EXTENSIONS -> ViewerKind.ARCHIVE
         else -> null
     }
 
@@ -73,6 +80,19 @@ object FileViewing {
     private val XML_EXTENSIONS = setOf("xml", "xsl", "xslt")
 
     private val GENERIC_TYPES = setOf("application/octet-stream", "document/unknown", "application/unknown")
+
+    private val ZIP_TYPES = setOf("application/zip", "application/x-zip-compressed", "application/x-zip")
+
+    /** Zips inside, which a server that only looks at the bytes may send as one. */
+    private val ZIPPED_DOCUMENTS = setOf("docx", "pptx")
+
+    /** The other archives [Archives] reads: 7z, tar, and gzip, bzip2 or xz, around a tar or on their own. */
+    private val ARCHIVE_TYPES = setOf(
+        "application/x-7z-compressed", "application/x-tar", "application/x-gtar", "application/gzip", "application/x-gzip",
+        "application/x-compressed-tar", "application/x-bzip2", "application/x-bzip", "application/x-bzip-compressed-tar",
+        "application/x-xz", "application/x-xz-compressed-tar",
+    )
+    private val ARCHIVE_EXTENSIONS = setOf("zip", "7z", "tar", "gz", "tgz", "bz2", "tbz", "tbz2", "xz", "txz")
 
     private val IMAGE_TYPES = setOf(
         "image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif", "image/bmp", "image/x-ms-bmp",

@@ -38,7 +38,8 @@ import org.ntust.app.tigerduck.files.ViewerKind
 
 /**
  * A downloaded file, shown by its kind's viewer under a bar with Share or Save and Open in
- * another app. A file its viewer can't read says so, with Open in another app beside it.
+ * another app. A file its viewer can't read says so, and why when the viewer knows, with Open in
+ * another app beside it.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +51,7 @@ internal fun FileViewerScreen(
     onOpenElsewhere: () -> Unit,
 ) {
     var failed by rememberSaveable(file.uri) { mutableStateOf(false) }
+    var reason by rememberSaveable(file.uri) { mutableStateOf<Int?>(null) }
     val fail = { failed = true }
     Scaffold(
         topBar = {
@@ -76,7 +78,7 @@ internal fun FileViewerScreen(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
             if (failed) {
-                CannotShow(onOpenElsewhere)
+                CannotShow(reason, onOpenElsewhere)
             } else {
                 when (file.kind) {
                     ViewerKind.PDF -> PdfViewer(file.uri, onFailed = fail)
@@ -86,6 +88,7 @@ internal fun FileViewerScreen(
                     ViewerKind.TEXT -> TextViewer(file.uri, markdown = false, browserPreference, onFailed = fail)
                     ViewerKind.MARKDOWN -> TextViewer(file.uri, markdown = true, browserPreference, onFailed = fail)
                     ViewerKind.DOCX, ViewerKind.PPTX -> OfficeViewer(file.uri, file.kind, onFailed = fail)
+                    ViewerKind.ARCHIVE -> ArchiveViewer(file, onFailed = { reason = it; failed = true }, onOpenElsewhere)
                 }
             }
         }
@@ -98,9 +101,9 @@ internal fun Reading() {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
 }
 
-/** A file its viewer couldn't read: saying so, and offering another app. */
+/** A file its viewer couldn't read: saying so, and why when [reason] says, and offering another app. */
 @Composable
-private fun CannotShow(onOpenElsewhere: () -> Unit) {
+private fun CannotShow(reason: Int?, onOpenElsewhere: () -> Unit) {
     Column(
         Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -118,6 +121,15 @@ private fun CannotShow(onOpenElsewhere: () -> Unit) {
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
         )
+        if (reason != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(reason),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(Modifier.height(24.dp))
         Button(onClick = onOpenElsewhere) { Text(stringResource(R.string.file_viewer_open_elsewhere)) }
     }

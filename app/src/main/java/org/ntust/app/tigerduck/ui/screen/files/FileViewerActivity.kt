@@ -20,7 +20,8 @@ import javax.inject.Inject
 
 /**
  * The app's own viewer for a downloaded file ([FileViewer]): a PDF, a picture, a video or sound,
- * text, or a Word or PowerPoint document, with Share or Save and Open in another app above it.
+ * text, a Word or PowerPoint document, or an archive, with Share or Save and Open in another app
+ * above it.
  * Kept through rotation and resizing rather than recreated, so a video plays on and a PDF keeps
  * its place.
  */

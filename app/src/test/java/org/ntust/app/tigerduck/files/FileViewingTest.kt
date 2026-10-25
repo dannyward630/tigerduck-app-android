@@ -49,8 +49,32 @@ class FileViewingTest {
     @Test
     fun `wma and anything else go to another app`() {
         assertEquals(OtherApp, opening("audio/x-ms-wma", "song.wma"))
-        assertEquals(OtherApp, opening("application/zip", "code.zip"))
         assertEquals(OtherApp, opening("application/vnd.android.package-archive", "app.apk"))
+        assertEquals(OtherApp, opening("application/x-rar-compressed", "code.rar"))
+    }
+
+    @Test
+    fun `zip, tar, tar gz and 7z archives open here, by type or by a generic type's name`() {
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/zip", "code.zip"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-zip-compressed", "code.zip"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-7z-compressed", "code.7z"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-tar", "code.tar"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/gzip", "code.tar.gz"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-compressed-tar", "code.tgz"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-bzip2", "code.tar.bz2"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-xz", "code.tar.xz"))
+        for (name in listOf("code.zip", "code.7z", "code.tar", "code.tar.gz", "code.tgz", "code.tbz2", "code.txz", "log.gz")) {
+            assertEquals(name, InApp(ViewerKind.ARCHIVE), opening("application/octet-stream", name))
+        }
+    }
+
+    @Test
+    fun `a word or powerpoint file sent as a zip opens as the document its name says`() {
+        // Both are zips inside: a server that only sees that sends them as one.
+        assertEquals(InApp(ViewerKind.DOCX), opening("application/zip", "report.docx"))
+        assertEquals(InApp(ViewerKind.PPTX), opening("application/x-zip-compressed", "slides.pptx"))
+        // Any other name keeps the type it was sent with.
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/zip", "photo.png"))
     }
 
     @Test
