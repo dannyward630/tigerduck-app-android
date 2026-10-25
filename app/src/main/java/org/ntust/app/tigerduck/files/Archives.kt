@@ -340,7 +340,7 @@ object Archives {
     // 7z
 
     private fun list7z(source: ArchiveSource, limits: ArchiveLimits, deadline: Long): ArchiveListing =
-        open7z(source, limits).use { sevenZ ->
+        open7z(source, limits, deadline).use { sevenZ ->
             val items = ArrayList<ArchiveItem>()
             var truncated = false
             for ((index, entry) in sevenZ.entries.withIndex()) {
@@ -367,32 +367,20 @@ object Archives {
         }
 
     private fun extract7z(source: ArchiveSource, item: ArchiveItem, out: OutputStream, limits: ArchiveLimits, deadline: Long) {
-        open7z(source, limits).use { sevenZ ->
-            val current = object : InputStream() {
-                override fun read() = sevenZ.read()
-                override fun read(b: ByteArray, off: Int, len: Int) = sevenZ.read(b, off, len)
-            }
-            // Through the files before it, read here rather than inside the reader: a file in a solid
-            // block is reached only by reading the ones before it, and those bytes count too.
-            val passing = Counted(current, limits, deadline, limits.maxScanBytes)
-            val buffer = ByteArray(BUFFER)
-            var index = 0
-            while (true) {
-                val entry = sevenZ.nextEntry ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
-                if (index++ != item.index) {
-                    if (entry.hasStream() && !entry.isDirectory && !entry.isAntiItem) while (passing.read(buffer) >= 0) Unit
-                    continue
-                }
-                if (ArchiveNames.normalize(entry.name ?: defaultName(source)) != item.path) throw ArchiveProblemException(ArchiveProblem.BROKEN)
-                if (entry.isDirectory || entry.isAntiItem) throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
-                if (entry.hasStream()) copyLimited(current, out, source.size, limits, deadline)
-                return
-            }
+        open7z(source, limits, deadline).use { sevenZ ->
+            val entry = sevenZ.entries.elementAtOrNull(item.index)
+                ?.takeIf { ArchiveNames.normalize(it.name ?: defaultName(source)) == item.path }
+                ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
+            if (entry.isDirectory || entry.isAntiItem) throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
+            if (!entry.hasStream()) return
+            // The reader skips the blocks the file isn't in, and decodes the files before it in its
+            // own: the time limit stops that too, through the channel it reads.
+            sevenZ.getInputStream(entry).use { copyLimited(it, out, source.size, limits, deadline) }
         }
     }
 
-    private fun open7z(source: ArchiveSource, limits: ArchiveLimits): SevenZFile {
-        val channel = source.open()
+    private fun open7z(source: ArchiveSource, limits: ArchiveLimits, deadline: Long): SevenZFile {
+        val channel = TimedChannel(source.open(), limits, deadline)
         try {
             // The reader holds a 7z's header whole, however large its packed form says it grows.
             val header = sevenZHeaderSize(channel)
@@ -433,6 +421,8 @@ object Archives {
         if (id == PACK_INFO) {
             sevenZNumber(header)
             val streams = sevenZNumber(header)
+            // Each stream takes a byte of the header at least.
+            require(streams in 1..header.remaining().toLong())
             id = header.get().toInt()
             if (id == SIZE) {
                 repeat(streams.toInt()) { sevenZNumber(header) }
@@ -496,11 +486,21 @@ object Archives {
         return value
     }
 
+    /**
+     * How many bytes the bits marking which of [count] digests are there take, held to the
+     * [remaining] bytes of the header: a count it can't hold is a damaged header, not a request
+     * for memory.
+     */
+    internal fun definedBitsLength(count: Long, remaining: Int): Int {
+        require(count in 0..remaining * 8L)
+        return ((count + 7) / 8).toInt()
+    }
+
     private fun skipDigests(header: ByteBuffer, count: Long) {
         val all = header.get().toInt() != 0
         var defined = count
         if (!all) {
-            val bits = ByteArray(((count + 7) / 8).toInt()).also { header.get(it) }
+            val bits = ByteArray(definedBitsLength(count, header.remaining())).also { header.get(it) }
             defined = (0 until count).count { bits[(it / 8).toInt()].toInt() and (0x80 ushr (it % 8).toInt()) != 0 }.toLong()
         }
         header.position(header.position() + (4 * defined).toInt())
@@ -614,10 +614,9 @@ object Archives {
         var packedModified: Long? = null
         val unpacked: InputStream = when (format) {
             ArchiveFormat.TAR -> raw
-            // One member: the reader holds each member's name and comment whole, and only the first's is checked.
-            ArchiveFormat.GZIP -> GzipCompressorInputStream.builder().setInputStream(raw.also(::checkGzipHeader)).setDecompressConcatenated(false).get().also { gzip ->
-                packedName = gzip.metaData.fileName
-                packedModified = gzip.metaData.modificationTime.takeIf { it > 0 }
+            ArchiveFormat.GZIP -> GzipMembers(raw).also { gzip ->
+                packedName = gzip.firstName
+                packedModified = gzip.firstModified
             }
             ArchiveFormat.BZIP2 -> BZip2CompressorInputStream(raw, true)
             ArchiveFormat.XZ -> XZCompressorInputStream.builder()
@@ -634,6 +633,46 @@ object Archives {
             val name = packedName?.let(ArchiveNames::normalize)?.substringAfterLast('/')?.takeIf { it.isNotEmpty() } ?: defaultName(source)
             block(Pass(counted, tar, name, packedModified))
         }
+    }
+
+    /**
+     * A gzip's members one after another, as one stream, each one's header checked before the
+     * reader takes it: the reader holds a member's name and comment whole, however long.
+     */
+    private class GzipMembers(private val raw: BufferedInputStream) : InputStream() {
+        private var member = next()
+        val firstName: String? = member.metaData.fileName
+        val firstModified: Long? = member.metaData.modificationTime.takeIf { it > 0 }
+
+        private fun next(): GzipCompressorInputStream {
+            checkGzipHeader(raw)
+            // One member at a time: the reader leaves [raw] just after it.
+            return GzipCompressorInputStream.builder().setInputStream(raw).setDecompressConcatenated(false).get()
+        }
+
+        override fun read(): Int {
+            val one = ByteArray(1)
+            return if (read(one, 0, 1) < 0) -1 else one[0].toInt() and 0xFF
+        }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int {
+            while (true) {
+                val read = member.read(b, off, len)
+                if (read >= 0 || !startsAnother()) return read
+                member = next()
+            }
+        }
+
+        /** Whether another member follows; anything else after the last, gzip itself leaves be. */
+        private fun startsAnother(): Boolean {
+            raw.mark(2)
+            val first = raw.read()
+            val second = raw.read()
+            raw.reset()
+            return first == 0x1F && second == 0x8B
+        }
+
+        override fun close() = member.close()
     }
 
     /** A gzip header whose name or comment runs past [GZIP_FIELD_MAX] bytes is taken for a damaged one. */
@@ -881,4 +920,19 @@ internal class Counted(input: InputStream, private val limits: ArchiveLimits, pr
 internal fun ArchiveLimits.check(deadline: Long) {
     if (Thread.currentThread().isInterrupted) throw InterruptedIOException("Stopped")
     if (now() > deadline) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
+}
+
+/**
+ * [channel], every read of it stopped once the thread is interrupted or [deadline] passes: the
+ * reader's own reads too, as when it decodes the files before one in a solid 7z block.
+ */
+internal class TimedChannel(
+    private val channel: SeekableByteChannel,
+    private val limits: ArchiveLimits,
+    private val deadline: Long,
+) : SeekableByteChannel by channel {
+    override fun read(dst: ByteBuffer): Int {
+        limits.check(deadline)
+        return channel.read(dst)
+    }
 }

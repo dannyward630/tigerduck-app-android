@@ -454,8 +454,8 @@ class ArchivesTest {
     }
 
     @Test
-    fun `files passed over on the way to one count against the scan limit`() {
-        val file = temp.newFile("passed.7z")
+    fun `a 7z file in a block of its own opens without decoding the files before it`() {
+        val file = temp.newFile("blocks.7z")
         SevenZOutputFile(file).use { out ->
             for ((path, bytes) in listOf("zeros.bin" to ByteArray(4 shl 20), "last.txt" to "end".toByteArray())) {
                 out.putArchiveEntry(out.createArchiveEntry(File(path), path))
@@ -465,8 +465,54 @@ class ArchivesTest {
         }
         val last = listing(file).items.last()
 
-        assertEquals(ArchiveProblem.TOO_LARGE, problem { extract(file, last, ArchiveLimits(maxScanBytes = 1L shl 20)) })
-        assertEquals("end", extract(file, last).readText())
+        // Decoding the 4 MiB before it would pass this scan limit.
+        assertEquals("end", extract(file, last, ArchiveLimits(maxScanBytes = 1L shl 20)).readText())
+    }
+
+    @Test
+    fun `the reader's own reads of an archive stop when the time is up`() {
+        val file = temp.newFile("any.bin").apply { writeBytes(ByteArray(4096)) }
+        var now = 0L
+        val limits = ArchiveLimits(timeLimitMillis = 5, now = { now })
+        val channel = TimedChannel(java.nio.channels.FileChannel.open(file.toPath()), limits, deadline = 5)
+
+        assertEquals(1024, channel.read(java.nio.ByteBuffer.allocate(1024)))
+        now = 6
+        assertEquals(ArchiveProblem.TOO_LARGE, problem { channel.read(java.nio.ByteBuffer.allocate(1024)) })
+    }
+
+    @Test
+    fun `a gz of several members reads on through all of them, each header checked`() {
+        val tarBytes = java.io.ByteArrayOutputStream().also { out ->
+            tar(out) {
+                file("first.txt", "one".toByteArray())
+                file("second.txt", Random(6).nextBytes(20_000))
+                file("third.txt", "three".toByteArray())
+            }
+        }.toByteArray()
+        fun member(bytes: ByteArray, name: String? = null) = java.io.ByteArrayOutputStream().also { out ->
+            val parameters = GzipParameters().apply { if (name != null) fileName = name }
+            GzipCompressorOutputStream(out, parameters).use { it.write(bytes) }
+        }.toByteArray()
+        val half = tarBytes.size / 2
+        val split = temp.newFile("split.tar.gz").apply { writeBytes(member(tarBytes.copyOfRange(0, half)) + member(tarBytes.copyOfRange(half, tarBytes.size))) }
+
+        val listing = listing(split)
+        assertEquals(listOf("first.txt", "second.txt", "third.txt"), listing.items.map { it.path })
+        assertEquals("three", extract(split, listing.items[2]).readText())
+
+        // A later member's name running on and on is caught too.
+        val longName = temp.newFile("long.tar.gz").apply {
+            writeBytes(member(tarBytes.copyOfRange(0, half)) + member(tarBytes.copyOfRange(half, tarBytes.size), name = "n".repeat(100_000)))
+        }
+        assertEquals(ArchiveProblem.BROKEN, problem { listing(longName) })
+    }
+
+    @Test
+    fun `a 7z header's digest count is held to the bytes it has before anything is made for it`() {
+        assertEquals(2, Archives.definedBitsLength(count = 9, remaining = 10))
+        assertEquals(ArchiveProblem.BROKEN, runCatching { Archives.definedBitsLength(count = 8_589_934_592, remaining = 10) }
+            .exceptionOrNull()?.let { ArchiveProblem.BROKEN })
     }
 
     @Test
