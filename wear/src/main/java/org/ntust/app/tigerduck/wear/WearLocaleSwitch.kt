@@ -32,8 +32,10 @@ internal class WearLocaleSwitch {
 
     /** What to do when the phone wants [wanted] and the screen shows [showing]. */
     fun step(wanted: String?, showing: String?): Step {
-        val want = normalized(wanted)
-        if (want == null || want == normalized(showing)) {
+        // No language yet, as in a new instance's snapshot before the stored one arrives:
+        // that says nothing about the last recreate, so it stays recorded.
+        val want = normalized(wanted) ?: return Step.Keep
+        if (want == normalized(showing)) {
             triedFor = null
             return Step.Keep
         }

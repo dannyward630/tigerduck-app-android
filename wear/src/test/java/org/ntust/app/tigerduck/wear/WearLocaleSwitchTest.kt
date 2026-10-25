@@ -35,6 +35,14 @@ class WearLocaleSwitchTest {
     }
 
     @Test
+    fun `the snapshot still loading after a recreate doesn't clear what was tried`() {
+        // A new instance starts from an empty snapshot, with no language, before the stored one arrives.
+        switch.recreating("en")
+        assertEquals(Step.Keep, switch.step(wanted = null, showing = "en-US"))
+        assertEquals(Step.Stay, switch.step(wanted = "en", showing = "en-US"))
+    }
+
+    @Test
     fun `a new language after one that stayed recreates again`() {
         switch.recreating("en")
         assertEquals(Step.Recreate, switch.step(wanted = "ja", showing = "en-US"))
