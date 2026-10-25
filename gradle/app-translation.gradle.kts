@@ -10,6 +10,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
@@ -27,6 +28,7 @@ import javax.inject.Inject
 @CacheableTask
 abstract class GenerateAppTranslationStrings @Inject constructor(
     private val exec: ExecOperations,
+    private val files: FileSystemOperations,
 ) : DefaultTask() {
     /** app-translation/source: the strings themselves. */
     @get:InputDirectory
@@ -52,7 +54,8 @@ abstract class GenerateAppTranslationStrings @Inject constructor(
     fun generate() {
         val out = outputDir.get().asFile
         // The generator never removes a locale's file; a locale dropped from source must go.
-        out.deleteRecursively()
+        // Gradle's delete fails the task where a file can't go, rather than leave it to ship.
+        files.delete { delete(out) }
         val args = mutableListOf(python3(), syncScript.get().asFile.path, "--res-dir", out.path)
         if (localesConfig.get()) args += "--locales-config"
         exec.exec { commandLine(args) }

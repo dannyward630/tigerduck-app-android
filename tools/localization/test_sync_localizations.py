@@ -41,5 +41,23 @@ class SyncIntoResDirTest(unittest.TestCase):
         self.assertFalse((sync.ROOT / "app-translation" / "generated" / "android").exists())
 
 
+class LineEndingsTest(unittest.TestCase):
+    def test_the_locale_list_is_written_with_lf_whatever_the_platform(self):
+        real = sync.Path.write_text
+        seen = []
+
+        def recording(path, content, *args, **kwargs):
+            seen.append(kwargs.get("newline"))
+            return real(path, content, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            sync.Path.write_text = recording
+            try:
+                sync.write_file(pathlib.Path(tmp) / "xml" / "a.xml", "one\n")
+            finally:
+                sync.Path.write_text = real
+        self.assertEqual(["\n"], seen)
+
+
 if __name__ == "__main__":
     unittest.main()
