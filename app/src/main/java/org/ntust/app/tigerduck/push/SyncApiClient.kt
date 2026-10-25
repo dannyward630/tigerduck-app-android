@@ -4,11 +4,11 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.json.JSONObject
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.guardedBy
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
+import org.ntust.app.tigerduck.network.BackendServices
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.shared.Course
 import javax.inject.Inject
@@ -146,14 +146,11 @@ class SyncApiClient @Inject constructor(
         .guardedBy(authTokenManager)
         .build()
 
+    private val api = BackendServices(SyncApi::class.java, client)
+
     suspend fun fetchRevision(): Long = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
-        val request = Request.Builder()
-            .url("$baseUrl/sync/revision")
-            .get()
-            .header("Authorization", authHeader)
-            .build()
-        client.newCall(request).execute().use { response ->
+        api.at(baseUrl).revision(authHeader).execute().use { response ->
             if (!response.isSuccessful) {
                 throw PushApiException("sync/revision failed: HTTP ${response.code}", response.code)
             }
@@ -169,12 +166,7 @@ class SyncApiClient @Inject constructor(
      */
     suspend fun fetchChanges(sinceRevision: Long): SyncChangesPage? = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
-        val request = Request.Builder()
-            .url("$baseUrl/sync?since_revision=$sinceRevision")
-            .get()
-            .header("Authorization", authHeader)
-            .build()
-        client.newCall(request).execute().use { response ->
+        api.at(baseUrl).changes(authHeader, sinceRevision).execute().use { response ->
             if (response.code == HTTP_GONE) return@withContext null
             if (!response.isSuccessful) {
                 throw PushApiException("sync changes failed: HTTP ${response.code}", response.code)
@@ -186,12 +178,7 @@ class SyncApiClient @Inject constructor(
     suspend fun fetchFullSync(): BackendSyncResult = withContext(Dispatchers.IO) {
         val authHeader = authTokenManager.requireAuthHeader()
         val fetchedAtMs = System.currentTimeMillis()
-        val request = Request.Builder()
-            .url("$baseUrl/sync/full")
-            .get()
-            .header("Authorization", authHeader)
-            .build()
-        client.newCall(request).execute().use { response ->
+        api.at(baseUrl).full(authHeader).execute().use { response ->
             if (!response.isSuccessful) {
                 throw PushApiException("sync/full failed: HTTP ${response.code}")
             }

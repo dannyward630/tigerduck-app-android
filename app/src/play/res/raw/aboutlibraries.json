@@ -3974,6 +3974,29 @@
             ]
         },
         {
+            "uniqueId": "com.squareup.retrofit2:retrofit",
+            "artifactVersion": "3.0.0",
+            "name": "Retrofit",
+            "description": "A type-safe HTTP client for Android and Java.",
+            "website": "https://github.com/square/retrofit",
+            "developers": [
+                {
+                    "name": "Square, Inc."
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:git://github.com/square/retrofit.git",
+                "developerConnection": "scm:git:ssh://git@github.com/square/retrofit.git",
+                "url": "https://github.com/square/retrofit/"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "jakarta.activation:jakarta.activation-api",
             "artifactVersion": "2.1.4",
             "name": "Jakarta Activation API",
