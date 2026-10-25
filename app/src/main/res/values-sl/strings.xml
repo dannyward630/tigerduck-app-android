@@ -38,6 +38,7 @@
     <string name="action_clear_text">Počisti besedilo</string>
     <string name="action_close">Zapri</string>
     <string name="action_confirm">Potrdi</string>
+    <string name="action_continue">Nadaljuj</string>
     <string name="action_done">Končano</string>
     <string name="action_go_to_settings">Odpri nastavitve</string>
     <string name="action_got_it">Razumem</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Trenutni zavihki</string>
     <string name="tab_editor_title">Prilagodi spodnjo vrstico</string>
     <string name="tag_server_notification">Strežniško obvestilo</string>
+    <string name="tls_certificate_fingerprint">Prstni odtis SHA-256</string>
+    <string name="tls_certificate_intermediate">Vmesno</string>
+    <string name="tls_certificate_issuer">Izdajatelj</string>
+    <string name="tls_certificate_list_title">Potrdila</string>
+    <string name="tls_certificate_name">Ime</string>
+    <string name="tls_certificate_root">Korensko</string>
+    <string name="tls_certificate_validity">Veljavnost</string>
+    <string name="tls_pin_mismatch_details">Potrdilo za %1$@ se razlikuje od tistega, ki ga ima TigerDuck zabeleženega, vendar ga je izdal zaupanja vreden izdajatelj, zato ga je spletno mesto morda obnovilo. Če nadaljujete, bo TigerDuck zaupal temu potrdilu do naslednje posodobitve, za vsa spletna mesta pod %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Izdajatelj: %@</string>
+    <string name="tls_pin_mismatch_message">Potrdilo spletnega mesta se ne ujema z zabeleženim, kar vpliva na varnost povezave. Želite nadaljevati na to spletno mesto?</string>
+    <string name="tls_pin_mismatch_show_details">Podrobnosti</string>
+    <string name="tls_pin_mismatch_title">Potrdilo se je spremenilo</string>
+    <string name="tls_pin_mismatch_view_certificate">Prikaži potrdilo</string>
     <string name="update_action_later">Pozneje</string>
     <string name="update_action_skip_version">Preskoči to različico</string>
     <string name="update_action_update_now">Posodobi zdaj</string>

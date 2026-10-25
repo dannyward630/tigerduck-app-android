@@ -38,6 +38,7 @@
     <string name="action_clear_text">مسح النص</string>
     <string name="action_close">إغلاق</string>
     <string name="action_confirm">تأكيد</string>
+    <string name="action_continue">متابعة</string>
     <string name="action_done">تم</string>
     <string name="action_go_to_settings">الانتقال إلى الإعدادات</string>
     <string name="action_got_it">حسنًا</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">التبويبات الحالية</string>
     <string name="tab_editor_title">تخصيص شريط التنقل السفلي</string>
     <string name="tag_server_notification">إشعار الخادم</string>
+    <string name="tls_certificate_fingerprint">بصمة SHA-256</string>
+    <string name="tls_certificate_intermediate">وسيطة</string>
+    <string name="tls_certificate_issuer">جهة الإصدار</string>
+    <string name="tls_certificate_list_title">الشهادات</string>
+    <string name="tls_certificate_name">الاسم</string>
+    <string name="tls_certificate_root">جذر</string>
+    <string name="tls_certificate_validity">الصلاحية</string>
+    <string name="tls_pin_mismatch_details">شهادة %1$@ تختلف عن الشهادة المسجّلة لدى TigerDuck، لكنها صادرة عن جهة موثوقة، فقد يكون الموقع جدّد شهادته. إذا تابعت، سيثق TigerDuck بهذه الشهادة حتى التحديث التالي، لكل المواقع ضمن %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">أصدرتها %@</string>
+    <string name="tls_pin_mismatch_message">شهادة الموقع لا تطابق الشهادة المسجّلة، مما يؤثر على أمان الاتصال. هل تريد متابعة الانتقال إلى هذا الموقع؟</string>
+    <string name="tls_pin_mismatch_show_details">التفاصيل</string>
+    <string name="tls_pin_mismatch_title">تم تغيير الشهادة</string>
+    <string name="tls_pin_mismatch_view_certificate">عرض الشهادة</string>
     <string name="update_action_later">لاحقاً</string>
     <string name="update_action_skip_version">تخطّي هذا الإصدار</string>
     <string name="update_action_update_now">تحديث الآن</string>

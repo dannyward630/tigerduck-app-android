@@ -38,6 +38,7 @@
     <string name="action_clear_text">Metni temizle</string>
     <string name="action_close">Kapat</string>
     <string name="action_confirm">Onayla</string>
+    <string name="action_continue">Devam</string>
     <string name="action_done">Tamam</string>
     <string name="action_go_to_settings">Ayarlara git</string>
     <string name="action_got_it">Anladım</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Mevcut sekmeler</string>
     <string name="tab_editor_title">Alt çubuğu özelleştir</string>
     <string name="tag_server_notification">Sunucu bildirimi</string>
+    <string name="tls_certificate_fingerprint">SHA-256 parmak izi</string>
+    <string name="tls_certificate_intermediate">Ara sertifika</string>
+    <string name="tls_certificate_issuer">Veren</string>
+    <string name="tls_certificate_list_title">Sertifikalar</string>
+    <string name="tls_certificate_name">Ad</string>
+    <string name="tls_certificate_root">Kök sertifika</string>
+    <string name="tls_certificate_validity">Geçerlilik</string>
+    <string name="tls_pin_mismatch_details">%1$@ sertifikası TigerDuck\'ın kayıtlı olanından farklı, ancak güvenilir bir kuruluş tarafından verilmiş; web sitesi sertifikasını yenilemiş olabilir. Devam ederseniz TigerDuck, sonraki güncellemeye kadar bu sertifikaya güvenir ve %2$@ altındaki tüm sitelere uygular.</string>
+    <string name="tls_pin_mismatch_issuer">Veren: %@</string>
+    <string name="tls_pin_mismatch_message">Web sitesinin sertifikası kayıtlı olanla eşleşmiyor, bu da bağlantının güvenliğini etkiliyor. Bu web sitesine devam edilsin mi?</string>
+    <string name="tls_pin_mismatch_show_details">Ayrıntılar</string>
+    <string name="tls_pin_mismatch_title">Sertifika değişti</string>
+    <string name="tls_pin_mismatch_view_certificate">Sertifikayı görüntüle</string>
     <string name="update_action_later">Daha sonra</string>
     <string name="update_action_skip_version">Bu sürümü atla</string>
     <string name="update_action_update_now">Şimdi güncelle</string>

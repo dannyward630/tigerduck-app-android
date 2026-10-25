@@ -38,6 +38,7 @@
     <string name="action_clear_text">Notīrīt tekstu</string>
     <string name="action_close">Aizvērt</string>
     <string name="action_confirm">Apstiprināt</string>
+    <string name="action_continue">Turpināt</string>
     <string name="action_done">Gatavs</string>
     <string name="action_go_to_settings">Doties uz iestatījumiem</string>
     <string name="action_got_it">Sapratu</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Pašreizējie cilņi</string>
     <string name="tab_editor_title">Pielāgot apakšējo joslu</string>
     <string name="tag_server_notification">Servera paziņojums</string>
+    <string name="tls_certificate_fingerprint">SHA-256 pirkstu nospiedums</string>
+    <string name="tls_certificate_intermediate">Starpposma</string>
+    <string name="tls_certificate_issuer">Izdevējs</string>
+    <string name="tls_certificate_list_title">Sertifikāti</string>
+    <string name="tls_certificate_name">Nosaukums</string>
+    <string name="tls_certificate_root">Saknes</string>
+    <string name="tls_certificate_validity">Derīgums</string>
+    <string name="tls_pin_mismatch_details">%1$@ sertifikāts atšķiras no TigerDuck ierakstītā, taču to izdevusi uzticama iestāde, tāpēc vietne, iespējams, to ir atjaunojusi. Ja turpināsiet, TigerDuck uzticēsies šim sertifikātam līdz nākamajam atjauninājumam visās vietnēs, kas pieder pie %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Izdevējs: %@</string>
+    <string name="tls_pin_mismatch_message">Vietnes sertifikāts neatbilst ierakstītajam, kas ietekmē savienojuma drošību. Vai turpināt uz šo vietni?</string>
+    <string name="tls_pin_mismatch_show_details">Detalizēta informācija</string>
+    <string name="tls_pin_mismatch_title">Sertifikāts ir mainījies</string>
+    <string name="tls_pin_mismatch_view_certificate">Skatīt sertifikātu</string>
     <string name="update_action_later">Vēlāk</string>
     <string name="update_action_skip_version">Izlaist šo versiju</string>
     <string name="update_action_update_now">Atjaunināt tagad</string>

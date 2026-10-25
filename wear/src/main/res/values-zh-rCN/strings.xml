@@ -38,6 +38,7 @@
     <string name="action_clear_text">清除文字</string>
     <string name="action_close">关闭</string>
     <string name="action_confirm">确认</string>
+    <string name="action_continue">继续</string>
     <string name="action_done">完成</string>
     <string name="action_go_to_settings">前往设置</string>
     <string name="action_got_it">收到！</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">当前显示的项目</string>
     <string name="tab_editor_title">自定义底部导航栏</string>
     <string name="tag_server_notification">服务器通知</string>
+    <string name="tls_certificate_fingerprint">SHA-256 指纹</string>
+    <string name="tls_certificate_intermediate">中间证书</string>
+    <string name="tls_certificate_issuer">签发者</string>
+    <string name="tls_certificate_list_title">证书</string>
+    <string name="tls_certificate_name">名称</string>
+    <string name="tls_certificate_root">根证书</string>
+    <string name="tls_certificate_validity">有效期</string>
+    <string name="tls_pin_mismatch_details">%1$@ 的证书和 TigerDuck 记录的不同，但仍由受信任的机构签发，可能是网站更新了证书。继续后，TigerDuck 更新前都会信任此证书，并应用到 %2$@ 下的所有网站。</string>
+    <string name="tls_pin_mismatch_issuer">签发者：%@</string>
+    <string name="tls_pin_mismatch_message">网站证书与记录不符，连接的安全性受到影响，确定要继续前往此网站吗？</string>
+    <string name="tls_pin_mismatch_show_details">详细信息</string>
+    <string name="tls_pin_mismatch_title">证书已更改</string>
+    <string name="tls_pin_mismatch_view_certificate">查看证书</string>
     <string name="update_action_later">稍后</string>
     <string name="update_action_skip_version">跳过此版本</string>
     <string name="update_action_update_now">立即更新</string>

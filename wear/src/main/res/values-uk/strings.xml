@@ -38,6 +38,7 @@
     <string name="action_clear_text">Очистити текст</string>
     <string name="action_close">Закрити</string>
     <string name="action_confirm">Підтвердити</string>
+    <string name="action_continue">Продовжити</string>
     <string name="action_done">Готово</string>
     <string name="action_go_to_settings">Перейти до налаштувань</string>
     <string name="action_got_it">Зрозуміло</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Поточні вкладки</string>
     <string name="tab_editor_title">Налаштувати нижню панель</string>
     <string name="tag_server_notification">Сповіщення сервера</string>
+    <string name="tls_certificate_fingerprint">Відбиток SHA-256</string>
+    <string name="tls_certificate_intermediate">Проміжний</string>
+    <string name="tls_certificate_issuer">Видавець</string>
+    <string name="tls_certificate_list_title">Сертифікати</string>
+    <string name="tls_certificate_name">Назва</string>
+    <string name="tls_certificate_root">Кореневий</string>
+    <string name="tls_certificate_validity">Термін дії</string>
+    <string name="tls_pin_mismatch_details">Сертифікат %1$@ відрізняється від записаного в TigerDuck, але виданий довіреним центром, тож сайт міг його оновити. Якщо продовжити, TigerDuck довірятиме цьому сертифікату до наступного оновлення для всіх сайтів у %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Видав: %@</string>
+    <string name="tls_pin_mismatch_message">Сертифікат сайту не збігається із записаним, що знижує безпеку з’єднання. Перейти на цей сайт?</string>
+    <string name="tls_pin_mismatch_show_details">Докладно</string>
+    <string name="tls_pin_mismatch_title">Сертифікат змінився</string>
+    <string name="tls_pin_mismatch_view_certificate">Переглянути сертифікат</string>
     <string name="update_action_later">Пізніше</string>
     <string name="update_action_skip_version">Пропустити цю версію</string>
     <string name="update_action_update_now">Оновити зараз</string>
