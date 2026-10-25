@@ -1084,3 +1084,6 @@ FodyWeavers.xsd
 # root). Pure build state — they were briefly committed by an over-broad
 # `git add -A` and are here so that cannot repeat.
 .kotlin/
+
+# The debug build's file viewer samples include a zip on purpose.
+!app/src/debug/assets/viewer-samples/*.zip
