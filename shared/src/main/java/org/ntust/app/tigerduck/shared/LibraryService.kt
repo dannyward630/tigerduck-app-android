@@ -247,7 +247,8 @@ class LibraryService(
                 .post(body)
                 .build()
 
-            send(request).use { response ->
+            // A sign-in that stops at a redirect got no answer: it is no refusal of the password.
+            (post(request) ?: throw LibraryServiceError.LoginUnavailable(GENERIC_ERROR)).use { response ->
                 val answer = loginAnswer(response.code, response.body.string())
                 val stored = credentials.saveLibrarySignIn(
                     accountGeneration,
@@ -446,7 +447,10 @@ class LibraryService(
             .post(body)
             .build()
 
-        send(request).use { response ->
+        // The token, sent again after a dropped connection, counts toward no lockout.
+        val answer = post(request, retryOnConnectionFailure = true)
+            ?: throw LibraryServiceError.QRGenerationFailed(GENERIC_ERROR)
+        answer.use { response ->
             val responseBody = response.body.string()
             val qrResponse = runCatching {
                 gson.fromJson(responseBody, LibraryQRResponse::class.java)
@@ -464,13 +468,19 @@ class LibraryService(
     }
 
     /**
-     * Sends [request] and waits for its response, cancelling the call when the caller is
-     * cancelled. A blocking execute() went on until the library answered or timed out, and held
-     * a caller that had already moved on, such as the watch's page after the phone handed over
-     * another account.
+     * Posts [request], which carries the password or the token, by [executeCredentialPost]'s
+     * rules: no redirect sends it on, to the library itself either, and one that would returns
+     * null. As on the iPhone and the Apple Watch.
      */
-    private suspend fun send(request: Request): Response = suspendCancellableCoroutine { waiting ->
-        val call = client.newCall(request)
+    private suspend fun post(request: Request, retryOnConnectionFailure: Boolean = false): Response? =
+        client.executeCredentialPost(request, retryOnConnectionFailure = retryOnConnectionFailure) { await(it) }
+
+    /**
+     * Waits for [call]'s response, cancelling the call when the caller is cancelled. A blocking
+     * execute() went on until the library answered or timed out, and held a caller that had
+     * already moved on, such as the watch's page after the phone handed over another account.
+     */
+    private suspend fun await(call: Call): Response = suspendCancellableCoroutine { waiting ->
         waiting.invokeOnCancellation { call.cancel() }
         call.enqueue(object : Callback {
             override fun onFailure(call: Call, e: IOException) = waiting.resumeWithException(e)
