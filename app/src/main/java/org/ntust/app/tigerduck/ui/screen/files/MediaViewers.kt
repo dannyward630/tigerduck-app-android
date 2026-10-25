@@ -8,6 +8,8 @@ import android.widget.ImageView
 import androidx.annotation.OptIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -24,7 +26,9 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,6 +50,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import com.mikepenz.markdown.compose.LazyMarkdownSuccess
 import com.mikepenz.markdown.m3.Markdown
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -101,11 +106,14 @@ private const val MAX_IMAGE_SIDE = 4096
 @Composable
 internal fun MediaViewer(uri: Uri, audio: Boolean, onFailed: () -> Unit) {
     val context = LocalContext.current
+    // Where it was and whether it played, kept when the screen is made again (a new display size).
+    var resumeAt by rememberSaveable(uri) { mutableLongStateOf(0L) }
+    var resumePlaying by rememberSaveable(uri) { mutableStateOf(true) }
     val player = remember(uri) {
         ExoPlayer.Builder(context).build().apply {
-            setMediaItem(MediaItem.fromUri(uri))
+            setMediaItem(MediaItem.fromUri(uri), resumeAt)
             prepare()
-            playWhenReady = true
+            playWhenReady = resumePlaying
         }
     }
     DisposableEffect(player) {
@@ -120,7 +128,14 @@ internal fun MediaViewer(uri: Uri, audio: Boolean, onFailed: () -> Unit) {
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle, player) {
-        val pause = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) player.pause() }
+        // Stopped before the screen's state is saved, so the place is in it.
+        val pause = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                resumeAt = player.currentPosition
+                resumePlaying = player.playWhenReady
+                player.pause()
+            }
+        }
         lifecycle.addObserver(pause)
         onDispose { lifecycle.removeObserver(pause) }
     }
@@ -180,9 +195,16 @@ internal fun TextViewer(uri: Uri, markdown: Boolean, browserPreference: String, 
             }
         }
         CompositionLocalProvider(LocalUriHandler provides handler) {
-            LazyColumn(Modifier.fillMaxSize()) {
-                item { Box(Modifier.padding(16.dp)) { Markdown(content = text.text) } }
-                truncated?.let { item { TruncatedNote(it) } }
+            Column(Modifier.fillMaxSize()) {
+                truncated?.let { TruncatedNote(it) }
+                // Block by block in a lazy list, so a long file lays out only what shows.
+                Markdown(
+                    content = text.text,
+                    modifier = Modifier.weight(1f),
+                    success = { state, components, modifier ->
+                        LazyMarkdownSuccess(state, components, modifier, contentPadding = PaddingValues(16.dp))
+                    },
+                )
             }
         }
     } else {

@@ -1,0 +1,58 @@
+package org.ntust.app.tigerduck.ui.screen.files
+
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntSize
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.io.Closeable
+
+class ViewerStateTest {
+
+    private val size = IntSize(1000, 1000)
+
+    @Test
+    fun `a gesture's end, with no finger left, leaves the zoom where it was`() {
+        val zoom = ZoomState()
+        zoom.change(2f, Offset(500f, 500f), Offset.Zero, size)
+        val at = zoom.offset
+
+        zoom.change(1f, Offset.Unspecified, Offset.Zero, size)
+
+        assertEquals(2f, zoom.scale)
+        assertEquals(at, zoom.offset)
+        assertTrue(zoom.offset.x.isFinite() && zoom.offset.y.isFinite())
+    }
+
+    private class Resource : Closeable {
+        var closed = 0
+        override fun close() {
+            closed++
+        }
+    }
+
+    @Test
+    fun `a document opened after the screen left is closed at once`() {
+        val owner = Owner<Resource>()
+        owner.close()
+
+        val late = Resource()
+        assertFalse(owner.adopt(late))
+
+        assertEquals(1, late.closed)
+    }
+
+    @Test
+    fun `a document the screen holds is closed once when it leaves`() {
+        val owner = Owner<Resource>()
+        val document = Resource()
+        assertTrue(owner.adopt(document))
+        assertEquals(document, owner.value)
+
+        owner.close()
+        owner.close()
+
+        assertEquals(1, document.closed)
+    }
+}

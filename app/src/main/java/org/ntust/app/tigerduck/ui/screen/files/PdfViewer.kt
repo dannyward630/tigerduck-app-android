@@ -41,9 +41,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -61,25 +64,28 @@ import java.io.Closeable
 @Composable
 internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
     val context = LocalContext.current
-    var document by remember(uri) { mutableStateOf<PdfDocument?>(null) }
-    LaunchedEffect(uri) {
-        // A locked or broken file throws here: the screen says it can't show it.
-        document = runCatching { withContext(Dispatchers.IO) { PdfDocument.open(context, uri) } }
-            .getOrElse { onFailed(); null }
+    // Whatever opens is the screen's to close, even if it opens after the screen has gone.
+    val owner = remember(uri) { Owner<PdfDocument>() }
+    DisposableEffect(owner) { onDispose { owner.close() } }
+    LaunchedEffect(owner) {
+        try {
+            withContext(Dispatchers.IO) { owner.adopt(PdfDocument.open(context, uri)) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // A locked or broken file: the screen says it can't show it.
+            onFailed()
+        }
     }
-    DisposableEffect(document) {
-        val open = document
-        onDispose { open?.close() }
-    }
-    val pdf = document ?: return Reading()
+    val pdf = owner.value ?: return Reading()
     val zoom = remember(uri) { ZoomState() }
     val list = rememberLazyListState()
     val position by remember(pdf) { derivedStateOf { PdfPages.position(list.firstVisibleItemIndex, pdf.pageSizes.size) } }
     BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer)) {
-        val renderWidth = with(LocalDensity.current) { PdfPages.renderWidth(maxWidth.roundToPx()) }
+        val viewWidth = with(LocalDensity.current) { maxWidth.roundToPx() }
         Box(Modifier.fillMaxSize().zoomable(zoom, oneFingerPans = false)) {
             LazyColumn(state = list, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(pdf.pageSizes.size) { index -> PdfPage(pdf, index, renderWidth) }
+                items(pdf.pageSizes.size) { index -> PdfPage(pdf, index, viewWidth) }
             }
         }
         val pageText = stringResource(R.string.a11y_file_viewer_page, position.first, position.second)
@@ -99,11 +105,11 @@ internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
 }
 
 @Composable
-private fun PdfPage(pdf: PdfDocument, index: Int, renderWidth: Int) {
+private fun PdfPage(pdf: PdfDocument, index: Int, viewWidth: Int) {
     val size = pdf.pageSizes[index]
-    var bitmap by remember(index, renderWidth) { mutableStateOf(pdf.cached(index, renderWidth)) }
-    LaunchedEffect(index, renderWidth) {
-        if (bitmap == null) bitmap = runCatching { pdf.render(index, renderWidth) }.getOrNull()
+    var bitmap by remember(index, viewWidth) { mutableStateOf(pdf.cached(index, viewWidth)) }
+    LaunchedEffect(index, viewWidth) {
+        if (bitmap == null) bitmap = runCatching { pdf.render(index, viewWidth) }.getOrNull()
     }
     val ratio = size.width.toFloat().coerceAtLeast(1f) / size.height.toFloat().coerceAtLeast(1f)
     Box(Modifier.fillMaxWidth().aspectRatio(ratio).background(androidx.compose.ui.graphics.Color.White)) {
@@ -125,19 +131,19 @@ internal class PdfDocument private constructor(
         override fun sizeOf(key: Pair<Int, Int>, value: Bitmap) = value.byteCount
     }
 
-    fun cached(index: Int, width: Int): Bitmap? = cache.get(index to width)
+    fun cached(index: Int, viewWidth: Int): Bitmap? = cache.get(index to viewWidth)
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    suspend fun render(index: Int, width: Int): Bitmap? = withContext(RENDERING) {
+    /** Page [index] for a view [viewWidth] px wide, at [PdfPages.renderSize]. */
+    suspend fun render(index: Int, viewWidth: Int): Bitmap? = withContext(RENDERING) {
         lock.withLock {
             if (closed) return@withLock null
-            cache.get(index to width)?.let { return@withLock it }
+            cache.get(index to viewWidth)?.let { return@withLock it }
             renderer.openPage(index).use { page ->
-                val height = PdfPages.displayHeight(page.width, page.height, width).coerceAtLeast(1)
+                val (width, height) = PdfPages.renderSize(page.width, page.height, viewWidth)
                 val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 bitmap.eraseColor(Color.WHITE)
                 page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                cache.put(index to width, bitmap)
+                cache.put(index to viewWidth, bitmap)
                 bitmap
             }
         }
@@ -163,13 +169,17 @@ internal class PdfDocument private constructor(
         private fun cacheBytes(): Int =
             minOf(Runtime.getRuntime().maxMemory() / 8, 96L * 1024 * 1024).toInt()
 
-        fun open(context: Context, uri: android.net.Uri): PdfDocument {
+        /** Opens [uri] and reads every page's size; stops, closing what it opened, when cancelled. */
+        suspend fun open(context: Context, uri: android.net.Uri): PdfDocument {
             val descriptor = context.contentResolver.openFileDescriptor(uri, "r")
                 ?: throw java.io.FileNotFoundException("no descriptor")
             try {
                 val renderer = PdfRenderer(descriptor)
                 try {
-                    val sizes = (0 until renderer.pageCount).map { i -> renderer.openPage(i).use { Size(it.width, it.height) } }
+                    val sizes = (0 until renderer.pageCount).map { i ->
+                        currentCoroutineContext().ensureActive()
+                        renderer.openPage(i).use { Size(it.width, it.height) }
+                    }
                     return PdfDocument(descriptor, renderer, sizes)
                 } catch (e: Exception) {
                     renderer.close()
@@ -180,5 +190,34 @@ internal class PdfDocument private constructor(
                 throw e
             }
         }
+    }
+}
+
+/**
+ * What a screen opened, closed when the screen leaves: also when it opens only after that, which
+ * a cancelled open can, as its result is then never handed back.
+ */
+internal class Owner<T : Closeable> {
+    private var closed = false
+
+    var value: T? by mutableStateOf(null)
+        private set
+
+    /** Takes [resource]; closes it at once instead when the screen has already left. */
+    @Synchronized
+    fun adopt(resource: T): Boolean {
+        if (closed) {
+            resource.close()
+            return false
+        }
+        value = resource
+        return true
+    }
+
+    @Synchronized
+    fun close() {
+        if (closed) return
+        closed = true
+        value?.close()
     }
 }

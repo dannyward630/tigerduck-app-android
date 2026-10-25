@@ -35,7 +35,9 @@ object FileViewing {
     fun opening(mimeType: String, fileName: String): FileOpening {
         val type = mimeType.substringBefore(';').trim().lowercase()
         val extension = fileName.substringAfterLast('.', missingDelimiterValue = "").lowercase()
-        if (isWebOrXml(type) || extension in SHARED_NOT_VIEWED_EXTENSIONS) return FileOpening.ShareOnly
+        if (isWebOrXml(type) || extension in SHARED_NOT_VIEWED_EXTENSIONS || extension in XML_EXTENSIONS) {
+            return FileOpening.ShareOnly
+        }
         val kind = if (type.isEmpty() || type in GENERIC_TYPES) kindOfExtension(extension) else kindOfType(type)
         return kind?.let(FileOpening::InApp) ?: FileOpening.OtherApp
     }
@@ -66,6 +68,9 @@ object FileViewing {
         "pptx" -> ViewerKind.PPTX
         else -> null
     }
+
+    /** XML by name, which the share sheet takes whatever type it was sent as. */
+    private val XML_EXTENSIONS = setOf("xml", "xsl", "xslt")
 
     private val GENERIC_TYPES = setOf("application/octet-stream", "document/unknown", "application/unknown")
 
@@ -115,6 +120,8 @@ object TextPreviews {
             bytes.startsWith(0xFE, 0xFF) -> String(evenLength(bytes.copyOfRange(2, bytes.size)), Charsets.UTF_16BE)
             else -> strict(completeUtf8(bytes, truncated), Charsets.UTF_8)
                 ?: strict(bytes, BIG5)
+                // The limit may have kept only a Big5 character's first byte.
+                ?: (if (truncated) strict(bytes.copyOf(bytes.size - 1), BIG5) else null)
                 ?: String(bytes, Charsets.UTF_8)
         }
         return TextPreview(text, truncated)
@@ -184,6 +191,29 @@ object PdfPages {
     fun displayHeight(pageWidth: Int, pageHeight: Int, width: Int): Int =
         if (pageWidth <= 0 || pageHeight <= 0) width else (width.toLong() * pageHeight / pageWidth).toInt()
 
+    /** The most pixels one page is rendered with: 32 MB of bitmap. */
+    const val MAX_RENDER_PIXELS = 8L * 1024 * 1024
+
+    /**
+     * The bitmap a page of [pageWidth] by [pageHeight] points renders into for a view [viewWidth]
+     * px wide: [renderWidth] wide, unless that would pass [MAX_RENDER_PIXELS], as a long strip of
+     * a page would, when it is narrower, its shape kept.
+     */
+    fun renderSize(pageWidth: Int, pageHeight: Int, viewWidth: Int): Pair<Int, Int> {
+        var width = renderWidth(viewWidth)
+        var height = displayHeight(pageWidth, pageHeight, width).coerceAtLeast(1)
+        if (width.toLong() * height > MAX_RENDER_PIXELS) {
+            val scale = kotlin.math.sqrt(MAX_RENDER_PIXELS.toDouble() / (width.toLong() * height))
+            width = (width * scale).toInt().coerceAtLeast(1)
+            height = displayHeight(pageWidth, pageHeight, width).coerceAtLeast(1)
+            while (width > 1 && width.toLong() * height > MAX_RENDER_PIXELS) {
+                width--
+                height = displayHeight(pageWidth, pageHeight, width).coerceAtLeast(1)
+            }
+        }
+        return width to height
+    }
+
     /** The width to render a page at for a view [viewWidth] px wide: sharper, so a pinch in stays crisp. */
     fun renderWidth(viewWidth: Int): Int = (viewWidth.coerceAtLeast(1) * 1.5f).roundToInt().coerceAtMost(MAX_RENDER_WIDTH)
 }
@@ -200,7 +230,7 @@ object OfficeRequests {
 
     /** The viewer's files, in `assets/viewer/`. */
     val ASSETS = setOf(
-        "office.html", "office.js", "office.css", "jszip.min.js", "jszip-shim.js", "docx-preview.min.js",
+        "office.html", "office-guard.js", "office.js", "office.css", "jszip.min.js", "jszip-shim.js", "docx-preview.min.js",
         "pptx-to-html.js",
     )
 

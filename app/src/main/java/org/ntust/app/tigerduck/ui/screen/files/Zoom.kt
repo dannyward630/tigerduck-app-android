@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -29,6 +30,8 @@ internal class ZoomState {
 
     /** Zooms by [zoom] about [centroid] and moves by [pan], kept within [size]'s edges. */
     fun change(zoom: Float, centroid: Offset, pan: Offset, size: IntSize) {
+        // A gesture's last event, with no finger left, has no centroid.
+        if (!centroid.isSpecified || !zoom.isFinite() || !pan.x.isFinite() || !pan.y.isFinite()) return
         val newScale = (scale * zoom).coerceIn(MIN, MAX)
         // Keep the point under the fingers where it is.
         val moved = (offset + centroid) * (newScale / scale) - centroid + pan
@@ -71,7 +74,7 @@ internal fun Modifier.zoomable(state: ZoomState, oneFingerPans: Boolean): Modifi
                 val event = awaitPointerEvent(PointerEventPass.Initial)
                 val pressed = event.changes.count { it.pressed }
                 val zooming = pressed >= 2
-                if (zooming || (oneFingerPans && state.scale > ZoomState.MIN)) {
+                if (pressed > 0 && (zooming || (oneFingerPans && state.scale > ZoomState.MIN))) {
                     state.change(event.calculateZoom(), event.calculateCentroid(useCurrent = true), -event.calculatePan(), size)
                     event.changes.forEach { if (it.positionChanged()) it.consume() }
                 }

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +25,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import org.ntust.app.tigerduck.files.FileViewing
 import org.ntust.app.tigerduck.files.OfficeRequests
 import org.ntust.app.tigerduck.files.ViewerKind
+import kotlinx.coroutines.delay
 import java.io.ByteArrayInputStream
 
 /**
@@ -40,11 +42,19 @@ internal fun OfficeViewer(uri: Uri, kind: ViewerKind, onFailed: () -> Unit) {
         officeWebView(context, uri, kind, onShown = { shown = true }, onFailed = onFailed)
     }
     DisposableEffect(web) { onDispose { web.destroy() } }
+    // A page that never says how it went (a script that never loaded, say) has failed too.
+    LaunchedEffect(web) {
+        delay(OFFICE_TIMEOUT_MILLIS)
+        if (!shown) onFailed()
+    }
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { web }, modifier = Modifier.fillMaxSize())
         if (!shown) Reading()
     }
 }
+
+/** How long a document may take to render before the viewer gives up on it. */
+private const val OFFICE_TIMEOUT_MILLIS = 60_000L
 
 @SuppressLint("SetJavaScriptEnabled")
 internal fun officeWebView(

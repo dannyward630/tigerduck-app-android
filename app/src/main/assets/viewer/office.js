@@ -1,7 +1,7 @@
 // Fetches the document the app serves at /document and renders it: a Word document with
 // docx-preview, a PowerPoint deck one slide after another with pptx-to-html. The page's title
-// tells the app how it went, so the page needs no bridge to it.
-import { pptxToHtml } from "./pptx-to-html.js";
+// tells the app how it went, so the page needs no bridge to it. PowerPoint's renderer loads
+// only for a deck, so a Word document never waits on it or fails with it.
 
 const kind = new URLSearchParams(location.search).get("kind");
 const root = document.getElementById("document");
@@ -13,6 +13,7 @@ async function show() {
   if (kind === "docx") {
     await docx.renderAsync(data, root, null, { inWrapper: true, useBase64URL: true, ignoreLastRenderedPageBreak: true });
   } else if (kind === "pptx") {
+    const { pptxToHtml } = await import("./pptx-to-html.js");
     // Each slide at the deck's own size and shape.
     const slides = await pptxToHtml(data);
     if (slides.length === 0) throw new Error("empty");

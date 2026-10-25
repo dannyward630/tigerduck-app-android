@@ -66,6 +66,30 @@ class FileViewingTest {
     }
 
     @Test
+    fun `an xml file never renders here, whatever it was sent as`() {
+        assertEquals(ShareOnly, opening("text/plain", "data.xml"))
+        assertEquals(ShareOnly, opening("text/markdown", "feed.xml"))
+    }
+
+    @Test
+    fun `big5 cut by the limit inside a character reads as big5 still`() {
+        // Each of these is 2 bytes in Big5: 7 bytes end inside the fourth.
+        val bytes = "課程大綱".toByteArray(charset("Big5"))
+        assertEquals(TextPreview("課程大", truncated = true), TextPreviews.read(ByteArrayInputStream(bytes), limitBytes = 7))
+    }
+
+    @Test
+    fun `a page is rendered no bigger than the pixel budget, its shape kept`() {
+        // A long strip of a page: 1 inch wide, 200 inches tall.
+        val size = PdfPages.renderSize(pageWidth = 72, pageHeight = 14_400, viewWidth = 1080)
+        assertTrue("${size.first} x ${size.second}", size.first.toLong() * size.second <= PdfPages.MAX_RENDER_PIXELS)
+        assertEquals(14_400.0 / 72, size.second.toDouble() / size.first, 1.0)
+        assertTrue(size.first >= 1)
+        // An ordinary page keeps the sharp width.
+        assertEquals(1620 to 2292, PdfPages.renderSize(pageWidth = 595, pageHeight = 842, viewWidth = 1080))
+    }
+
+    @Test
     fun `a generic type opens by the name's extension`() {
         assertEquals(InApp(ViewerKind.PDF), opening("application/octet-stream", "week 3.pdf"))
         assertEquals(InApp(ViewerKind.DOCX), opening("document/unknown", "report.docx"))
