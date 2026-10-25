@@ -255,20 +255,25 @@ internal suspend fun openPickedPicture(
 @Composable
 internal fun rememberRefetchAfterEditor(refetch: (suspend () -> Unit)?): () -> Unit {
     var editing by rememberSaveable { mutableStateOf(false) }
-    var back by rememberSaveable { mutableStateOf(false) }
+    // Returns from the editor, and the last one a fetch finished for.
+    var returns by rememberSaveable { mutableIntStateOf(0) }
+    var fetchedFor by rememberSaveable { mutableIntStateOf(0) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (editing) {
             editing = false
-            back = true
+            returns++
         }
     }
     val latest by rememberUpdatedState(refetch)
-    LaunchedEffect(back, refetch != null) {
+    // A later return ends the wait for the earlier one's fetch, which may have read the profile
+    // before the later edit, and fetches behind it.
+    LaunchedEffect(returns, refetch != null) {
         val fetch = latest
-        if (back && fetch != null) {
+        if (returns > fetchedFor && fetch != null) {
+            val fetching = returns
             fetch()
-            // Cleared once done: a page recreated meanwhile fetches, and reports a failure, again.
-            back = false
+            // Marked once done: a page recreated meanwhile fetches, and reports a failure, again.
+            fetchedFor = fetching
         }
     }
     return remember { { editing = true } }

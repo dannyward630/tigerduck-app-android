@@ -135,6 +135,33 @@ class MoodleProfileEditorReturnTest {
         assertEquals("done, nothing more", 2, fetches)
     }
 
+    /**
+     * Edited again while the first edit's fetch, or its snackbar, still waits: that fetch may have
+     * read the profile before the second edit, so the second return fetches too.
+     */
+    @Test
+    fun `a second edit while the first one's fetch waits fetches again`() {
+        val answer = CompletableDeferred<Unit>()
+        var fetches = 0
+        var openEditor: () -> Unit = {}
+        composeRule.setContent {
+            CompositionLocalProvider(LocalLifecycleOwner provides page) {
+                openEditor = rememberRefetchAfterEditor(refetch = { fetches++; answer.await() })
+            }
+        }
+        composeRule.runOnIdle { openEditor() }
+        leaveAndComeBack()
+        assertEquals(1, fetches)
+
+        composeRule.runOnIdle { openEditor() }
+        leaveAndComeBack()
+        assertEquals(2, fetches)
+
+        composeRule.runOnIdle { answer.complete(Unit) }
+        leaveAndComeBack()
+        assertEquals("done, nothing more", 2, fetches)
+    }
+
     @Test
     fun `a failed fetch is offered again until it works or the student lets it go`() = runBlocking {
         val failure = IllegalStateException("offline")
