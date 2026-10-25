@@ -15,6 +15,14 @@ import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 
+/**
+ * A three-digit ROC academic year in a link's text on the calendar page, as the school writes
+ * it: "115學年度行事曆(ics檔案)". Digits on either side rule a match out, not word boundaries:
+ * Android's regex follows Unicode, where 學 is a word character, so `\b` between the year and
+ * 學年度 never matched and the page gave no years at all.
+ */
+internal const val CALENDAR_LINK_YEAR = """(?<!\d)(1\d{2})(?!\d)"""
+
 @Singleton
 class CalendarService @Inject constructor(
     baseClient: OkHttpClient,
@@ -43,7 +51,7 @@ class CalendarService @Inject constructor(
                 "<a[^>]*href=\"([^\"]*)\"[^>]*>(.*?)</a>",
                 setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)
             )
-            val yearRegex = Regex("""\b(1\d{2})\b""")
+            val yearRegex = Regex(CALENDAR_LINK_YEAR)
             val result = mutableMapOf<Int, String>()
 
             for (match in linkRegex.findAll(html)) {
