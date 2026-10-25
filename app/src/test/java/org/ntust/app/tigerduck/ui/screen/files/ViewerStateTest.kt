@@ -19,6 +19,8 @@ class ViewerStateTest {
         val at = zoom.offset
 
         zoom.change(1f, Offset.Unspecified, Offset.Zero, size)
+        zoom.change(1f, Offset(Float.NaN, 0f), Offset.Zero, size)
+        zoom.change(1f, Offset(0f, Float.POSITIVE_INFINITY), Offset.Zero, size)
 
         assertEquals(2f, zoom.scale)
         assertEquals(at, zoom.offset)

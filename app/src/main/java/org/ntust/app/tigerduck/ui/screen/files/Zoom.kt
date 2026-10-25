@@ -31,7 +31,8 @@ internal class ZoomState {
     /** Zooms by [zoom] about [centroid] and moves by [pan], kept within [size]'s edges. */
     fun change(zoom: Float, centroid: Offset, pan: Offset, size: IntSize) {
         // A gesture's last event, with no finger left, has no centroid.
-        if (!centroid.isSpecified || !zoom.isFinite() || !pan.x.isFinite() || !pan.y.isFinite()) return
+        if (!centroid.isSpecified || !centroid.x.isFinite() || !centroid.y.isFinite()) return
+        if (!zoom.isFinite() || !pan.x.isFinite() || !pan.y.isFinite()) return
         val newScale = (scale * zoom).coerceIn(MIN, MAX)
         // Keep the point under the fingers where it is.
         val moved = (offset + centroid) * (newScale / scale) - centroid + pan

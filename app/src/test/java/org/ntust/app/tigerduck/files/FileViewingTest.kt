@@ -85,6 +85,13 @@ class FileViewingTest {
         assertTrue("${size.first} x ${size.second}", size.first.toLong() * size.second <= PdfPages.MAX_RENDER_PIXELS)
         assertEquals(14_400.0 / 72, size.second.toDouble() / size.first, 1.0)
         assertTrue(size.first >= 1)
+        // A page too thin to keep its shape within the budget at a pixel's width, and one whose
+        // height in pixels wouldn't fit an Int: still within it, still taller than wide.
+        for (height in listOf(30_000_000, 10_000_000, Int.MAX_VALUE)) {
+            val (w, h) = PdfPages.renderSize(pageWidth = 1, pageHeight = height, viewWidth = 1080)
+            assertTrue("$height: $w x $h", w >= 1 && h >= 1 && w.toLong() * h <= PdfPages.MAX_RENDER_PIXELS)
+            assertTrue("$height: $w x $h", h > w)
+        }
         // An ordinary page keeps the sharp width.
         assertEquals(1620 to 2292, PdfPages.renderSize(pageWidth = 595, pageHeight = 842, viewWidth = 1080))
     }

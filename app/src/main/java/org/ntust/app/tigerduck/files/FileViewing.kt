@@ -189,7 +189,8 @@ object PdfPages {
 
     /** How tall a page of [pageWidth] by [pageHeight] points is drawn [width] px wide. */
     fun displayHeight(pageWidth: Int, pageHeight: Int, width: Int): Int =
-        if (pageWidth <= 0 || pageHeight <= 0) width else (width.toLong() * pageHeight / pageWidth).toInt()
+        if (pageWidth <= 0 || pageHeight <= 0) width
+        else (width.toLong() * pageHeight / pageWidth).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
 
     /** The most pixels one page is rendered with: 32 MB of bitmap. */
     const val MAX_RENDER_PIXELS = 8L * 1024 * 1024
@@ -200,18 +201,18 @@ object PdfPages {
      * a page would, when it is narrower, its shape kept.
      */
     fun renderSize(pageWidth: Int, pageHeight: Int, viewWidth: Int): Pair<Int, Int> {
-        var width = renderWidth(viewWidth)
-        var height = displayHeight(pageWidth, pageHeight, width).coerceAtLeast(1)
-        if (width.toLong() * height > MAX_RENDER_PIXELS) {
-            val scale = kotlin.math.sqrt(MAX_RENDER_PIXELS.toDouble() / (width.toLong() * height))
-            width = (width * scale).toInt().coerceAtLeast(1)
-            height = displayHeight(pageWidth, pageHeight, width).coerceAtLeast(1)
-            while (width > 1 && width.toLong() * height > MAX_RENDER_PIXELS) {
-                width--
-                height = displayHeight(pageWidth, pageHeight, width).coerceAtLeast(1)
-            }
+        // In doubles: a page's height in pixels may not fit an Int.
+        var width = renderWidth(viewWidth).toDouble()
+        var height = width * pageHeight.coerceAtLeast(1) / pageWidth.coerceAtLeast(1)
+        if (width * height > MAX_RENDER_PIXELS) {
+            val scale = kotlin.math.sqrt(MAX_RENDER_PIXELS / (width * height))
+            width *= scale
+            height *= scale
         }
-        return width to height
+        val w = width.toInt().coerceAtLeast(1)
+        // A page too thin for a pixel's width: as tall as the budget allows.
+        val h = height.toLong().coerceIn(1, MAX_RENDER_PIXELS / w).toInt()
+        return w to h
     }
 
     /** The width to render a page at for a view [viewWidth] px wide: sharper, so a pinch in stays crisp. */
