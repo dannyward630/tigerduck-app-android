@@ -391,8 +391,10 @@ class ArchivesTest {
             out.write(ByteArray(1024))
         }
         var result: Any? = "not reached"
-        // A small stack, as a worker thread's may be.
-        val thread = Thread(null, { result = runCatching { problem { listing(file) } }.getOrElse { it::class.simpleName } }, "small", 256L * 1024)
+        // Headers allowed without end, so it's the depth that stops it, not their size, which a
+        // JVM with smaller frames reaches first; on a small stack, as a worker thread's may be.
+        val limits = ArchiveLimits(maxHeaderBytes = 1L shl 40)
+        val thread = Thread(null, { result = runCatching { problem { listing(file, limits) } }.getOrElse { it::class.simpleName } }, "small", 256L * 1024)
         thread.start()
         thread.join()
 
