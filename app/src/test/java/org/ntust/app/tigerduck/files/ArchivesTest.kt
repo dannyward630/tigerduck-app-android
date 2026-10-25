@@ -329,6 +329,37 @@ class ArchivesTest {
     }
 
     @Test
+    fun `two takings of one file at once each finish whole, neither spoiling the other's`() {
+        val bytes = Random(4).nextBytes(1 shl 20)
+        val file = zip { file("data.bin", bytes) }
+        val item = listing(file).items.single()
+        val into = temp.newFolder("shared")
+        // The first stops partway, until the second has finished.
+        val partway = java.util.concurrent.CountDownLatch(1)
+        val secondDone = java.util.concurrent.CountDownLatch(1)
+        var checks = 0
+        val slow = ArchiveLimits(now = {
+            if (++checks == 3) {
+                partway.countDown()
+                secondDone.await()
+            }
+            0L
+        })
+        var first: Result<File>? = null
+        val thread = Thread { first = runCatching { Archives.extract(source(file), item, into, slow) } }
+        thread.start()
+        partway.await()
+
+        val second = Archives.extract(source(file), item, into)
+        assertArrayEquals(bytes, second.readBytes())
+        secondDone.countDown()
+        thread.join()
+
+        assertArrayEquals(bytes, first!!.getOrThrow().readBytes())
+        assertEquals(listOf(second.name), into.list()!!.toList())
+    }
+
+    @Test
     fun `the same file taken out twice is the same bytes`() {
         val bytes = Random(3).nextBytes(100_000)
         val file = zip { file("data.bin", bytes) }

@@ -130,15 +130,17 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
     var problem by remember { mutableStateOf<ArchiveProblem?>(null) }
     val taken = remember(folder) { mutableMapOf<Int, File>() }
 
-    // Back stops a file being taken out, then goes up a folder, before it leaves.
+    // Back stops a file being taken out, then goes up a folder, before it leaves. The stopped job
+    // lets go of its handle itself, once it has stopped, so no other starts beside it meanwhile.
     BackHandler(enabled = taking != null || path.isNotEmpty()) {
-        taking?.let { it.cancel(); taking = null } ?: run { path = ArchiveTree.parent(path) }
+        taking?.cancel() ?: run { path = ArchiveTree.parent(path) }
     }
 
     fun open(item: ArchiveItem) {
         if (taking != null) return
         item.problem?.let { problem = it; return }
         taking = scope.launch {
+            val self = coroutineContext[Job]
             try {
                 val out = taken[item.index]?.takeIf { it.exists() } ?: reading {
                     folder.mkdirs()
@@ -152,7 +154,7 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
             } catch (_: Exception) {
                 problem = ArchiveProblem.BROKEN
             } finally {
-                taking = null
+                if (taking === self) taking = null
             }
         }
     }

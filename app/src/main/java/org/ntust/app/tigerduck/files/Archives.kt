@@ -141,7 +141,8 @@ object Archives {
         val deadline = limits.now() + limits.timeLimitMillis
         val extension = ArchiveNames.extension(item.path)
         val target = File(into, "item-${item.index}" + if (extension.isEmpty()) "" else ".$extension")
-        val partial = File(into, "${target.name}.part")
+        // A name of its own: another taking of the same file may be writing beside it.
+        val partial = File.createTempFile("${target.name}.", ".part", into)
         try {
             guarded {
                 partial.outputStream().use { out ->
