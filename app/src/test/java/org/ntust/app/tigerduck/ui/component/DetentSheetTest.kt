@@ -10,6 +10,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -25,7 +29,10 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -44,6 +51,7 @@ class DetentSheetTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     private lateinit var state: DetentSheetState
+    private lateinit var scope: CoroutineScope
     private var dismissed = 0
     /** How far a finger goes before a drag starts, in px: Robolectric's is 16 dp, a phone's 8. */
     private var touchSlop = 0f
@@ -52,30 +60,49 @@ class DetentSheetTest {
     private val height get() = state.draggable.anchors.positionOf(DetentSheetValue.Hidden)
     private val offset get() = state.draggable.offset
 
-    private fun show(openAt: DetentSheetValue = DetentSheetValue.Half) {
+    /** The window's height, in dp: a smaller one stands for a rotation or a split screen. */
+    private var windowHeight by mutableStateOf(891.dp)
+
+    /**
+     * A sheet as the course sheet uses it, filling the window; or, with [contentHeight], one as tall
+     * as its content, as the other sheets are.
+     */
+    private fun show(
+        openAt: DetentSheetValue? = null,
+        halfHeight: Boolean = true,
+        contentHeight: Dp? = null,
+    ) {
         composeRule.setContent {
             touchSlop = LocalViewConfiguration.current.touchSlop
+            scope = rememberCoroutineScope()
             state = rememberDetentSheetState()
-            DetentSheetLayer(
-                state = state,
-                openAt = openAt,
-                onDismissed = { dismissed++ },
-                containerColor = Color.White,
-            ) {
-                Box(Modifier.fillMaxSize().testTag(CONTENT)) { Spacer(Modifier.fillMaxWidth().height(10.dp)) }
+            Box(Modifier.fillMaxWidth().height(windowHeight)) {
+                DetentSheetLayer(
+                    state = state,
+                    onDismissed = { dismissed++ },
+                    halfHeight = halfHeight,
+                    fillHeight = contentHeight == null,
+                    openAt = openAt,
+                    containerColor = Color.White,
+                ) {
+                    val size = if (contentHeight == null) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(contentHeight)
+                    Box(size.testTag(CONTENT)) { Spacer(Modifier.fillMaxWidth().height(10.dp)) }
+                }
             }
         }
         composeRule.waitForIdle()
     }
 
-    /** Steps the clock a frame at a time for [millis], noting the highest the sheet's top went. */
-    private fun watch(millis: Long): Float {
+    /** Steps the clock a frame at a time for [millis], noting the highest and lowest the sheet's top went. */
+    private fun watch(millis: Long): ClosedFloatingPointRange<Float> {
         var highest = Float.MAX_VALUE
+        var lowest = -Float.MAX_VALUE
         repeat((millis / 16).toInt()) {
             composeRule.mainClock.advanceTimeByFrame()
             highest = minOf(highest, offset)
+            lowest = maxOf(lowest, offset)
         }
-        return highest
+        return highest..lowest
     }
 
     /** A finger's drag of [dy] px over [millis] ms, in 8 ms steps; a held finger before the lift drops the speed to nothing. */
@@ -162,7 +189,7 @@ class DetentSheetTest {
         composeRule.onNodeWithTag(CONTENT).performTouchInput {
             drag(from = Offset(centerX, 700f), dy = -600f, millis = 48)
         }
-        val highest = watch(1200)
+        val highest = watch(1200).start
         composeRule.mainClock.autoAdvance = true
         composeRule.waitForIdle()
         assertTrue("went $highest px past the top", highest >= -0.5f)
@@ -177,8 +204,9 @@ class DetentSheetTest {
         composeRule.onRoot().performTouchInput {
             drag(from = Offset(40f, 30f * density), dy = -25f * density, millis = 24)
         }
-        val highest = watch(800)
-        assertTrue("went $highest px past the top", highest >= -0.5f)
+        val moved = watch(800)
+        assertTrue("went ${moved.start} px past the top", moved.start >= -0.5f)
+        assertTrue("dipped ${moved.endInclusive} px below the top", moved.endInclusive <= 0.5f)
         assertFalse("still animating, and would take the next touch", state.draggable.isAnimationRunning)
         composeRule.mainClock.autoAdvance = true
     }
@@ -261,6 +289,85 @@ class DetentSheetTest {
         assertEquals(1, dismissed)
     }
 
+    @Test
+    fun `a tap outside while the sheet is still opening closes it`() {
+        composeRule.mainClock.autoAdvance = false
+        show()
+        composeRule.mainClock.advanceTimeBy(64)
+        assertTrue("already open", state.draggable.isAnimationRunning)
+        composeRule.onRoot().performTouchInput { click(Offset(centerX, 20f)) }
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+        assertEquals(DetentSheetValue.Hidden, state.currentValue)
+        assertEquals(1, dismissed)
+    }
+
+    @Test
+    fun `a smaller window keeps the sheet at its height`() {
+        show()
+        // Half way down a 891 dp window lies below a 400 dp one: the old offset alone would read Hidden.
+        windowHeight = 400.dp
+        composeRule.waitForIdle()
+        assertEquals(DetentSheetValue.Half, state.currentValue)
+        assertEquals(height / 2f, offset, 1f)
+        assertEquals(0, dismissed)
+    }
+
+    @Test
+    fun `a window that changes size during a drag on the sheet leaves it at rest after`() {
+        show(openAt = DetentSheetValue.Full)
+        composeRule.onRoot().performTouchInput {
+            down(Offset(40f, 30f * density))
+            repeat(6) { moveBy(Offset(0f, 12f * density), delayMillis = 16) }
+        }
+        windowHeight = 700.dp
+        composeRule.waitForIdle()
+        composeRule.onRoot().performTouchInput {
+            repeat(3) { moveBy(Offset(0f, 12f * density), delayMillis = 16) }
+            up()
+        }
+        composeRule.waitForIdle()
+        assertFalse("still animating, and would take the next touch", state.draggable.isAnimationRunning)
+        assertEquals(state.draggable.anchors.positionOf(state.currentValue), offset, 0.5f)
+    }
+
+    @Test
+    fun `a sheet as tall as its content rises to show all of it`() {
+        show(contentHeight = 300.dp)
+        assertEquals(DetentSheetValue.Full, state.currentValue)
+        val bottom = composeRule.onNodeWithTag(CONTENT).fetchSemanticsNode().boundsInRoot.bottom
+        assertEquals(height, bottom, 1f)
+    }
+
+    @Test
+    fun `a short sheet has no half height to stop at`() {
+        show(contentHeight = 300.dp)
+        assertFalse(state.draggable.anchors.hasPositionFor(DetentSheetValue.Half))
+    }
+
+    @Test
+    fun `a sheet that can't stop half way opens in full`() {
+        show(halfHeight = false, contentHeight = 800.dp)
+        assertEquals(DetentSheetValue.Full, state.currentValue)
+        assertFalse(state.draggable.anchors.hasPositionFor(DetentSheetValue.Half))
+    }
+
+    @Test
+    fun `a tall sheet as tall as its content opens at half height`() {
+        show(contentHeight = 800.dp)
+        assertEquals(DetentSheetValue.Half, state.currentValue)
+    }
+
+    @Test
+    fun `hide slides the sheet away and calls onDismissed once`() {
+        show()
+        composeRule.runOnIdle { scope.launch { state.hide() } }
+        composeRule.waitForIdle()
+        assertEquals(DetentSheetValue.Hidden, state.currentValue)
+        assertFalse(state.isVisible)
+        assertEquals(1, dismissed)
+    }
+
     private companion object {
         const val CONTENT = "sheet-content"
     }
@@ -286,7 +393,7 @@ class DetentSheetMotionTest {
     }
 
     @Test
-    fun `no distance left, no speed added`() {
-        assertEquals(-4_000f, DetentSheetMotion.startVelocity(-4_000f, 0f), 0f)
+    fun `a sheet already at its height gets no speed, or the spring would carry it off and back`() {
+        assertEquals(0f, DetentSheetMotion.startVelocity(-4_000f, 0f), 0f)
     }
 }

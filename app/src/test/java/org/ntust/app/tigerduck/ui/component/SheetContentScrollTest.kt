@@ -62,8 +62,10 @@ class SheetContentScrollTest {
             val sheetScroll = remember(scroll) { SheetContentScroll(scroll) }
             DetentSheetLayer(
                 state = sheet,
-                openAt = DetentSheetValue.Full,
                 onDismissed = { dismissed = true },
+                halfHeight = true,
+                fillHeight = true,
+                openAt = DetentSheetValue.Full,
                 containerColor = Color.White,
             ) {
                 Box(

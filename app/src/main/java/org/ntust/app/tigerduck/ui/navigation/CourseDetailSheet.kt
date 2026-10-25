@@ -136,10 +136,14 @@ private fun CourseDetailSheet(
         }
     }
     DetentSheet(
+        onDismissed = onClosed,
         state = sheetState,
+        halfHeight = true,
+        // The full height whatever the page, so the sheet opens at half the screen as iOS's
+        // medium detent does, and a short page doesn't shrink it.
+        fillHeight = true,
         // Up as high as it was left.
         openAt = if (place.expanded) DetentSheetValue.Full else DetentSheetValue.Half,
-        onDismissed = onClosed,
         containerColor = MaterialTheme.colorScheme.background,
     ) {
         // A navigation of the course detail alone: its entry gives the page's view models a home
