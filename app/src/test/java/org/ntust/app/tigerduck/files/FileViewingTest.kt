@@ -78,6 +78,14 @@ class FileViewingTest {
     }
 
     @Test
+    fun `a spreadsheet, a book or an app sent as a zip goes where its name says, not into the archive viewer`() {
+        // Zips inside too, but their parts mean nothing listed one by one.
+        for (name in listOf("grades.xlsx", "notes.odt", "book.epub", "app.apk", "tool.jar")) {
+            assertEquals(name, OtherApp, opening("application/zip", name))
+        }
+    }
+
+    @Test
     fun `web pages, svg and xml never render here, by type or by name`() {
         assertEquals(ShareOnly, opening("text/html", "page.html"))
         assertEquals(ShareOnly, opening("application/xhtml+xml", "page.xhtml"))

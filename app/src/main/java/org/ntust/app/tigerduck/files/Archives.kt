@@ -98,8 +98,8 @@ data class ArchiveLimits(
     val ratioFreeBytes: Long = 16L shl 20,
     /** The most decompressed bytes one pass over a compressed tar reads, to list it or reach a file. */
     val maxScanBytes: Long = 2L shl 30,
-    /** The most memory, in KiB, a 7z or an xz may ask its decoder for. */
-    val maxMemoryKiB: Int = 256 shl 10,
+    /** The most memory, in KiB, a 7z or an xz may ask its decoder for: 7-Zip's Ultra, a 64 MiB dictionary, fits. */
+    val maxMemoryKiB: Int = 96 shl 10,
     val timeLimitMillis: Long = 60_000,
     val now: () -> Long = System::currentTimeMillis,
 )
@@ -187,7 +187,9 @@ object Archives {
 
     private fun extractZip(source: ArchiveSource, item: ArchiveItem, out: OutputStream, limits: ArchiveLimits, deadline: Long) {
         openZip(source, limits).use { zip ->
-            val entry = zip.entries.asSequence().elementAtOrNull(item.index) ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
+            val entry = zip.entries.asSequence().elementAtOrNull(item.index)
+                ?.takeIf { ArchiveNames.normalize(zipName(it)) == item.path }
+                ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
             zipProblem(zip, entry)?.let { throw ArchiveProblemException(it) }
             val packed = entry.compressedSize.takeIf { it > 0 } ?: source.size
             zip.getInputStream(entry).use { copyLimited(it, out, packed, limits, deadline) }
@@ -297,7 +299,9 @@ object Archives {
 
     private fun extract7z(source: ArchiveSource, item: ArchiveItem, out: OutputStream, limits: ArchiveLimits, deadline: Long) {
         open7z(source, limits).use { sevenZ ->
-            val entry = sevenZ.entries.elementAtOrNull(item.index) ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
+            val entry = sevenZ.entries.elementAtOrNull(item.index)
+                ?.takeIf { ArchiveNames.normalize(it.name ?: defaultName(source)) == item.path }
+                ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
             if (entry.isDirectory || entry.isAntiItem) throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
             if (!entry.hasStream()) return
             // A file in a solid block is reached by reading the ones before it: those bytes count too.
@@ -375,6 +379,7 @@ object Archives {
         streamed(source, format, limits, deadline) { pass ->
             val tar = pass.tar
             if (tar == null) {
+                if (pass.singleName != item.path) throw ArchiveProblemException(ArchiveProblem.BROKEN)
                 copyLimited(pass.stream, out, source.size, limits, deadline)
                 return@streamed
             }
@@ -383,6 +388,8 @@ object Archives {
                 limits.check(deadline)
                 val entry = tar.nextEntry ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
                 if (index++ != item.index) continue
+                // The archive changed since it was listed: not the file that was tapped.
+                if (ArchiveNames.normalize(entry.name) != item.path) throw ArchiveProblemException(ArchiveProblem.BROKEN)
                 tarProblem(entry)?.let { throw ArchiveProblemException(it) }
                 if (entry.isDirectory) throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
                 copyLimited(tar, out, source.size, limits, deadline)
@@ -412,12 +419,16 @@ object Archives {
         var packedModified: Long? = null
         val unpacked: InputStream = when (format) {
             ArchiveFormat.TAR -> raw
-            ArchiveFormat.GZIP -> GzipCompressorInputStream(raw, true).also { gzip ->
+            ArchiveFormat.GZIP -> GzipCompressorInputStream.builder().setInputStream(raw).setDecompressConcatenated(true).get().also { gzip ->
                 packedName = gzip.metaData.fileName
                 packedModified = gzip.metaData.modificationTime.takeIf { it > 0 }
             }
             ArchiveFormat.BZIP2 -> BZip2CompressorInputStream(raw, true)
-            ArchiveFormat.XZ -> XZCompressorInputStream(raw, true, limits.maxMemoryKiB)
+            ArchiveFormat.XZ -> XZCompressorInputStream.builder()
+                .setInputStream(raw)
+                .setDecompressConcatenated(true)
+                .setMemoryLimitKiB(limits.maxMemoryKiB)
+                .get()
             else -> throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
         }
         // A plain tar costs nothing to pass over; a compressed one costs every byte it holds.

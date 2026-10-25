@@ -319,6 +319,16 @@ class ArchivesTest {
     }
 
     @Test
+    fun `an archive that changed since it was listed doesn't hand over another file`() {
+        val file = zip("changing.zip") { file("week 1.pdf", "first".toByteArray()) }
+        val item = listing(file).items.single()
+        file.delete()
+        zip("changing.zip") { file("other.pdf", "second".toByteArray()) }
+
+        assertEquals(ArchiveProblem.BROKEN, problem { extract(file, item) })
+    }
+
+    @Test
     fun `the same file taken out twice is the same bytes`() {
         val bytes = Random(3).nextBytes(100_000)
         val file = zip { file("data.bin", bytes) }

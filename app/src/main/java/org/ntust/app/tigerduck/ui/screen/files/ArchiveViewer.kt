@@ -53,6 +53,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -75,7 +76,6 @@ import org.ntust.app.tigerduck.files.FileViewing
 import org.ntust.app.tigerduck.util.fileProviderAuthority
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.text.NumberFormat
@@ -87,7 +87,8 @@ import kotlin.concurrent.thread
  * Tapping a file takes out only it, into this viewer's own folder in the cache, and opens it as a
  * downloaded file opens: in the viewer, an archive inside too, or in another app. One that can't
  * be taken out says why, offering the archive to another app. The folder goes when the viewer
- * closes; [onFailed] gets the reason an archive can't be listed, null when there is none to give.
+ * does, not when it's only recreated; [onFailed] gets the reason an archive can't be listed, null
+ * when there is none to give.
  */
 @Composable
 internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, onOpenElsewhere: () -> Unit) {
@@ -97,7 +98,7 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
     val folder = remember(session) { ArchiveCache.folder(context, session) }
     DisposableEffect(folder) {
         onDispose {
-            if (context.findActivity()?.isFinishing != false) thread(name = "archive-cache") { folder.deleteRecursively() }
+            if (context.findActivity()?.isChangingConfigurations != true) thread(name = "archive-cache") { folder.deleteRecursively() }
         }
     }
 
@@ -111,7 +112,10 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
             }
         } catch (e: ArchiveProblemException) {
             onFailed(e.problem.reason())
-        } catch (_: IOException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Damaged, gone, or not ours to read: there's no more to say.
             onFailed(null)
         }
     }
@@ -134,12 +138,16 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
         item.problem?.let { problem = it; return }
         taking = scope.launch {
             try {
-                val out = taken[item.index]?.takeIf { it.exists() }
-                    ?: reading { Archives.extract(source.value, item, folder) }.also { taken[item.index] = it }
+                val out = taken[item.index]?.takeIf { it.exists() } ?: reading {
+                    folder.mkdirs()
+                    Archives.extract(source.value, item, folder).also { ArchiveCache.trim(folder, newest = it) }
+                }.also { taken[item.index] = it }
                 openTaken(context, out, item)
             } catch (e: ArchiveProblemException) {
                 problem = e.problem
-            } catch (_: IOException) {
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
                 problem = ArchiveProblem.BROKEN
             } finally {
                 taking = null
@@ -257,11 +265,20 @@ internal fun ArchiveProblem.reason(): Int? = when (this) {
 
 /**
  * [block] off the main thread, stopped when the screen leaves or [ArchiveLimits.timeLimitMillis]
- * runs out, even inside a read: the thread is interrupted, which closes the file it reads.
+ * runs out, even inside a read: the thread is interrupted, which closes the file it reads. What
+ * that interruption throws is the stop, not a damaged archive.
  */
 private suspend fun <T> reading(block: () -> T): T =
-    withTimeoutOrNull(ArchiveLimits().timeLimitMillis + 5_000) { runInterruptible(Dispatchers.IO) { block() } }
-        ?: throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
+    withTimeoutOrNull(ArchiveLimits().timeLimitMillis + 5_000) {
+        runInterruptible(Dispatchers.IO) {
+            try {
+                block()
+            } catch (e: Exception) {
+                if (Thread.currentThread().isInterrupted) throw CancellationException("Stopped").apply { initCause(e) }
+                throw e
+            }
+        }
+    } ?: throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
 
 /** Opens [file], taken out of an archive as [item], as a downloaded file of its name opens. */
 private fun openTaken(context: Context, file: File, item: ArchiveItem) {
@@ -288,7 +305,7 @@ private fun Context.archiveSource(uri: Uri, name: String, scratch: File): Archiv
             ParcelFileDescriptor.AutoCloseInputStream(descriptor).channel
         }
     }
-    val copy = File(scratch, "archive")
+    val copy = File(scratch, ArchiveCache.STREAM_COPY)
     val input = contentResolver.openInputStream(uri) ?: throw FileNotFoundException(name)
     input.use { copy.outputStream().use { out -> copyAtMost(it, out, MAX_STREAMED_ARCHIVE) } }
     return ArchiveSource.of(copy).let { ArchiveSource(name, it.size, it.open) }
@@ -318,7 +335,24 @@ internal object ArchiveCache {
     private const val DIR = "archive_entries"
     private const val DAY_MILLIS = 24L * 60 * 60 * 1000
 
+    /** The most a viewer keeps taken out at once: past it, the files taken out longest ago go. */
+    const val MAX_FOLDER_BYTES = 512L shl 20
+
     fun folder(context: Context, session: String): File = File(File(context.cacheDir, DIR), session).apply { mkdirs() }
+
+    /** The copy of an archive read through a stream ([archiveSource]): read again on every tap. */
+    const val STREAM_COPY = "archive"
+
+    /** [folder] within [maxBytes]: the files taken out longest ago go first, [newest] never, nor a [STREAM_COPY]. */
+    fun trim(folder: File, newest: File, maxBytes: Long = MAX_FOLDER_BYTES) {
+        val files = folder.listFiles()?.filter { it.isFile }.orEmpty()
+        var total = files.sumOf { it.length() }
+        for (old in files.filter { it != newest && it.name != STREAM_COPY }.sortedBy { it.lastModified() }) {
+            if (total <= maxBytes) return
+            total -= old.length()
+            old.delete()
+        }
+    }
 
     /** Folders a viewer the system closed without telling it left behind: a day on, they go. */
     fun sweep(context: Context, keep: File, now: Long = System.currentTimeMillis()) {

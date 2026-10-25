@@ -29,7 +29,8 @@ sealed interface FileOpening {
  * attachment ([org.ntust.app.tigerduck.mail.resolveAttachmentMimeType]): the name's extension only
  * when the type says nothing, so a file sent as something else never opens here by its name alone.
  * A file named or typed as a web page, an SVG or other XML goes to the share sheet, by either. A
- * Word or PowerPoint file sent as a zip, which inside it is, opens as the document its name says.
+ * file of a kind that's a zip inside, sent as a zip, goes where its name says: a Word or PowerPoint
+ * file to its viewer, a spreadsheet, a book or an app to another app, never into the archive viewer.
  */
 object FileViewing {
 
@@ -41,7 +42,7 @@ object FileViewing {
         }
         val kind = when {
             type.isEmpty() || type in GENERIC_TYPES -> kindOfExtension(extension)
-            type in ZIP_TYPES && extension in ZIPPED_DOCUMENTS -> kindOfExtension(extension)
+            type in ZIP_TYPES && extension in ZIPPED_FORMATS -> kindOfExtension(extension)
             else -> kindOfType(type)
         }
         return kind?.let(FileOpening::InApp) ?: FileOpening.OtherApp
@@ -84,7 +85,9 @@ object FileViewing {
     private val ZIP_TYPES = setOf("application/zip", "application/x-zip-compressed", "application/x-zip")
 
     /** Zips inside, which a server that only looks at the bytes may send as one. */
-    private val ZIPPED_DOCUMENTS = setOf("docx", "pptx")
+    private val ZIPPED_FORMATS = setOf(
+        "docx", "pptx", "xlsx", "docm", "pptm", "xlsm", "odt", "ods", "odp", "epub", "apk", "jar",
+    )
 
     /** The other archives [Archives] reads: 7z, tar, and gzip, bzip2 or xz, around a tar or on their own. */
     private val ARCHIVE_TYPES = setOf(
