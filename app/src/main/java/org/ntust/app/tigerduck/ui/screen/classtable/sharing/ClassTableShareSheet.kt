@@ -132,7 +132,14 @@ internal fun ClassTableShareSheet(
                 IconButton(
                     onClick = {
                         scanOnceClosed = true
-                        close()
+                        scope.launch {
+                            try {
+                                sheetState.hide()
+                            } finally {
+                                // Caught on its way down and pulled back up: a later Done only closes it.
+                                if (!sheetState.isClosed) scanOnceClosed = false
+                            }
+                        }
                     },
                     modifier = Modifier.size(HEADER_BUTTON_SIZE),
                 ) {

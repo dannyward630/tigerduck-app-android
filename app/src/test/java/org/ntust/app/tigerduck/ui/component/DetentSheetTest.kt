@@ -14,6 +14,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -53,6 +55,7 @@ class DetentSheetTest {
     private lateinit var state: DetentSheetState
     private lateinit var scope: CoroutineScope
     private var dismissed = 0
+    private var clicks = 0
     /** How far a finger goes before a drag starts, in px: Robolectric's is 16 dp, a phone's 8. */
     private var touchSlop = 0f
     private val density get() = composeRule.density.density
@@ -86,7 +89,9 @@ class DetentSheetTest {
                     containerColor = Color.White,
                 ) {
                     val size = if (contentHeight == null) Modifier.fillMaxSize() else Modifier.fillMaxWidth().height(contentHeight)
-                    Box(size.testTag(CONTENT)) { Spacer(Modifier.fillMaxWidth().height(10.dp)) }
+                    Box(size.testTag(CONTENT)) {
+                        Box(Modifier.size(48.dp).testTag(BUTTON).clickable { clicks++ })
+                    }
                 }
             }
         }
@@ -357,14 +362,14 @@ class DetentSheetTest {
     @Test
     fun `a short sheet has no half height to stop at`() {
         show(contentHeight = 300.dp)
-        assertFalse(state.draggable.anchors.hasPositionFor(DetentSheetValue.Half))
+        assertFalse(state.hasHalf)
     }
 
     @Test
     fun `a sheet that can't stop half way opens in full`() {
         show(halfHeight = false, contentHeight = 800.dp)
         assertEquals(DetentSheetValue.Full, state.currentValue)
-        assertFalse(state.draggable.anchors.hasPositionFor(DetentSheetValue.Half))
+        assertFalse(state.hasHalf)
     }
 
     @Test
@@ -383,32 +388,121 @@ class DetentSheetTest {
         assertEquals(1, dismissed)
     }
 
+    @Test
+    fun `grabbing the sheet while it opens doesn't close it`() {
+        composeRule.mainClock.autoAdvance = false
+        show()
+        composeRule.mainClock.advanceTimeBy(96)
+        val grabbedAt = offset
+        // A finger on the rising sheet, held a moment, then lifted.
+        composeRule.onRoot().performTouchInput {
+            down(Offset(40f, grabbedAt + 30f * density))
+            moveBy(Offset(0f, -4f), delayMillis = 48)
+        }
+        composeRule.mainClock.advanceTimeBy(160)
+        assertEquals("closed under the finger", 0, dismissed)
+        composeRule.onRoot().performTouchInput { up() }
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+        assertEquals(0, dismissed)
+        assertTrue(state.isVisible)
+    }
+
+    @Test
+    fun `back while the sheet opens closes it`() {
+        composeRule.mainClock.autoAdvance = false
+        show()
+        composeRule.mainClock.advanceTimeBy(64)
+        composeRule.runOnIdle { composeRule.activity.onBackPressedDispatcher.onBackPressed() }
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+        assertEquals(DetentSheetValue.Hidden, state.currentValue)
+        assertEquals(1, dismissed)
+    }
+
+    @Test
+    fun `a sheet whose half height goes away while it opens to it still opens, and closes after`() {
+        // 380 dp of content under a 48 dp handle: taller than half of an 800 dp window, shorter
+        // than half of an 891 dp one.
+        windowHeight = 800.dp
+        composeRule.mainClock.autoAdvance = false
+        show(contentHeight = 380.dp)
+        composeRule.mainClock.advanceTimeBy(64)
+        windowHeight = 891.dp
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+        assertFalse("its offset is lost", offset.isNaN())
+        assertTrue(state.isVisible)
+        assertEquals(state.draggable.anchors.positionOf(DetentSheetValue.Full), offset, 0.5f)
+
+        composeRule.runOnIdle { scope.launch { state.hide() } }
+        composeRule.waitForIdle()
+        assertEquals(1, dismissed)
+    }
+
+    @Test
+    fun `a tap just after the sheet has come up reaches what it taps`() {
+        composeRule.mainClock.autoAdvance = false
+        show()
+        // Up and still to the eye. A sheet still easing in by fractions of a pixel would take the
+        // tap for a grab of its own.
+        composeRule.mainClock.advanceTimeBy(DetentSheetMotion.DURATION_MILLIS + 50L)
+        composeRule.onNodeWithTag(BUTTON).performClick()
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+        assertEquals(1, clicks)
+    }
+
     private companion object {
         const val CONTENT = "sheet-content"
+        const val BUTTON = "sheet-button"
     }
 }
 
 class DetentSheetMotionTest {
 
+    private val seconds = DetentSheetMotion.DURATION_MILLIS / 1000f
+
     @Test
-    fun `a fling toward the height is held to what the spring stops from without passing it`() {
-        val distance = -500f
-        val limit = kotlin.math.sqrt(DetentSheetMotion.STIFFNESS) * 500f
-        assertEquals(-limit, DetentSheetMotion.startVelocity(-20_000f, distance), 0.01f)
+    fun `a fling starts the curve at its own speed where it can`() {
+        // 2.5 times the curve's average speed over 500 px.
+        val velocity = -2.5f * 500f / seconds
+        assertEquals(2.5f, DetentSheetMotion.startSlope(velocity, -500f), 0.001f)
     }
 
     @Test
-    fun `a slow fling toward the height keeps its speed`() {
-        assertEquals(-300f, DetentSheetMotion.startVelocity(-300f, -500f), 0f)
+    fun `a hard fling starts it no faster than it can go without passing its end`() {
+        assertEquals(3f, DetentSheetMotion.startSlope(-20_000f, -500f), 0f)
     }
 
     @Test
-    fun `a fling away from the height keeps its speed`() {
-        assertEquals(4_000f, DetentSheetMotion.startVelocity(4_000f, -500f), 0f)
+    fun `a slow fling, or none, still eases out`() {
+        assertEquals(2f, DetentSheetMotion.startSlope(-100f, -500f), 0f)
+        assertEquals(2f, DetentSheetMotion.startSlope(0f, -500f), 0f)
     }
 
     @Test
-    fun `a sheet already at its height gets no speed, or the spring would carry it off and back`() {
-        assertEquals(0f, DetentSheetMotion.startVelocity(-4_000f, 0f), 0f)
+    fun `a fling away from the height eases out toward it all the same`() {
+        assertEquals(2f, DetentSheetMotion.startSlope(4_000f, -500f), 0f)
+    }
+
+    @Test
+    fun `a sheet already at its height doesn't move`() {
+        assertEquals(0f, DetentSheetMotion.startSlope(-4_000f, 0f), 0f)
+    }
+
+    @Test
+    fun `the curve goes only forward, from the start to the end`() {
+        for (slope in listOf(0f, 2f, 2.5f, 3f)) {
+            var last = 0f
+            for (i in 0..100) {
+                val p = DetentSheetMotion.progress(i / 100f, slope)
+                assertTrue("slope $slope went back at ${i / 100f}", p >= last - 1e-6f)
+                assertTrue("slope $slope passed its end at ${i / 100f}", p <= 1f + 1e-6f)
+                last = p
+            }
+            assertEquals(0f, DetentSheetMotion.progress(0f, slope), 0f)
+            assertEquals(1f, DetentSheetMotion.progress(1f, slope), 1e-6f)
+        }
     }
 }

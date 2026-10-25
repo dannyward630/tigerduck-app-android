@@ -10,11 +10,10 @@
 package org.ntust.app.tigerduck.ui.component
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.AnchoredDraggableState
@@ -86,7 +85,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sign
-import kotlin.math.sqrt
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -98,13 +96,13 @@ internal enum class DetentSheetValue { Hidden, Half, Full }
 /** How a [DetentSheet] moves. */
 internal object DetentSheetMotion {
     /**
-     * Material3's sheet settles with damping 0.9 and stiffness 700: quick, and with a fling behind
-     * it, past its top and back. This one is softer and takes about twice as long, and it is
-     * critically damped, so it comes to rest without swinging past where it stops.
+     * How long the sheet takes to get where it's going. Material3's sheet settles with a spring
+     * (damping 0.9, stiffness 700) in about 250 ms, and with a fling behind it, past its top and
+     * back. This one takes longer and eases out on a curve that never passes its end, and it is done
+     * when its time is up: a spring's tail, still moving by fractions of a pixel long after it looks
+     * still, would leave the sheet taking every tap meant for what's on it as a grab of its own.
      */
-    const val STIFFNESS = 200f
-
-    val Spec: SpringSpec<Float> = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = STIFFNESS)
+    const val DURATION_MILLIS = 400
 
     /** A fling at least this fast moves the sheet on to the next height. Material's is 125 dp/s. */
     val VelocityThreshold: Dp = 80.dp
@@ -112,20 +110,29 @@ internal object DetentSheetMotion {
     /** Let go at least this far from the last height it passed, the sheet goes on to the next. Material's is 56 dp. */
     val PositionalThreshold: Dp = 32.dp
 
-    /** The spring's natural frequency, in radians a second. */
-    private val omega = sqrt(STIFFNESS)
+    /**
+     * The curve's starting slope, as a multiple of its average speed over [distance]: the fling's
+     * own [velocity] where it can, between 2, a gentle ease-out, and 3, the steepest a cubic can
+     * start with and still not pass its end. A fling the other way eases out from 2 all the same.
+     */
+    fun startSlope(velocity: Float, distance: Float): Float {
+        if (distance == 0f) return 0f
+        val fling = if (sign(velocity) == sign(distance)) {
+            abs(velocity) * DURATION_MILLIS / 1000f / abs(distance)
+        } else {
+            0f
+        }
+        return fling.coerceIn(2f, 3f)
+    }
 
     /**
-     * [velocity], held to what the spring can start from toward a height [distance] away without
-     * passing it. A critically damped spring passes its target only when it starts toward it faster
-     * than its natural frequency times the distance; one that starts the other way never does. A
-     * sheet already there gets no speed at all, or the spring would carry it off and back.
+     * How far along the sheet is, from 0 to 1, a fraction [t] of the way through: a cubic that
+     * starts at [slope] and comes to rest at its end. With a slope up to 3 it only ever goes forward.
      */
-    fun startVelocity(velocity: Float, distance: Float): Float {
-        if (distance == 0f) return 0f
-        if (velocity == 0f || sign(velocity) != sign(distance)) return velocity
-        val limit = omega * abs(distance)
-        return velocity.coerceIn(-limit, limit)
+    fun progress(t: Float, slope: Float): Float {
+        val t2 = t * t
+        val t3 = t2 * t
+        return (3f * t2 - 2f * t3) + slope * (t3 - 2f * t2 + t)
     }
 }
 
@@ -141,8 +148,20 @@ internal class DetentSheetState(initialValue: DetentSheetValue, private val dens
     /** The height the sheet is on its way to, or rests at. */
     val targetValue: DetentSheetValue get() = draggable.targetValue
 
+    /**
+     * Whether the sheet rests out of sight. Not just named so: a finger on a sheet still rising
+     * stops its move and leaves it named for where it set out from, out of sight, while it shows.
+     */
+    internal val isClosed: Boolean
+        get() = currentValue == DetentSheetValue.Hidden && !draggable.isAnimationRunning &&
+            abs(draggable.offset - draggable.anchors.positionOf(DetentSheetValue.Hidden)) < 0.5f
+
     /** Whether the sheet is up, at rest or moving: out of sight only once it has closed. */
     val isVisible: Boolean get() = currentValue != DetentSheetValue.Hidden
+
+    /** Whether the sheet stops at half height: one taller than half the window, that asked to. */
+    var hasHalf by mutableStateOf(false)
+        private set
 
     /** How far down the window the sheet's top is, in px; NaN until it is laid out. */
     val offset: Float get() = draggable.offset
@@ -155,25 +174,31 @@ internal class DetentSheetState(initialValue: DetentSheetValue, private val dens
      * The heights for a [windowHeight] window and a [sheetHeight] sheet: out of sight below the
      * window, its whole height up at full, and half the window on the way if [halfHeight] and the
      * sheet is taller than that, as Material's sheet has it.
+     *
+     * A sheet without a half height has one all the same, at full: Foundation ends a move at the
+     * height it set out for, and one that went away on the way, as a rotation can make it, would
+     * leave the sheet with no place to be. Tied with full, full is the one found.
      */
     fun updateAnchors(windowHeight: Int, sheetHeight: Int, halfHeight: Boolean) {
         val h = windowHeight.toFloat()
+        val half = halfHeight && sheetHeight > windowHeight / 2
+        val full = (h - sheetHeight).coerceAtLeast(0f)
         val anchors = DraggableAnchors {
             DetentSheetValue.Hidden at h
-            if (halfHeight && sheetHeight > windowHeight / 2) DetentSheetValue.Half at h / 2f
-            DetentSheetValue.Full at (h - sheetHeight).coerceAtLeast(0f)
+            DetentSheetValue.Half at if (half) h / 2f else full
+            DetentSheetValue.Full at full
         }
+        if (hasHalf != half) hasHalf = half
         if (anchors == draggable.anchors) return
         // The height the sheet was at, or on its way to, by name: its offset in px could stand
         // for any height in a window of another size.
         val wanted = if (draggable.anchors.size == 0) draggable.currentValue else draggable.targetValue
-        val target = when {
-            anchors.hasPositionFor(wanted) -> wanted
-            wanted == DetentSheetValue.Half -> DetentSheetValue.Full
-            else -> wanted
-        }
-        draggable.updateAnchors(anchors, target)
+        draggable.updateAnchors(anchors, resolve(wanted))
     }
+
+    /** [value], or full for half height on a sheet that has none. */
+    private fun resolve(value: DetentSheetValue): DetentSheetValue =
+        if (value == DetentSheetValue.Half && !hasHalf) DetentSheetValue.Full else value
 
     /** Where the sheet's top is drawn: never above its full height, out of sight until laid out. */
     fun visibleOffset(): Int {
@@ -211,20 +236,24 @@ internal class DetentSheetState(initialValue: DetentSheetValue, private val dens
      * while it animates, it takes the next touch for its own, which a sheet at rest mustn't.
      */
     suspend fun animateTo(value: DetentSheetValue, velocity: Float = 0f) {
-        val to = draggable.anchors.positionOf(value)
+        val target = resolve(value)
+        val to = draggable.anchors.positionOf(target)
         if (to.isNaN() || draggable.offset.isNaN()) return
-        if (value != DetentSheetValue.Hidden) hasShown = true
+        if (target != DetentSheetValue.Hidden) hasShown = true
         if (abs(to - draggable.offset) < 0.5f) {
-            if (draggable.settledValue != value || draggable.isAnimationRunning) draggable.snapTo(value)
+            if (draggable.settledValue != target || draggable.isAnimationRunning) draggable.snapTo(target)
             return
         }
-        draggable.anchoredDrag(value) { anchors, latest ->
+        draggable.anchoredDrag(target) { anchors, latest ->
             val from = draggable.offset
-            val end = anchors.positionOf(latest)
-            animate(from, end, DetentSheetMotion.startVelocity(velocity, end - from), DetentSheetMotion.Spec) { value, speed ->
-                dragTo(value, speed)
+            val distance = anchors.positionOf(latest) - from
+            val slope = DetentSheetMotion.startSlope(velocity, distance)
+            animate(0f, 1f, animationSpec = tween(DetentSheetMotion.DURATION_MILLIS, easing = LinearEasing)) { t, _ ->
+                dragTo(from + distance * DetentSheetMotion.progress(t, slope))
             }
         }
+        // Set out for half height that went away on the way: it rests at full, under half's name.
+        if (draggable.settledValue == DetentSheetValue.Half && !hasHalf) draggable.snapTo(DetentSheetValue.Full)
     }
 
     suspend fun hide() = animateTo(DetentSheetValue.Hidden)
@@ -232,9 +261,7 @@ internal class DetentSheetState(initialValue: DetentSheetValue, private val dens
     suspend fun expand() = animateTo(DetentSheetValue.Full)
 
     /** Down to half height, or up in full for a sheet that has none. */
-    suspend fun partialExpand() = animateTo(
-        if (draggable.anchors.hasPositionFor(DetentSheetValue.Half)) DetentSheetValue.Half else DetentSheetValue.Full,
-    )
+    suspend fun partialExpand() = animateTo(DetentSheetValue.Half)
 
     /**
      * A drag on the sheet itself, let go: settled by a move of the sheet's own, in [scope], once
@@ -380,7 +407,7 @@ internal fun DetentSheetLayer(
 ) {
     val scope = rememberCoroutineScope()
     val dismissed by rememberUpdatedState(onDismissed)
-    val close: () -> Unit = { scope.launch { state.hide() } }
+    val close: () -> Unit = remember(state, scope) { { scope.launch { state.hide() } } }
     val open by rememberUpdatedState(openAt)
     val flingBehavior = remember(state, scope) { state.flingBehavior(scope) }
 
@@ -388,21 +415,20 @@ internal fun DetentSheetLayer(
     LaunchedEffect(state) {
         snapshotFlow { state.draggable.anchors.size }.first { it > 0 }
         if (!state.hasShown) {
-            val anchors = state.draggable.anchors
-            val requested = open ?: DetentSheetValue.Half
-            state.animateTo(
-                if (anchors.hasPositionFor(requested)) requested else DetentSheetValue.Full,
-            )
+            state.animateTo(open ?: DetentSheetValue.Half)
         }
     }
     LaunchedEffect(state) {
-        snapshotFlow {
-            state.hasShown && state.currentValue == DetentSheetValue.Hidden && !state.draggable.isAnimationRunning
-        }.first { it }
+        snapshotFlow { state.hasShown && state.isClosed }.first { it }
         dismissed()
     }
-    BackHandler(enabled = dismissOnBack && state.currentValue != DetentSheetValue.Hidden) {
-        if (state.currentValue == DetentSheetValue.Full && state.draggable.anchors.hasPositionFor(DetentSheetValue.Half)) {
+    // On its way up too: Material's own Back is off, so one that did nothing then would leave
+    // Back doing nothing at all.
+    BackHandler(
+        enabled = dismissOnBack &&
+            (state.currentValue != DetentSheetValue.Hidden || state.targetValue != DetentSheetValue.Hidden),
+    ) {
+        if (state.currentValue == DetentSheetValue.Full && state.hasHalf) {
             scope.launch { state.animateTo(DetentSheetValue.Half) }
         } else {
             close()
@@ -504,8 +530,7 @@ private fun Handle(state: DetentSheetState, onClose: () -> Unit) {
     val scope = rememberCoroutineScope()
     val expand = { scope.launch { state.expand() }; Unit }
     val collapse = { scope.launch { state.partialExpand() }; Unit }
-    val canCollapse = state.currentValue == DetentSheetValue.Full &&
-        state.draggable.anchors.hasPositionFor(DetentSheetValue.Half)
+    val canCollapse = state.currentValue == DetentSheetValue.Full && state.hasHalf
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Box(
             modifier = Modifier

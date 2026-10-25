@@ -114,7 +114,14 @@ fun WhatsNewSheet(flow: WhatsNewFlow, onDismiss: () -> Unit) {
         // tap on the last button can't dismiss twice.
         if (!finishing) {
             finishing = true
-            scope.launch { sheetState.hide() }
+            scope.launch {
+                try {
+                    sheetState.hide()
+                } finally {
+                    // Caught on its way down and pulled back up: the button closes it again.
+                    if (!sheetState.isClosed) finishing = false
+                }
+            }
         }
     }
     // The app's own sheet: Material's threw this one past its top on an

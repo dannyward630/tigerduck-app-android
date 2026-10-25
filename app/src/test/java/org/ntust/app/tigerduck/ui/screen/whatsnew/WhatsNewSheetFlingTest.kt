@@ -212,6 +212,29 @@ class WhatsNewSheetFlingTest {
     }
 
     @Test
+    fun `a close caught on its way down lets Continue close the sheet again`() {
+        openSheet()
+        composeRule.mainClock.autoAdvance = false
+        continueButton().performClick()
+        composeRule.mainClock.advanceTimeBy(96)
+        // A finger catches the sheet by its handle on the way down and pulls it back up.
+        dragHandle().performTouchInput {
+            down(center)
+            repeat(12) { moveBy(androidx.compose.ui.geometry.Offset(0f, -100f), delayMillis = 16) }
+            // Held still before the lift: no fling, only where it was let go.
+            repeat(8) { moveBy(androidx.compose.ui.geometry.Offset(0f, 0f), delayMillis = 16) }
+            up()
+        }
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+        assertTrue("it closed anyway", !dismissed)
+
+        continueButton().performClick()
+        composeRule.waitForIdle()
+        assertTrue("Continue did nothing", dismissed)
+    }
+
+    @Test
     fun `a downward fling still closes the sheet`() {
         openSheet()
         title().performTouchInput { swipeDown(startY = centerY, endY = centerY + 900f, durationMillis = 60) }
