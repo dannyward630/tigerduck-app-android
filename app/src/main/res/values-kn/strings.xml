@@ -38,6 +38,7 @@
     <string name="action_clear_text">ಪಠ್ಯ ಅಳಿಸಿ</string>
     <string name="action_close">ಮುಚ್ಚಿ</string>
     <string name="action_confirm">ದೃಢಪಡಿಸಿ</string>
+    <string name="action_continue">ಮುಂದುವರಿಸಿ</string>
     <string name="action_done">ಮುಗಿಯಿತು</string>
     <string name="action_go_to_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳಿಗೆ ಹೋಗಿ</string>
     <string name="action_got_it">ತಿಳಿಯಿತು</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">ಪ್ರಸ್ತುತ ಟ್ಯಾಬ್‌ಗಳು</string>
     <string name="tab_editor_title">ಕೆಳಗಿನ ನ್ಯಾವಿಗೇಷನ್ ಕಸ್ಟಮೈಸ್ ಮಾಡಿ</string>
     <string name="tag_server_notification">ಸರ್ವರ್ ಅಧಿಸೂಚನೆ</string>
+    <string name="tls_certificate_fingerprint">SHA-256 ಫಿಂಗರ್‌ಪ್ರಿಂಟ್</string>
+    <string name="tls_certificate_intermediate">ಮಧ್ಯಂತರ</string>
+    <string name="tls_certificate_issuer">ನೀಡಿದವರು</string>
+    <string name="tls_certificate_list_title">ಪ್ರಮಾಣಪತ್ರಗಳು</string>
+    <string name="tls_certificate_name">ಹೆಸರು</string>
+    <string name="tls_certificate_root">ರೂಟ್</string>
+    <string name="tls_certificate_validity">ಮಾನ್ಯತೆ</string>
+    <string name="tls_pin_mismatch_details">%1$@ ಪ್ರಮಾಣಪತ್ರ TigerDuck ದಾಖಲಿಸಿರುವುದಕ್ಕಿಂತ ಭಿನ್ನವಾಗಿದೆ, ಆದರೆ ಅದನ್ನು ವಿಶ್ವಾಸಾರ್ಹ ಸಂಸ್ಥೆ ನೀಡಿದೆ, ಆದ್ದರಿಂದ ವೆಬ್‌ಸೈಟ್ ಪ್ರಮಾಣಪತ್ರವನ್ನು ನವೀಕರಿಸಿರಬಹುದು. ಮುಂದುವರಿದರೆ, ಮುಂದಿನ ಅಪ್‌ಡೇಟ್‌ವರೆಗೆ TigerDuck ಈ ಪ್ರಮಾಣಪತ್ರವನ್ನು ನಂಬುತ್ತದೆ, %2$@ ಅಡಿಯ ಎಲ್ಲಾ ಸೈಟ್‌ಗಳಿಗೆ.</string>
+    <string name="tls_pin_mismatch_issuer">ನೀಡಿದವರು: %@</string>
+    <string name="tls_pin_mismatch_message">ವೆಬ್‌ಸೈಟ್‌ನ ಪ್ರಮಾಣಪತ್ರ ದಾಖಲಾಗಿರುವುದಕ್ಕೆ ಹೊಂದಿಕೆಯಾಗುತ್ತಿಲ್ಲ, ಇದರಿಂದ ಸಂಪರ್ಕದ ಸುರಕ್ಷತೆಗೆ ಧಕ್ಕೆಯಾಗುತ್ತದೆ. ಈ ವೆಬ್‌ಸೈಟ್‌ಗೆ ಮುಂದುವರಿಯಬೇಕೆ?</string>
+    <string name="tls_pin_mismatch_show_details">ವಿವರಗಳು</string>
+    <string name="tls_pin_mismatch_title">ಪ್ರಮಾಣಪತ್ರ ಬದಲಾಗಿದೆ</string>
+    <string name="tls_pin_mismatch_view_certificate">ಪ್ರಮಾಣಪತ್ರ ವೀಕ್ಷಿಸಿ</string>
     <string name="update_action_later">ನಂತರ</string>
     <string name="update_action_skip_version">ಈ ಆವೃತ್ತಿ ಬಿಟ್ಟುಬಿಡಿ</string>
     <string name="update_action_update_now">ಈಗ ಅಪ್‌ಡೇಟ್ ಮಾಡಿ</string>

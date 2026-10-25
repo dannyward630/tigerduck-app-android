@@ -38,6 +38,7 @@
     <string name="action_clear_text">Wyczyść tekst</string>
     <string name="action_close">Zamknij</string>
     <string name="action_confirm">Potwierdź</string>
+    <string name="action_continue">Kontynuuj</string>
     <string name="action_done">Gotowe</string>
     <string name="action_go_to_settings">Przejdź do ustawień</string>
     <string name="action_got_it">Rozumiem</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Bieżące zakładki</string>
     <string name="tab_editor_title">Dostosuj dolny pasek</string>
     <string name="tag_server_notification">Powiadomienie serwera</string>
+    <string name="tls_certificate_fingerprint">Odcisk SHA-256</string>
+    <string name="tls_certificate_intermediate">Pośredni</string>
+    <string name="tls_certificate_issuer">Wystawca</string>
+    <string name="tls_certificate_list_title">Certyfikaty</string>
+    <string name="tls_certificate_name">Nazwa</string>
+    <string name="tls_certificate_root">Główny</string>
+    <string name="tls_certificate_validity">Ważność</string>
+    <string name="tls_pin_mismatch_details">Certyfikat witryny %1$@ różni się od zapisanego w TigerDuck, ale wystawił go zaufany urząd, więc witryna mogła go odnowić. Jeśli kontynuujesz, TigerDuck będzie ufać temu certyfikatowi do następnej aktualizacji, dla wszystkich witryn w %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Wystawca: %@</string>
+    <string name="tls_pin_mismatch_message">Certyfikat witryny nie zgadza się z zapisanym, co wpływa na bezpieczeństwo połączenia. Przejść do tej witryny?</string>
+    <string name="tls_pin_mismatch_show_details">Szczegóły</string>
+    <string name="tls_pin_mismatch_title">Certyfikat został zmieniony</string>
+    <string name="tls_pin_mismatch_view_certificate">Wyświetl certyfikat</string>
     <string name="update_action_later">Później</string>
     <string name="update_action_skip_version">Pomiń tę wersję</string>
     <string name="update_action_update_now">Aktualizuj teraz</string>

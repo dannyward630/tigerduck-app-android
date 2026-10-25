@@ -38,6 +38,7 @@
     <string name="action_clear_text">清除文字</string>
     <string name="action_close">關閉</string>
     <string name="action_confirm">確認</string>
+    <string name="action_continue">繼續</string>
     <string name="action_done">完成</string>
     <string name="action_go_to_settings">去設定</string>
     <string name="action_got_it">收到！</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">目前顯示的項目</string>
     <string name="tab_editor_title">自訂底部功能列</string>
     <string name="tag_server_notification">伺服器通知</string>
+    <string name="tls_certificate_fingerprint">SHA-256 指紋</string>
+    <string name="tls_certificate_intermediate">中繼憑證</string>
+    <string name="tls_certificate_issuer">簽發者</string>
+    <string name="tls_certificate_list_title">憑證</string>
+    <string name="tls_certificate_name">名稱</string>
+    <string name="tls_certificate_root">根憑證</string>
+    <string name="tls_certificate_validity">有效期</string>
+    <string name="tls_pin_mismatch_details">%1$@ 嘅憑證同 TigerDuck 記錄嘅唔同，但仍然由受信任嘅機構簽發，可能係網站更新咗憑證。繼續之後，TigerDuck 更新前都會信任呢個憑證，並套用到 %2$@ 底下嘅所有網站。</string>
+    <string name="tls_pin_mismatch_issuer">簽發者：%@</string>
+    <string name="tls_pin_mismatch_message">網站憑證同記錄唔一致，連線嘅安全性受到影響，確定要繼續前往呢個網站嗎？</string>
+    <string name="tls_pin_mismatch_show_details">詳細資料</string>
+    <string name="tls_pin_mismatch_title">憑證已更改</string>
+    <string name="tls_pin_mismatch_view_certificate">查看憑證</string>
     <string name="update_action_later">稍後</string>
     <string name="update_action_skip_version">跳過此版本</string>
     <string name="update_action_update_now">立即更新</string>

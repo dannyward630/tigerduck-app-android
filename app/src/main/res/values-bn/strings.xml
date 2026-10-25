@@ -38,6 +38,7 @@
     <string name="action_clear_text">টেক্সট পরিষ্কার করুন</string>
     <string name="action_close">বন্ধ করুন</string>
     <string name="action_confirm">নিশ্চিত করুন</string>
+    <string name="action_continue">এগিয়ে যান</string>
     <string name="action_done">সম্পন্ন</string>
     <string name="action_go_to_settings">সেটিংসে যান</string>
     <string name="action_got_it">বুঝেছি</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">বর্তমান ট্যাবসমূহ</string>
     <string name="tab_editor_title">নিচের নেভিগেশন বার কাস্টমাইজ করুন</string>
     <string name="tag_server_notification">সার্ভার বিজ্ঞপ্তি</string>
+    <string name="tls_certificate_fingerprint">SHA-256 ফিঙ্গারপ্রিন্ট</string>
+    <string name="tls_certificate_intermediate">মধ্যবর্তী</string>
+    <string name="tls_certificate_issuer">ইস্যুকারী</string>
+    <string name="tls_certificate_list_title">সার্টিফিকেট</string>
+    <string name="tls_certificate_name">নাম</string>
+    <string name="tls_certificate_root">রুট</string>
+    <string name="tls_certificate_validity">মেয়াদ</string>
+    <string name="tls_pin_mismatch_details">%1$@-এর সার্টিফিকেট TigerDuck-এ রেকর্ড করা সার্টিফিকেট থেকে আলাদা, তবে এটি একটি বিশ্বস্ত কর্তৃপক্ষ ইস্যু করেছে, তাই ওয়েবসাইট হয়তো সার্টিফিকেট নবায়ন করেছে। এগিয়ে গেলে TigerDuck পরবর্তী আপডেট পর্যন্ত এই সার্টিফিকেটে ভরসা করবে, %2$@-এর অধীনে সব সাইটের জন্য।</string>
+    <string name="tls_pin_mismatch_issuer">ইস্যুকারী: %@</string>
+    <string name="tls_pin_mismatch_message">ওয়েবসাইটের সার্টিফিকেট রেকর্ড করা সার্টিফিকেটের সাথে মেলে না, যা সংযোগের নিরাপত্তাকে প্রভাবিত করে। এই ওয়েবসাইটে এগিয়ে যাবেন?</string>
+    <string name="tls_pin_mismatch_show_details">বিস্তারিত</string>
+    <string name="tls_pin_mismatch_title">সার্টিফিকেট বদলেছে</string>
+    <string name="tls_pin_mismatch_view_certificate">সার্টিফিকেট দেখুন</string>
     <string name="update_action_later">পরে</string>
     <string name="update_action_skip_version">এই সংস্করণ এড়িয়ে যান</string>
     <string name="update_action_update_now">এখনই আপডেট করুন</string>

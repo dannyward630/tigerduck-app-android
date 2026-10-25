@@ -38,6 +38,7 @@
     <string name="action_clear_text">Kustuta tekst</string>
     <string name="action_close">Sulge</string>
     <string name="action_confirm">Kinnita</string>
+    <string name="action_continue">Jätka</string>
     <string name="action_done">Valmis</string>
     <string name="action_go_to_settings">Mine seadetesse</string>
     <string name="action_got_it">Selge</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Praegused vahekaardid</string>
     <string name="tab_editor_title">Kohanda alumist riba</string>
     <string name="tag_server_notification">Serveriteatis</string>
+    <string name="tls_certificate_fingerprint">SHA-256 sõrmejälg</string>
+    <string name="tls_certificate_intermediate">Vahesertifikaat</string>
+    <string name="tls_certificate_issuer">Väljastaja</string>
+    <string name="tls_certificate_list_title">Sertifikaadid</string>
+    <string name="tls_certificate_name">Nimi</string>
+    <string name="tls_certificate_root">Juursertifikaat</string>
+    <string name="tls_certificate_validity">Kehtivus</string>
+    <string name="tls_pin_mismatch_details">Saidi %1$@ sertifikaat erineb sellest, mille TigerDuck on salvestanud, kuid selle on väljastanud usaldusväärne asutus, nii et sait võis selle uuendada. Kui jätkad, usaldab TigerDuck seda sertifikaati kuni järgmise uuenduseni kõigil saitidel, mis kuuluvad domeeni %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Väljastaja: %@</string>
+    <string name="tls_pin_mismatch_message">Veebisaidi sertifikaat ei vasta salvestatule, mis mõjutab ühenduse turvalisust. Kas jätkata sellele veebisaidile?</string>
+    <string name="tls_pin_mismatch_show_details">Üksikasjad</string>
+    <string name="tls_pin_mismatch_title">Sertifikaat on muutunud</string>
+    <string name="tls_pin_mismatch_view_certificate">Vaata sertifikaati</string>
     <string name="update_action_later">Hiljem</string>
     <string name="update_action_skip_version">Jäta see versioon vahele</string>
     <string name="update_action_update_now">Uuenda kohe</string>

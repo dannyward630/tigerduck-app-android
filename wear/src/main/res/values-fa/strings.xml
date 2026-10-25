@@ -38,6 +38,7 @@
     <string name="action_clear_text">پاک کردن متن</string>
     <string name="action_close">بستن</string>
     <string name="action_confirm">تأیید</string>
+    <string name="action_continue">ادامه</string>
     <string name="action_done">انجام شد</string>
     <string name="action_go_to_settings">رفتن به تنظیمات</string>
     <string name="action_got_it">متوجه شدم</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">تب‌های فعلی</string>
     <string name="tab_editor_title">شخصی‌سازی نوار پایین</string>
     <string name="tag_server_notification">اعلان سرور</string>
+    <string name="tls_certificate_fingerprint">اثر انگشت SHA-256</string>
+    <string name="tls_certificate_intermediate">میانی</string>
+    <string name="tls_certificate_issuer">صادرکننده</string>
+    <string name="tls_certificate_list_title">گواهی‌ها</string>
+    <string name="tls_certificate_name">نام</string>
+    <string name="tls_certificate_root">ریشه</string>
+    <string name="tls_certificate_validity">اعتبار</string>
+    <string name="tls_pin_mismatch_details">گواهی %1$@ با گواهی ثبت‌شده در TigerDuck متفاوت است، اما یک مرجع معتبر آن را صادر کرده است، پس ممکن است وب‌سایت گواهی خود را تمدید کرده باشد. اگر ادامه دهید، TigerDuck تا به‌روزرسانی بعدی به این گواهی اعتماد می‌کند، برای همه سایت‌های زیر %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">صادرکننده: %@</string>
+    <string name="tls_pin_mismatch_message">گواهی وب‌سایت با گواهی ثبت‌شده مطابقت ندارد و این امنیت اتصال را تحت تأثیر قرار می‌دهد. به این وب‌سایت ادامه می‌دهید؟</string>
+    <string name="tls_pin_mismatch_show_details">جزئیات</string>
+    <string name="tls_pin_mismatch_title">گواهی تغییر کرده است</string>
+    <string name="tls_pin_mismatch_view_certificate">مشاهده گواهی</string>
     <string name="update_action_later">بعداً</string>
     <string name="update_action_skip_version">از این نسخه بگذر</string>
     <string name="update_action_update_now">همین الان به‌روزرسانی کن</string>
