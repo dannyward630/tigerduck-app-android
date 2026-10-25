@@ -9,10 +9,11 @@ import java.util.Locale
  * `MainActivity.attachBaseContext` applies. When the copy is behind (the
  * process died between the two writes), every new instance comes up in the old
  * language and asks to recreate again: an endless relaunch with a blank screen.
- * So the copy is brought up to date before recreating, and a language is
- * recreated for at most once a process.
+ * So the copy is brought up to date before recreating
+ * ([org.ntust.app.tigerduck.wear.data.SchedulePersistence.syncLanguageTag]), and
+ * a language is recreated for at most once until the screen shows what was wanted.
  */
-internal object WearLocaleSwitch {
+internal class WearLocaleSwitch {
 
     enum class Step {
         /** The screen shows the wanted language, or the phone sent none. */
@@ -25,21 +26,33 @@ internal object WearLocaleSwitch {
         Stay,
     }
 
-    /** The language this process last recreated for, as [normalized] gives it. */
+    /** The language last recreated for, [normalized]; cleared once the screen shows what was wanted. */
     @Volatile
-    var triedFor: String? = null
+    private var triedFor: String? = null
 
-    /** What to do when the phone wants [wanted], the screen shows [showing], and [triedFor] was tried. */
-    fun step(wanted: String?, showing: String?, triedFor: String?): Step {
-        val want = normalized(wanted) ?: return Step.Keep
-        if (want == normalized(showing)) return Step.Keep
-        if (want == normalized(triedFor)) return Step.Stay
-        return Step.Recreate
+    /** What to do when the phone wants [wanted] and the screen shows [showing]. */
+    fun step(wanted: String?, showing: String?): Step {
+        val want = normalized(wanted)
+        if (want == null || want == normalized(showing)) {
+            triedFor = null
+            return Step.Keep
+        }
+        return if (want == triedFor) Step.Stay else Step.Recreate
     }
 
-    /** [tag] in BCP 47's own form, lower case, so "zh-hant-tw" and "zh-Hant-TW" are one; null for none. */
-    fun normalized(tag: String?): String? =
-        tag?.trim()?.takeIf { it.isNotEmpty() }
-            ?.let { Locale.forLanguageTag(it).toLanguageTag().lowercase(Locale.ROOT) }
-            ?.takeIf { it != "und" }
+    /** Records that the activity is being recreated for [tag]. */
+    fun recreating(tag: String) {
+        triedFor = normalized(tag)
+    }
+
+    companion object {
+        /** The one this process keeps, across its activity's instances. */
+        val process = WearLocaleSwitch()
+
+        /** [tag] in BCP 47's own form, lower case, so "zh-hant-tw" and "zh-Hant-TW" are one; null for none. */
+        fun normalized(tag: String?): String? =
+            tag?.trim()?.takeIf { it.isNotEmpty() }
+                ?.let { Locale.forLanguageTag(it).toLanguageTag().lowercase(Locale.ROOT) }
+                ?.takeIf { it != "und" }
+    }
 }

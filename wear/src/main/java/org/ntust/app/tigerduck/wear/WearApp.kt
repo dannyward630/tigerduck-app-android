@@ -25,11 +25,9 @@ import androidx.wear.compose.material3.HorizontalPagerScaffold
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
 import org.ntust.app.tigerduck.wear.data.SyncRequester
@@ -73,13 +71,14 @@ fun WearApp() {
     val activity = context.findActivity()
     val configuration = LocalConfiguration.current
     LaunchedEffect(snapshot.languageTag) {
-        val tag = snapshot.languageTag ?: return@LaunchedEffect
-        val showing = configuration.locales[0]?.toLanguageTag()
-        if (WearLocaleSwitch.step(tag, showing, WearLocaleSwitch.triedFor) != WearLocaleSwitch.Step.Recreate) {
+        val tag = snapshot.languageTag
+        val switch = WearLocaleSwitch.process
+        if (switch.step(tag, configuration.locales[0]?.toLanguageTag()) != WearLocaleSwitch.Step.Recreate) {
             return@LaunchedEffect
         }
-        withContext(Dispatchers.IO) { repo.writeLanguageTagBlocking(tag) }
-        WearLocaleSwitch.triedFor = tag
+        // False when a newer sync changed the language meanwhile: its own run of this effect decides.
+        if (tag == null || !repo.syncLanguageTag(tag)) return@LaunchedEffect
+        switch.recreating(tag)
         activity?.recreate()
     }
 
