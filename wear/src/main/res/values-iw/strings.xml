@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">מחיקת כל הקבצים שהורדו</string>
     <string name="settings_downloaded_files_delete_all_message">קבצי Moodle וקבצים מצורפים מהדואר יורדו שוב בפעם הבאה שתפתח אותם.</string>
     <string name="settings_downloaded_files_delete_all_title">למחוק את כל הקבצים שהורדו?</string>
+    <string name="settings_downloaded_files_delete_kind">מחיקת %@</string>
     <string name="settings_downloaded_files_footer">קבצים שהורדו בדפדפן של TigerDuck נשמרים בתיקיית ההורדות בטלפון ולא נמחקים מכאן.</string>
     <string name="settings_downloaded_files_images">תמונות של מערכת השעות</string>
     <string name="settings_downloaded_files_mail">קבצים מצורפים מהדואר</string>

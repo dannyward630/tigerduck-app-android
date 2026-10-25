@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Барлық жүктелген файлдарды жою</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle файлдары мен пошта тіркемелері келесі ашқанда қайта жүктеледі.</string>
     <string name="settings_downloaded_files_delete_all_title">Барлық жүктелген файлдарды жою керек пе?</string>
+    <string name="settings_downloaded_files_delete_kind">Жою: %@</string>
     <string name="settings_downloaded_files_footer">TigerDuck браузерінде жүктелген файлдар телефонның «Жүктеулер» қалтасында сақталады және мұнда жойылмайды.</string>
     <string name="settings_downloaded_files_images">Сабақ кестесінің суреттері</string>
     <string name="settings_downloaded_files_mail">Пошта тіркемелері</string>

@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">பதிவிறக்கிய எல்லா கோப்புகளையும் நீக்கு</string>
     <string name="settings_downloaded_files_delete_all_message">அடுத்த முறை திறக்கும்போது Moodle கோப்புகளும் மின்னஞ்சல் இணைப்புகளும் மீண்டும் பதிவிறக்கப்படும்.</string>
     <string name="settings_downloaded_files_delete_all_title">பதிவிறக்கிய எல்லா கோப்புகளையும் நீக்கவா?</string>
+    <string name="settings_downloaded_files_delete_kind">%@ நீக்கு</string>
     <string name="settings_downloaded_files_footer">TigerDuck உலாவியில் பதிவிறக்கிய கோப்புகள் உங்கள் ஃபோனின் Downloads கோப்புறையில் சேமிக்கப்படும், இங்கிருந்து நீக்கப்படாது.</string>
     <string name="settings_downloaded_files_images">வகுப்பு அட்டவணை படங்கள்</string>
     <string name="settings_downloaded_files_mail">மின்னஞ்சல் இணைப்புகள்</string>

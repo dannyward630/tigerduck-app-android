@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">İndirilen tüm dosyaları sil</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle dosyaları ve e-posta ekleri bir sonraki açışınızda yeniden indirilir.</string>
     <string name="settings_downloaded_files_delete_all_title">İndirilen tüm dosyalar silinsin mi?</string>
+    <string name="settings_downloaded_files_delete_kind">Sil: %@</string>
     <string name="settings_downloaded_files_footer">TigerDuck tarayıcısında indirilen dosyalar telefonunuzun İndirilenler klasörüne kaydedilir ve buradan silinmez.</string>
     <string name="settings_downloaded_files_images">Ders programı görselleri</string>
     <string name="settings_downloaded_files_mail">E-posta ekleri</string>

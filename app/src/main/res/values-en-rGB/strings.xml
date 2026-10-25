@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Delete all downloaded files</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle files and mail attachments download again the next time you open them.</string>
     <string name="settings_downloaded_files_delete_all_title">Delete all downloaded files?</string>
+    <string name="settings_downloaded_files_delete_kind">Delete %@</string>
     <string name="settings_downloaded_files_footer">Files downloaded in the TigerDuck browser are saved to your phone\'s Downloads folder and aren\'t deleted here.</string>
     <string name="settings_downloaded_files_images">Class table images</string>
     <string name="settings_downloaded_files_mail">Mail attachments</string>

@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">सभी डाउनलोड की गई फ़ाइलें हटाएँ</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle फ़ाइलें और मेल अटैचमेंट अगली बार खोलने पर फिर से डाउनलोड होंगे।</string>
     <string name="settings_downloaded_files_delete_all_title">सभी डाउनलोड की गई फ़ाइलें हटाएँ?</string>
+    <string name="settings_downloaded_files_delete_kind">%@ हटाएँ</string>
     <string name="settings_downloaded_files_footer">TigerDuck ब्राउज़र में डाउनलोड की गई फ़ाइलें आपके फ़ोन के Downloads फ़ोल्डर में सेव होती हैं और यहाँ से नहीं हटाई जातीं।</string>
     <string name="settings_downloaded_files_images">कक्षा सारणी की इमेज</string>
     <string name="settings_downloaded_files_mail">मेल अटैचमेंट</string>

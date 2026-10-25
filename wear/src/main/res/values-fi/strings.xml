@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Poista kaikki ladatut tiedostot</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle-tiedostot ja sähköpostin liitteet ladataan uudelleen, kun avaat ne seuraavan kerran.</string>
     <string name="settings_downloaded_files_delete_all_title">Poistetaanko kaikki ladatut tiedostot?</string>
+    <string name="settings_downloaded_files_delete_kind">Poista: %@</string>
     <string name="settings_downloaded_files_footer">TigerDuck-selaimessa ladatut tiedostot tallennetaan puhelimen Lataukset-kansioon, eikä niitä poisteta täältä.</string>
     <string name="settings_downloaded_files_images">Lukujärjestyksen kuvat</string>
     <string name="settings_downloaded_files_mail">Sähköpostin liitteet</string>

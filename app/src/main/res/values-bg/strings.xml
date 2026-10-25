@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Изтриване на всички изтеглени файлове</string>
     <string name="settings_downloaded_files_delete_all_message">Файловете от Moodle и прикачените файлове от пощата ще се изтеглят отново, когато ги отворите следващия път.</string>
     <string name="settings_downloaded_files_delete_all_title">Изтриване на всички изтеглени файлове?</string>
+    <string name="settings_downloaded_files_delete_kind">Изтриване: %@</string>
     <string name="settings_downloaded_files_footer">Файловете, изтеглени в браузъра на TigerDuck, се записват в папката „Изтегляния“ на телефона и не се изтриват оттук.</string>
     <string name="settings_downloaded_files_images">Изображения на разписанието</string>
     <string name="settings_downloaded_files_mail">Прикачени файлове от пощата</string>

@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Удалить все скачанные файлы</string>
     <string name="settings_downloaded_files_delete_all_message">Файлы Moodle и вложения из почты будут скачаны заново, когда вы откроете их в следующий раз.</string>
     <string name="settings_downloaded_files_delete_all_title">Удалить все скачанные файлы?</string>
+    <string name="settings_downloaded_files_delete_kind">Удалить: %@</string>
     <string name="settings_downloaded_files_footer">Файлы, скачанные в браузере TigerDuck, сохраняются в папке «Загрузки» на телефоне и здесь не удаляются.</string>
     <string name="settings_downloaded_files_images">Изображения расписания</string>
     <string name="settings_downloaded_files_mail">Вложения из почты</string>

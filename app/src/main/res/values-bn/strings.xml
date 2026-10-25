@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">সব ডাউনলোড করা ফাইল মুছুন</string>
     <string name="settings_downloaded_files_delete_all_message">পরের বার খুললে Moodle ফাইল ও মেইলের অ্যাটাচমেন্ট আবার ডাউনলোড হবে।</string>
     <string name="settings_downloaded_files_delete_all_title">সব ডাউনলোড করা ফাইল মুছবেন?</string>
+    <string name="settings_downloaded_files_delete_kind">%@ মুছুন</string>
     <string name="settings_downloaded_files_footer">TigerDuck ব্রাউজারে ডাউনলোড করা ফাইল আপনার ফোনের Downloads ফোল্ডারে সেভ হয় এবং এখান থেকে মোছা হয় না।</string>
     <string name="settings_downloaded_files_images">ক্লাস তালিকার ছবি</string>
     <string name="settings_downloaded_files_mail">মেইলের অ্যাটাচমেন্ট</string>

@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Burahin ang lahat ng na-download na file</string>
     <string name="settings_downloaded_files_delete_all_message">Muling ida-download ang mga file sa Moodle at mga attachment ng mail sa susunod na buksan mo ang mga ito.</string>
     <string name="settings_downloaded_files_delete_all_title">Burahin ang lahat ng na-download na file?</string>
+    <string name="settings_downloaded_files_delete_kind">Burahin ang %@</string>
     <string name="settings_downloaded_files_footer">Ang mga file na na-download sa TigerDuck browser ay naka-save sa Downloads folder ng iyong phone at hindi binubura rito.</string>
     <string name="settings_downloaded_files_images">Mga larawan ng iskedyul ng klase</string>
     <string name="settings_downloaded_files_mail">Mga attachment ng mail</string>

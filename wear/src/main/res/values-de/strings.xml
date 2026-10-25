@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Alle heruntergeladenen Dateien löschen</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle-Dateien und E-Mail-Anhänge werden erneut heruntergeladen, wenn Sie sie das nächste Mal öffnen.</string>
     <string name="settings_downloaded_files_delete_all_title">Alle heruntergeladenen Dateien löschen?</string>
+    <string name="settings_downloaded_files_delete_kind">%@ löschen</string>
     <string name="settings_downloaded_files_footer">Im TigerDuck-Browser heruntergeladene Dateien werden im Download-Ordner Ihres Telefons gespeichert und hier nicht gelöscht.</string>
     <string name="settings_downloaded_files_images">Stundenplanbilder</string>
     <string name="settings_downloaded_files_mail">E-Mail-Anhänge</string>

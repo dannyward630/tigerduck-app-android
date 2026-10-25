@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Elimina tutti i file scaricati</string>
     <string name="settings_downloaded_files_delete_all_message">I file di Moodle e gli allegati della posta verranno scaricati di nuovo la prossima volta che li apri.</string>
     <string name="settings_downloaded_files_delete_all_title">Eliminare tutti i file scaricati?</string>
+    <string name="settings_downloaded_files_delete_kind">Elimina: %@</string>
     <string name="settings_downloaded_files_footer">I file scaricati nel browser di TigerDuck vengono salvati nella cartella Download del telefono e non vengono eliminati da qui.</string>
     <string name="settings_downloaded_files_images">Immagini dell\'orario</string>
     <string name="settings_downloaded_files_mail">Allegati della posta</string>

@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Smazat všechny stažené soubory</string>
     <string name="settings_downloaded_files_delete_all_message">Soubory z Moodlu a přílohy e-mailů se při dalším otevření stáhnou znovu.</string>
     <string name="settings_downloaded_files_delete_all_title">Smazat všechny stažené soubory?</string>
+    <string name="settings_downloaded_files_delete_kind">Smazat: %@</string>
     <string name="settings_downloaded_files_footer">Soubory stažené v prohlížeči TigerDuck se ukládají do složky Stažené soubory v telefonu a tady se nemažou.</string>
     <string name="settings_downloaded_files_images">Obrázky rozvrhu</string>
     <string name="settings_downloaded_files_mail">Přílohy e-mailů</string>

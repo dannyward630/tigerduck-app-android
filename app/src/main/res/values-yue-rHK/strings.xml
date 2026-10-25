@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">刪除所有已下載嘅檔案</string>
     <string name="settings_downloaded_files_delete_all_message">下次打開 Moodle 檔案同郵件附件嗰陣，會再重新下載。</string>
     <string name="settings_downloaded_files_delete_all_title">要刪除所有已下載嘅檔案嗎？</string>
+    <string name="settings_downloaded_files_delete_kind">刪除%@</string>
     <string name="settings_downloaded_files_footer">喺 TigerDuck 瀏覽器下載嘅檔案會儲存喺手機嘅「下載」資料夾，唔會喺呢度刪除。</string>
     <string name="settings_downloaded_files_images">課表圖片</string>
     <string name="settings_downloaded_files_mail">郵件附件</string>

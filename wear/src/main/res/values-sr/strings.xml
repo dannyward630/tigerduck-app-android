@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Обриши све преузете датотеке</string>
     <string name="settings_downloaded_files_delete_all_message">Датотеке са Moodle-а и прилози из поште поново ће се преузети када их следећи пут отворите.</string>
     <string name="settings_downloaded_files_delete_all_title">Обрисати све преузете датотеке?</string>
+    <string name="settings_downloaded_files_delete_kind">Обриши: %@</string>
     <string name="settings_downloaded_files_footer">Датотеке преузете у прегледачу TigerDuck чувају се у фасцикли „Преузимања“ на телефону и овде се не бришу.</string>
     <string name="settings_downloaded_files_images">Слике распореда</string>
     <string name="settings_downloaded_files_mail">Прилози из поште</string>

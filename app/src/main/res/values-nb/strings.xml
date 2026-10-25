@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Slett alle nedlastede filer</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle-filer og e-postvedlegg lastes ned på nytt neste gang du åpner dem.</string>
     <string name="settings_downloaded_files_delete_all_title">Vil du slette alle nedlastede filer?</string>
+    <string name="settings_downloaded_files_delete_kind">Slett %@</string>
     <string name="settings_downloaded_files_footer">Filer som lastes ned i TigerDuck-nettleseren, lagres i Nedlastinger-mappen på telefonen og slettes ikke her.</string>
     <string name="settings_downloaded_files_images">Bilder av timeplanen</string>
     <string name="settings_downloaded_files_mail">E-postvedlegg</string>

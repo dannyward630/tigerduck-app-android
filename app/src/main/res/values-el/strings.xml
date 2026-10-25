@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Διαγραφή όλων των ληφθέντων αρχείων</string>
     <string name="settings_downloaded_files_delete_all_message">Τα αρχεία Moodle και τα συνημμένα αλληλογραφίας θα ληφθούν ξανά την επόμενη φορά που θα τα ανοίξετε.</string>
     <string name="settings_downloaded_files_delete_all_title">Διαγραφή όλων των ληφθέντων αρχείων;</string>
+    <string name="settings_downloaded_files_delete_kind">Διαγραφή: %@</string>
     <string name="settings_downloaded_files_footer">Τα αρχεία που λαμβάνετε στο πρόγραμμα περιήγησης του TigerDuck αποθηκεύονται στον φάκελο Λήψεις του τηλεφώνου σας και δεν διαγράφονται από εδώ.</string>
     <string name="settings_downloaded_files_images">Εικόνες προγράμματος μαθημάτων</string>
     <string name="settings_downloaded_files_mail">Συνημμένα αλληλογραφίας</string>

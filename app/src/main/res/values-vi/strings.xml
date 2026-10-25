@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Xóa tất cả tệp đã tải xuống</string>
     <string name="settings_downloaded_files_delete_all_message">Tệp Moodle và tệp đính kèm trong thư sẽ được tải xuống lại vào lần tới bạn mở chúng.</string>
     <string name="settings_downloaded_files_delete_all_title">Xóa tất cả tệp đã tải xuống?</string>
+    <string name="settings_downloaded_files_delete_kind">Xóa %@</string>
     <string name="settings_downloaded_files_footer">Tệp tải xuống trong trình duyệt TigerDuck được lưu vào thư mục Tải xuống của điện thoại và không bị xóa ở đây.</string>
     <string name="settings_downloaded_files_images">Ảnh thời khóa biểu</string>
     <string name="settings_downloaded_files_mail">Tệp đính kèm trong thư</string>

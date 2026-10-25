@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">બધી ડાઉનલોડ કરેલી ફાઇલો ડિલીટ કરો</string>
     <string name="settings_downloaded_files_delete_all_message">આગલી વખતે ખોલશો ત્યારે Moodle ફાઇલો અને મેઇલ એટેચમેન્ટ ફરીથી ડાઉનલોડ થશે.</string>
     <string name="settings_downloaded_files_delete_all_title">બધી ડાઉનલોડ કરેલી ફાઇલો ડિલીટ કરીએ?</string>
+    <string name="settings_downloaded_files_delete_kind">%@ ડિલીટ કરો</string>
     <string name="settings_downloaded_files_footer">TigerDuck બ્રાઉઝરમાં ડાઉનલોડ કરેલી ફાઇલો તમારા ફોનના Downloads ફોલ્ડરમાં સેવ થાય છે અને અહીંથી ડિલીટ થતી નથી.</string>
     <string name="settings_downloaded_files_images">ક્લાસ ટાઇમટેબલની છબીઓ</string>
     <string name="settings_downloaded_files_mail">મેઇલ એટેચમેન્ટ</string>

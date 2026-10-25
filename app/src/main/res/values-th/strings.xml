@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">ลบไฟล์ที่ดาวน์โหลดทั้งหมด</string>
     <string name="settings_downloaded_files_delete_all_message">ไฟล์ Moodle และไฟล์แนบในอีเมลจะดาวน์โหลดใหม่เมื่อคุณเปิดครั้งถัดไป</string>
     <string name="settings_downloaded_files_delete_all_title">ลบไฟล์ที่ดาวน์โหลดทั้งหมดใช่ไหม</string>
+    <string name="settings_downloaded_files_delete_kind">ลบ%@</string>
     <string name="settings_downloaded_files_footer">ไฟล์ที่ดาวน์โหลดในเบราว์เซอร์ของ TigerDuck จะบันทึกไว้ในโฟลเดอร์ดาวน์โหลดของโทรศัพท์ และจะไม่ถูกลบที่นี่</string>
     <string name="settings_downloaded_files_images">รูปตารางเรียน</string>
     <string name="settings_downloaded_files_mail">ไฟล์แนบในอีเมล</string>

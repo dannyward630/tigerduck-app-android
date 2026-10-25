@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Usuń wszystkie pobrane pliki</string>
     <string name="settings_downloaded_files_delete_all_message">Pliki z Moodle i załączniki z poczty zostaną pobrane ponownie przy następnym otwarciu.</string>
     <string name="settings_downloaded_files_delete_all_title">Usunąć wszystkie pobrane pliki?</string>
+    <string name="settings_downloaded_files_delete_kind">Usuń: %@</string>
     <string name="settings_downloaded_files_footer">Pliki pobrane w przeglądarce TigerDuck są zapisywane w folderze Pobrane w telefonie i nie są tutaj usuwane.</string>
     <string name="settings_downloaded_files_images">Obrazy planu zajęć</string>
     <string name="settings_downloaded_files_mail">Załączniki z poczty</string>

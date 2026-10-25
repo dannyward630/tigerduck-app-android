@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">تمام ڈاؤن لوڈ کردہ فائلیں حذف کریں</string>
     <string name="settings_downloaded_files_delete_all_message">اگلی بار کھولنے پر Moodle فائلیں اور میل کے منسلکات دوبارہ ڈاؤن لوڈ ہوں گے۔</string>
     <string name="settings_downloaded_files_delete_all_title">تمام ڈاؤن لوڈ کردہ فائلیں حذف کریں؟</string>
+    <string name="settings_downloaded_files_delete_kind">%@ حذف کریں</string>
     <string name="settings_downloaded_files_footer">TigerDuck براؤزر میں ڈاؤن لوڈ کردہ فائلیں آپ کے فون کے Downloads فولڈر میں محفوظ ہوتی ہیں اور یہاں سے حذف نہیں ہوتیں۔</string>
     <string name="settings_downloaded_files_images">کلاس شیڈول کی تصاویر</string>
     <string name="settings_downloaded_files_mail">میل کے منسلکات</string>

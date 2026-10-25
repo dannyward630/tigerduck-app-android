@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Supprimer tous les fichiers téléchargés</string>
     <string name="settings_downloaded_files_delete_all_message">Les fichiers Moodle et les pièces jointes des e-mails seront de nouveau téléchargés la prochaine fois que vous les ouvrirez.</string>
     <string name="settings_downloaded_files_delete_all_title">Supprimer tous les fichiers téléchargés ?</string>
+    <string name="settings_downloaded_files_delete_kind">Supprimer : %@</string>
     <string name="settings_downloaded_files_footer">Les fichiers téléchargés dans le navigateur TigerDuck sont enregistrés dans le dossier Téléchargements de votre téléphone et ne sont pas supprimés ici.</string>
     <string name="settings_downloaded_files_images">Images de l\'emploi du temps</string>
     <string name="settings_downloaded_files_mail">Pièces jointes des e-mails</string>

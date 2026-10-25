@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಎಲ್ಲಾ ಫೈಲ್‌ಗಳನ್ನು ಅಳಿಸಿ</string>
     <string name="settings_downloaded_files_delete_all_message">ಮುಂದಿನ ಬಾರಿ ತೆರೆದಾಗ Moodle ಫೈಲ್‌ಗಳು ಮತ್ತು ಮೇಲ್ ಲಗತ್ತುಗಳು ಮತ್ತೆ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತವೆ.</string>
     <string name="settings_downloaded_files_delete_all_title">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಎಲ್ಲಾ ಫೈಲ್‌ಗಳನ್ನು ಅಳಿಸಬೇಕೆ?</string>
+    <string name="settings_downloaded_files_delete_kind">%@ ಅಳಿಸಿ</string>
     <string name="settings_downloaded_files_footer">TigerDuck ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಫೈಲ್‌ಗಳು ನಿಮ್ಮ ಫೋನ್‌ನ Downloads ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಉಳಿಯುತ್ತವೆ ಮತ್ತು ಇಲ್ಲಿಂದ ಅಳಿಸಲಾಗುವುದಿಲ್ಲ.</string>
     <string name="settings_downloaded_files_images">ತರಗತಿ ವೇಳಾಪಟ್ಟಿಯ ಚಿತ್ರಗಳು</string>
     <string name="settings_downloaded_files_mail">ಮೇಲ್ ಲಗತ್ತುಗಳು</string>

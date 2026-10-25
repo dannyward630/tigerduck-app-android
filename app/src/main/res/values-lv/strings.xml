@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Dzēst visus lejupielādētos failus</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle faili un e-pasta pielikumi tiks lejupielādēti vēlreiz, kad nākamreiz tos atvērsiet.</string>
     <string name="settings_downloaded_files_delete_all_title">Vai dzēst visus lejupielādētos failus?</string>
+    <string name="settings_downloaded_files_delete_kind">Dzēst: %@</string>
     <string name="settings_downloaded_files_footer">TigerDuck pārlūkā lejupielādētie faili tiek saglabāti tālruņa mapē Lejupielādes, un šeit tie netiek dzēsti.</string>
     <string name="settings_downloaded_files_images">Stundu plāna attēli</string>
     <string name="settings_downloaded_files_mail">E-pasta pielikumi</string>

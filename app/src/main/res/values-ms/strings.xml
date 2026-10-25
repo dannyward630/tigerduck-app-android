@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Padam semua fail yang dimuat turun</string>
     <string name="settings_downloaded_files_delete_all_message">Fail Moodle dan lampiran mel akan dimuat turun semula apabila anda membukanya lain kali.</string>
     <string name="settings_downloaded_files_delete_all_title">Padam semua fail yang dimuat turun?</string>
+    <string name="settings_downloaded_files_delete_kind">Padam %@</string>
     <string name="settings_downloaded_files_footer">Fail yang dimuat turun dalam pelayar TigerDuck disimpan dalam folder Muat Turun telefon anda dan tidak dipadam di sini.</string>
     <string name="settings_downloaded_files_images">Imej jadual kelas</string>
     <string name="settings_downloaded_files_mail">Lampiran mel</string>

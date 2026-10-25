@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Kustuta kõik allalaaditud failid</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle\'i failid ja e-kirjade manused laaditakse järgmisel avamisel uuesti alla.</string>
     <string name="settings_downloaded_files_delete_all_title">Kas kustutada kõik allalaaditud failid?</string>
+    <string name="settings_downloaded_files_delete_kind">Kustuta: %@</string>
     <string name="settings_downloaded_files_footer">TigerDucki brauseris allalaaditud failid salvestatakse telefoni kausta Allalaadimised ja neid siin ei kustutata.</string>
     <string name="settings_downloaded_files_images">Tunniplaani pildid</string>
     <string name="settings_downloaded_files_mail">E-kirjade manused</string>

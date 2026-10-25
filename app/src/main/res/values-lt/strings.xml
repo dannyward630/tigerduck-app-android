@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Ištrinti visus atsisiųstus failus</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle failai ir laiškų priedai bus atsisiųsti iš naujo, kai kitą kartą juos atidarysite.</string>
     <string name="settings_downloaded_files_delete_all_title">Ištrinti visus atsisiųstus failus?</string>
+    <string name="settings_downloaded_files_delete_kind">Ištrinti: %@</string>
     <string name="settings_downloaded_files_footer">TigerDuck naršyklėje atsisiųsti failai išsaugomi telefono aplanke „Atsisiuntimai“ ir čia netrinami.</string>
     <string name="settings_downloaded_files_images">Tvarkaraščio vaizdai</string>
     <string name="settings_downloaded_files_mail">Laiškų priedai</string>

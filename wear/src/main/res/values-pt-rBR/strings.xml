@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Excluir todos os arquivos baixados</string>
     <string name="settings_downloaded_files_delete_all_message">Os arquivos do Moodle e os anexos de e-mail serão baixados de novo na próxima vez que você abri-los.</string>
     <string name="settings_downloaded_files_delete_all_title">Excluir todos os arquivos baixados?</string>
+    <string name="settings_downloaded_files_delete_kind">Excluir: %@</string>
     <string name="settings_downloaded_files_footer">Os arquivos baixados no navegador do TigerDuck são salvos na pasta Downloads do celular e não são excluídos aqui.</string>
     <string name="settings_downloaded_files_images">Imagens da grade horária</string>
     <string name="settings_downloaded_files_mail">Anexos de e-mail</string>

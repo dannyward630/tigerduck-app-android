@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">حذف همه فایل‌های دانلودشده</string>
     <string name="settings_downloaded_files_delete_all_message">فایل‌های Moodle و پیوست‌های ایمیل دفعه بعد که بازشان کنید دوباره دانلود می‌شوند.</string>
     <string name="settings_downloaded_files_delete_all_title">همه فایل‌های دانلودشده حذف شوند؟</string>
+    <string name="settings_downloaded_files_delete_kind">حذف %@</string>
     <string name="settings_downloaded_files_footer">فایل‌هایی که در مرورگر TigerDuck دانلود می‌کنید در پوشه دانلودهای گوشی ذخیره می‌شوند و از اینجا حذف نمی‌شوند.</string>
     <string name="settings_downloaded_files_images">تصاویر برنامه کلاس‌ها</string>
     <string name="settings_downloaded_files_mail">پیوست‌های ایمیل</string>

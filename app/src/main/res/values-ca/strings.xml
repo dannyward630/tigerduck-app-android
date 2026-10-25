@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Elimina tots els fitxers baixats</string>
     <string name="settings_downloaded_files_delete_all_message">Els fitxers de Moodle i els adjunts del correu es tornaran a baixar la propera vegada que els obriu.</string>
     <string name="settings_downloaded_files_delete_all_title">Voleu eliminar tots els fitxers baixats?</string>
+    <string name="settings_downloaded_files_delete_kind">Elimina: %@</string>
     <string name="settings_downloaded_files_footer">Els fitxers baixats al navegador de TigerDuck es desen a la carpeta Baixades del vostre telèfon i no s\'eliminen aquí.</string>
     <string name="settings_downloaded_files_images">Imatges de l\'horari</string>
     <string name="settings_downloaded_files_mail">Fitxers adjunts del correu</string>

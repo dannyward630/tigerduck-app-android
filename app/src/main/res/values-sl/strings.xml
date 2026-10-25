@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Izbriši vse prenesene datoteke</string>
     <string name="settings_downloaded_files_delete_all_message">Datoteke iz Moodla in priloge iz pošte se bodo znova prenesle, ko jih boste naslednjič odprli.</string>
     <string name="settings_downloaded_files_delete_all_title">Želite izbrisati vse prenesene datoteke?</string>
+    <string name="settings_downloaded_files_delete_kind">Izbriši: %@</string>
     <string name="settings_downloaded_files_footer">Datoteke, prenesene v brskalniku TigerDuck, se shranijo v mapo Prenosi v telefonu in se tukaj ne izbrišejo.</string>
     <string name="settings_downloaded_files_images">Slike urnika</string>
     <string name="settings_downloaded_files_mail">Priloge iz pošte</string>

@@ -1093,6 +1093,7 @@
     <string name="settings_downloaded_files_delete_all">Hapus semua file yang diunduh</string>
     <string name="settings_downloaded_files_delete_all_message">File Moodle dan lampiran email akan diunduh lagi saat kamu membukanya berikutnya.</string>
     <string name="settings_downloaded_files_delete_all_title">Hapus semua file yang diunduh?</string>
+    <string name="settings_downloaded_files_delete_kind">Hapus %@</string>
     <string name="settings_downloaded_files_footer">File yang diunduh di browser TigerDuck disimpan di folder Download ponselmu dan tidak dihapus di sini.</string>
     <string name="settings_downloaded_files_images">Gambar jadwal kuliah</string>
     <string name="settings_downloaded_files_mail">Lampiran email</string>
