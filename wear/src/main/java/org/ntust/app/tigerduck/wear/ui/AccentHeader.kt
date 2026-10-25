@@ -15,16 +15,14 @@ import org.ntust.app.tigerduck.wear.ui.theme.readableOnBlack
 
 /**
  * A screen's title in the phone's accent, its gradient included, as the
- * iPhone's watch app shows its titles in the app's accent color; both ends
+ * iPhone's watch app shows its titles in the app's accent color, all along it
  * [made readable on black][readableOnBlack].
  */
 @Composable
 fun AccentHeader(text: String) {
     val accent = LocalAccentColor.current
     val gradient = LocalAccentGradient.current
-    val brush = remember(accent, gradient) {
-        accentTitleBrush(readableOnBlack(accent), gradient?.let { it.copy(end = readableOnBlack(it.end)) })
-    }
+    val brush = remember(accent, gradient) { accentTitleBrush(accent, gradient, ::readableOnBlack) }
     ListHeader {
         // BasicText, which paints with the style's brush: Material's Text would put its
         // color over it. So it takes the header's alignment, lines and overflow itself.

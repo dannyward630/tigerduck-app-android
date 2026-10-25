@@ -17,6 +17,8 @@ import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.wear.ui.theme.WearAccentGradient
 import org.ntust.app.tigerduck.wear.ui.theme.accentTitleBrush
+import org.ntust.app.tigerduck.wear.ui.theme.readableOnBlack
+import androidx.compose.ui.graphics.luminance
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
@@ -57,6 +59,20 @@ class AccentMarksDrawingTest {
         }
         assertTrue(title.towardBlue(2, 15) < 0.1f)
         assertTrue(title.towardBlue(197, 15) > 0.9f)
+    }
+
+    @Test
+    fun `a title's gradient made readable reads on black all the way across, not only at its ends`() {
+        // Both ends read on black, but mixed in sRGB the middle drops to 3.7:1.
+        val blue = Color(0xFF007AFF)
+        val pink = Color(0xFFFF2D55)
+        val title = render(200, 30) {
+            drawRect(accentTitleBrush(blue, WearAccentGradient(pink, AccentGradientDirection.LeftToRight), ::readableOnBlack))
+        }
+        for (x in 2 until 198 step 7) {
+            val pixel = Color(title.getPixel(x, 15))
+            assertTrue("($x) reads on black: ${(pixel.luminance() + 0.05f) / 0.05f}", (pixel.luminance() + 0.05f) / 0.05f >= 4.4f)
+        }
     }
 
     @Test
