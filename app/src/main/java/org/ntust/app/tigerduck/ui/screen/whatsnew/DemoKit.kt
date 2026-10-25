@@ -180,6 +180,8 @@ internal fun MockText(
         modifier = modifier,
         style = MaterialTheme.typography.labelSmall,
         fontSize = fontSize,
+        // The style's line height would grow with the font scale; this one keeps to the size.
+        lineHeight = fontSize * 1.3f,
         fontWeight = weight,
         color = color,
         maxLines = 1,

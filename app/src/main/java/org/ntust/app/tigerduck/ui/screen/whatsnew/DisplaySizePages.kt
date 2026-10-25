@@ -73,13 +73,14 @@ private fun DisplaySizeDemo(animate: Boolean) {
     val clock = demoClock(animate, SIZE_LOOP_MILLIS, still = 0.35f)
     val t = { clock.value }
     // Display size up and back, then text size up and back, as percentages.
-    val display = { 100f + 20f * (span(t(), 0.10f, 0.28f) - span(t(), 0.42f, 0.52f)) }
-    val text = { 100f + 30f * (span(t(), 0.60f, 0.78f) - span(t(), 0.90f, 0.98f)) }
+    // Kept with their clock, which animations turning on or off replaces.
+    val display = remember(clock) { { 100f + 20f * (span(clock.value, 0.10f, 0.28f) - span(clock.value, 0.42f, 0.52f)) } }
+    val text = remember(clock) { { 100f + 30f * (span(clock.value, 0.60f, 0.78f) - span(clock.value, 0.90f, 0.98f)) } }
     val colors = MaterialTheme.colorScheme
     // The sizes in the sliders' steps of 5%, as the preview takes them: it lays
     // out again at each, as Settings' does, rather than on every frame.
-    val displayStep by remember { derivedStateOf { step(display()) } }
-    val textStep by remember { derivedStateOf { step(text()) } }
+    val displayStep by remember(display) { derivedStateOf { step(display()) } }
+    val textStep by remember(text) { derivedStateOf { step(text()) } }
     val density = LocalDensity.current
     MockScreen(sizeDemoDescription.resolve()) {
         Column(
@@ -137,7 +138,7 @@ private fun step(percent: Float): Int = (percent / 5f).roundToInt() * 5
 private fun SizeSlider(label: String, percent: () -> Float, min: Float, max: Float) {
     val colors = MaterialTheme.colorScheme
     // The percentage in steps of 5, so the label changes as the slider's would, not every frame.
-    val shown by remember { derivedStateOf { step(percent()) } }
+    val shown by remember(percent) { derivedStateOf { step(percent()) } }
     Column(Modifier.padding(vertical = 3.dp)) {
         Row {
             MockText(label, Modifier.weight(1f), size = 10.sp)

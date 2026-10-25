@@ -75,6 +75,25 @@ internal fun libraryBottomBarPage(
     declineLabel = WhatsNewText(en = "Keep Mine", zhHant = "保留目前設定"),
     apply = { tabsAddingLibrary(tabs())?.let(setTabs) },
     isApplicable = { !isSignedIn() && tabsAddingLibrary(tabs()) != null },
+    // Answering 2.3.0's Mail question earlier in the same run can fill the bar.
+    instead = { if (AppFeature.LIBRARY !in tabs() && tabsAddingLibrary(tabs()) == null) libraryInMorePage(tabs) else null },
+)
+
+/** In place of [libraryBottomBarPage] once the bar has filled up: where Library is instead. */
+private fun libraryInMorePage(tabs: () -> List<AppFeature>) = WhatsNewPage.Feature(
+    id = "library-in-more",
+    visual = WhatsNewVisual.Custom {
+        val current = remember { tabs() }
+        BottomBarChangeDemo(before = current, after = current)
+    },
+    title = WhatsNewText(
+        en = "Library is in More",
+        zhHant = "圖書館在「更多」裡",
+    ),
+    body = WhatsNewText(
+        en = "Your bottom bar is full. Open Library from More, or give it a place by customizing the bar in Settings.",
+        zhHant = "底部功能列已經滿了。從「更多」就能打開圖書館，也可以在設定中自訂功能列，替它空出位置。",
+    ),
 )
 
 /** [tabs] with Library last, which puts it left of More, or null when the bar has it or is full. */

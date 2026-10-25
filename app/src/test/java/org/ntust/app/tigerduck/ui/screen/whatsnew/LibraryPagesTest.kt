@@ -53,6 +53,19 @@ class LibraryPagesTest {
     }
 
     @Test
+    fun `a bar filled before the question comes up shows where library is instead`() {
+        bar = listOf(HOME, CLASS_TABLE, SCORE, SCHOOL_MAIL)
+        assertEquals("Library is in More", ask(signedIn = false).instead()?.title?.en)
+    }
+
+    @Test
+    fun `with room, or with library on the bar, the question itself shows`() {
+        assertNull(ask(signedIn = false).instead())
+        bar = listOf(HOME, CLASS_TABLE, SCORE, LIBRARY)
+        assertNull(ask(signedIn = false).instead())
+    }
+
+    @Test
     fun `the 2_3_x default the upgrade keeps has room for library`() {
         assertEquals(AppFeature.defaultTabs, tabsAddingLibrary(AppFeature.defaultTabsBeforeLibrary))
     }

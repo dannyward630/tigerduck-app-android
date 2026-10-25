@@ -3,24 +3,39 @@ package org.ntust.app.tigerduck.ui.screen.whatsnew
 import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.getBoundsInRoot
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.model.AppFeature
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * The 2.4.0 demos: each one draws, animated or still, in both languages, and
@@ -104,6 +119,69 @@ class WhatsNewDemosTest {
                 composeRule.onAllNodesWithText(caption.resolve(lang), substring = true).assertCountEquals(0)
             }
         }
+    }
+
+    @Test
+    fun `an earlier answer that fills the bar turns the library question into where library is`() {
+        var bar = listOf(AppFeature.HOME, AppFeature.CLASS_TABLE, AppFeature.SCORE)
+        val fill = WhatsNewPage.OptIn(
+            id = "fill",
+            visual = WhatsNewVisual.Icon(Icons.Filled.Mail),
+            title = WhatsNewText(en = "Fill the bar?", zhHant = "Fill the bar?"),
+            body = WhatsNewText(en = "Mail goes last.", zhHant = "Mail goes last."),
+            confirmLabel = WhatsNewText(en = "Fill it", zhHant = "Fill it"),
+            declineLabel = WhatsNewText(en = "Keep it", zhHant = "Keep it"),
+            apply = { bar = bar + AppFeature.SCHOOL_MAIL },
+        )
+        val library = libraryBottomBarPage(isSignedIn = { false }, tabs = { bar }, setTabs = { bar = it })
+        composeRule.setContent { WhatsNewSheet(WhatsNewFlow(listOf(fill, library), summary = null), onDismiss = {}) }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Fill it").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Library is in More").assertExists()
+        composeRule.onNodeWithText("Add Library").assertDoesNotExist()
+    }
+
+    @Test
+    fun `confirming the library question doesn't turn it into where library is`() {
+        var bar = listOf(AppFeature.HOME, AppFeature.CLASS_TABLE, AppFeature.SCORE)
+        val library = libraryBottomBarPage(isSignedIn = { false }, tabs = { bar }, setTabs = { bar = it })
+        composeRule.setContent { WhatsNewSheet(WhatsNewFlow(listOf(library), summary = null), onDismiss = {}) }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Add Library").performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText("Library is in More").assertDoesNotExist()
+    }
+
+    @Test
+    // Real text measurement: the default graphics mode measures every line alike.
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `mock text keeps its height at any font scale, as its screen does`() {
+        composeRule.setContent {
+            val density = LocalDensity.current
+            MaterialTheme {
+                Column {
+                    for (fontScale in listOf(1f, 2f)) {
+                        CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale)) {
+                            MockText("Calculus", Modifier.testTag("mock $fontScale"))
+                            // Text that does follow the font scale, to show the scale took.
+                            Text("Calculus", Modifier.testTag("plain $fontScale"), style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                }
+            }
+        }
+        fun height(tag: String) = composeRule.onNodeWithTag(tag).getBoundsInRoot().height
+
+        assertTrue(
+            "plain ${height("plain 1.0")} → ${height("plain 2.0")}, mock ${height("mock 1.0")} → ${height("mock 2.0")}",
+            height("plain 2.0") > height("plain 1.0"),
+        )
+        assertEquals(height("mock 1.0"), height("mock 2.0"))
     }
 
     @Test
