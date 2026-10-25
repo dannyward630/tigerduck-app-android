@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">顯示翻譯</string>
     <string name="settings_color_theme">顏色主題</string>
     <string name="settings_delete_account">刪除帳號</string>
-    <string name="settings_display_size_app_footer">以手機本身的顯示大小與字型大小為基準，只調整這個 App。</string>
     <string name="settings_display_size_app_section">App 內</string>
-    <string name="settings_display_size_preview_footer">放開滑桿後，App 就會換成新的大小。</string>
     <string name="settings_display_size_text">文字大小</string>
     <string name="settings_display_size_title">顯示與文字大小</string>
     <string name="settings_display_size_ui">顯示大小</string>
-    <string name="settings_display_size_widget_footer">Widget 本身的大小由桌面決定，這裡調整的是 Widget 裡的內容。</string>
     <string name="settings_display_size_widget_section">Widget</string>
     <string name="settings_feedback_bug_report">回饋/問題回報</string>
     <string name="settings_flip_to_library_summary">將手機螢幕朝下即可開啟圖書館 QR</string>

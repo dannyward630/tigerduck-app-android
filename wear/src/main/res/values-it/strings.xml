@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Mostra tradotto</string>
     <string name="settings_color_theme">Tema colore</string>
     <string name="settings_delete_account">Elimina account</string>
-    <string name="settings_display_size_app_footer">Regola le dimensioni dell\'app rispetto alle dimensioni di visualizzazione e dei caratteri del telefono.</string>
     <string name="settings_display_size_app_section">Nell\'app</string>
-    <string name="settings_display_size_preview_footer">L\'app passa alle nuove dimensioni quando rilasci il cursore.</string>
     <string name="settings_display_size_text">Dimensioni del testo</string>
     <string name="settings_display_size_title">Dimensioni di visualizzazione e testo</string>
     <string name="settings_display_size_ui">Dimensioni di visualizzazione</string>
-    <string name="settings_display_size_widget_footer">Le dimensioni di ogni widget le decide la schermata Home. Queste regolano ciò che viene mostrato al suo interno.</string>
     <string name="settings_display_size_widget_section">Widget</string>
     <string name="settings_feedback_bug_report">Feedback / Segnala un problema</string>
     <string name="settings_flip_to_library_summary">Capovolgi il telefono con lo schermo verso il basso per aprire il QR della biblioteca.</string>

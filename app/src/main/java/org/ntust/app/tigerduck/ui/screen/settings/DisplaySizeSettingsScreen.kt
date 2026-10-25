@@ -155,7 +155,6 @@ internal fun DisplaySizeContent(
                     }
                 }
             }
-            item { Footnote(stringResource(R.string.settings_display_size_preview_footer)) }
 
             item { SectionHeader(stringResource(R.string.settings_display_size_app_section)) }
             item {
@@ -167,7 +166,6 @@ internal fun DisplaySizeContent(
                     }
                 }
             }
-            item { Footnote(stringResource(R.string.settings_display_size_app_footer)) }
 
             item { SectionHeader(stringResource(R.string.settings_display_size_widget_section)) }
             item {
@@ -179,7 +177,6 @@ internal fun DisplaySizeContent(
                     }
                 }
             }
-            item { Footnote(stringResource(R.string.settings_display_size_widget_footer)) }
 
             item { SectionHeader(stringResource(R.string.feature_class_table)) }
             item {

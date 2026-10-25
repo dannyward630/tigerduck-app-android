@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Vis oversættelse</string>
     <string name="settings_color_theme">Farvetema</string>
     <string name="settings_delete_account">Slet konto</string>
-    <string name="settings_display_size_app_footer">Justerer appens størrelser oven i telefonens skærm- og skriftstørrelse.</string>
     <string name="settings_display_size_app_section">I appen</string>
-    <string name="settings_display_size_preview_footer">Appen skifter til den nye størrelse, når du slipper skyderen.</string>
     <string name="settings_display_size_text">Tekststørrelse</string>
     <string name="settings_display_size_title">Skærm- og tekststørrelse</string>
     <string name="settings_display_size_ui">Skærmstørrelse</string>
-    <string name="settings_display_size_widget_footer">Din startskærm bestemmer, hvor stor hver widget er. Disse størrelser ændrer det, der vises i den.</string>
     <string name="settings_display_size_widget_section">Widgets</string>
     <string name="settings_feedback_bug_report">Feedback / Rapportér problem</string>
     <string name="settings_flip_to_library_summary">Vend telefonen med skærmen nedad for at åbne bibliotekets QR.</string>

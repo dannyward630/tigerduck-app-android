@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Rādīt tulkojumu</string>
     <string name="settings_color_theme">Krāsu tēma</string>
     <string name="settings_delete_account">Konta dzēšana</string>
-    <string name="settings_display_size_app_footer">Maina lietotnes izmērus papildus tālruņa displeja un fonta lielumam.</string>
     <string name="settings_display_size_app_section">Lietotnē</string>
-    <string name="settings_display_size_preview_footer">Lietotne pārslēdzas uz jauno lielumu, kad atlaižat slīdni.</string>
     <string name="settings_display_size_text">Teksta lielums</string>
     <string name="settings_display_size_title">Displeja un teksta lielums</string>
     <string name="settings_display_size_ui">Displeja lielums</string>
-    <string name="settings_display_size_widget_footer">Katra logrīka lielumu nosaka sākuma ekrāns. Šie lielumi maina to, kas tajā tiek parādīts.</string>
     <string name="settings_display_size_widget_section">Logrīki</string>
     <string name="settings_feedback_bug_report">Atsauksme / Ziņot par problēmu</string>
     <string name="settings_flip_to_library_summary">Apvērs tālruni ar ekrānu uz leju, lai atvērtu bibliotēkas QR.</string>

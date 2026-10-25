@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">הצג תרגום</string>
     <string name="settings_color_theme">ערכת צבעים</string>
     <string name="settings_delete_account">מחיקת חשבון</string>
-    <string name="settings_display_size_app_footer">משנה את הגדלים באפליקציה מעבר לגודל התצוגה והגופן שבטלפון.</string>
     <string name="settings_display_size_app_section">באפליקציה</string>
-    <string name="settings_display_size_preview_footer">האפליקציה עוברת לגודל החדש כשמשחררים את המחוון.</string>
     <string name="settings_display_size_text">גודל הטקסט</string>
     <string name="settings_display_size_title">גודל התצוגה והטקסט</string>
     <string name="settings_display_size_ui">גודל התצוגה</string>
-    <string name="settings_display_size_widget_footer">מסך הבית קובע את גודלו של כל ווידג׳ט. הגדלים האלה משנים את מה שמוצג בתוכו.</string>
     <string name="settings_display_size_widget_section">ווידג׳טים</string>
     <string name="settings_feedback_bug_report">משוב / דיווח על בעיה</string>
     <string name="settings_flip_to_library_summary">הפוך את הטלפון עם המסך כלפי מטה כדי לפתוח את ה-QR של הספרייה.</string>

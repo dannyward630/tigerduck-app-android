@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">แสดงคำแปล</string>
     <string name="settings_color_theme">ธีมสี</string>
     <string name="settings_delete_account">ลบบัญชี</string>
-    <string name="settings_display_size_app_footer">ปรับขนาดของแอปเพิ่มจากขนาดการแสดงผลและขนาดแบบอักษรของโทรศัพท์</string>
     <string name="settings_display_size_app_section">ในแอป</string>
-    <string name="settings_display_size_preview_footer">แอปจะเปลี่ยนเป็นขนาดใหม่เมื่อคุณปล่อยแถบเลื่อน</string>
     <string name="settings_display_size_text">ขนาดข้อความ</string>
     <string name="settings_display_size_title">ขนาดการแสดงผลและข้อความ</string>
     <string name="settings_display_size_ui">ขนาดการแสดงผล</string>
-    <string name="settings_display_size_widget_footer">หน้าจอหลักเป็นตัวกำหนดขนาดของวิดเจ็ตแต่ละอัน ขนาดเหล่านี้เปลี่ยนสิ่งที่แสดงอยู่ภายใน</string>
     <string name="settings_display_size_widget_section">วิดเจ็ต</string>
     <string name="settings_feedback_bug_report">ความคิดเห็น / รายงานปัญหา</string>
     <string name="settings_flip_to_library_summary">พลิกโทรศัพท์คว่ำหน้าลงเพื่อเปิด QR ห้องสมุด</string>

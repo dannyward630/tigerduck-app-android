@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">ಅನುವಾದ ತೋರಿಸು</string>
     <string name="settings_color_theme">ಬಣ್ಣ ಥೀಮ್</string>
     <string name="settings_delete_account">ಖಾತೆ ಅಳಿಸಿ</string>
-    <string name="settings_display_size_app_footer">ಫೋನ್‌ನ ಡಿಸ್‌ಪ್ಲೇ ಮತ್ತು ಫಾಂಟ್ ಗಾತ್ರದ ಮೇಲೆ ಅಪ್ಲಿಕೇಶನ್‌ನ ಗಾತ್ರಗಳನ್ನು ಬದಲಾಯಿಸುತ್ತದೆ.</string>
     <string name="settings_display_size_app_section">ಅಪ್ಲಿಕೇಶನ್‌ನಲ್ಲಿ</string>
-    <string name="settings_display_size_preview_footer">ಸ್ಲೈಡರ್ ಬಿಟ್ಟ ತಕ್ಷಣ ಅಪ್ಲಿಕೇಶನ್ ಹೊಸ ಗಾತ್ರಕ್ಕೆ ಬದಲಾಗುತ್ತದೆ.</string>
     <string name="settings_display_size_text">ಪಠ್ಯದ ಗಾತ್ರ</string>
     <string name="settings_display_size_title">ಡಿಸ್‌ಪ್ಲೇ ಮತ್ತು ಪಠ್ಯದ ಗಾತ್ರ</string>
     <string name="settings_display_size_ui">ಡಿಸ್‌ಪ್ಲೇ ಗಾತ್ರ</string>
-    <string name="settings_display_size_widget_footer">ಪ್ರತಿ ವಿಜೆಟ್‌ನ ಗಾತ್ರವನ್ನು ಹೋಮ್ ಸ್ಕ್ರೀನ್ ನಿರ್ಧರಿಸುತ್ತದೆ. ಈ ಗಾತ್ರಗಳು ವಿಜೆಟ್‌ನ ಒಳಗೆ ತೋರಿಸುವುದನ್ನು ಬದಲಾಯಿಸುತ್ತವೆ.</string>
     <string name="settings_display_size_widget_section">ವಿಜೆಟ್‌ಗಳು</string>
     <string name="settings_feedback_bug_report">ಪ್ರತಿಕ್ರಿಯೆ / ಸಮಸ್ಯೆ ವರದಿ</string>
     <string name="settings_flip_to_library_summary">ಲೈಬ್ರರಿ QR ತೆರೆಯಲು ಫೋನ್ ಅನ್ನು ಸ್ಕ್ರೀನ್ ಕೆಳಕ್ಕೆ ಮಾಡಿ ಫ್ಲಿಪ್ ಮಾಡಿ.</string>
