@@ -1,6 +1,6 @@
 // Fetches the document the app serves at /document and renders it: a Word document with
 // docx-preview, a PowerPoint deck one slide after another with pptx-to-html. The page's title
-// tells the app how it went, so the page needs no bridge to it. PowerPoint's renderer loads
+// tells the app how it went, and why it failed, so the page needs no bridge to it. PowerPoint's renderer loads
 // only for a deck, so a Word document never waits on it or fails with it.
 
 const kind = new URLSearchParams(location.search).get("kind");
@@ -29,4 +29,7 @@ async function show() {
   document.title = "shown";
 }
 
-show().catch(() => { document.title = "failed"; });
+show().catch((error) => {
+  const why = error instanceof Error ? error.name + ": " + error.message : String(error);
+  document.title = ("failed: " + why).slice(0, 300);
+});

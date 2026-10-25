@@ -62,7 +62,7 @@ import java.io.Closeable
  * kept at once ([PdfDocument.cache]).
  */
 @Composable
-internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
+internal fun PdfViewer(uri: Uri, onFailed: (ViewerFailure) -> Unit) {
     val context = LocalContext.current
     // Whatever opens is the screen's to close, even if it opens after the screen has gone.
     val owner = remember(uri) { Owner<PdfDocument>() }
@@ -72,9 +72,9 @@ internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
             withContext(Dispatchers.IO) { owner.adopt(PdfDocument.open(context, uri)) }
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Exception) {
+        } catch (e: Exception) {
             // A locked or broken file: the screen says it can't show it.
-            onFailed()
+            onFailed(ViewerFailure(e))
         }
     }
     val pdf = owner.value ?: return Reading()
@@ -105,7 +105,7 @@ internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
 }
 
 @Composable
-private fun PdfPage(pdf: PdfDocument, index: Int, viewWidth: Int, onFailed: () -> Unit) {
+private fun PdfPage(pdf: PdfDocument, index: Int, viewWidth: Int, onFailed: (ViewerFailure) -> Unit) {
     val size = pdf.pageSizes[index]
     var bitmap by remember(index, viewWidth) { mutableStateOf(pdf.cached(index, viewWidth)) }
     LaunchedEffect(index, viewWidth) {
@@ -114,9 +114,9 @@ private fun PdfPage(pdf: PdfDocument, index: Int, viewWidth: Int, onFailed: () -
             bitmap = pdf.render(index, viewWidth)
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
             // A page that can't be drawn would look blank: the screen says it can't show the file.
-            onFailed()
+            onFailed(ViewerFailure(e, note = "page ${index + 1}"))
         }
     }
     val ratio = size.width.toFloat().coerceAtLeast(1f) / size.height.toFloat().coerceAtLeast(1f)

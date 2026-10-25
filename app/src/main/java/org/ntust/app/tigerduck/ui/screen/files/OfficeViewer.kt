@@ -35,7 +35,7 @@ import java.io.ByteArrayInputStream
  * through [OfficeRequests]; the page's title says whether it rendered. Pinch to zoom.
  */
 @Composable
-internal fun OfficeViewer(uri: Uri, kind: ViewerKind, onFailed: () -> Unit) {
+internal fun OfficeViewer(uri: Uri, kind: ViewerKind, onFailed: (ViewerFailure) -> Unit) {
     val context = LocalContext.current
     var shown by remember(uri) { mutableStateOf(false) }
     val web = remember(uri) {
@@ -45,7 +45,7 @@ internal fun OfficeViewer(uri: Uri, kind: ViewerKind, onFailed: () -> Unit) {
     // A page that never says how it went (a script that never loaded, say) has failed too.
     LaunchedEffect(web) {
         delay(OFFICE_TIMEOUT_MILLIS)
-        if (!shown) onFailed()
+        if (!shown) onFailed(ViewerFailure(note = "not rendered within ${OFFICE_TIMEOUT_MILLIS / 1000} s"))
     }
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { web }, modifier = Modifier.fillMaxSize())
@@ -62,20 +62,33 @@ internal fun officeWebView(
     uri: Uri,
     kind: ViewerKind,
     onShown: () -> Unit,
-    onFailed: () -> Unit,
+    onFailed: (ViewerFailure) -> Unit,
 ): WebView = WebView(context).apply {
     lockDown(settings)
-    webViewClient = OfficeClient(context, uri, kind, onFailed)
+    val client = OfficeClient(context, uri, kind, onFailed)
+    webViewClient = client
     webChromeClient = object : WebChromeClient() {
         override fun onReceivedTitle(view: WebView, title: String?) {
-            when (title) {
-                "shown" -> onShown()
-                "failed" -> onFailed()
+            if (title == "shown") {
+                onShown()
+            } else {
+                // With the document's own read failing, when that's what the page tripped on.
+                officeFailure(title)?.let { onFailed(ViewerFailure(client.documentError, note = it)) }
             }
         }
     }
     val name = if (kind == ViewerKind.PPTX) "pptx" else "docx"
     loadUrl("${OfficeRequests.PAGE}?kind=$name")
+}
+
+/**
+ * What the page's [title] says went wrong, when it says it failed ("failed", or "failed: " and
+ * the script's error), or null.
+ */
+internal fun officeFailure(title: String?): String? {
+    if (title == null || !title.startsWith("failed")) return null
+    val why = title.removePrefix("failed").removePrefix(":").trim()
+    return if (why.isEmpty()) "the document's renderer failed" else "renderer: $why"
 }
 
 /** The viewer's WebView: scripts for its renderers, and nothing it could reach out with. */
@@ -103,8 +116,13 @@ private class OfficeClient(
     private val context: Context,
     private val uri: Uri,
     private val kind: ViewerKind,
-    private val onFailed: () -> Unit,
+    private val onFailed: (ViewerFailure) -> Unit,
 ) : WebViewClient() {
+
+    /** Why the document itself couldn't be read, when it couldn't. */
+    @Volatile
+    var documentError: Throwable? = null
+        private set
 
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse =
         when (val route = OfficeRequests.route(request.url.toString())) {
@@ -114,14 +132,14 @@ private class OfficeClient(
             OfficeRequests.Route.Document -> runCatching {
                 val type = if (kind == ViewerKind.PPTX) FileViewing.PPTX_TYPE else FileViewing.DOCX_TYPE
                 WebResourceResponse(type, null, context.contentResolver.openInputStream(uri))
-            }.getOrElse { blocked() }
+            }.getOrElse { documentError = it; blocked() }
             OfficeRequests.Route.Blocked -> blocked()
         }
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = true
 
     override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-        onFailed()
+        onFailed(ViewerFailure(note = "WebView renderer gone (crashed: ${detail.didCrash()})"))
         return true
     }
 
