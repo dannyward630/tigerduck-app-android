@@ -12,6 +12,7 @@ hilt = "2.60.1"
 hiltNavigationCompose = "1.4.0"
 ksp = "2.3.12"
 okhttp = "5.5.0"
+retrofit = "3.0.0"
 gson = "2.14.0"
 bouncycastle = "1.86"
 securityCrypto = "1.1.0"
@@ -67,6 +68,7 @@ hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-com
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 okhttp-tls = { group = "com.squareup.okhttp3", name = "okhttp-tls", version.ref = "okhttp" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 bouncycastle-bcprov = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }

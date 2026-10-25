@@ -18,8 +18,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import okhttp3.Request
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
+import org.ntust.app.tigerduck.network.BackendServices
 import org.ntust.app.tigerduck.network.model.AcademicCalendarDto
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.ui.component.ServerStatusTracker
@@ -50,6 +50,7 @@ class AcademicCalendarStore @Inject constructor(
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     private val client = baseClient.newBuilder().build()
+    private val api = BackendServices(AcademicCalendarApi::class.java, client)
     private val gson = Gson()
     private val refreshMutex = Mutex()
 
@@ -104,14 +105,11 @@ class AcademicCalendarStore @Inject constructor(
      */
     suspend fun refresh(): Boolean = refreshMutex.withLock {
         withContext(Dispatchers.IO) {
-            val url = resolveAnnouncementEndpoint(appPreferences).url.trimEnd('/') +
-                "/calendar/semesters"
-            val builder = Request.Builder().url(url).get()
-                .header("Accept", "application/json")
-            prefs.getString(KEY_ETAG, null)?.let { builder.header("If-None-Match", it) }
+            val base = resolveAnnouncementEndpoint(appPreferences).url
+            val call = api.at(base).semesters("application/json", prefs.getString(KEY_ETAG, null))
 
             runCatching {
-                client.newCall(builder.build()).execute().use { response ->
+                call.execute().use { response ->
                     // This GET carries no account and runs on every app open
                     // whatever the sync setting is, which makes it the one
                     // signal that can tell the status dot whether the backend
