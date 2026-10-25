@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">பீரியட் %1$s</string>
     <string name="a11y_empty_classroom_same_room">அதே வகுப்பறை</string>
     <string name="a11y_empty_classroom_walk_minutes">நடந்தால் சுமார் %1$d நிமிடம்</string>
+    <string name="a11y_file_viewer_page">%2$d இல் பக்கம் %1$d</string>
     <string name="a11y_rankings_trend_chart">பருவம் வாரியான GPA போக்கு</string>
     <string name="a11y_rankings_trend_no_selection">பருவம் தேர்வு செய்யப்படவில்லை</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">மதிப்பெண்கள்</string>
     <string name="feature_settings">அமைப்புகள்</string>
     <string name="feature_settings_short">அமைப்புகள்</string>
+    <string name="file_viewer_cannot_show">இந்தக் கோப்பை இங்கே காட்ட முடியாது.</string>
+    <string name="file_viewer_open_elsewhere">வேறு ஆப்ஸில் திற</string>
+    <string name="file_viewer_text_truncated">இந்தக் கோப்பின் முதல் %1$s காட்டப்படுகிறது.</string>
     <string name="first_trigger_flip_to_library_keep">இயக்கத்தில் வை</string>
     <string name="first_trigger_flip_to_library_message">நீங்கள் தொலைபேசியை புரட்டியதை கவனித்தோம். இந்த சைகை நூலக QR ஐ விரைவாக திறக்கும். இந்த அம்சத்தை வைத்திருக்க விரும்புகிறீர்களா?</string>
     <string name="first_trigger_flip_to_library_title">புரட்டி நூலக QR திற</string>

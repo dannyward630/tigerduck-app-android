@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Lesuur %1$s</string>
     <string name="a11y_empty_classroom_same_room">Hetzelfde lokaal</string>
     <string name="a11y_empty_classroom_walk_minutes">Ongeveer %1$d min lopen</string>
+    <string name="a11y_file_viewer_page">Pagina %1$d van %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA-trend per semester</string>
     <string name="a11y_rankings_trend_no_selection">Geen semester geselecteerd</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Cijfers</string>
     <string name="feature_settings">Instellingen</string>
     <string name="feature_settings_short">Instellingen</string>
+    <string name="file_viewer_cannot_show">Dit bestand kan hier niet worden weergegeven.</string>
+    <string name="file_viewer_open_elsewhere">Openen in andere app</string>
+    <string name="file_viewer_text_truncated">De eerste %1$s van dit bestand worden getoond.</string>
     <string name="first_trigger_flip_to_library_keep">Ingeschakeld houden</string>
     <string name="first_trigger_flip_to_library_message">Het lijkt erop dat je je telefoon hebt omgedraaid. Dit gebaar kan snel de bibliotheek-QR openen. Wil je deze functie behouden?</string>
     <string name="first_trigger_flip_to_library_title">Omdraaien om bibliotheek-QR te openen</string>
