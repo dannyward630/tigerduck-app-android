@@ -96,7 +96,8 @@ internal object CjkCentering {
 
         var best: Correction? = null
         var bestOff = abs(low)
-        for (raise in most downTo 1) {
+        // One px past the offset too: a line that grows with the shift lets glyphs rise less.
+        for (raise in (most + 1) downTo 1) {
             // ceil(-ascent * shift) is the shift in whole px Compose applies: `raise` px up.
             val shift = (raise + 0.5f) / ascent
             val latinMoved = layout.line(LATIN_SAMPLE, style, shift).fromMiddle + shiftPx(ascent, shift) - latinBefore

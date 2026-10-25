@@ -154,6 +154,19 @@ class CjkCenteringTest {
     }
 
     @Test
+    fun `a raise past the first offset is weighed too, when the line grows with it`() {
+        // A line no taller than its fonts grows with the shift, so raising CJK by its
+        // offset leaves it 1.5 px low; one px more leaves each 1 px off.
+        val device = Device(cjkKeepsItsHeight = true, lineHeight = 57, cjkAscent = 44f, cjkDescent = 12f, cjkInkBelowMiddle = 2.5f)
+
+        val c = device.correction(style)!!
+
+        val cjkLow = abs(device.cjkLow(c))
+        val latinMoved = abs(device.latinGlyphs(c) - device.latinGlyphs(null))
+        assertTrue("CJK $cjkLow px off, Latin moved $latinMoved px", maxOf(cjkLow, latinMoved) <= 1f)
+    }
+
+    @Test
     fun `every style of the typography is corrected, in its own place`() {
         val device = Device(cjkKeepsItsHeight = true)
         val other = style.copy(fontSize = 16.sp, lineHeight = 20.sp)
