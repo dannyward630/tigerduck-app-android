@@ -25,7 +25,7 @@ class WhatsNewFlow(
          *
          * [restoredPageIds] is the [pageIds] of a flow that was on screen
          * before a config-change recreation. When given, exactly those pages
-         * come back (in catalog order) and the "only if this applies" checks
+         * come back, in the same order as a fresh run, and the "only if this applies" checks
          * are skipped: an answer the user already gave can flip a check, and
          * re-filtering would shift every page after it under their thumb.
          *
