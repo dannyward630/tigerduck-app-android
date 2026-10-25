@@ -34,6 +34,7 @@ import org.ntust.app.tigerduck.analytics.AnalyticsLogger
 import org.ntust.app.tigerduck.push.FcmBootstrap
 import org.ntust.app.tigerduck.wear.WearScheduleBridge
 import org.ntust.app.tigerduck.widget.WidgetUpdater
+import org.ntust.app.tigerduck.ui.theme.preloadKeptCjkCorrections
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -117,6 +118,8 @@ class TigerDuckApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        // The theme reads it on its first frame: start loading it from disk now.
+        preloadKeptCjkCorrections(this)
         // First, before anything can read or write DataCache. BootReceiver and
         // BackgroundSyncWorker both run without an Activity, so leaving this
         // to AppState let WorkManager's persisted periodic sync fire on the

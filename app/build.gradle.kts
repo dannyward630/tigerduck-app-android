@@ -586,6 +586,7 @@ dependencies {
     // Network
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+    implementation(libs.retrofit)
     implementation(libs.gson)
     implementation(libs.jsoup)
 
