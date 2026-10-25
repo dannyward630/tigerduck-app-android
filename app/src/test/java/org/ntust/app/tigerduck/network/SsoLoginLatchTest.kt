@@ -16,6 +16,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.PersistedStoredPasswordLatch
+import org.ntust.app.tigerduck.auth.guardAutomaticHarvest
+import org.ntust.app.tigerduck.auth.retryStoredPasswordChain
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
@@ -169,7 +171,7 @@ class SsoLoginLatchTest {
     }
 
     @Test
-    fun `a sign-in again empties the session before its visit, and the school's yes ends the refusals`() = runTest {
+    fun `a sign-in again empties the session before its visit, and leaves the refusals for the retry to settle`() = runTest {
         latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
         clock += 10_000
         accepts = true
@@ -181,7 +183,8 @@ class SsoLoginLatchTest {
 
         assertEquals(listOf(0L), sessionAtFirstVisit)
         assertEquals(1, posts.size)
-        assertEquals(0, latch.refusals.value)
+        // The retry settles the count once the Moodle token step is through as well.
+        assertEquals(1, latch.refusals.value)
     }
 
     @Test
@@ -205,6 +208,78 @@ class SsoLoginLatchTest {
         assertEquals(session, sessionManager.loginTimestampMs)
         assertEquals(0, visits)
         assertEquals(0, posts.size)
+    }
+
+    /** Another automatic post was refused, and its wait started, while this one waited for the lock. */
+    @Test
+    fun `a sign-in again that must wait leaves the warm session as it was`() = runTest {
+        sessionManager.markLoginSuccess()
+        val session = sessionManager.loginTimestampMs
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+
+        val failure = runCatching { service.signInAgain(SERVICE, STUDENT, PASSWORD) { true } }.exceptionOrNull()
+
+        assertTrue("got $failure", failure is SsoLoginError.LoginFailed)
+        assertEquals(session, sessionManager.loginTimestampMs)
+        assertEquals(0, visits)
+        assertEquals(0, posts.size)
+    }
+
+    /**
+     * The school takes every post, and the Moodle token renewal is refused every time: the
+     * retry's own yes from the school must not end the count, or each refused renewal starts it
+     * again at the first step, and the retry posts every 10 seconds for good.
+     */
+    @Test
+    fun `a retry the school takes but whose Moodle token renewal is refused still backs off`() = runTest {
+        accepts = true
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        val gaps = mutableListOf<Long>()
+
+        repeat(4) {
+            val due = latch.retryAt()!!
+            gaps += due - clock
+            clock = due
+            val generation = latch.generation
+            retryStoredPasswordChain(
+                signInToSchool = {
+                    runCatching { service.signInAgain(SERVICE, STUDENT, PASSWORD) { latch.refusals.value > 0 } }
+                        .getOrDefault(false)
+                },
+                moodleTokenMissing = { true },
+                renewMoodleToken = {
+                    latch.guardAutomaticHarvest(STUDENT, PASSWORD) { posting ->
+                        posting.post<Unit> { throw MoodleWebserviceError.SsoLoginRejected(REASON) }
+                    }
+                },
+                settle = { latch.markAccepted(generation, STUDENT, PASSWORD) },
+                signInToBackend = { true },
+            )
+        }
+
+        assertEquals(listOf(10_000L, 60_000L, 300_000L, 21_600_000L), gaps)
+    }
+
+    @Test
+    fun `a retry the school takes, with a Moodle token stored, ends the refusals before the backend`() = runTest {
+        accepts = true
+        latch.markRejected(latch.generation, STUDENT, PASSWORD, REASON)
+        clock = latch.retryAt()!!
+        val generation = latch.generation
+        var refusalsAtBackend = -1
+
+        assertTrue(
+            retryStoredPasswordChain(
+                signInToSchool = { service.signInAgain(SERVICE, STUDENT, PASSWORD) { latch.refusals.value > 0 } },
+                moodleTokenMissing = { false },
+                renewMoodleToken = {},
+                settle = { latch.markAccepted(generation, STUDENT, PASSWORD) },
+                signInToBackend = { refusalsAtBackend = latch.refusals.value; true },
+            ),
+        )
+
+        assertEquals(0, refusalsAtBackend)
+        assertFalse(latch.isRejected)
     }
 
     private fun answer(request: Request): Response {

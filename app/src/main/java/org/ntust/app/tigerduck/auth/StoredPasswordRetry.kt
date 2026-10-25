@@ -78,11 +78,17 @@ internal suspend fun retryWhenDue(
  * stored, then [signInToBackend], told whether this try got the Moodle token. Signs nothing out.
  * It stops at the first step that fails, a refusal the latch counts included, and says whether it
  * ran to the end.
+ *
+ * [settle] ends the refusals once the school and the Moodle token step are both through, before
+ * the backend's step, not on the school's yes alone: a renewal refused every time would otherwise
+ * start the count again at its first step after each yes, and the retry would post every 10
+ * seconds for good. As on the iPhone.
  */
 internal suspend fun retryStoredPasswordChain(
     signInToSchool: suspend () -> Boolean,
     moodleTokenMissing: () -> Boolean,
     renewMoodleToken: suspend () -> Unit,
+    settle: () -> Unit,
     signInToBackend: suspend (renewedToken: Boolean) -> Boolean,
 ): Boolean {
     if (!signInToSchool()) return false
@@ -96,5 +102,6 @@ internal suspend fun retryStoredPasswordChain(
             return false
         }
     }
+    settle()
     return signInToBackend(renewed)
 }

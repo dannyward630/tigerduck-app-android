@@ -308,11 +308,17 @@ class AuthService @Inject constructor(
      * nothing to try.
      */
     internal suspend fun retryStoredPassword(): Boolean {
-        if (demoAccount.isActive || credentials.ntustStudentId == null) return true
+        if (demoAccount.isActive) return true
+        // Read before anything is posted: a sign-in by hand or a sign-out meanwhile moves the
+        // generation, and the settling below then counts for nothing.
+        val generation = storedPasswordLatch.generation
+        val studentId = credentials.ntustStudentId ?: return true
+        val password = credentials.ntustPassword ?: return true
         return retryStoredPasswordChain(
             signInToSchool = ::signInAgainToSchool,
             moodleTokenMissing = { credentials.moodleToken.isNullOrEmpty() },
             renewMoodleToken = { moodleTokenService.renewToken(null) },
+            settle = { storedPasswordLatch.markAccepted(generation, studentId, password) },
             // Past the pause after a failed sign-in only with the Moodle token it lacked, which
             // this try's harvest, paced by the refusals' own schedule, has just got: any other
             // try waits it out, as the backend takes 5 logins per 15 minutes.
