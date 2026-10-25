@@ -99,7 +99,7 @@ class ColorPickerSheetLayoutTest {
 
     @Test
     @Config(qualifiers = "en-w393dp-h851dp", fontScale = 1.5f)
-    fun `with the code field focused at 150% text, the keyboard covers neither the field nor the buttons`() {
+    fun `with the code field focused at 150 percent text, the keyboard covers neither the field nor the buttons`() {
         showCustomPicker()
         composeRule.onNode(hasSetTextAction()).performClick()
         val keyboardTop = showKeyboard(heightDp = 300f)

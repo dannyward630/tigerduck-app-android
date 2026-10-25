@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.browser
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -8,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Moodle's sign-in provider: its site, its session, its sign-in page. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class BrowserSignInTest {
 
     @Test

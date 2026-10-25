@@ -20,8 +20,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
-import android.content.pm.ActivityInfo
-import android.content.pm.ResolveInfo
 import android.content.IntentFilter
 
 /**
@@ -50,6 +48,21 @@ class PretendMissingAppsTest {
 
     private fun view(uri: String) = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
 
+    /** A browser, as one registers: an activity that takes every http and https link. */
+    private fun installBrowser() {
+        val browser = ComponentName("com.example.browser", "Main")
+        shadowOf(context.packageManager).addActivityIfNotPresent(browser)
+        shadowOf(context.packageManager).addIntentFilterForActivity(
+            browser,
+            IntentFilter(Intent.ACTION_VIEW).apply {
+                addCategory(Intent.CATEGORY_DEFAULT)
+                addCategory(Intent.CATEGORY_BROWSABLE)
+                addDataScheme("http")
+                addDataScheme("https")
+            },
+        )
+    }
+
     @Test
     fun `each intent is put down to the app it needs`() {
         assertEquals(OutsideApp.MOODLE, PretendMissingApps.needs(view("moodlemobile://https://moodle2.ntust.edu.tw?redirect=/my/"), own))
@@ -68,14 +81,9 @@ class PretendMissingAppsTest {
 
     @Test
     fun `a link an app opens itself needs no browser, TigerDuck's own share links included`() {
-        val pm = shadowOf(context.packageManager)
-        // A browser takes any https link; TigerDuck takes its share links.
-        val anyLink = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
-        val browser = ResolveInfo().apply { activityInfo = ActivityInfo().apply { packageName = "com.example.browser"; name = "Main" } }
-        val tigerDuck = ResolveInfo().apply { activityInfo = ActivityInfo().apply { packageName = own; name = "$own.MainActivity" } }
+        // A browser takes any https link; TigerDuck's own manifest takes its share links.
+        installBrowser()
         val shareLink = view("https://share.tigerduck.app/classtable/abc")
-        pm.addResolveInfoForIntent(anyLink, browser)
-        pm.addResolveInfoForIntent(shareLink, listOf(browser, tigerDuck))
         PretendMissingApps.setMissing(OutsideApp.BROWSER, true)
 
         assertNull(PretendMissingApps.needs(shareLink, own, context.packageManager))
@@ -83,7 +91,6 @@ class PretendMissingAppsTest {
         assertEquals(own, PretendMissingApps.filter(shareLink, own, context.packageManager).`package`)
         // A link only browsers take still needs one.
         val page = view("https://www.ntust.edu.tw/")
-        pm.addResolveInfoForIntent(page, browser)
         assertEquals(OutsideApp.BROWSER, PretendMissingApps.needs(page, own, context.packageManager))
     }
 
@@ -123,16 +130,7 @@ class PretendMissingAppsTest {
 
     @Test
     fun `with the browser missing, no default browser is found`() {
-        val browser = ResolveInfo().apply {
-            activityInfo = ActivityInfo().apply { packageName = "com.example.browser"; name = "Main" }
-        }
-        val probe = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
-        shadowOf(context.packageManager).addResolveInfoForIntent(probe, browser)
-        shadowOf(context.packageManager).addActivityIfNotPresent(ComponentName("com.example.browser", "Main"))
-        shadowOf(context.packageManager).addIntentFilterForActivity(
-            ComponentName("com.example.browser", "Main"),
-            IntentFilter(Intent.ACTION_VIEW).apply { addCategory(Intent.CATEGORY_BROWSABLE); addDataScheme("https") },
-        )
+        installBrowser()
         assertEquals("com.example.browser", defaultBrowserPackage(context.packageManager))
 
         PretendMissingApps.setMissing(OutsideApp.BROWSER, true)
