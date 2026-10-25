@@ -27,6 +27,10 @@ import org.ntust.app.tigerduck.files.OfficeRequests
 import org.ntust.app.tigerduck.files.ViewerKind
 import kotlinx.coroutines.delay
 import java.io.ByteArrayInputStream
+import java.io.FileNotFoundException
+import java.io.FilterInputStream
+import java.io.IOException
+import java.io.InputStream
 
 /**
  * A Word or PowerPoint document, rendered by the JavaScript libraries the app ships in
@@ -35,7 +39,7 @@ import java.io.ByteArrayInputStream
  * through [OfficeRequests]; the page's title says whether it rendered. Pinch to zoom.
  */
 @Composable
-internal fun OfficeViewer(uri: Uri, kind: ViewerKind, onFailed: () -> Unit) {
+internal fun OfficeViewer(uri: Uri, kind: ViewerKind, onFailed: (ViewerFailure) -> Unit) {
     val context = LocalContext.current
     var shown by remember(uri) { mutableStateOf(false) }
     val web = remember(uri) {
@@ -45,7 +49,7 @@ internal fun OfficeViewer(uri: Uri, kind: ViewerKind, onFailed: () -> Unit) {
     // A page that never says how it went (a script that never loaded, say) has failed too.
     LaunchedEffect(web) {
         delay(OFFICE_TIMEOUT_MILLIS)
-        if (!shown) onFailed()
+        if (!shown) onFailed(ViewerFailure(note = "not rendered within ${OFFICE_TIMEOUT_MILLIS / 1000} s"))
     }
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { web }, modifier = Modifier.fillMaxSize())
@@ -62,20 +66,33 @@ internal fun officeWebView(
     uri: Uri,
     kind: ViewerKind,
     onShown: () -> Unit,
-    onFailed: () -> Unit,
+    onFailed: (ViewerFailure) -> Unit,
 ): WebView = WebView(context).apply {
     lockDown(settings)
-    webViewClient = OfficeClient(context, uri, kind, onFailed)
+    val client = OfficeClient(context, uri, kind, onFailed)
+    webViewClient = client
     webChromeClient = object : WebChromeClient() {
         override fun onReceivedTitle(view: WebView, title: String?) {
-            when (title) {
-                "shown" -> onShown()
-                "failed" -> onFailed()
+            if (title == "shown") {
+                onShown()
+            } else {
+                // With the document's own read failing, when that's what the page tripped on.
+                officeFailure(title)?.let { onFailed(ViewerFailure(client.documentError, note = it)) }
             }
         }
     }
     val name = if (kind == ViewerKind.PPTX) "pptx" else "docx"
     loadUrl("${OfficeRequests.PAGE}?kind=$name")
+}
+
+/**
+ * What the page's [title] says went wrong, when it says it failed ("failed", or "failed: " and
+ * the script's error), or null.
+ */
+internal fun officeFailure(title: String?): String? {
+    if (title == null || !title.startsWith("failed")) return null
+    val why = title.removePrefix("failed").removePrefix(":").trim()
+    return if (why.isEmpty()) "the document's renderer failed" else "renderer: $why"
 }
 
 /** The viewer's WebView: scripts for its renderers, and nothing it could reach out with. */
@@ -103,8 +120,13 @@ private class OfficeClient(
     private val context: Context,
     private val uri: Uri,
     private val kind: ViewerKind,
-    private val onFailed: () -> Unit,
+    private val onFailed: (ViewerFailure) -> Unit,
 ) : WebViewClient() {
+
+    /** Why the document itself couldn't be read, when it couldn't. */
+    @Volatile
+    var documentError: Throwable? = null
+        private set
 
     override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse =
         when (val route = OfficeRequests.route(request.url.toString())) {
@@ -113,15 +135,16 @@ private class OfficeClient(
             }.getOrElse { blocked() }
             OfficeRequests.Route.Document -> runCatching {
                 val type = if (kind == ViewerKind.PPTX) FileViewing.PPTX_TYPE else FileViewing.DOCX_TYPE
-                WebResourceResponse(type, null, context.contentResolver.openInputStream(uri))
-            }.getOrElse { blocked() }
+                val input = context.contentResolver.openInputStream(uri) ?: throw FileNotFoundException("no stream")
+                WebResourceResponse(type, null, ErrorRecordingInputStream(input) { documentError = it })
+            }.getOrElse { documentError = it; blocked() }
             OfficeRequests.Route.Blocked -> blocked()
         }
 
     override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest) = true
 
     override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-        onFailed()
+        onFailed(ViewerFailure(note = "WebView renderer gone (crashed: ${detail.didCrash()})"))
         return true
     }
 
@@ -131,5 +154,25 @@ private class OfficeClient(
         "html" -> "text/html"
         "css" -> "text/css"
         else -> "text/javascript"
+    }
+}
+
+/**
+ * [input], keeping the error a read fails with ([onError]) before passing it on: WebView reads the
+ * document's stream after it's handed over, so a provider that opens it and then fails part way
+ * would otherwise leave only the page's own error to show.
+ */
+internal class ErrorRecordingInputStream(input: InputStream, private val onError: (Throwable) -> Unit) : FilterInputStream(input) {
+    override fun read(): Int = recording { super.read() }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int = recording { super.read(b, off, len) }
+
+    override fun skip(n: Long): Long = recording { super.skip(n) }
+
+    private inline fun <T> recording(read: () -> T): T = try {
+        read()
+    } catch (e: IOException) {
+        onError(e)
+        throw e
     }
 }

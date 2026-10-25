@@ -72,7 +72,7 @@ class ArchiveViewerTest {
             MaterialTheme {
                 ArchiveViewer(
                     ViewedFile(Uri.fromFile(file), type, file.name, ViewerKind.ARCHIVE),
-                    onFailed = { failed = it },
+                    onFailed = { reason, _ -> failed = reason },
                     onOpenElsewhere = { elsewhere++ },
                 )
             }
