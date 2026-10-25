@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Vertaling weergeven</string>
     <string name="settings_color_theme">Kleurthema</string>
     <string name="settings_delete_account">Account verwijderen</string>
-    <string name="settings_display_size_app_footer">Past de groottes van de app aan bovenop de weergave- en lettergrootte van je telefoon.</string>
     <string name="settings_display_size_app_section">In de app</string>
-    <string name="settings_display_size_preview_footer">De app gaat over op de nieuwe grootte zodra je de schuifregelaar loslaat.</string>
     <string name="settings_display_size_text">Tekstgrootte</string>
     <string name="settings_display_size_title">Weergave- en tekstgrootte</string>
     <string name="settings_display_size_ui">Weergavegrootte</string>
-    <string name="settings_display_size_widget_footer">Je startscherm bepaalt hoe groot elke widget is. Deze groottes veranderen wat erin wordt getoond.</string>
     <string name="settings_display_size_widget_section">Widgets</string>
     <string name="settings_feedback_bug_report">Feedback / Probleem melden</string>
     <string name="settings_flip_to_library_summary">Leg je telefoon met het scherm naar beneden om de bibliotheek-QR te openen.</string>

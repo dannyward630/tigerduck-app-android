@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">অনুবাদ প্রদর্শন করুন</string>
     <string name="settings_color_theme">রং থিম</string>
     <string name="settings_delete_account">অ্যাকাউন্ট মুছুন</string>
-    <string name="settings_display_size_app_footer">ফোনের ডিসপ্লে ও ফন্টের আকারের ওপর অ্যাপের আকার বদলায়।</string>
     <string name="settings_display_size_app_section">অ্যাপে</string>
-    <string name="settings_display_size_preview_footer">স্লাইডার ছেড়ে দিলেই অ্যাপ নতুন আকারে বদলে যায়।</string>
     <string name="settings_display_size_text">লেখার আকার</string>
     <string name="settings_display_size_title">ডিসপ্লে ও লেখার আকার</string>
     <string name="settings_display_size_ui">ডিসপ্লের আকার</string>
-    <string name="settings_display_size_widget_footer">প্রতিটি উইজেট কত বড় হবে তা হোম স্ক্রিন ঠিক করে। এই আকারগুলো উইজেটের ভেতরে যা দেখায় তা বদলায়।</string>
     <string name="settings_display_size_widget_section">উইজেট</string>
     <string name="settings_feedback_bug_report">মতামত / সমস্যা রিপোর্ট করুন</string>
     <string name="settings_flip_to_library_summary">লাইব্রেরি QR খুলতে ফোনটি স্ক্রিন নিচু করে উল্টান।</string>

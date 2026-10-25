@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">عرض الترجمة</string>
     <string name="settings_color_theme">نسق الألوان</string>
     <string name="settings_delete_account">حذف الحساب</string>
-    <string name="settings_display_size_app_footer">يغيّر أحجام التطبيق إضافةً إلى حجم العرض وحجم الخط في هاتفك.</string>
     <string name="settings_display_size_app_section">في التطبيق</string>
-    <string name="settings_display_size_preview_footer">ينتقل التطبيق إلى الحجم الجديد عند رفع إصبعك عن شريط التمرير.</string>
     <string name="settings_display_size_text">حجم النص</string>
     <string name="settings_display_size_title">حجم العرض والنص</string>
     <string name="settings_display_size_ui">حجم العرض</string>
-    <string name="settings_display_size_widget_footer">تحدد الشاشة الرئيسية حجم كل أداة. تغيّر هذه الأحجام ما يظهر داخلها.</string>
     <string name="settings_display_size_widget_section">الأدوات</string>
     <string name="settings_feedback_bug_report">ملاحظات / الإبلاغ عن مشكلة</string>
     <string name="settings_flip_to_library_summary">اقلب هاتفك بحيث يكون الشاشة لأسفل لفتح رمز QR للمكتبة.</string>

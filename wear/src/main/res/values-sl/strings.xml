@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Prikaži prevod</string>
     <string name="settings_color_theme">Barvna tema</string>
     <string name="settings_delete_account">Izbris računa</string>
-    <string name="settings_display_size_app_footer">Spremeni velikosti v aplikaciji poleg velikosti prikaza in pisave v telefonu.</string>
     <string name="settings_display_size_app_section">V aplikaciji</string>
-    <string name="settings_display_size_preview_footer">Aplikacija preklopi na novo velikost, ko spustite drsnik.</string>
     <string name="settings_display_size_text">Velikost besedila</string>
     <string name="settings_display_size_title">Velikost prikaza in besedila</string>
     <string name="settings_display_size_ui">Velikost prikaza</string>
-    <string name="settings_display_size_widget_footer">Velikost vsakega gradnika določa začetni zaslon. Te velikosti spremenijo to, kar je prikazano v njem.</string>
     <string name="settings_display_size_widget_section">Gradniki</string>
     <string name="settings_feedback_bug_report">Povratne informacije / Prijava napake</string>
     <string name="settings_flip_to_library_summary">Obrni telefon z zaslonom navzdol, da odpreš QR knjižnice.</string>

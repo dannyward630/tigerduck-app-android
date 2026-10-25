@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">번역 표시</string>
     <string name="settings_color_theme">색상 테마</string>
     <string name="settings_delete_account">계정 삭제</string>
-    <string name="settings_display_size_app_footer">휴대전화의 화면 크기와 글꼴 크기를 기준으로 이 앱의 크기만 조정합니다.</string>
     <string name="settings_display_size_app_section">앱 내</string>
-    <string name="settings_display_size_preview_footer">슬라이더에서 손을 떼면 앱이 새 크기로 바뀝니다.</string>
     <string name="settings_display_size_text">텍스트 크기</string>
     <string name="settings_display_size_title">화면 및 텍스트 크기</string>
     <string name="settings_display_size_ui">화면 크기</string>
-    <string name="settings_display_size_widget_footer">위젯 자체의 크기는 홈 화면에서 정해집니다. 여기서는 위젯 안에 표시되는 내용의 크기를 조정합니다.</string>
     <string name="settings_display_size_widget_section">위젯</string>
     <string name="settings_feedback_bug_report">피드백 / 문제 신고</string>
     <string name="settings_flip_to_library_summary">화면을 아래로 뒤집으면 도서관 QR이 열립니다.</string>

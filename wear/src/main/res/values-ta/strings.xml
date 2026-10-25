@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">மொழிபெயர்ப்பைக் காட்டு</string>
     <string name="settings_color_theme">நிற தீம்</string>
     <string name="settings_delete_account">கணக்கை நீக்கு</string>
-    <string name="settings_display_size_app_footer">ஃபோனின் காட்சி மற்றும் எழுத்துரு அளவுக்கு மேல் App-இன் அளவுகளை மாற்றும்.</string>
     <string name="settings_display_size_app_section">App-இல்</string>
-    <string name="settings_display_size_preview_footer">ஸ்லைடரை விட்டதும் App புதிய அளவுக்கு மாறும்.</string>
     <string name="settings_display_size_text">உரை அளவு</string>
     <string name="settings_display_size_title">காட்சி மற்றும் உரை அளவு</string>
     <string name="settings_display_size_ui">காட்சி அளவு</string>
-    <string name="settings_display_size_widget_footer">ஒவ்வொரு விட்ஜெட்டின் அளவையும் முகப்புத் திரை தீர்மானிக்கிறது. இந்த அளவுகள் விட்ஜெட்டுக்குள் காட்டப்படுவதை மாற்றும்.</string>
     <string name="settings_display_size_widget_section">விட்ஜெட்கள்</string>
     <string name="settings_feedback_bug_report">கருத்து / சிக்கல் அறிக்கை</string>
     <string name="settings_flip_to_library_summary">நூலக QR திறக்க தொலைபேசியை திரை கீழே வைத்து திருப்பவும்.</string>

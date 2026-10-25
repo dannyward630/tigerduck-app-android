@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Çevirisi göster</string>
     <string name="settings_color_theme">Renk teması</string>
     <string name="settings_delete_account">Hesap silme</string>
-    <string name="settings_display_size_app_footer">Uygulamanın boyutlarını telefonunuzun ekran ve yazı tipi boyutunun üzerine ayarlar.</string>
     <string name="settings_display_size_app_section">Uygulamada</string>
-    <string name="settings_display_size_preview_footer">Kaydırıcıyı bıraktığınızda uygulama yeni boyuta geçer.</string>
     <string name="settings_display_size_text">Metin boyutu</string>
     <string name="settings_display_size_title">Ekran ve metin boyutu</string>
     <string name="settings_display_size_ui">Ekran boyutu</string>
-    <string name="settings_display_size_widget_footer">Her widget\'ın boyutunu ana ekran belirler. Bu boyutlar widget\'ın içinde gösterilenleri değiştirir.</string>
     <string name="settings_display_size_widget_section">Widget\'lar</string>
     <string name="settings_feedback_bug_report">Geri bildirim / Sorun bildir</string>
     <string name="settings_flip_to_library_summary">Kütüphane QR\'ını açmak için telefonu ekran aşağı gelecek şekilde çevir.</string>
