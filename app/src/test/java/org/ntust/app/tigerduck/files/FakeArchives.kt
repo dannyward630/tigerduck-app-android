@@ -134,3 +134,39 @@ internal fun sevenZWithPackedHeader(unpackSize: Long): ByteArray {
         .array()
     return start + junk + next
 }
+
+/**
+ * This zip with [count] bytes before it, as a self-extracting one has, its offsets left as they
+ * were. They start as a zip's local header does, so the file is still taken for a zip.
+ */
+internal fun File.prefixedWith(count: Int): File = apply {
+    val prefix = ByteArray(count) { 0x20 }.also { byteArrayOf(0x50, 0x4B, 0x03, 0x04).copyInto(it) }
+    writeBytes(prefix + readBytes())
+}
+
+/**
+ * This zip with a Zip64 end record and locator added, pointing at its directory and declaring no
+ * entries, and its own end record's offset and count made wrong: a reader that sees the locator
+ * goes by the Zip64 record, as the zip reader does.
+ */
+internal fun File.withZip64Record(): File = apply {
+    val bytes = readBytes()
+    val end = (bytes.size - 22 downTo 0).first { at ->
+        bytes[at] == 0x50.toByte() && bytes[at + 1] == 0x4B.toByte() && bytes[at + 2] == 0x05.toByte() && bytes[at + 3] == 0x06.toByte()
+    }
+    val record = java.nio.ByteBuffer.wrap(bytes, end, 22).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+    val directorySize = record.getInt(end + 12).toLong() and 0xFFFFFFFFL
+    val directoryAt = record.getInt(end + 16).toLong() and 0xFFFFFFFFL
+    val zip64 = java.nio.ByteBuffer.allocate(56 + 20).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        .putInt(0x06064B50).putLong(44).putShort(45).putShort(45).putInt(0).putInt(0)
+        .putLong(0).putLong(0).putLong(directorySize).putLong(directoryAt)
+        .putInt(0x07064B50).putInt(0).putLong(end.toLong()).putInt(1)
+        .array()
+    val oldEnd = bytes.copyOfRange(end, bytes.size)
+    java.nio.ByteBuffer.wrap(oldEnd).order(java.nio.ByteOrder.LITTLE_ENDIAN).apply {
+        putShort(8, 0)
+        putShort(10, 0)
+        putInt(16, 0)
+    }
+    writeBytes(bytes.copyOfRange(0, end) + zip64 + oldEnd)
+}

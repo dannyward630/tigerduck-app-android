@@ -242,27 +242,33 @@ object Archives {
 
     /**
      * What a zip's end of central directory declares, read before its directory is, so a zip of a
-     * million entries is turned away before they're all in memory. Null when there's no such
-     * record, which the zip reader then reports.
+     * million entries is turned away before they're all in memory: found as the zip reader finds
+     * it, so the records counted are the ones it reads. Null when there's no such record, which the
+     * zip reader then reports.
      */
     internal fun zipDirectory(channel: SeekableByteChannel): ZipDirectory? {
         val size = channel.size()
         val tailSize = minOf(size, END_RECORD_SIZE + 0xFFFFL).toInt()
-        val tail = read(channel, size - tailSize, tailSize) ?: return null
+        val tailStart = size - tailSize
+        val tail = read(channel, tailStart, tailSize) ?: return null
         for (at in tailSize - END_RECORD_SIZE.toInt() downTo 0) {
             if (tail.getInt(at) != END_SIGNATURE) continue
+            val endAt = tailStart + at
+            // A Zip64 locator just before it: the Zip64 record says where the directory is, whatever
+            // this record says, and the reader refuses the zip if that record isn't there.
+            val locator = read(channel, endAt - 20, 20)
+            if (locator != null && locator.getInt(0) == ZIP64_LOCATOR_SIGNATURE) {
+                val recordAt = locator.getLong(8)
+                val record = if (recordAt in 0..(size - 56)) read(channel, recordAt, 56) else null
+                if (record == null || record.getInt(0) != ZIP64_END_SIGNATURE) return null
+                return ZipDirectory(record.getLong(32), record.getLong(48))
+            }
             val entries = (tail.getShort(at + 10).toInt() and 0xFFFF).toLong()
+            val length = tail.getInt(at + 12).toLong() and 0xFFFFFFFFL
             val offset = tail.getInt(at + 16).toLong() and 0xFFFFFFFFL
-            if (entries != 0xFFFFL && offset != 0xFFFFFFFFL) return ZipDirectory(entries, offset)
-            // Zip64: its locator sits just before, and points at the record that holds both.
-            val plain = ZipDirectory(entries, offset)
-            val locator = read(channel, size - tailSize + at - 20, 20) ?: return plain
-            if (locator.getInt(0) != ZIP64_LOCATOR_SIGNATURE) return plain
-            val recordAt = locator.getLong(8)
-            if (recordAt !in 0..(size - 56)) return plain
-            val record = read(channel, recordAt, 56) ?: return plain
-            if (record.getInt(0) != ZIP64_END_SIGNATURE) return plain
-            return ZipDirectory(record.getLong(32), record.getLong(48))
+            // Data before the archive, as a self-extracting one has, moves its directory along by as
+            // much, which the reader allows for.
+            return ZipDirectory(entries, offset + maxOf(endAt - length - offset, 0L))
         }
         return null
     }

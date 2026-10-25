@@ -407,6 +407,22 @@ class ArchivesTest {
     }
 
     @Test
+    fun `a zip with data before it is counted where the reader finds its directory`() {
+        val file = zip { repeat(6) { file("file $it.txt", byteArrayOf(1)) } }.declaringEntries(0).prefixedWith(1_000)
+
+        assertEquals(6, listing(file).items.size)
+        assertEquals(ArchiveProblem.TOO_MANY, problem { listing(file, ArchiveLimits(maxZipEntries = 5)) })
+    }
+
+    @Test
+    fun `a zip with a Zip64 locator is counted where its Zip64 record says, as the reader goes`() {
+        val file = zip { repeat(6) { file("file $it.txt", byteArrayOf(1)) } }.withZip64Record()
+
+        assertEquals(6, listing(file).items.size)
+        assertEquals(ArchiveProblem.TOO_MANY, problem { listing(file, ArchiveLimits(maxZipEntries = 5)) })
+    }
+
+    @Test
     fun `an xz file in a zip is one the app doesn't read, its decoder's memory being unbounded there`() {
         val file = zip { file("data.bin", "fake".toByteArray()) }.packedWith("data.bin", 95)
 
