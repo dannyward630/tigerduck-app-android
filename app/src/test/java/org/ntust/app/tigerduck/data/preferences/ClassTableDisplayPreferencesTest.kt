@@ -7,6 +7,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.data.DataMigration
+import org.ntust.app.tigerduck.library.FlipToLibraryDefaultOffMigration
+import org.ntust.app.tigerduck.liveactivity.LiveActivityPreferences
+import org.ntust.app.tigerduck.notification.ClassReminders
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
@@ -49,6 +53,34 @@ class ClassTableDisplayPreferencesTest {
 
         raw().edit().putBoolean("showClassroomInClassTable", true).commit()
         assertTrue(prefs().showClassroomInClassTable)
+    }
+
+    /**
+     * An update from 2.3.1, where the classrooms defaulted off and the switch
+     * was stored only once flipped, through every step this version's first
+     * launch takes on the preferences: an untouched switch gets the classrooms
+     * on, and one turned off keeps them off.
+     */
+    @Test
+    fun `an update from the off-by-default version keeps the classroom switch the user stored`() {
+        fun updatedFrom(stored: Boolean?): Boolean {
+            raw().edit().clear()
+                .putInt("dataSchemaVersion", 3)
+                .putBoolean("hasCompletedOnboarding", true)
+                .apply { if (stored != null) putBoolean("showClassroomInClassTable", stored) }
+                .commit()
+            val prefs = prefs()
+            DataMigration.settleReenableCheck(prefs, signedIn = true)
+            DataMigration.dropStaleCoursesCheck(prefs)
+            ClassReminders.migrateIfNeeded(prefs, LiveActivityPreferences(context))
+            LibraryTabKeepMigration.runIfNeeded(prefs)
+            FlipToLibraryDefaultOffMigration.runIfNeeded(prefs)
+            return prefs().showClassroomInClassTable
+        }
+
+        assertFalse(updatedFrom(stored = false))
+        assertTrue(updatedFrom(stored = true))
+        assertTrue(updatedFrom(stored = null))
     }
 
     @Test
