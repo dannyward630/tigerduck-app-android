@@ -22,6 +22,7 @@ class Release240PagesTest {
                 "class-table-share",
                 "library",
                 "library-bottom-bar",
+                "bottom-bar-editor",
                 "mail-notifications",
                 "empty-classroom",
                 "display-size",

@@ -42,6 +42,7 @@ internal fun release240Pages(
     classTableSharePage(),
     libraryPage(isSignedIn = isLibrarySignedIn),
     libraryBottomBarPage(isSignedIn = isLibrarySignedIn, tabs = tabs, setTabs = setTabs),
+    bottomBarEditorPage(),
     mailNotificationsPage(),
     emptyClassroomPage(),
     displaySizePage(),

@@ -24,7 +24,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -35,17 +41,22 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 
 // The pieces the feature demos are built from: a small screen to draw in, a
 // clock that loops through a demo's steps, a fingertip that taps, and grey
@@ -91,16 +102,44 @@ internal fun MockScreen(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(24.dp)
+    val targets = remember { TapTargets() }
     Box(
         modifier
             .width(width)
             .height(height)
+            .onGloballyPositioned { targets.origin = it.positionInRoot() }
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .clearAndSetSemantics { if (description != null) contentDescription = description },
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(LocalTapTargets provides targets) { content() }
+    }
+}
+
+/**
+ * Where the parts a demo's fingertip taps were laid out ([tapTarget]), so the
+ * fingertip lands on them whatever the fonts make of the rows above: a
+ * position worked out in dp drifts on a phone whose CJK font is taller.
+ */
+internal class TapTargets {
+    /** The mock screen's top left, in the root's px. */
+    var origin by mutableStateOf(Offset.Zero)
+
+    /** Each target's center, in the root's px. */
+    val centers = mutableStateMapOf<String, Offset>()
+
+    /** [id]'s center from the screen's top left, in px; null until it's laid out. */
+    fun center(id: String): Offset? = centers[id]?.let { it - origin }
+}
+
+internal val LocalTapTargets = staticCompositionLocalOf<TapTargets?> { null }
+
+/** Marks what the fingertip tapping [id] lands on. For parts that stay put: a graphics layer's movement isn't seen. */
+@Composable
+internal fun Modifier.tapTarget(id: String): Modifier {
+    val targets = LocalTapTargets.current ?: return this
+    return onGloballyPositioned { targets.centers[id] = it.boundsInRoot().center }
 }
 
 /**
@@ -117,10 +156,22 @@ internal fun Modifier.demoDescription(description: String): Modifier =
  */
 @Composable
 internal fun Fingertip(x: Dp, y: Dp, shown: () -> Float, press: () -> Float) {
+    FingertipAt({ Offset(x.toPx(), y.toPx()) }, shown, press)
+}
+
+/** A fingertip on the part marked [target] with [tapTarget]; nowhere until that's laid out. */
+@Composable
+internal fun Fingertip(target: String, shown: () -> Float, press: () -> Float) {
+    val targets = LocalTapTargets.current
+    FingertipAt({ targets?.center(target) ?: Offset(-1_000f, -1_000f) }, shown, press)
+}
+
+@Composable
+private fun FingertipAt(at: Density.() -> Offset, shown: () -> Float, press: () -> Float) {
     val color = MaterialTheme.colorScheme.onSurface
     Box(
         Modifier
-            .offset { IntOffset((x - 14.dp).roundToPx(), (y - 14.dp).roundToPx()) }
+            .offset { at().let { IntOffset((it.x - 14.dp.toPx()).roundToInt(), (it.y - 14.dp.toPx()).roundToInt()) } }
             .size(28.dp)
             .graphicsLayer {
                 val p = press()
@@ -132,7 +183,7 @@ internal fun Fingertip(x: Dp, y: Dp, shown: () -> Float, press: () -> Float) {
     )
     Box(
         Modifier
-            .offset { IntOffset((x - 14.dp).roundToPx(), (y - 14.dp).roundToPx()) }
+            .offset { at().let { IntOffset((it.x - 14.dp.toPx()).roundToInt(), (it.y - 14.dp.toPx()).roundToInt()) } }
             .size(28.dp)
             .graphicsLayer {
                 alpha = shown() * 0.9f
@@ -213,10 +264,10 @@ internal fun window(t: Float, from: Float, to: Float, fade: Float = 0.02f): Floa
 
 /**
  * Something that looks like a QR code, [size] square: three finder squares and
- * a fixed scatter of modules. It encodes nothing.
+ * a fixed scatter of modules, another for another [seed]. It encodes nothing.
  */
 @Composable
-internal fun MockQr(size: Dp, modifier: Modifier = Modifier) {
+internal fun MockQr(size: Dp, modifier: Modifier = Modifier, seed: Int = 0x2545F491) {
     Canvas(
         modifier
             .size(size)
@@ -237,7 +288,7 @@ internal fun MockQr(size: Dp, modifier: Modifier = Modifier) {
         finder(QR_CELLS - 7, 0)
         finder(0, QR_CELLS - 7)
         // A fixed scatter: the same "code" on every frame and every device.
-        var seed = 0x2545F491
+        var seed = seed
         for (y in 0 until QR_CELLS) for (x in 0 until QR_CELLS) {
             val inFinder = (x < 8 && y < 8) || (x >= QR_CELLS - 8 && y < 8) || (x < 8 && y >= QR_CELLS - 8)
             seed = seed xor (seed shl 13); seed = seed xor (seed ushr 17); seed = seed xor (seed shl 5)

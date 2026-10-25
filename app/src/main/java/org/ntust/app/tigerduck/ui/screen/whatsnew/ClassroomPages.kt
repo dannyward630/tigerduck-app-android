@@ -37,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.data.model.AppFeature
 
 /**
  * "Find a free classroom": the nearest free room between your classes, and
@@ -51,8 +52,8 @@ internal fun emptyClassroomPage() = WhatsNewPage.Feature(
         zhHant = "找空教室更輕鬆",
     ),
     body = WhatsNewText(
-        en = "It suggests the nearest free room between your classes, and shows whether it's up the stairs, along the same floor or in another building.",
-        zhHant = "依你前後的課推薦最近的空教室，並標出要爬樓梯、在同一層走過去，還是要去其他棟。",
+        en = "Open Empty classroom from the bottom bar or from More. It suggests the nearest free room between your classes, and shows whether it's up the stairs, along the same floor or in another building.",
+        zhHant = "從底部功能列或「更多」打開空教室，就會依你前後的課推薦最近的空教室，並標出要爬樓梯、在同一層走過去，還是要去其他棟。",
     ),
 )
 
@@ -80,22 +81,33 @@ private val routes = listOf(
 )
 
 private val classroomDemoDescription = WhatsNewText(
-    en = "Demo: a suggested free room between two classes, reached up the stairs, along the same floor, or from another building.",
-    zhHant = "示範：推薦兩堂課之間的空教室，可能要爬樓梯、在同一層走過去，或從其他棟過去。",
+    en = "Demo: Empty classroom opens from More, and suggests a free room between two classes, reached up the stairs, along the same floor, or from another building.",
+    zhHant = "示範：從「更多」打開空教室，推薦兩堂課之間的空教室，可能要爬樓梯、在同一層走過去，或從其他棟過去。",
 )
 
 private const val CLASSROOM_LOOP_MILLIS = 9_000
 
 @Composable
 private fun EmptyClassroomDemo(animate: Boolean) {
-    // Still: the stairs.
-    val clock = demoClock(animate, CLASSROOM_LOOP_MILLIS, still = 0.15f)
-    val t = { clock.value }
-    // Each route holds a third of the loop.
-    fun shown(index: Int) = { window(t(), index / 3f, (index + 1) / 3f, fade = 0.04f) }
+    // Each route holds a third of the feature's part.
+    fun shown(t: () -> Float, index: Int) = { window(t(), index / 3f, (index + 1) / 3f, fade = 0.04f) }
+    PathDemo(
+        description = classroomDemoDescription.resolve(),
+        animate = animate,
+        featureMillis = CLASSROOM_LOOP_MILLIS,
+        start = PathStart.MoreCard(AppFeature.EMPTY_CLASSROOM),
+        stops = emptyList(),
+        // Still: the stairs.
+        featureStill = 0.15f,
+        below = { t -> routes.forEachIndexed { index, route -> DemoCaption(route.caption.resolve(), alpha = shown(t, index)) } },
+    ) { t -> EmptyClassroomScene(shown = { index -> shown(t, index) }) }
+}
+
+/** The suggestion and its route, each route shown by [shown]. */
+@Composable
+private fun EmptyClassroomScene(shown: (Int) -> () -> Float) {
     val colors = MaterialTheme.colorScheme
-    Column(Modifier.demoDescription(classroomDemoDescription.resolve()), horizontalAlignment = Alignment.CenterHorizontally) {
-        MockScreen {
+    Box(Modifier.fillMaxSize().background(colors.surface)) {
             Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MockText(stringResource(R.string.feature_empty_classroom), size = 14.sp, weight = FontWeight.Bold)
                 // The periods, the chosen one filled.
@@ -140,11 +152,6 @@ private fun EmptyClassroomDemo(animate: Boolean) {
                     }
                 }
             }
-        }
-        Spacer(Modifier.height(10.dp))
-        Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
-            routes.forEachIndexed { index, route -> DemoCaption(route.caption.resolve(), alpha = shown(index)) }
-        }
     }
 }
 
