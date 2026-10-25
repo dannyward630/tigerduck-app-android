@@ -24,18 +24,18 @@ class NavTransitionsTest {
     }
 
     @Test
-    fun `tapping a tab fades`() {
+    fun `tapping a tab swaps at once`() {
         assertFalse(slidesBetween(from = "home", to = "announcements", isPop = false, tabRoutes = tabs))
     }
 
     @Test
-    fun `tapping a later tab from inside a pushed screen fades`() {
+    fun `tapping a later tab from inside a pushed screen swaps at once`() {
         // popUpTo removes the pushed screen, then the tab is pushed: not a pop.
         assertFalse(slidesBetween(from = "announcements/detail/{id}", to = "more", isPop = false, tabRoutes = tabs))
     }
 
     @Test
-    fun `tapping the first tab from inside a pushed screen fades`() {
+    fun `tapping the first tab from inside a pushed screen swaps at once`() {
         // popUpTo lands on the first tab itself and nothing is pushed, so
         // Navigation Compose reports the tap as a pop.
         assertFalse(
@@ -76,7 +76,7 @@ class NavTransitionsTest {
     }
 
     @Test
-    fun `backing from a tab to the first tab fades`() {
+    fun `backing from a tab to the first tab swaps at once`() {
         assertFalse(slidesBetween(from = "announcements", to = "home", isPop = true, tabRoutes = tabs))
     }
 
