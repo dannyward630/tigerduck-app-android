@@ -54,6 +54,11 @@ class WhatsNewDemosTest {
 
     private val demos = listOf(
         Demo(
+            replayPage(),
+            WhatsNewText(en = "Demo: from More, Settings opens", zhHant = "示範：從「更多」打開設定"),
+            emptyList(),
+        ),
+        Demo(
             moodleCoursePage(),
             WhatsNewText(en = "Demo: a course opens", zhHant = "示範：從課表點開課程"),
             listOf(WhatsNewText(en = "Without the Moodle app", zhHant = "沒有 Moodle App 時")),
