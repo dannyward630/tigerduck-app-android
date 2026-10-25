@@ -123,10 +123,20 @@ object Archives {
             head.startsWith(0x50, 0x4B, 0x07, 0x08) -> ArchiveFormat.ZIP
         head.startsWith(0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C) -> ArchiveFormat.SEVEN_Z
         head.startsWith(0x1F, 0x8B) -> ArchiveFormat.GZIP
-        head.startsWith(0x42, 0x5A, 0x68) -> ArchiveFormat.BZIP2
+        isBzip2(head) -> ArchiveFormat.BZIP2
         head.startsWith(0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00) -> ArchiveFormat.XZ
         isTar(head, head.size) -> ArchiveFormat.TAR
         else -> null
+    }
+
+    /**
+     * "BZh" and a block size from 1 to 9, then the first block's magic, or the end-of-stream one
+     * of an empty stream: "BZh" alone also starts a tar whose first file's name does.
+     */
+    private fun isBzip2(head: ByteArray): Boolean {
+        if (!head.startsWith(0x42, 0x5A, 0x68) || head.size < 10 || head[3].toInt() !in '1'.code..'9'.code) return false
+        val magic = head.copyOfRange(4, 10)
+        return magic.startsWith(0x31, 0x41, 0x59, 0x26, 0x53, 0x59) || magic.startsWith(0x17, 0x72, 0x45, 0x38, 0x50, 0x90)
     }
 
     fun list(source: ArchiveSource, limits: ArchiveLimits = ArchiveLimits()): ArchiveListing {
