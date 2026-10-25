@@ -25,9 +25,11 @@ import androidx.wear.compose.material3.HorizontalPagerScaffold
 import androidx.wear.compose.navigation.SwipeDismissableNavHost
 import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
 import org.ntust.app.tigerduck.wear.data.SyncRequester
@@ -65,15 +67,19 @@ fun WearApp() {
     }
 
     // Re-apply the phone's chosen locale when it changes mid-session.
-    // attachBaseContext on the next instance will read the persisted tag and
-    // apply it; recreating the activity is the cleanest way to swap locale
-    // without rebuilding compose state by hand.
+    // attachBaseContext on the next instance applies the start-up copy of the
+    // tag; recreating the activity is the cleanest way to swap locale without
+    // rebuilding compose state by hand. WearLocaleSwitch keeps it from looping.
     val activity = context.findActivity()
     val configuration = LocalConfiguration.current
     LaunchedEffect(snapshot.languageTag) {
         val tag = snapshot.languageTag ?: return@LaunchedEffect
-        val current = configuration.locales[0]?.toLanguageTag() ?: ""
-        if (current.equals(tag, ignoreCase = true)) return@LaunchedEffect
+        val showing = configuration.locales[0]?.toLanguageTag()
+        if (WearLocaleSwitch.step(tag, showing, WearLocaleSwitch.triedFor) != WearLocaleSwitch.Step.Recreate) {
+            return@LaunchedEffect
+        }
+        withContext(Dispatchers.IO) { repo.writeLanguageTagBlocking(tag) }
+        WearLocaleSwitch.triedFor = tag
         activity?.recreate()
     }
 

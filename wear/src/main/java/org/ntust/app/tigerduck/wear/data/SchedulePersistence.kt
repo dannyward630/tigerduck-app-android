@@ -70,9 +70,15 @@ class SchedulePersistence(private val context: Context) {
                 loggedIn, languageTag, disableScreenCaptureProtection, quietDays,
             )
         }
-        if (languageTag != null) {
-            bootstrapPrefs.edit().putString(BOOTSTRAP_KEY_LANGUAGE, languageTag).apply()
-        }
+        if (languageTag != null) writeLanguageTagBlocking(languageTag)
+    }
+
+    /**
+     * Brings the start-up copy of the language up to date, synchronously: the next
+     * `attachBaseContext` must read it, even if the process dies right after.
+     */
+    fun writeLanguageTagBlocking(languageTag: String) {
+        bootstrapPrefs.edit().putString(BOOTSTRAP_KEY_LANGUAGE, languageTag).commit()
     }
 
     /** Synchronous cold-start read used by Activity `attachBaseContext` to
