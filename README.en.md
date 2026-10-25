@@ -224,9 +224,10 @@ git submodule update --init --recursive
 ./gradlew :app:installPlayDebug      # or :app:installFdroidDebug
 ```
 
-> 💡 Course / classroom abbreviations (`name-abbr/`) and localization strings (
-`app-translation/generated/android/`) come from submodules. **Always** initialize submodules before
-> opening Android Studio, otherwise the build will fail to locate resource files.
+> 💡 Course / classroom abbreviations (`name-abbr/`) and localization strings (`app-translation/`)
+> come from submodules. **Always** initialize submodules before opening Android Studio, otherwise the
+> build will fail to locate resource files. Building also needs Python 3.9 or newer, which generates the strings
+> (macOS's own `python3` is 3.9; CI tests 3.9 and the newest).
 
 ### Wear OS App (`:wear` module)
 
@@ -263,31 +264,13 @@ submodule and are shared with the iOS client.
 
 - Source files in `app-translation/source/` — 55 files (`en.json`, `zh-Hant.json`, `ja.json`,
   `ko.json`, `ar.json`, …)
-- Generated outputs in `app-translation/generated/`:
-    - Android: `android/values/strings.xml` (English as default),
-      `android/values-<lang>/strings.xml`
-    - Apple (iOS / macOS): `apple/<lang>.lproj/Localizable.strings`
-- The app's `app/src/main/res/values*/strings.xml` and the watch's `wear/src/main/res/values*/strings.xml`
-  are copies of the Android output, committed and overwritten on every sync — **do not** edit
-  generated files by hand.
-
-Run a one-shot sync (regenerates the outputs, then copies them into both `app/` and `wear/`):
-
-```bash
-./debug/sync-localizations.sh
-```
-
-`python3 tools/localization/sync_localizations.py` on its own only regenerates
-`app-translation/generated/` and `locales_config.xml`; it does not touch either module's
-`strings.xml`.
-
-Gradle can also sync before a build, but this is **opt-in**: the sync and copy tasks are only wired
-into `preBuild` when you pass `-PsyncLocalizations` (see `app/build.gradle.kts` and
-`wear/build.gradle.kts`):
-
-```bash
-./gradlew :app:assemblePlayDebug -PsyncLocalizations
-```
+- Every build generates the Android strings from the submodule's `source/*.json`: the
+  `generateAppTranslationStrings` task (`gradle/app-translation.gradle.kts`, applied by `:app` and
+  `:wear`) writes `values*/strings.xml`, and the phone's `xml/locales_config.xml`, into
+  `build/generated/appTranslation/res`. Nothing is committed, here or in the submodule, so a
+  translation change only moves the submodule pin. It needs Python 3.9 or newer on PATH.
+- The submodule still commits its Apple (`generated/apple/`) and backend (`generated/backend/`)
+  outputs, which the Apple app and the backend read.
 
 For new locales or strings, open a separate PR against the
 [`app-translation/`](https://github.com/tigerduck-app/app-translation) submodule — do **not** edit
@@ -375,7 +358,7 @@ tigerduck-app-android/                  # Android App + Wear OS (Kotlin 2.4 / Co
 │   └── libs.versions.toml              # Version Catalog
 ├── app-translation/                    # ⤴ git submodule: 65 locale translations (incl. `watch_*` keys)
 ├── name-abbr/                          # ⤴ git submodule: course / classroom abbreviations
-├── tools/localization/                 # Translation sync script (opt in via -PsyncLocalizations)
+├── tools/localization/                 # Generates the strings from app-translation on every build
 ├── build.gradle.kts
 └── settings.gradle.kts
 ```

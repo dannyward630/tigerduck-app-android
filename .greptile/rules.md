@@ -10,17 +10,6 @@
       hash is injected by a GitHub Action on the `main` branch when the release is cut. The
       placeholder is intentional.
 
-## iOS-style placeholders in generated strings
-
-- In `app/src/main/res/values*/strings.xml` and `wear/src/main/res/values*/strings.xml`, do not flag
-  `%@`, `%1$@`, `%2$@` or `%1$lld` placeholders as wrong for Android. Those files are generated from
-  the app-translation submodule, whose schema is iOS-first, and Kotlin fills those placeholders with
-  `replaceIosArg` (`app/src/main/java/org/ntust/app/tigerduck/util/IosPlaceholder.kt`), not with
-  `getString(id, args)` formatting. Do flag a call that passes format arguments to `getString` or
-  `stringResource` for a string that uses these placeholders, since that one would throw.
-    - **Why:** the strings are shared with the Apple apps and can't be edited by hand in this repo;
-      `replaceIosArg` is the one place that bridges the two formats.
-
 ## Upgrade-safe persistence — please flag
 
 **Rule:** In any commit that touches a Gson-deserialized data class

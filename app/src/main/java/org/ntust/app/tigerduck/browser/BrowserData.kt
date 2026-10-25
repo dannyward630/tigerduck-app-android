@@ -43,10 +43,23 @@ object BrowserSession {
      */
     val usable: Boolean get() = pendingDeletions.value == 0
 
-    fun end() = state.update { it + 1 }
+    /** Held while the session moves on or a clearing starts, and while [ifStill] writes. */
+    private val lock = Any()
 
-    internal fun setClearing(clearing: Boolean) {
+    fun end() = synchronized(lock) { state.update { it + 1 } }
+
+    internal fun setClearing(clearing: Boolean) = synchronized(lock) {
         clearingState.value = clearing
+    }
+
+    /**
+     * Runs [write] if the session is still [session] and nothing is clearing: what a download
+     * keeps in the browser's cookies, which must not outlive a clearing that left the download
+     * running. One lock with [end] and [setClearing], so a clearing cannot start between the check
+     * and the write; a write before it starts is cleared with the rest.
+     */
+    fun ifStill(session: Int, write: () -> Unit) = synchronized(lock) {
+        if (state.value == session && !clearingState.value) write()
     }
 
     internal fun deletionStarted() = pendingDeletions.update { it + 1 }
@@ -158,6 +171,25 @@ class BrowserDataCleaner(
                 // The next start clears it again, and the browser stays closed till then.
                 else -> Unit
             }
+        } finally {
+            BrowserSession.end()
+            BrowserSession.setClearing(false)
+        }
+    }
+
+    /**
+     * The WebView's stores alone: cookies, site storage and the pages' cache, for Settings'
+     * Storage page. The screens open close first, as for [clear], since what they show goes; the
+     * downloads go on, and each site's zoom and desktop choice stay. Not an account change, so
+     * nothing is marked to clear again at the next start: a clearing cut short leaves only some of
+     * the user's own sites' data.
+     */
+    suspend fun clearWebsiteData() = lock.withLock {
+        BrowserSession.setClearing(true)
+        try {
+            BrowserSession.end()
+            runCatching { storage.clear() }
+                .onFailure { Log.w(TAG, "browser storage not cleared: ${it.javaClass.simpleName}") }
         } finally {
             BrowserSession.end()
             BrowserSession.setClearing(false)

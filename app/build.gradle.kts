@@ -678,74 +678,13 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
 }
 
-val syncLocalizations = tasks.register<Exec>("syncLocalizations") {
-    group = "localization"
-    description = "Generate Android localization files from shared JSON sources."
-    workingDir = rootProject.projectDir
-    // Placeholder; the real interpreter is resolved in doFirst so detection
-    // happens at execution time, not project sync.
-    commandLine("python3", "tools/localization/sync_localizations.py")
-    doFirst {
-        val script = "tools/localization/sync_localizations.py"
-        // Probe the common Python 3 launchers across Linux / macOS / Windows.
-        val python = listOf("python3", "python", "py").firstOrNull { candidate ->
-            runCatching {
-                val proc = ProcessBuilder(candidate, "--version")
-                    .redirectErrorStream(true)
-                    .start()
-                val output = proc.inputStream.readBytes().toString(Charsets.UTF_8)
-                proc.waitFor() == 0 && output.contains("Python 3")
-            }.getOrDefault(false)
-        } ?: throw GradleException(
-            "syncLocalizations requires Python 3 on PATH (tried python3, python, py). " +
-                    "Install Python 3 from https://www.python.org/ and re-run."
-        )
-        commandLine(python, script)
-    }
-}
+// The strings, generated from app-translation's source/*.json on every build.
+apply(from = rootProject.file("gradle/app-translation.gradle.kts"))
+val appTranslationStrings = tasks.named("generateAppTranslationStrings")
 
-val copyGeneratedAndroidLocalizations = tasks.register<Copy>("copyGeneratedAndroidLocalizations") {
-    group = "localization"
-    description = "Copy app-translation/generated/android values-* resources into app/src/main/res."
-
-    // Ensure the generator ran first.
-    dependsOn(syncLocalizations)
-
-    val sourceDir = rootProject.layout.projectDirectory.dir("app-translation/generated/android")
-    val destDir = layout.projectDirectory.dir("src/main/res")
-
-    // Only copy valid Android resource qualifier directories.
-    from(sourceDir) {
-        include("values*/strings.xml")
-        include("values-b+*/strings.xml")
-    }
-
-    into(destDir)
-    includeEmptyDirs = false
-
-    // Atomically clear stale generated files just before copying. If syncLocalizations
-    // fails, this doFirst never runs, so committed locale files remain on disk.
-    doFirst {
-        val resDir = destDir.asFile
-        fileTree(resDir) {
-            include("values*/strings.xml")
-            include("values-b+*/strings.xml")
-        }.forEach { it.delete() }
-
-        resDir.listFiles()
-            ?.filter { it.isDirectory && (it.name.startsWith("values-") || it.name.startsWith("values-b+")) }
-            ?.forEach { dir ->
-                val remaining = dir.listFiles()
-                if (remaining == null || remaining.isEmpty()) {
-                    dir.delete()
-                }
-            }
-    }
-}
-
-if (providers.gradleProperty("syncLocalizations").isPresent) {
-    tasks.named("preBuild") {
-        dependsOn(syncLocalizations)
-        dependsOn(copyGeneratedAndroidLocalizations)
+androidComponents {
+    onVariants { variant ->
+        // The task's class lives in that script, so its output is reached by name.
+        variant.sources.res?.addGeneratedSourceDirectory(appTranslationStrings) { it.property("outputDir") as DirectoryProperty }
     }
 }
