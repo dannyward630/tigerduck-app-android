@@ -25,6 +25,8 @@ import org.ntust.app.tigerduck.auth.PasswordPosting
 import org.ntust.app.tigerduck.auth.StoredPasswordLatch
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.di.ApplicationScope
+import org.ntust.app.tigerduck.shared.CredentialPost
+import org.ntust.app.tigerduck.shared.executeCredentialPost
 import java.net.SocketTimeoutException
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
@@ -366,6 +368,11 @@ class MoodleTokenService internal constructor(
                 else -> responseUrl.resolve(bridge.action)
                     ?: throw MoodleWebserviceError.MalformedResponse("Invalid bridge action: ${bridge.action}")
             }
+            // The code passes the sign-in on to Moodle, so it goes to the school's hosts over HTTPS
+            // and nowhere else. Nothing is posted, so this is no refusal of the password.
+            if (!CredentialPost.isSchoolTarget(url)) {
+                throw MoodleWebserviceError.MalformedResponse("OIDC bridge action outside the school's HTTPS hosts")
+            }
             Log.i("MoodleTokenService", "posting OIDC bridge → ${url.redactForLog()}")
             val (nextHtml, nextUrl) = io {
                 postForm(
@@ -454,6 +461,10 @@ class MoodleTokenService internal constructor(
         return executeAndReadBody(client, req)
     }
 
+    /**
+     * The OIDC bridge's POST, which carries the code SSO hands Moodle: no redirect sends the form
+     * on, and one that would ends the sign-in ([executeCredentialPost]).
+     */
     private fun postForm(
         client: OkHttpClient,
         url: HttpUrl,
@@ -467,12 +478,15 @@ class MoodleTokenService internal constructor(
         val reqBuilder = Request.Builder().url(url).post(body)
         if (referer != null) reqBuilder.header("Referer", referer)
         if (origin != null) reqBuilder.header("Origin", origin)
-        return executeAndReadBody(client, reqBuilder.build())
+        return readBody(
+            execute { client.executeCredentialPost(reqBuilder.build()) }
+                ?: throw MoodleWebserviceError.MalformedResponse("OIDC bridge redirect not followed"),
+        )
     }
 
     /**
      * The SSO sign-in form's POST, which carries the password: no redirect sends the form on to
-     * another address, and one that would ends the sign-in ([executeCredentialPost]).
+     * another address, and one that would ends the sign-in ([executeSignInFormPost]).
      */
     private fun postLoginForm(
         client: OkHttpClient,
@@ -489,7 +503,7 @@ class MoodleTokenService internal constructor(
             .header("Origin", origin)
             .build()
         return readBody(
-            execute { client.executeCredentialPost(request) }
+            execute { client.executeSignInFormPost(request) }
                 ?: throw MoodleWebserviceError.MalformedResponse("SSO sign-in redirect not followed"),
         )
     }

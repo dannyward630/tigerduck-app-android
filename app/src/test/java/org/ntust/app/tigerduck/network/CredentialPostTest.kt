@@ -14,7 +14,7 @@ import org.junit.Test
 import java.io.IOException
 
 /**
- * [executeCredentialPost] against a stand-in school that answers as an application interceptor,
+ * [executeSignInFormPost] against a stand-in school that answers as an application interceptor,
  * which is ahead of OkHttp's own redirect and retry handling. Hand-made answers throughout.
  */
 class CredentialPostTest {
@@ -46,7 +46,7 @@ class CredentialPostTest {
             }
         }
 
-        school.executeCredentialPost(post())!!.close()
+        school.executeSignInFormPost(post())!!.close()
 
         // So the session's guard refuses it, and the departed account's cookies stay out.
         assertEquals(true, getStartedUnderDepartedAccount)
@@ -67,7 +67,7 @@ class CredentialPostTest {
             page(chain.request())
         }
 
-        val failure = runCatching { school.executeCredentialPost(post())?.close() }.exceptionOrNull()
+        val failure = runCatching { school.executeSignInFormPost(post())?.close() }.exceptionOrNull()
 
         assertTrue("got $failure", failure is IOException)
         assertEquals("each post counts toward the account's lockout", 1, posts)
@@ -81,7 +81,7 @@ class CredentialPostTest {
             redirect(chain.request(), 307, SIGN_IN_URL)
         }
 
-        assertNull(school.executeCredentialPost(post()))
+        assertNull(school.executeSignInFormPost(post()))
         assertEquals(4, posts)
     }
 

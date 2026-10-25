@@ -9,6 +9,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.ntust.app.tigerduck.auth.StoredPasswordLatch
 import org.ntust.app.tigerduck.auth.postAutomatically
+import org.ntust.app.tigerduck.shared.CredentialPost
+import org.ntust.app.tigerduck.shared.executeCredentialPost
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -293,6 +295,10 @@ class SsoLoginService internal constructor(
             val form =
                 HtmlParser.findOIDCBridgeForm(currentHtml) ?: return currentHtml to currentUrl
             val actionUrl = resolveUrl(form.action, currentUrl)
+            // What the bridge carries passes the sign-in on, so it goes to the school's hosts over
+            // HTTPS and nowhere else, whatever the page names as the form's action. As on the
+            // iPhone.
+            if (!CredentialPost.isSchoolTarget(actionUrl)) throw SsoLoginError.InvalidResponse()
             val (newHtml, newUrl) = postForm(actionUrl, form.inputs)
             currentHtml = newHtml
             currentUrl = newUrl
@@ -302,7 +308,7 @@ class SsoLoginService internal constructor(
 
     /**
      * The sign-in form's POST, which carries the password: no redirect sends the form on to
-     * another address, and one that would ends the sign-in ([executeCredentialPost]).
+     * another address, and one that would ends the sign-in ([executeSignInFormPost]).
      */
     private fun postLoginForm(url: HttpUrl, fields: List<Pair<String, String>>): Pair<String, HttpUrl> {
         try {
@@ -310,7 +316,7 @@ class SsoLoginService internal constructor(
                 fields.forEach { (name, value) -> add(name, value) }
             }.build()
             val request = Request.Builder().url(url).post(body).build()
-            val response = client.executeCredentialPost(request) ?: throw SsoLoginError.InvalidResponse()
+            val response = client.executeSignInFormPost(request) ?: throw SsoLoginError.InvalidResponse()
             response.use { return it.body.string() to it.request.url }
         } catch (e: SsoLoginError) {
             throw e
@@ -319,6 +325,10 @@ class SsoLoginService internal constructor(
         }
     }
 
+    /**
+     * A bridge form's POST, which carries the ID token or the code the school hands the service: no
+     * redirect sends the form on, and one that would ends the sign-in ([executeCredentialPost]).
+     */
     private fun postForm(url: HttpUrl, fields: List<Pair<String, String>>): Pair<String, HttpUrl> {
         try {
             val body = FormBody.Builder().apply {
@@ -330,9 +340,10 @@ class SsoLoginService internal constructor(
                 .post(body)
                 .build()
 
-            client.newCall(request).execute().use { response ->
-                val html = response.body.string()
-                return html to response.request.url
+            val response = client.executeCredentialPost(request) ?: throw SsoLoginError.InvalidResponse()
+            response.use {
+                val html = it.body.string()
+                return html to it.request.url
             }
         } catch (e: SsoLoginError) {
             throw e
