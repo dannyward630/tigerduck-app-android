@@ -24,11 +24,13 @@ import javax.inject.Singleton
 internal const val CALENDAR_LINK_YEAR = """(?<!\d)(1\d{2})(?!\d)"""
 
 @Singleton
-class CalendarService @Inject constructor(
+class CalendarService internal constructor(
     baseClient: OkHttpClient,
+    /** The page listing the academic calendar's ICS files, or a redirect to it. */
+    private val calendarPageUrl: String,
 ) {
 
-    private val calendarPageUrl = "https://r.xinshou.tw/ntust-calender"
+    @Inject constructor(baseClient: OkHttpClient) : this(baseClient, CALENDAR_PAGE_URL)
 
     private val browserClient = baseClient.newBuilder()
         .addInterceptor { chain ->
@@ -43,8 +45,9 @@ class CalendarService @Inject constructor(
     suspend fun fetchCalendarUrls(): Map<Int, String> = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder().url(calendarPageUrl).get().build()
-            val (html, baseUrl) = browserClient.newCall(request).execute().use { response ->
-                response.body.string() to response.request.url.toString()
+            // Links on the page resolve against where the redirect led, not the address asked for.
+            val (html, pageUrl) = browserClient.newCall(request).execute().use { response ->
+                response.body.string() to response.request.url
             }
 
             val linkRegex = Regex(
@@ -64,16 +67,8 @@ class CalendarService @Inject constructor(
                 val yearMatch = yearRegex.find(text) ?: continue
                 val year = yearMatch.groupValues[1].toIntOrNull() ?: continue
 
-                val absoluteUrl = if (href.startsWith("http")) {
-                    href
-                } else if (href.startsWith("/")) {
-                    val parsed = java.net.URL(baseUrl)
-                    "${parsed.protocol}://${parsed.host}$href"
-                } else {
-                    val base = baseUrl.substringBeforeLast("/") + "/"
-                    base + href
-                }
-                result[year] = absoluteUrl
+                val absoluteUrl = pageUrl.resolve(href) ?: continue
+                result[year] = absoluteUrl.toString()
             }
             result
         } catch (e: Exception) {
@@ -228,5 +223,13 @@ class CalendarService @Inject constructor(
             }
         }
         return events
+    }
+
+    companion object {
+        /**
+         * TigerDuck's own 307 to the school's academic calendar page. The backend keeps the
+         * target, so the page can move without a release.
+         */
+        const val CALENDAR_PAGE_URL = "https://api.tigerduck.app/links/ntust-calendar"
     }
 }

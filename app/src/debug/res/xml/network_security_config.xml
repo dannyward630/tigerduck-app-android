@@ -59,9 +59,4 @@
             <pin digest="SHA-256">Douxi77vs4G+Ib/BogbTFymEYq0QSFXwSgVCaZcI09Q=</pin>
         </pin-set>
     </domain-config>
-
-    <!-- App's own backend: cleartext still blocked but not pinned. -->
-    <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">r.xinshou.tw</domain>
-    </domain-config>
 </network-security-config>
