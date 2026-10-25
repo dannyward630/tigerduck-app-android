@@ -3,6 +3,8 @@ package org.ntust.app.tigerduck.wear.tile
 import androidx.wear.protolayout.LayoutElementBuilders
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import androidx.compose.ui.graphics.luminance
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,5 +29,13 @@ class NextClassTileLayoutTest {
     fun `an accent the watch can't read falls back to the default blue`() {
         assertEquals(0xFF007AFF.toInt(), tileAccentArgb("not a color"))
         assertEquals(0xFFFF6B35.toInt(), tileAccentArgb("#FF6B35"))
+    }
+
+    @Test
+    fun `a dark accent is lifted until the status line reads on black`() {
+        val argb = tileAccentArgb("#5856D6")
+        val lifted = androidx.compose.ui.graphics.Color(argb)
+        assertTrue(androidx.compose.ui.graphics.Color(0xFF5856D6) != lifted)
+        assertTrue((lifted.luminance() + 0.05f) / 0.05f >= 4.5f)
     }
 }

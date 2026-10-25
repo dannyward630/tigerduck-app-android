@@ -17,6 +17,27 @@ class AccentColorSchemeTest {
     }
 
     @Test
+    fun `an accent that reads on black is kept as it is`() {
+        assertEquals(Color(0xFFFF6B35), readableOnBlack(Color(0xFFFF6B35)))
+        assertEquals(Color(0xFFFFD60A), readableOnBlack(Color(0xFFFFD60A)))
+    }
+
+    @Test
+    fun `a dark accent is lifted until it reads on black, keeping its hue`() {
+        // The iPhone's own Indigo preset: 3.7:1 on black as it is.
+        val indigo = Color(0xFF5856D6)
+        val lifted = readableOnBlack(indigo)
+        assertTrue(contrast(lifted, Color.Black) >= 4.5f)
+        assertTrue(lifted.blue > lifted.red && lifted.blue > lifted.green)
+        assertTrue(contrast(readableOnBlack(Color.Black), Color.Black) >= 4.5f)
+    }
+
+    @Test
+    fun `the primary color is the accent made readable on black`() {
+        assertTrue(contrast(accentColorScheme(Color(0xFF5856D6)).primary, Color.Black) >= 4.5f)
+    }
+
+    @Test
     fun `the accent is the primary color`() {
         assertEquals(Color(0xFFFF6B35), accentColorScheme(Color(0xFFFF6B35)).primary)
     }
@@ -28,7 +49,6 @@ class AccentColorSchemeTest {
             assertTrue("on $accent", contrast(scheme.onPrimary, scheme.primary) >= 4.5f)
         }
         assertTrue(accentColorScheme(Color(0xFFFFD60A)).onPrimary.luminance() < 0.2f)
-        assertEquals(Color.White, accentColorScheme(Color(0xFF1A237E)).onPrimary)
     }
 
     @Test

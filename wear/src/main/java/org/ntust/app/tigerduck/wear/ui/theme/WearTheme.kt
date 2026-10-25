@@ -86,19 +86,37 @@ fun accentTitleBrush(start: Color, gradient: WearAccentGradient?): Brush {
 /**
  * Wear's Material colors with the phone's [accent] as primary, as the iPhone
  * tints its watch app with it (`.accentColor`): buttons, sliders, toggles and
- * the icons on them follow it. Text on the accent and on its dark container is
+ * the icons on them follow it. The accent is [made readable on black][readableOnBlack]
+ * first, as the watch's background is. Text on it and on its dark container is
  * black or white, or a light tone of the accent, whichever reads.
  */
 fun accentColorScheme(accent: Color): ColorScheme {
+    val primary = readableOnBlack(accent)
     val container = lerp(Color.Black, accent, 0.4f)
     val lightAccent = lerp(accent, Color.White, 0.7f)
     return ColorScheme().copy(
-        primary = accent,
-        primaryDim = lerp(accent, Color.Black, 0.2f),
+        primary = primary,
+        primaryDim = lerp(primary, Color.Black, 0.2f),
         primaryContainer = container,
-        onPrimary = readableOn(accent),
+        onPrimary = readableOn(primary),
         onPrimaryContainer = if (contrast(lightAccent, container) >= 4.5f) lightAccent else readableOn(container),
     )
+}
+
+/**
+ * [color] as text and marks on the watch's black take it: itself when it reads there
+ * (4.5:1, WCAG's bar for text), otherwise lifted toward white until it does, its hue kept.
+ * A dark accent, such as the iPhone's own Indigo preset, would otherwise all but vanish.
+ */
+internal fun readableOnBlack(color: Color): Color {
+    if (contrast(color, Color.Black) >= 4.5f) return color
+    var lift = 0.05f
+    while (lift < 1f) {
+        val lifted = lerp(color, Color.White, lift)
+        if (contrast(lifted, Color.Black) >= 4.5f) return lifted
+        lift += 0.05f
+    }
+    return Color.White
 }
 
 /** Black or white, whichever reads better on [background]. */

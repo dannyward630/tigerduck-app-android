@@ -2,6 +2,8 @@ package org.ntust.app.tigerduck.wear.tile
 
 import android.content.Context
 import androidx.concurrent.futures.CallbackToFutureAdapter
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.wear.protolayout.ActionBuilders
 import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
@@ -26,6 +28,7 @@ import org.ntust.app.tigerduck.wear.MainActivity
 import org.ntust.app.tigerduck.wear.R
 import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
+import org.ntust.app.tigerduck.wear.ui.theme.readableOnBlack
 import org.ntust.app.tigerduck.wear.data.WatchSnapshot
 import org.ntust.app.tigerduck.wear.ui.weekdayCaptionRes
 import java.time.LocalDate
@@ -243,6 +246,12 @@ internal fun tileTextLine(text: String, accentArgb: Int?): LayoutElementBuilders
         }
         .build()
 
-/** The phone's accent as the tile paints it; the watch's default blue for one it can't read. */
-internal fun tileAccentArgb(hex: String): Int =
-    runCatching { android.graphics.Color.parseColor(hex) }.getOrDefault(android.graphics.Color.parseColor(SchedulePersistence.DEFAULT_ACCENT))
+/**
+ * The phone's accent as the tile paints it, [made readable on black][readableOnBlack];
+ * the watch's default blue for one it can't read.
+ */
+internal fun tileAccentArgb(hex: String): Int {
+    val accent = runCatching { android.graphics.Color.parseColor(hex) }
+        .getOrDefault(android.graphics.Color.parseColor(SchedulePersistence.DEFAULT_ACCENT))
+    return readableOnBlack(Color(accent)).toArgb()
+}
