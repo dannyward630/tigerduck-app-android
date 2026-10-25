@@ -16,6 +16,7 @@ import org.ntust.app.tigerduck.mail.imap.MailFolders
 import org.ntust.app.tigerduck.mail.imap.MailSessionFactory
 import org.ntust.app.tigerduck.mail.imap.SpecialFolder
 import org.ntust.app.tigerduck.mail.notify.MailNotifier
+import org.ntust.app.tigerduck.mail.index.MailSearchIndex
 import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.store.MailCredentialStore
@@ -47,6 +48,13 @@ class MailAccount @Inject constructor(
      * tests that are not about it.
      */
     private val heldSends: HeldSendStore? = null,
+    /**
+     * The text of every mail downloaded for search, emptied with the cache whenever the account
+     * leaves. The repository empties it too, but only once something has made it: a sign-out
+     * from Settings, or a full reset, in a process that never opened Mail has no repository to
+     * hear it. Absent in tests that are not about it.
+     */
+    private val searchIndex: MailSearchIndex? = null,
 ) {
     private val _signedIn = MutableStateFlow(credentialsOrNull() != null)
     val signedIn: StateFlow<Boolean> = _signedIn.asStateFlow()
@@ -194,6 +202,11 @@ class MailAccount @Inject constructor(
     private fun leaveMailOf(departing: String?, keptBefore: Int = Int.MAX_VALUE) {
         cache.clearAll()
         heldSends?.clear(departing, below = keptBefore)
+        // Kept only when it is no longer the departing student's but the one signed in now, as
+        // the repository's own clearing keeps it: by now the next student may have downloaded
+        // mail of theirs.
+        val left = departing?.lowercase()
+        searchIndex?.clearUnless { owner -> owner != null && owner != left && owner == ownAddress?.lowercase() }
     }
 
     /** A password typed again keeps what the student chose; see [MailStateStore.clearSignIn]. */

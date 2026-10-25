@@ -14,6 +14,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.ntust.app.tigerduck.mail.model.MailAddress
+import org.ntust.app.tigerduck.mail.index.InMemoryMailSearchIndex
 import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import java.io.File
@@ -39,8 +40,13 @@ class MailAccountTest {
     private val heldRoot by lazy { File(heldTmp.root, "held") }
     private val heldSends by lazy { HeldSendStore(heldRoot) }
 
+    private val searchIndex = InMemoryMailSearchIndex()
+
     private fun account() =
-        MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope, heldSends)
+        MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope, heldSends, searchIndex)
+
+    /** Mail of [owner]'s downloaded for search, as the index worker would. */
+    private fun indexMail(owner: String) = assertTrue(searchIndex.open(owner, "INBOX", 1L) { true })
 
     private val heldFields = HeldSendStore.Fields(
         "NEW", "", -1, false, null, null, listOf("amy@x.tw"), emptyList(), emptyList(), "Hi", "Hello",
@@ -228,6 +234,36 @@ class MailAccountTest {
         }
         assertNull(HeldSendStore(heldRoot).orphan("b10000001@mail.ntust.edu.tw"))
         assertFalse(File(heldRoot, "m1").exists())
+    }
+
+    @Test
+    fun `sign-out empties the mail search index, though no repository is there to hear it`() = runTest {
+        // A sign-out from Settings, or a full reset, in a process that never opened Mail: only
+        // the account is there, and the index still holds every downloaded mail's text.
+        val account = account()
+        account.signIn("b10000001", "pw")
+        indexMail("b10000001@mail.ntust.edu.tw")
+
+        account.signOut()
+
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (notifier.cancelledAll == 0) delay(10) }
+        }
+        assertNull(searchIndex.uidValidity("b10000001@mail.ntust.edu.tw", "INBOX"))
+    }
+
+    @Test
+    fun `another student signing in empties the previous one's search index, and the same one signing in again keeps it`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        indexMail("b10000001@mail.ntust.edu.tw")
+
+        assertNull(account.signIn("b10000001", "pw"))
+        assertEquals("their own, still to search", 1L, searchIndex.uidValidity("b10000001@mail.ntust.edu.tw", "INBOX"))
+
+        server.passwords["B10000002"] = "pw"
+        assertNull(account.signIn("b10000002", "pw"))
+        assertNull(searchIndex.uidValidity("b10000001@mail.ntust.edu.tw", "INBOX"))
     }
 
     @Test
