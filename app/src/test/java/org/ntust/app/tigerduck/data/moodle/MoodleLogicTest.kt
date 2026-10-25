@@ -213,6 +213,20 @@ class MoodleLogicTest {
     }
 
     @Test
+    fun `a number grade reads without the zeros ending its decimals, anything else stays whole`() {
+        assertEquals("85", MoodleGrades.shownGrade(grade(1, grade = "85.00")))
+        assertEquals("85.5", MoodleGrades.shownGrade(grade(1, grade = "85.50")))
+        assertEquals("85,5", MoodleGrades.shownGrade(grade(1, grade = "85,50")))
+        assertEquals("0", MoodleGrades.shownGrade(grade(1, grade = "0.00")))
+        assertEquals("-3", MoodleGrades.shownGrade(grade(1, grade = "-3.0")))
+        // A whole number's own zeros are its digits.
+        assertEquals("100", MoodleGrades.shownGrade(grade(1, grade = "100")))
+        assertEquals("A+", MoodleGrades.shownGrade(grade(1, grade = "A+")))
+        assertEquals("95.00 %", MoodleGrades.shownGrade(grade(1, grade = "95.00 %")))
+        assertNull(MoodleGrades.shownGrade(grade(1, grade = null)))
+    }
+
+    @Test
     fun `the maximum shows only beside a number`() {
         assertEquals("100", MoodleGrades.maxText(grade(1, grade = "95.00")))
         assertEquals("12.5", MoodleGrades.maxText(grade(1, grade = "10", max = 12.5)))

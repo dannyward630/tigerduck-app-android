@@ -245,7 +245,13 @@ private fun PageStep(page: WhatsNewPage, isLast: Boolean, animate: Boolean, adva
                             },
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text(page.confirmLabel.resolve()) }
-                        TextButton(onClick = advance, modifier = Modifier.fillMaxWidth()) {
+                        TextButton(
+                            onClick = {
+                                page.onDecline()
+                                advance()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
                             Text(page.declineLabel.resolve())
                         }
                     }

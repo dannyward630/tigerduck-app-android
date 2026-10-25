@@ -172,6 +172,10 @@ class TigerDuckApp : Application(), Configuration.Provider {
         appScope.launch {
             appPreferences.accentColorChanged.collect { wearBridge.publish() }
         }
+        // The watch's course cards follow the interface style.
+        appScope.launch {
+            appPreferences.visualPresetChanged.collect { wearBridge.publish() }
+        }
         // The background sync, reminders, notifications and Live Update follow the sign-in from every page.
         accountSessionEffects.start(appScope)
         // A stored password the school or the library refused goes again once its wait is over.

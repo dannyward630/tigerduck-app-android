@@ -327,6 +327,16 @@ class SchoolMailListViewModel @Inject constructor(
      */
     private var lookedAt: Long? = null
 
+    /**
+     * Per folder whose rows on screen are still the ones [showCached] painted, the date the folder
+     * had then. A load that failed leaves those rows up, and they are a previous visit's, flags
+     * and deletions included, so only a first page from the server that replaces them dates the
+     * folder again ([fetchFirstPage]): not the poll, whose STATUS tells only whether mail arrived,
+     * and not a [MailChecker] check that moves the inbox's stored date meanwhile, which the row
+     * does not show over them. As on the iPhone.
+     */
+    private val cachePainted = mutableMapOf<String, Long>()
+
     init {
         viewModelScope.launch { account.authFailed.collect { authBannerClosed.value = false } }
         viewModelScope.launch { repository.changes.collect(::apply) }
@@ -352,6 +362,7 @@ class SchoolMailListViewModel @Inject constructor(
         forgetSearch()
         lookedAt = null
         staleFolders.clear()
+        cachePainted.clear()
         changedAt.clear()
         listGeneration++
         folderValidity = emptyMap()
@@ -860,8 +871,13 @@ class SchoolMailListViewModel @Inject constructor(
         // takes the mark off when it lands, and should it fail the mark keeps the next appearance
         // fetching the folder again. No fetch from here; the caller's is already on its way.
         val since = changeSeq
-        val pages = _state.value.targets.mapNotNull { folder -> repository.cachedPage(folder)?.let { folder to it } }
-        if (pages.isEmpty() || !stillCurrent(selection, generation)) return
+        val targets = _state.value.targets
+        val pages = targets.mapNotNull { folder -> repository.cachedPage(folder)?.let { folder to it } }
+        if (!stillCurrent(selection, generation)) return
+        // A folder with no cached page has no rows painted for it, so nothing for its date to keep.
+        cachePainted -= targets.toSet()
+        if (pages.isEmpty()) return
+        pages.forEach { (folder, _) -> cachePainted[folder] = checker.fetchedAt(folder) }
         listGeneration++
         // The validity the cached page was read under goes with its cursor: should the first page
         // fail -- offline at startup -- this is the list that gets paged, and without it an older
@@ -909,6 +925,9 @@ class SchoolMailListViewModel @Inject constructor(
             folderValidity = folderValidity + pages.associate { (folder, page) -> folder to page.uidValidity }
             _state.update { it.copy(messages = rowsOf(selection, pages), cursors = cursorsOf(pages), loadState = LoadState.Loaded) }
             lookedAt = clock.now()
+            // The server's rows are on screen now, so the folders show their own dates again.
+            cachePainted -= targets.toSet()
+            showFetchedAt()
             // A mark set before these pages were asked for is answered by them; one set since is not.
             targets.forEach { folder -> if ((staleFolders[folder] ?: 0) <= since) staleFolders.remove(folder) }
             refetchIfChangedSince(targets, since)
@@ -1340,7 +1359,8 @@ class SchoolMailListViewModel @Inject constructor(
      * check that finds nothing new must still move the "Last synced" row, or a time that stands
      * still reads as a page that stopped syncing; All mail is dated by the older of its two
      * folders, so both have to be verified for its row to move. A folder whose check failed keeps
-     * its date. The background [MailChecker] stays the inbox's alone: it is for notifications.
+     * its date, and so does one whose rows a failed load left from the cache ([cachePainted]). The
+     * background [MailChecker] stays the inbox's alone: it is for notifications.
      */
     private suspend fun poll() {
         val s = _state.value
@@ -1350,8 +1370,9 @@ class SchoolMailListViewModel @Inject constructor(
         try {
             if (s.inboxInView) {
                 val status = repository.inboxStatus { stillCurrent(selection, generation) }
-                // The STATUS reached the inbox, whatever the refetch a grown one starts makes of it.
-                s.inboxFolder?.let { dated(it, generation) }
+                // The STATUS reached the inbox, whatever the refetch a grown one starts makes of it;
+                // rows a failed load left from the cache are not dated by it ([cachePainted]).
+                s.inboxFolder?.let { if (it !in cachePainted) dated(it, generation) }
                 val newest = s.messages.filter { it.folder == s.inboxFolder }.maxOfOrNull { it.uid } ?: 0L
                 if (status.uidNext > newest + 1) {
                     // A chip tapped while the STATUS was out has its own load running; the view
@@ -1370,7 +1391,7 @@ class SchoolMailListViewModel @Inject constructor(
                 // moves on. A folder that left the screen is left alone; the next tick polls
                 // whatever is on screen then.
                 repository.status(folder) { stillCurrent(selection, generation) }
-                dated(folder, generation)
+                if (folder !in cachePainted) dated(folder, generation)
             }
             // Every folder on screen answered: a look as good as a page, for the next return.
             lookedAt = clock.now()
@@ -1475,11 +1496,12 @@ class SchoolMailListViewModel @Inject constructor(
 
     /**
      * The date of the folders on screen: the older of All mail's two, and 0 while one of them has
-     * none, as on the iPhone -- a merged list is only as fresh as its staler half. Nothing is on
-     * screen to date before [load] has resolved the folders.
+     * none, as on the iPhone -- a merged list is only as fresh as its staler half. A folder whose
+     * rows are still the cache's shows the date it had when they were painted ([cachePainted]).
+     * Nothing is on screen to date before [load] has resolved the folders.
      */
     private fun showFetchedAt() = _state.update { s ->
-        s.copy(fetchedAt = s.targets.minOfOrNull { checker.fetchedAt(it) } ?: 0L)
+        s.copy(fetchedAt = s.targets.minOfOrNull { cachePainted[it] ?: checker.fetchedAt(it) } ?: 0L)
     }
 
     /** Keyed by (folder, uid), never by UID alone -- the same UID in two folders is two mails. */
