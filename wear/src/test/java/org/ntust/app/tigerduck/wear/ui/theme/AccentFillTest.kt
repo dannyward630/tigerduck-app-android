@@ -58,11 +58,19 @@ class AccentFillTest {
 
     @Test
     fun `every part of a gradient reads on black, not only its ends`() {
-        // Blue to pink: both ends read, but mixed in sRGB the middle drops to 3.7:1.
-        val fill = draw(accentFill(Color(0xFF007AFF), WearAccentGradient(Color(0xFFFF2D55), AccentGradientDirection.LeftToRight)))
+        // Navy to dark red: neither end, nor anything between, reads on black as it is.
+        val fill = draw(accentFill(Color(0xFF1A237E), WearAccentGradient(Color(0xFF8B0000), AccentGradientDirection.LeftToRight)))
         for (x in 2 until 198 step 7) {
             assertTrue("($x)", contrast(Color(fill.getPixel(x, 10)), Color.Black) >= 4.4f)
         }
+    }
+
+    @Test
+    fun `a mirrored fill puts the gradient's ends the other way round`() {
+        // For a canvas the indicator mirrors, so the ends land on the screen's own sides.
+        val fill = draw(accentFill(orange, WearAccentGradient(purple, AccentGradientDirection.LeftToRight), mirrored = true))
+        val left = Color(fill.getPixel(2, 10))
+        assertTrue("purple first: $left", left.blue > left.red)
     }
 
     @Test
