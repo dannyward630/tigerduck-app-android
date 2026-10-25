@@ -23,7 +23,7 @@ import org.ntust.app.tigerduck.data.sharing.ImportedClassTables
 
 /**
  * One row of the class table switcher, which the Class Table tab's menu and the class table's
- * credits label both list: "Import class table", the people in import order, then the user's own
+ * credits label both list: "Add Class Table", the people in import order, then the user's own
  * class table under their student ID, a check on the one shown.
  */
 sealed interface ClassTableSwitcherEntry {

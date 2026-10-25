@@ -1,4 +1,4 @@
-// "Export class table screenshot": the timetable drawn into a PNG off
+// "Export Screenshot": the timetable drawn into a PNG off
 // screen, then handed to the system share sheet.
 
 package org.ntust.app.tigerduck.ui.screen.classtable

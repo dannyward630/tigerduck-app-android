@@ -24,14 +24,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MoreVert
@@ -398,47 +395,27 @@ fun ClassTableScreen(
                                 )
                                 return@DropdownMenu
                             }
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.add_course_title)) },
-                                leadingIcon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                                onClick = { showMoreMenu = false; showAddCourse = true },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.class_table_reset_title)) },
-                                leadingIcon = { Icon(Icons.Filled.Sync, contentDescription = null) },
-                                onClick = { showMoreMenu = false; showResetConfirm = true },
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.class_table_share)) },
-                                leadingIcon = { Icon(Icons.Filled.QrCode, contentDescription = null) },
-                                onClick = {
+                            OwnClassTableMenuItems(
+                                onAddCourse = { showMoreMenu = false; showAddCourse = true },
+                                // Held off with an export, whose chooser would
+                                // open behind the sheet.
+                                shareEnabled = !exporting && shareTerms.isNotEmpty() &&
+                                    ClassTableShare.canName(viewModel.studentId),
+                                onShare = {
                                     showMoreMenu = false
                                     val id = viewModel.studentId
                                     if (id != null && shareTerms.isNotEmpty()) {
                                         sharing = ClassTableShare(id, shareTerms)
                                     }
                                 },
-                                // Held off with an export, whose chooser would
-                                // open behind the sheet.
-                                enabled = !exporting && shareTerms.isNotEmpty() &&
-                                    ClassTableShare.canName(viewModel.studentId),
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.class_table_export_screenshot)) },
-                                leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
-                                onClick = { showMoreMenu = false; exporting = true },
+                                onImport = { showMoreMenu = false; onRequestImport() },
                                 // Only exportable while the grid below is
                                 // drawn; anything else would export a header
                                 // over nothing. Also off while one is in
                                 // flight.
-                                enabled = hasGrid && !exporting,
-                            )
-                            HorizontalDivider()
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.class_table_import)) },
-                                leadingIcon = { Icon(Icons.Filled.QrCodeScanner, contentDescription = null) },
-                                onClick = { showMoreMenu = false; onRequestImport() },
+                                exportEnabled = hasGrid && !exporting,
+                                onExport = { showMoreMenu = false; exporting = true },
+                                onReset = { showMoreMenu = false; showResetConfirm = true },
                             )
                         }
                     }
