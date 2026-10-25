@@ -184,6 +184,9 @@ class HomeBackendSync @Inject constructor(
             val generation = courseIgnoreSync.currentGeneration()
             // What waits to go up goes first, so the snapshot has it.
             retryUnsent()
+            // Every class-table delete asked before the fetch ranks below it, every later one
+            // above: a course reset the snapshot reads lets go of the first only; see applyCourseReset.
+            val beforeFetch = pendingCourseDeletes.stamp()
             // The first-sync mark upload is pinned to the sign-in read here:
             // a sign-out and another sign-in meanwhile must not send these
             // marks as theirs.
@@ -216,7 +219,7 @@ class HomeBackendSync @Inject constructor(
             } else {
                 state.allCourses.value.isNotEmpty()
             }
-            applyCourseReset(result, account)
+            applyCourseReset(result, account, beforeFetch)
             // Not gated on any of the per-category sync toggles: a holiday
             // exception is a notification setting, not course or assignment
             // data, and the categories the user can turn off do not cover
@@ -426,8 +429,12 @@ class HomeBackendSync @Inject constructor(
      * absence of history as a reset and deletes courses the user just added.
      * Remembered for [account] only: after a sign-out it would be the next
      * account's first sync that skipped a reset.
+     *
+     * The reset brings back the courses this phone hid, so the deletes still
+     * waiting to go up from before the fetch ([beforeFetch]) go too: sent on
+     * a later retry, one would take a restored course off the server again.
      */
-    private suspend fun applyCourseReset(result: BackendSyncResult, account: String?) {
+    private suspend fun applyCourseReset(result: BackendSyncResult, account: String?, beforeFetch: Long) {
         val reset = CourseSyncReconciler.coursesReset(
             result.coursesResetAt, prefs.lastSeenCoursesResetAt, prefs.legacyLastCourseSyncAtMs,
         )
@@ -440,6 +447,11 @@ class HomeBackendSync @Inject constructor(
             dataCache.saveDeletedCourseNos(emptySet())
             // In every term: the reconcile would keep a course whose add waits.
             pendingCourseAdds.forgetAll()
+            // Under the adds lock, as a term reset's forgetTerm: a retry waiting behind it then
+            // finds them gone. One asked since the fetch is newer than the reset, and stays.
+            pendingCourseAdds.removing {
+                pendingCourseDeletes.forgetAskedBefore(beforeFetch)
+            }
             Log.i(TAG, "[sync] courses reset detected, wiped manual courses")
         }
         if (authService.isStillSignedInAs(account)) {

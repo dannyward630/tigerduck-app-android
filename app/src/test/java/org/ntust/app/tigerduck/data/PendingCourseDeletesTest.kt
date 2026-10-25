@@ -188,6 +188,51 @@ class PendingCourseDeletesTest {
         assertEquals(listOf("client:1142:MA1010002"), keys().drop(3))
     }
 
+    /**
+     * A course reset made on another device, read from a full sync's snapshot, brings back the
+     * courses this phone's queued deletes took (`HomeBackendSync.applyCourseReset`). Those asked
+     * before the fetch go, in every term, under the adds lock; one asked after it is newer than
+     * the reset the snapshot read, and stays.
+     */
+    @Test
+    fun `a course reset read from another device lets go of the deletes asked before its fetch`() = runTest {
+        answer = { throw IOException("offline") }
+        deletes.send(term, typed)
+        deletes.send("1142", typed)
+        val fetch = deletes.stamp()
+        deletes.send(term, other)
+
+        adds.removing { deletes.forgetAskedBefore(fetch) }
+        assertEquals(mapOf(term to listOf(other)), queued())
+
+        // Sent again, either would have taken a restored course off the server.
+        answer = {}
+        deletes.retry()
+        assertEquals(listOf("client:1151:PE1010003"), keys().drop(3))
+    }
+
+    /**
+     * The class table stamps a removal as the student acts and keeps it only after its own writes
+     * (`ClassTableViewModel.removeAddedCourse`). A reset's let-go landing in between must still
+     * take it: kept after, it would go up and take the restored course off the server.
+     */
+    @Test
+    fun `a delete asked before a reset's fetch but kept after its let-go is not kept`() = runTest {
+        val asked = deletes.stamp()
+        val alsoAsked = deletes.stamp()
+        val fetch = deletes.stamp()
+        adds.removing { deletes.forgetAskedBefore(fetch) }
+
+        deletes.keep(term, typed, asked)
+        deletes.send(term, other, alsoAsked)
+        assertEquals(emptyMap<String, List<String>>(), queued())
+        assertEquals(emptyList<String>(), keys())
+
+        // One asked after the fetch is newer than the reset, and goes.
+        deletes.send(term, other)
+        assertEquals(listOf("client:1151:PE1010003"), keys())
+    }
+
     /** Account-scoped: a sign-out's wipe takes the queue with the rest of the user's data. */
     @Test
     fun `a sign-out leaves no delete to send as the next account`() = runTest {

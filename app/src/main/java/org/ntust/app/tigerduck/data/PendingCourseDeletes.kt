@@ -32,8 +32,10 @@ internal fun interface CourseDeleter {
  * reconcile keeps the course out of the term until it lands
  * (`CourseSyncReconciler.reconcileSemester`'s `graceCourseNos`). It goes
  * once the DELETE lands, once the course is added back (the add's force key
- * would otherwise lose to a DELETE landing after it), or once its term is
- * reset, which deletes the term's rows itself. Account-scoped: kept with the
+ * would otherwise lose to a DELETE landing after it), once its term is
+ * reset, which deletes the term's rows itself, or once a full sync reads a
+ * course reset made on another device, which brought the course back
+ * ([forgetAskedBefore]). Account-scoped: kept with the
  * user data and wiped with it at sign-out, and each request pinned to the
  * sign-in it was read under, as the adds are, so a sign-out and another
  * sign-in while it waits for its header cannot send it as the next account.
@@ -85,6 +87,10 @@ class PendingCourseDeletes internal constructor(
     // Whether [lastStamp] has been raised above every stamp the file held when
     // this process first needed one; read and set under [mutex].
     private var seeded = false
+
+    // Every delete asked before this a course reset let go of ([forgetAskedBefore]),
+    // so one asked before it and kept only after is not kept; read and set under [mutex].
+    private var forgottenBefore = Long.MIN_VALUE
 
     /**
      * The moment of a class-table action, for [send] and [forget]: the clock,
@@ -196,6 +202,23 @@ class PendingCourseDeletes internal constructor(
         edit(dataCache.writeGeneration()) { it - semester }
     }
 
+    /**
+     * Lets go of every delete asked before [stamp], one [stamp] took before a full sync's fetch:
+     * that snapshot read a course reset made on another device, which brought back the courses
+     * they took (`HomeBackendSync.applyCourseReset`). One asked after it is newer than the reset
+     * and stays. Call it inside [PendingCourseAdds.removing], as [forgetTerm]: a retry waiting
+     * behind it then finds them gone, rather than taking a restored course off the server again.
+     * A removal stamped before [stamp] whose own writes outlast this, as the class table's may
+     * before it keeps its delete, finds it let go too: [keep] and [send] then keep nothing.
+     */
+    suspend fun forgetAskedBefore(stamp: Long) {
+        mutex.withLock { forgottenBefore = maxOf(forgottenBefore, stamp) }
+        edit(dataCache.writeGeneration()) { pending ->
+            pending.mapValues { (_, entries) -> entries.filterValues { queuedAt -> queuedAt > stamp } }
+                .filterValues { it.isNotEmpty() }
+        }
+    }
+
     // Under the adds lock, with the delete read again there: false once the
     // data was wiped or the account changed since [generation] and [signIn]
     // were read, when the delete was another account's and is not sent as
@@ -241,9 +264,15 @@ class PendingCourseDeletes internal constructor(
         lastStamp.updateAndGet { last -> maxOf(last, largest) }
     }
 
-    // A delete asked again keeps the later moment: it is the newer removal.
+    // A delete asked again keeps the later moment: it is the newer removal. One
+    // asked before a course reset let go of the deletes is not kept at all;
+    // called under [mutex], by [edit].
     private fun Map<String, Map<String, Long>>.with(semester: String, courseNo: String, queuedAt: Long) =
-        this + (semester to this[semester].orEmpty().let { it + (courseNo to maxOf(it[courseNo] ?: 0L, queuedAt)) })
+        if (queuedAt < forgottenBefore) {
+            this
+        } else {
+            this + (semester to this[semester].orEmpty().let { it + (courseNo to maxOf(it[courseNo] ?: 0L, queuedAt)) })
+        }
 
     private fun Map<String, Map<String, Long>>.without(
         semester: String,
