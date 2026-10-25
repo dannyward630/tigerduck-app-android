@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -41,9 +40,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -52,11 +50,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.roundToInt
 
 // The pieces the feature demos are built from: a small screen to draw in, a
 // clock that loops through a demo's steps, a fingertip that taps, and grey
@@ -107,7 +103,7 @@ internal fun MockScreen(
         modifier
             .width(width)
             .height(height)
-            .onGloballyPositioned { targets.origin = it.positionInRoot() }
+            .onPlaced { targets.screen = it }
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
@@ -118,28 +114,34 @@ internal fun MockScreen(
 }
 
 /**
- * Where the parts a demo's fingertip taps were laid out ([tapTarget]), so the
- * fingertip lands on them whatever the fonts make of the rows above: a
- * position worked out in dp drifts on a phone whose CJK font is taller.
+ * The parts a demo's fingertip taps ([tapTarget]), so the fingertip lands on
+ * them whatever the fonts make of the rows above: a position worked out in dp
+ * drifts on a phone whose CJK font is taller. Their coordinates are live, so
+ * they're measured where they are now: a graphics layer sliding a screen in
+ * moves a target without laying it out again.
  */
 internal class TapTargets {
-    /** The mock screen's top left, in the root's px. */
-    var origin by mutableStateOf(Offset.Zero)
+    /** The mock screen, once it's placed. */
+    var screen by mutableStateOf<LayoutCoordinates?>(null)
 
-    /** Each target's center, in the root's px. */
-    val centers = mutableStateMapOf<String, Offset>()
+    /** Each target, once it's placed. */
+    val placed = mutableStateMapOf<String, LayoutCoordinates>()
 
-    /** [id]'s center from the screen's top left, in px; null until it's laid out. */
-    fun center(id: String): Offset? = centers[id]?.let { it - origin }
+    /** [id]'s center as seen from [from], the mock screen's top left unless given, in px; null until both are placed. */
+    fun center(id: String, from: LayoutCoordinates? = screen): Offset? {
+        val target = placed[id]?.takeIf { it.isAttached } ?: return null
+        val here = from?.takeIf { it.isAttached } ?: return null
+        return here.localPositionOf(target, Offset(target.size.width / 2f, target.size.height / 2f))
+    }
 }
 
 internal val LocalTapTargets = staticCompositionLocalOf<TapTargets?> { null }
 
-/** Marks what the fingertip tapping [id] lands on. For parts that stay put: a graphics layer's movement isn't seen. */
+/** Marks what the fingertip tapping [id] lands on. */
 @Composable
 internal fun Modifier.tapTarget(id: String): Modifier {
     val targets = LocalTapTargets.current ?: return this
-    return onGloballyPositioned { targets.centers[id] = it.boundsInRoot().center }
+    return onPlaced { targets.placed[id] = it }
 }
 
 /**
@@ -159,21 +161,28 @@ internal fun Fingertip(x: Dp, y: Dp, shown: () -> Float, press: () -> Float) {
     FingertipAt({ Offset(x.toPx(), y.toPx()) }, shown, press)
 }
 
-/** A fingertip on the part marked [target] with [tapTarget]; nowhere until that's laid out. */
+/** A fingertip on the part marked [target] with [tapTarget], wherever that is now; nowhere until it's placed. */
 @Composable
 internal fun Fingertip(target: String, shown: () -> Float, press: () -> Float) {
     val targets = LocalTapTargets.current
-    FingertipAt({ targets?.center(target) ?: Offset(-1_000f, -1_000f) }, shown, press)
+    FingertipAt({ here -> targets?.center(target, from = here) ?: Offset(-1_000f, -1_000f) }, shown, press)
 }
 
+/**
+ * The fingertip's ring and dot, centered on what [at] gives, from where the
+ * fingertip is placed. Moved by their layers, which follow the demo's clock,
+ * so a target that's moving is followed.
+ */
 @Composable
-private fun FingertipAt(at: Density.() -> Offset, shown: () -> Float, press: () -> Float) {
+private fun FingertipAt(at: Density.(here: LayoutCoordinates?) -> Offset, shown: () -> Float, press: () -> Float) {
     val color = MaterialTheme.colorScheme.onSurface
+    var here by remember { mutableStateOf<LayoutCoordinates?>(null) }
     Box(
         Modifier
-            .offset { at().let { IntOffset((it.x - 14.dp.toPx()).roundToInt(), (it.y - 14.dp.toPx()).roundToInt()) } }
+            .onPlaced { here = it }
             .size(28.dp)
             .graphicsLayer {
+                at(here).let { translationX = it.x - 14.dp.toPx(); translationY = it.y - 14.dp.toPx() }
                 val p = press()
                 alpha = shown() * (1f - p) * 0.9f
                 scaleX = 1f + p * 1.2f
@@ -183,9 +192,9 @@ private fun FingertipAt(at: Density.() -> Offset, shown: () -> Float, press: () 
     )
     Box(
         Modifier
-            .offset { at().let { IntOffset((it.x - 14.dp.toPx()).roundToInt(), (it.y - 14.dp.toPx()).roundToInt()) } }
             .size(28.dp)
             .graphicsLayer {
+                at(here).let { translationX = it.x - 14.dp.toPx(); translationY = it.y - 14.dp.toPx() }
                 alpha = shown() * 0.9f
                 val s = 1f - press() * 0.15f
                 scaleX = s

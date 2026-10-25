@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -19,7 +18,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,12 +30,13 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.ntust.app.tigerduck.R
@@ -199,15 +201,19 @@ private fun SliderFingertip(t: () -> Float, percent: () -> Float, min: Float, ma
     val targets = LocalTapTargets.current
     // The track runs across the card: 18dp in from each side of the screen.
     val trackWidth = MockScreenWidth - 36.dp
+    var here by remember { mutableStateOf<LayoutCoordinates?>(null) }
     Box(
         Modifier
-            .offset {
-                val center = targets?.center(track) ?: return@offset IntOffset(-1_000, -1_000)
-                val x = center.x + trackWidth.toPx() * (((percent() - min) / (max - min)).coerceIn(0f, 1f) - 0.5f)
-                IntOffset((x - 14.dp.toPx()).roundToInt(), (center.y - 14.dp.toPx()).roundToInt())
-            }
+            .onPlaced { here = it }
             .size(28.dp)
-            .graphicsLayer { alpha = window(t(), from, to) * 0.9f }
+            .graphicsLayer {
+                // Measured each frame, from where the fingertip is placed: the screen may be sliding in.
+                val center = targets?.center(track, from = here) ?: Offset(-1_000f, -1_000f)
+                val x = center.x + trackWidth.toPx() * (((percent() - min) / (max - min)).coerceIn(0f, 1f) - 0.5f)
+                translationX = x - 14.dp.toPx()
+                translationY = center.y - 14.dp.toPx()
+                alpha = window(t(), from, to) * 0.9f
+            }
             .clip(CircleShape)
             .background(color.copy(alpha = 0.3f)),
     )

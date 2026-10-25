@@ -39,14 +39,15 @@ import androidx.compose.ui.unit.sp
 import org.ntust.app.tigerduck.R
 
 /**
- * "Want to see these again?" — the first of a release's pages: Settings ›
- * What's new shows them again any time, which the demo walks to, from More.
+ * "Want to see the new features page again?" — the first of a release's
+ * pages: Settings › What's new shows them again any time, which the demo
+ * walks to, from More.
  */
 internal fun replayPage() = WhatsNewPage.Feature(
     id = "whats-new-replay",
     visual = WhatsNewVisual.Custom { animate -> ReplayDemo(animate) },
     title = WhatsNewText(
-        en = "Want to see these again?",
+        en = "Want to see the new features page again?",
         zhHant = "想再次看到以下的新功能描述？",
     ),
     body = WhatsNewText(
@@ -60,7 +61,7 @@ private val replayDemoDescription = WhatsNewText(
     zhHant = "示範：從「更多」打開設定，往下滑到「新功能說明」，新功能說明就會再出現一次。",
 )
 
-private const val REPLAY_LOOP_MILLIS = 3_000
+private const val REPLAY_LOOP_MILLIS = 3_500
 
 @Composable
 private fun ReplayDemo(animate: Boolean) {

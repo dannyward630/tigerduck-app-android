@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,10 +63,30 @@ internal class PathStop(
     val scrolled: Boolean = true,
 )
 
-// The way's steps, as parts of the whole loop: More, then each screen on the way.
-private const val MORE_PART = 0.08f
-private const val STOP_PART = 0.16f
-private const val END = 0.96f
+// The way's steps, in milliseconds, whatever the feature's own part: More's
+// tap, each screen on the way, a screen sliding in, and the way back to More.
+private const val MORE_MILLIS = 1_000
+private const val STOP_MILLIS = 2_000
+private const val SLIDE_MILLIS = 360
+private const val END_MILLIS = 450
+
+/**
+ * When a path demo's steps happen, as parts (0 to 1) of its loop: More, then
+ * [stops] screens, then the feature's [featureMillis], then the way back.
+ */
+internal class PathTiming(stops: Int, featureMillis: Int) {
+    val loopMillis = MORE_MILLIS + STOP_MILLIS * stops + featureMillis + END_MILLIS
+    val more = part(MORE_MILLIS)
+    val stop = part(STOP_MILLIS)
+    val slide = part(SLIDE_MILLIS)
+    val pathEnd = more + stop * stops
+    val end = 1f - part(END_MILLIS)
+
+    /** Where screen [index] on the way starts. */
+    fun stopFrom(index: Int) = more + stop * index
+
+    private fun part(millis: Int) = millis.toFloat() / loopMillis
+}
 
 private val RowHeight = 26.dp
 private val TitleHeight = 28.dp
@@ -90,49 +111,53 @@ internal fun PathDemo(
     below: (@Composable (feature: () -> Float) -> Unit)? = null,
     feature: @Composable BoxScope.(feature: () -> Float) -> Unit,
 ) {
-    val pathEnd = MORE_PART + STOP_PART * stops.size
-    val loopMillis = (featureMillis / (END - pathEnd)).toInt()
-    val clock = demoClock(animate, loopMillis, still = pathEnd + featureStill * (END - pathEnd))
+    val timing = remember(stops.size, featureMillis) { PathTiming(stops.size, featureMillis) }
+    val more = timing.more
+    val stopPart = timing.stop
+    val pathEnd = timing.pathEnd
+    val end = timing.end
+    val clock = demoClock(animate, timing.loopMillis, still = pathEnd + featureStill * (end - pathEnd))
     val t = { clock.value }
-    val featureT = { ((t() - pathEnd) / (END - pathEnd)).coerceIn(0f, 1f) }
+    val featureT = { ((t() - pathEnd) / (end - pathEnd)).coerceIn(0f, 1f) }
     // Everything on the way goes as the loop ends, back to More.
-    val ending = { 1f - span(t(), END, 0.995f) }
+    val ending = { 1f - span(t(), end, end + (1f - end) * 0.875f) }
     Column(Modifier.demoDescription(description), horizontalAlignment = Alignment.CenterHorizontally) {
         MockScreen {
             when (start) {
                 PathStart.SettingsGear -> MoreWithGear()
                 is PathStart.MoreCard -> MoreWithCard(start.feature)
             }
+            // A screen's moments, as parts of its own step: the list scrolls, then a row is tapped.
             stops.forEachIndexed { index, stop ->
-                val from = MORE_PART + STOP_PART * index
+                val from = timing.stopFrom(index)
                 StopScreen(
                     stop,
                     Modifier.graphicsLayer {
-                        translationX = (1f - span(t(), from - 0.03f, from) * ending()) * size.width
+                        translationX = (1f - span(t(), from - timing.slide, from) * ending()) * size.width
                     },
-                    scroll = { if (stop.scrolled) span(t(), from + 0.02f, from + 0.08f) else 0f },
-                    tapped = { window(t(), from + 0.11f, from + STOP_PART + 0.02f) },
+                    scroll = { if (stop.scrolled) span(t(), from + stopPart * 0.12f, from + stopPart * 0.5f) else 0f },
+                    tapped = { window(t(), from + stopPart * 0.69f, from + stopPart * 1.12f) },
                 )
             }
             Box(
                 Modifier
                     .fillMaxSize()
-                    .graphicsLayer { translationX = (1f - span(t(), pathEnd - 0.03f, pathEnd) * ending()) * size.width },
+                    .graphicsLayer { translationX = (1f - span(t(), pathEnd - timing.slide, pathEnd) * ending()) * size.width },
             ) { feature(featureT) }
             // The taps on the way: More's gear or card, then each screen's row.
             when (start) {
                 PathStart.SettingsGear ->
-                    Fingertip(196.dp, 22.dp, shown = { window(t(), 0.01f, MORE_PART) }, press = { span(t(), 0.05f, MORE_PART - 0.01f) })
+                    Fingertip(196.dp, 22.dp, shown = { window(t(), more * 0.12f, more) }, press = { span(t(), more * 0.62f, more * 0.88f) })
                 is PathStart.MoreCard ->
-                    Fingertip("more card", shown = { window(t(), 0.01f, MORE_PART) }, press = { span(t(), 0.05f, MORE_PART - 0.01f) })
+                    Fingertip("more card", shown = { window(t(), more * 0.12f, more) }, press = { span(t(), more * 0.62f, more * 0.88f) })
             }
             stops.forEachIndexed { index, stop ->
-                val from = MORE_PART + STOP_PART * index
+                val from = timing.stopFrom(index)
                 Fingertip(
                     110.dp,
                     rowCenter(stop),
-                    shown = { window(t(), from + 0.08f, from + STOP_PART - 0.01f) },
-                    press = { span(t(), from + 0.11f, from + 0.14f) },
+                    shown = { window(t(), from + stopPart * 0.5f, from + stopPart * 0.94f) },
+                    press = { span(t(), from + stopPart * 0.69f, from + stopPart * 0.88f) },
                 )
             }
         }

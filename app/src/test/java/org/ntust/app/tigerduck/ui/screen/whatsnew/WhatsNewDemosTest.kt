@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.ui.screen.whatsnew
 import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
@@ -13,9 +14,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getBoundsInRoot
@@ -54,9 +59,10 @@ class WhatsNewDemosTest {
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
     /** A demo: its page, the start of its description, and text it shows that TalkBack mustn't hear separately. */
-    private class Demo(val page: WhatsNewPage, val description: WhatsNewText, val hidden: List<String>)
+    private class Demo(val page: WhatsNewPage, val description: WhatsNewText, val hidden: List<WhatsNewText>)
 
-    private fun string(id: Int) = composeRule.activity.getString(id)
+    /** An app string: the same in both of the demo's languages, which follow the app's locale for these. */
+    private fun string(id: Int) = composeRule.activity.getString(id).let { WhatsNewText(en = it, zhHant = it) }
 
     private val demos: List<Demo> by lazy {
         listOf(
@@ -68,18 +74,23 @@ class WhatsNewDemosTest {
             Demo(
                 moodleCoursePage(),
                 WhatsNewText(en = "Demo: a course opens", zhHant = "示範：從課表點開課程"),
-                listOf("Without the Moodle app", string(R.string.course_detail_members_label)),
+                listOf(WhatsNewText(en = "Without the Moodle app", zhHant = "沒有 Moodle App 時"), string(R.string.course_detail_members_label)),
             ),
             Demo(moodleAssignmentPage(), WhatsNewText(en = "Demo: an assignment opens", zhHant = "示範：點開作業"), listOf(string(R.string.school_mail_attachments))),
             Demo(
                 classTableSharePage(),
                 WhatsNewText(en = "Demo: on one phone", zhHant = "示範：在一支手機的課表"),
-                listOf("Scanned in TigerDuck", "Any QR scanner", "TAT works too", string(R.string.class_table_share_tat_compatible)),
+                listOf(
+                    WhatsNewText(en = "Scanned in TigerDuck", zhHant = "用 TigerDuck 掃描"),
+                    WhatsNewText(en = "Any QR scanner", zhHant = "用任何 QR code 掃描器"),
+                    WhatsNewText(en = "TAT works too", zhHant = "也支援臺科 TAT"),
+                    string(R.string.class_table_share_tat_compatible),
+                ),
             ),
             Demo(
                 libraryPage(isSignedIn = { false }),
                 WhatsNewText(en = "Demo: the library pass opens", zhHant = "示範：從底部功能列"),
-                listOf("From More", string(R.string.library_virtual_pass_title)),
+                listOf(WhatsNewText(en = "From More", zhHant = "從「更多」"), string(R.string.library_virtual_pass_title)),
             ),
             Demo(
                 bottomBarEditorPage(),
@@ -94,7 +105,11 @@ class WhatsNewDemosTest {
             Demo(
                 emptyClassroomPage(),
                 WhatsNewText(en = "Demo: Empty classroom opens from More", zhHant = "示範：從「更多」打開空教室"),
-                listOf("Along the same floor", "Over to another building", string(R.string.feature_empty_classroom)),
+                listOf(
+                    WhatsNewText(en = "Along the same floor", zhHant = "本樓平移"),
+                    WhatsNewText(en = "Over to another building", zhHant = "去其他棟"),
+                    string(R.string.feature_empty_classroom),
+                ),
             ),
             Demo(
                 displaySizePage(),
@@ -136,7 +151,7 @@ class WhatsNewDemosTest {
             composeRule.onAllNodesWithContentDescription(demo.description.resolve(lang), substring = true)
                 .assertCountEquals(1)
             demo.hidden.forEach { text ->
-                composeRule.onAllNodesWithText(text, substring = true).assertCountEquals(0)
+                composeRule.onAllNodesWithText(text.resolve(lang), substring = true).assertCountEquals(0)
             }
         }
     }
@@ -221,6 +236,44 @@ class WhatsNewDemosTest {
         val center = targets!!.center("switch")!!
         assertEquals(60f * density, center.x, 1f)
         assertEquals(110f * density, center.y, 1f)
+    }
+
+    @Test
+    fun `a tap target in a screen that slides in is found where it comes to rest, each loop`() {
+        var targets: TapTargets? = null
+        // Where a fingertip drawn in the same screen is placed: it slides with it.
+        var fingertip: LayoutCoordinates? = null
+        // Starts off the screen to the right, as a screen on the way does.
+        var away by mutableFloatStateOf(1f)
+        composeRule.setContent {
+            Box(Modifier.padding(start = 30.dp, top = 40.dp)) {
+                MockScreen {
+                    targets = LocalTapTargets.current
+                    Box(Modifier.fillMaxSize().graphicsLayer { translationX = away * size.width }) {
+                        Box(Modifier.padding(start = 50.dp, top = 100.dp).size(20.dp).tapTarget("switch"))
+                        Box(Modifier.size(1.dp).onPlaced { fingertip = it })
+                    }
+                }
+            }
+        }
+        val density = composeRule.density.density
+        repeat(2) {
+            away = 1f
+            composeRule.waitForIdle()
+            // From the fingertip's place, the target is where it is in the screen, however far that has slid.
+            for (slid in listOf(0.5f, 0f)) {
+                away = slid
+                composeRule.waitForIdle()
+
+                val fromFingertip = targets!!.center("switch", from = fingertip)!!
+                assertEquals(60f * density, fromFingertip.x, 1f)
+                assertEquals(110f * density, fromFingertip.y, 1f)
+            }
+
+            val fromScreen = targets!!.center("switch")!!
+            assertEquals(60f * density, fromScreen.x, 1f)
+            assertEquals(110f * density, fromScreen.y, 1f)
+        }
     }
 
     @Test
