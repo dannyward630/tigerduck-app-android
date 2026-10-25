@@ -324,11 +324,23 @@ class ArchivesTest {
         assertEquals(ArchiveFormat.ZIP, format(0x50, 0x4B, 0x05, 0x06))
         assertEquals(ArchiveFormat.SEVEN_Z, format(0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C))
         assertEquals(ArchiveFormat.GZIP, format(0x1F, 0x8B))
-        assertEquals(ArchiveFormat.BZIP2, format(0x42, 0x5A, 0x68))
+        // "BZh", a block size from 1 to 9, then a block's magic, or the end's in an empty one.
+        assertEquals(ArchiveFormat.BZIP2, format(0x42, 0x5A, 0x68, 0x39, 0x31, 0x41, 0x59, 0x26, 0x53, 0x59))
+        assertEquals(ArchiveFormat.BZIP2, format(0x42, 0x5A, 0x68, 0x31, 0x17, 0x72, 0x45, 0x38, 0x50, 0x90))
+        assertNull(format(0x42, 0x5A, 0x68))
         assertEquals(ArchiveFormat.XZ, format(0xFD, 0x37, 0x7A, 0x58, 0x5A, 0x00))
         val tar = ByteArray(512).also { "ustar".toByteArray().copyInto(it, 257) }
         assertEquals(ArchiveFormat.TAR, Archives.format(tar))
         assertNull(format(0x52, 0x61, 0x72, 0x21))
+    }
+
+    @Test
+    fun `a tar whose first file's name starts with BZh is a tar, not a bzip2`() {
+        val file = temp.newFile("notes.tar").also { f -> f.outputStream().use { tar(it) { file("BZh notes.txt", "hi".toByteArray()) } } }
+
+        val listing = listing(file)
+        assertEquals(ArchiveFormat.TAR, listing.format)
+        assertEquals(listOf("BZh notes.txt"), listing.items.map { it.path })
     }
 
     @Test

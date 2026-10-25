@@ -118,7 +118,7 @@ class MoodleFileIntentTest {
         assertTrue(launchMoodleFile(viewer, file("moodle_files/a1/5/p90/s1/1/hw4.pdf"), "application/pdf"))
         assertEquals(FileViewerActivity::class.java.name, launched!!.component?.className)
         assertTrue(launchMoodleFile(viewer, file("moodle_files/a1/5/p90/s1/1/hw4.doc"), "application/msword"))
-        assertEquals(Intent.ACTION_CHOOSER, launched!!.action)
+        assertEquals(Intent.ACTION_CHOOSER, launched.action)
 
         val cached = File(context.cacheDir, "TigerDuckCache/moodle/B1/courses/5/grades.json").apply {
             parentFile!!.mkdirs()

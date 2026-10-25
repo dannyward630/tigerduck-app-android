@@ -278,7 +278,7 @@ internal object PackedClassTableCode {
                 repeat(n) {
                     val (tail, next) = getTail(r, level)
                     level = next
-                    if (last != null && tail <= last!!) malformed()
+                    if (last != null && tail <= last) malformed()
                     last = tail
                     // A head and tail the head rule splits otherwise, as 3N with G115701, are another course's.
                     val courseNo = heads[head] + tail

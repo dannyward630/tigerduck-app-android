@@ -238,7 +238,7 @@ class MediaStoreDownloadTransfer(
                     return@coroutineScope Hop.Redirect(next, response.headers("Set-Cookie"))
                 }
                 if (!response.isSuccessful) throw IOException("HTTP ${response.code}")
-                val body = response.body ?: throw IOException("no body")
+                val body = response.body
                 val total = body.contentLength().takeIf { it >= 0 }
                 Hop.Saved((save ?: ::saveToDownloads)(plan, total, body.byteStream(), progress))
             }

@@ -65,15 +65,20 @@ fun WearApp() {
     }
 
     // Re-apply the phone's chosen locale when it changes mid-session.
-    // attachBaseContext on the next instance will read the persisted tag and
-    // apply it; recreating the activity is the cleanest way to swap locale
-    // without rebuilding compose state by hand.
+    // attachBaseContext on the next instance applies the start-up copy of the
+    // tag; recreating the activity is the cleanest way to swap locale without
+    // rebuilding compose state by hand. WearLocaleSwitch keeps it from looping.
     val activity = context.findActivity()
     val configuration = LocalConfiguration.current
     LaunchedEffect(snapshot.languageTag) {
-        val tag = snapshot.languageTag ?: return@LaunchedEffect
-        val current = configuration.locales[0]?.toLanguageTag() ?: ""
-        if (current.equals(tag, ignoreCase = true)) return@LaunchedEffect
+        val tag = snapshot.languageTag
+        val switch = WearLocaleSwitch.process
+        if (switch.step(tag, configuration.locales[0]?.toLanguageTag()) != WearLocaleSwitch.Step.Recreate) {
+            return@LaunchedEffect
+        }
+        // False when a newer sync changed the language meanwhile: its own run of this effect decides.
+        if (tag == null || !repo.syncLanguageTag(tag)) return@LaunchedEffect
+        switch.recreating(tag)
         activity?.recreate()
     }
 
