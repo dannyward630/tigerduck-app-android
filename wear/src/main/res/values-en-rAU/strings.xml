@@ -374,7 +374,7 @@
     <string name="coming_soon_message">This feature is not implemented yet. Stay tuned!</string>
     <string name="coming_soon_title">Coming soon</string>
     <string name="common_auto_sign_in_failed">Auto sign-in failed</string>
-    <string name="common_automatic">Automatic</string>
+    <string name="common_automatic">Auto</string>
     <string name="common_disabled">Disabled</string>
     <string name="common_enabled">Enabled</string>
     <string name="common_not_signed_in">Not signed in</string>
