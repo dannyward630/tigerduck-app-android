@@ -28,7 +28,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -60,6 +59,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.network.CourseService
 import org.ntust.app.tigerduck.network.model.CourseSearchResult
+import org.ntust.app.tigerduck.ui.component.DetentSheetState
 import org.ntust.app.tigerduck.ui.component.scrollbar
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 import org.ntust.app.tigerduck.util.formatCredits
@@ -92,11 +92,11 @@ private fun containsHan(text: String): Boolean = text.any {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddCourseSheet(
+internal fun AddCourseSheet(
     semester: String,
     existingCourseNos: Set<String>,
     courseService: CourseService,
-    sheetState: SheetState,
+    sheetState: DetentSheetState,
     /**
      * Returns true iff the course was actually persisted. The sheet uses this
      * to gate [sessionAddedCourseNos]: a rejected add (a triple-period
@@ -121,7 +121,7 @@ fun AddCourseSheet(
     // overlay can re-center as the user drags between partial and full.
     val visibleHeightDp by remember(sheetState, containerHeightPx) {
         derivedStateOf {
-            val offset = runCatching { sheetState.requireOffset() }.getOrDefault(0f)
+            val offset = sheetState.offset.takeUnless { it.isNaN() } ?: 0f
             with(density) { (containerHeightPx - offset).coerceAtLeast(0f).toDp() }
         }
     }

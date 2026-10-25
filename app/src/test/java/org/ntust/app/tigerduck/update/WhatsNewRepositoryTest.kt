@@ -9,6 +9,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.ntust.app.tigerduck.data.model.WhatsNewContent
 import org.ntust.app.tigerduck.data.model.WhatsNewSummaryItem
+import org.ntust.app.tigerduck.ui.screen.whatsnew.WhatsNewIcons
 import java.io.File
 
 class WhatsNewRepositoryTest {
@@ -104,6 +105,17 @@ class WhatsNewRepositoryTest {
         }.toSet()
         assertEquals(versions, WhatsNewRepository.parseAll(json, languageTag = "en").keys)
         assertEquals(versions, WhatsNewRepository.parseAll(json, languageTag = "zh-Hant-TW").keys)
+    }
+
+    @Test
+    fun `every icon the shipped whatsnew json names has a glyph of its own`() {
+        val json = File("src/main/assets/whatsnew.json").readText()
+        val unknown = listOf("en", "zh-Hant-TW").flatMap { tag ->
+            WhatsNewRepository.parseAll(json, languageTag = tag).values.flatMap { summary ->
+                summary.items.mapNotNull { it.icon }.filterNot(WhatsNewIcons::knows)
+            }
+        }.distinct()
+        assertEquals(emptyList<String>(), unknown)
     }
 
     @Test

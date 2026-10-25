@@ -318,16 +318,18 @@ class InAppBrowserScreenTest {
         composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
 
         composeRule.onNodeWithText("100%").assertExists()
-        composeRule.onNodeWithContentDescription(string(R.string.browser_zoom_in)).performClick()
         composeRule.onNodeWithText(string(R.string.browser_desktop_site)).performClick()
         composeRule.onNodeWithText(string(R.string.browser_appearance_dark)).performClick()
+        // Last: zooming steps the rest of the menu aside for a second (BrowserZoomPeekTest).
+        composeRule.onNodeWithContentDescription(string(R.string.browser_zoom_in)).performClick()
         composeRule.onNodeWithText(
             "Auto matches the browser's colors to the page. Pages that support dark mode switch right away, without reloading.",
         ).assertDoesNotExist()
+        composeRule.mainClock.advanceTimeBy(1_500)
         composeRule.onNodeWithText(string(R.string.browser_print)).performScrollTo().assertExists()
         composeRule.onNodeWithText(string(R.string.browser_downloads)).performScrollTo().assertExists()
 
-        assertEquals(listOf("zoomIn", "desktop true", "appearance DARK"), calls)
+        assertEquals(listOf("desktop true", "appearance DARK", "zoomIn"), calls)
     }
 
     @Test

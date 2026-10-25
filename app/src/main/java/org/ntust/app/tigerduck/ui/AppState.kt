@@ -30,7 +30,7 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CourseNameScale
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.data.preferences.DisplayScale
-import org.ntust.app.tigerduck.data.preferences.LibraryTabAddMigration
+import org.ntust.app.tigerduck.data.preferences.LibraryTabKeepMigration
 import org.ntust.app.tigerduck.data.preferences.effectiveCloudSyncEnabled
 import org.ntust.app.tigerduck.library.FlipToLibraryDefaultOffMigration
 import org.ntust.app.tigerduck.library.FlipToLibrarySetting
@@ -75,6 +75,36 @@ internal fun effectiveCloudSyncWrite(requested: Boolean, flavor: String = BuildC
  */
 internal fun keepsPreviousDefaultTabs(hasCompletedOnboarding: Boolean, hasStoredTabs: Boolean): Boolean =
     hasCompletedOnboarding && !hasStoredTabs
+
+/**
+ * The bottom bar's one-time fix-ups at startup, in their order.
+ */
+internal fun settleBottomBar(prefs: AppPreferences) {
+    // An untouched bottom bar isn't stored — it follows
+    // AppFeature.defaultTabs — so when 2.3.0 swapped the default's Calendar
+    // for Mail, an existing user's bar would change under them. Keep their
+    // old default once instead; 2.3.0's What's New asks whether to
+    // switch. Checked once per install: a fresh install's first launch,
+    // before onboarding, has nothing to keep and gets the new default.
+    if (!prefs.previousDefaultTabsChecked) {
+        if (keepsPreviousDefaultTabs(prefs.hasCompletedOnboarding, prefs.hasStoredConfiguredTabs)) {
+            prefs.configuredTabs = AppFeature.previousDefaultTabs
+        }
+        prefs.previousDefaultTabsChecked = true
+    }
+    // TODO: remove in a future release once unfinished features ship (or
+    // enough time has passed that no users still have these entries
+    // persisted). Strips features that were once tab-pinnable but route
+    // to a placeholder, so the bottom bar never shows a "coming soon" tab.
+    val saved = prefs.configuredTabs
+    val cleaned = saved.filterNot { it in AppFeature.unfinishedFeatures }
+    if (cleaned != saved) {
+        prefs.configuredTabs = cleaned.ifEmpty { AppFeature.defaultTabs }
+    }
+    // After the pin above, so a pre-2.3.0 bar it stores stays as it is:
+    // What's New asks about Mail, then about Library.
+    LibraryTabKeepMigration.runIfNeeded(prefs)
+}
 
 @Singleton
 class AppState @Inject constructor(
@@ -138,30 +168,7 @@ class AppState @Inject constructor(
             DataMigration.Outcome.NeedsUserReset -> _needsUserReset.value = true
             DataMigration.Outcome.Ok -> Unit
         }
-        // An untouched bottom bar isn't stored — it follows
-        // AppFeature.defaultTabs — so when 2.3.0 swapped the default's Calendar
-        // for Mail, an existing user's bar would change under them. Keep their
-        // old default once instead; 2.3.0's What's New asks whether to
-        // switch. Checked once per install: a fresh install's first launch,
-        // before onboarding, has nothing to keep and gets the new default.
-        if (!prefs.previousDefaultTabsChecked) {
-            if (keepsPreviousDefaultTabs(prefs.hasCompletedOnboarding, prefs.hasStoredConfiguredTabs)) {
-                prefs.configuredTabs = AppFeature.previousDefaultTabs
-            }
-            prefs.previousDefaultTabsChecked = true
-        }
-        // TODO: remove in a future release once unfinished features ship (or
-        // enough time has passed that no users still have these entries
-        // persisted). Strips features that were once tab-pinnable but route
-        // to a placeholder, so the bottom bar never shows a "coming soon" tab.
-        val saved = prefs.configuredTabs
-        val cleaned = saved.filterNot { it in AppFeature.unfinishedFeatures }
-        if (cleaned != saved) {
-            prefs.configuredTabs = cleaned.ifEmpty { AppFeature.defaultTabs }
-        }
-        // After the pin and the clean-up above, so a pre-2.3.0 bar the pin
-        // stores gets Library too, and a slot the clean-up frees counts.
-        LibraryTabAddMigration.runIfNeeded(prefs)
+        settleBottomBar(prefs)
         // Before flipToLibraryEnabled is read below, so the switch it may
         // store is the one this process starts with.
         FlipToLibraryDefaultOffMigration.runIfNeeded(prefs)

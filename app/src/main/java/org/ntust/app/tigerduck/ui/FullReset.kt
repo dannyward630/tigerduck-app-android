@@ -51,9 +51,9 @@ internal class FullReset(
         // Same for the pre-2.3.0 bottom-bar check: once the user onboards
         // again, the next launch would otherwise pin the old Calendar bar
         // on what is now a fresh start. And for the Library one, which
-        // would add Library back to a bar the user has set up since.
+        // would pin the bar without Library there, as it does for an upgrade.
         prefs.previousDefaultTabsChecked = true
-        prefs.libraryTabAddChecked = true
+        prefs.libraryTabKeepChecked = true
         // Nothing from before the reset is left for it to read.
         prefs.flipToLibraryDefaultOffChecked = true
     }

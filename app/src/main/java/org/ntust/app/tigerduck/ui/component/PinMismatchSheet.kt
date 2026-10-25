@@ -27,11 +27,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -147,10 +145,7 @@ fun PinMismatchSheet(
 ) {
     var detailsOpen by rememberSaveable(host) { mutableStateOf(false) }
     var certificatesOpen by rememberSaveable(host) { mutableStateOf(false) }
-    ModalBottomSheet(
-        onDismissRequest = onCancel,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-    ) {
+    DetentSheet(onDismissed = onCancel) {
         Column(
             Modifier
                 .fillMaxWidth()

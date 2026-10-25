@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Rodyti vertimą</string>
     <string name="settings_color_theme">Spalvų tema</string>
     <string name="settings_delete_account">Paskyros ištrynimas</string>
-    <string name="settings_display_size_app_footer">Keičia programos dydžius papildomai prie telefono ekrano ir šrifto dydžio.</string>
     <string name="settings_display_size_app_section">Programoje</string>
-    <string name="settings_display_size_preview_footer">Programa persijungia į naują dydį, kai atleidžiate slankiklį.</string>
     <string name="settings_display_size_text">Teksto dydis</string>
     <string name="settings_display_size_title">Ekrano ir teksto dydis</string>
     <string name="settings_display_size_ui">Ekrano dydis</string>
-    <string name="settings_display_size_widget_footer">Kiekvieno valdiklio dydį nustato pagrindinis ekranas. Šie dydžiai keičia tai, kas jame rodoma.</string>
     <string name="settings_display_size_widget_section">Valdikliai</string>
     <string name="settings_feedback_bug_report">Atsiliepimai / Pranešti apie klaidą</string>
     <string name="settings_flip_to_library_summary">Apverskite telefoną ekranu žemyn, kad atidarytumėte bibliotekos QR.</string>

@@ -6,8 +6,6 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,11 +24,12 @@ import androidx.navigation.compose.composable
 private val slideSpec = tween<IntOffset>(300, easing = FastOutSlowInEasing)
 
 /**
- * Whether moving from [from] to [to] slides rather than crossfades. Tabs are
- * siblings with no left-to-right order, so moving onto a tab — or, going
- * back, off one — keeps the fade; every other push and pop slides. A
- * bottom-bar tap ([tabTapped]) always fades: tapping the first tab from a
- * pushed screen pops back to it, which would otherwise read as a back.
+ * Whether moving from [from] to [to] slides rather than swapping at once.
+ * Tabs are siblings with no left-to-right order, so moving onto a tab — or,
+ * going back, off one — swaps the page in a frame, as iOS's tab bar does;
+ * every other push and pop slides. A bottom-bar tap ([tabTapped]) always
+ * swaps: tapping the first tab from a pushed screen pops back to it, which
+ * would otherwise read as a back.
  */
 internal fun slidesBetween(
     from: String?,
@@ -70,26 +69,30 @@ internal fun AnimatedContentTransitionScope<NavBackStackEntry>.slides(
     tabTapped = tabTap.made(initialState.id, targetState.id),
 )
 
+// A tab swaps at once. The crossfade it had faded the page it left out faster than it faded the
+// new one in, so for a moment both were part see-through over the background: a flash before
+// the switch.
+
 /** The opened screen comes in from the end edge. */
 internal fun AnimatedContentTransitionScope<NavBackStackEntry>.pushEnter(tabRoutes: Set<String>, tabTap: TabTap): EnterTransition =
-    if (slides(isPop = false, tabRoutes, tabTap)) slideIntoContainer(SlideDirection.Start, slideSpec) else fadeIn(tween(150))
+    if (slides(isPop = false, tabRoutes, tabTap)) slideIntoContainer(SlideDirection.Start, slideSpec) else EnterTransition.None
 
 /** The screen underneath drifts a quarter width towards the start. */
 internal fun AnimatedContentTransitionScope<NavBackStackEntry>.pushExit(tabRoutes: Set<String>, tabTap: TabTap): ExitTransition =
-    if (slides(isPop = false, tabRoutes, tabTap)) slideOutOfContainer(SlideDirection.Start, slideSpec) { it / 4 } else fadeOut(tween(100))
+    if (slides(isPop = false, tabRoutes, tabTap)) slideOutOfContainer(SlideDirection.Start, slideSpec) { it / 4 } else ExitTransition.None
 
 /** The screen underneath drifts back from a quarter width out. */
 internal fun AnimatedContentTransitionScope<NavBackStackEntry>.popEnter(tabRoutes: Set<String>, tabTap: TabTap): EnterTransition =
-    if (slides(isPop = true, tabRoutes, tabTap)) slideIntoContainer(SlideDirection.End, slideSpec) { it / 4 } else fadeIn(tween(150))
+    if (slides(isPop = true, tabRoutes, tabTap)) slideIntoContainer(SlideDirection.End, slideSpec) { it / 4 } else EnterTransition.None
 
 /** The closed screen leaves by the end edge; a back swipe drags it there. */
 internal fun AnimatedContentTransitionScope<NavBackStackEntry>.popExit(tabRoutes: Set<String>, tabTap: TabTap): ExitTransition =
-    if (slides(isPop = true, tabRoutes, tabTap)) slideOutOfContainer(SlideDirection.End, slideSpec) else fadeOut(tween(100))
+    if (slides(isPop = true, tabRoutes, tabTap)) slideOutOfContainer(SlideDirection.End, slideSpec) else ExitTransition.None
 
 /**
  * A [composable] destination painted with the theme background. Many screens
- * leave their background to the outer Scaffold, which a fade hid; while two
- * screens slide past each other, one would show through the other.
+ * leave their background to the outer Scaffold; while two screens slide past
+ * each other, one would show through the other.
  */
 internal fun NavGraphBuilder.page(
     route: String,

@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Zobraziť preklad</string>
     <string name="settings_color_theme">Farebná téma</string>
     <string name="settings_delete_account">Odstránenie účtu</string>
-    <string name="settings_display_size_app_footer">Mení veľkosti v aplikácii nad rámec veľkosti zobrazenia a písma nastavenej v telefóne.</string>
     <string name="settings_display_size_app_section">V aplikácii</string>
-    <string name="settings_display_size_preview_footer">Aplikácia prejde na novú veľkosť, keď pustíte posúvač.</string>
     <string name="settings_display_size_text">Veľkosť textu</string>
     <string name="settings_display_size_title">Veľkosť zobrazenia a textu</string>
     <string name="settings_display_size_ui">Veľkosť zobrazenia</string>
-    <string name="settings_display_size_widget_footer">Veľkosť každého widgetu určuje plocha. Tieto veľkosti menia to, čo sa v ňom zobrazuje.</string>
     <string name="settings_display_size_widget_section">Widgety</string>
     <string name="settings_feedback_bug_report">Spätná väzba / Nahlásenie problému</string>
     <string name="settings_flip_to_library_summary">Otočte telefón obrazovkou nadol a otvoríte QR knižnice.</string>

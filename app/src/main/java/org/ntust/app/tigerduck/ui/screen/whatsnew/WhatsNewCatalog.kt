@@ -21,5 +21,19 @@ object WhatsNewCatalog {
             schoolMailPage(appState),
             mailBottomBarPage(appState),
         ),
+        30 to listOf(
+            moodleCoursePage(),
+            moodleAssignmentPage(),
+            classTableSharePage(),
+            libraryPage(isSignedIn = { appState.isLibraryLoggedIn }),
+            libraryBottomBarPage(
+                isSignedIn = { appState.isLibraryLoggedIn },
+                tabs = { appState.configuredTabs },
+                setTabs = { appState.configuredTabs = it },
+            ),
+            mailNotificationsPage(),
+            emptyClassroomPage(),
+            displaySizePage(),
+        ),
     )
 }

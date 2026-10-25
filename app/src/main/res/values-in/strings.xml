@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Tampilkan terjemahan</string>
     <string name="settings_color_theme">Tema warna</string>
     <string name="settings_delete_account">Hapus akun</string>
-    <string name="settings_display_size_app_footer">Mengubah ukuran aplikasi di atas ukuran tampilan dan font ponsel Anda.</string>
     <string name="settings_display_size_app_section">Di aplikasi</string>
-    <string name="settings_display_size_preview_footer">Aplikasi beralih ke ukuran baru saat Anda melepas penggeser.</string>
     <string name="settings_display_size_text">Ukuran teks</string>
     <string name="settings_display_size_title">Ukuran tampilan dan teks</string>
     <string name="settings_display_size_ui">Ukuran tampilan</string>
-    <string name="settings_display_size_widget_footer">Layar utama menentukan seberapa besar setiap widget. Ukuran ini mengubah apa yang ditampilkan di dalamnya.</string>
     <string name="settings_display_size_widget_section">Widget</string>
     <string name="settings_feedback_bug_report">Umpan balik / Laporkan masalah</string>
     <string name="settings_flip_to_library_summary">Balik ponsel dengan layar menghadap bawah untuk membuka QR perpustakaan.</string>

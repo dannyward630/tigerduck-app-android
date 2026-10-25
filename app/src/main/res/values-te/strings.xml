@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">అనువాదాన్ని చూపించు</string>
     <string name="settings_color_theme">రంగు థీమ్</string>
     <string name="settings_delete_account">అకౌంట్ తొలగించు</string>
-    <string name="settings_display_size_app_footer">ఫోన్ డిస్‌ప్లే మరియు ఫాంట్ పరిమాణంపై యాప్ పరిమాణాలను మారుస్తుంది.</string>
     <string name="settings_display_size_app_section">యాప్‌లో</string>
-    <string name="settings_display_size_preview_footer">స్లయిడర్‌ను వదలగానే యాప్ కొత్త పరిమాణానికి మారుతుంది.</string>
     <string name="settings_display_size_text">టెక్స్ట్ పరిమాణం</string>
     <string name="settings_display_size_title">డిస్‌ప్లే మరియు టెక్స్ట్ పరిమాణం</string>
     <string name="settings_display_size_ui">డిస్‌ప్లే పరిమాణం</string>
-    <string name="settings_display_size_widget_footer">ప్రతి విడ్జెట్ పరిమాణాన్ని హోమ్ స్క్రీన్ నిర్ణయిస్తుంది. ఈ పరిమాణాలు విడ్జెట్ లోపల కనిపించే వాటిని మారుస్తాయి.</string>
     <string name="settings_display_size_widget_section">విడ్జెట్‌లు</string>
     <string name="settings_feedback_bug_report">ఫీడ్‌బ్యాక్ / సమస్య నివేదించు</string>
     <string name="settings_flip_to_library_summary">లైబ్రరీ QR తెరవడానికి ఫోన్‌ని స్క్రీన్ కిందకు పెట్టి తిప్పండి.</string>

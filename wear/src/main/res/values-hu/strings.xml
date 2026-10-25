@@ -1084,13 +1084,10 @@
     <string name="settings_classroom_mandarin_display_translated">Fordítás megjelenítése</string>
     <string name="settings_color_theme">Színtéma</string>
     <string name="settings_delete_account">Fiók törlése</string>
-    <string name="settings_display_size_app_footer">A telefon megjelenítési és betűméretén felül módosítja az alkalmazás méreteit.</string>
     <string name="settings_display_size_app_section">Az alkalmazásban</string>
-    <string name="settings_display_size_preview_footer">Az alkalmazás akkor vált az új méretre, amikor elengeded a csúszkát.</string>
     <string name="settings_display_size_text">Szövegméret</string>
     <string name="settings_display_size_title">Megjelenítési és szövegméret</string>
     <string name="settings_display_size_ui">Megjelenítési méret</string>
-    <string name="settings_display_size_widget_footer">Az egyes widgetek méretét a kezdőképernyő határozza meg. Ezek a méretek azt módosítják, ami bennük megjelenik.</string>
     <string name="settings_display_size_widget_section">Widgetek</string>
     <string name="settings_feedback_bug_report">Visszajelzés / Hibabejelentés</string>
     <string name="settings_flip_to_library_summary">Fordítsd az okostelefont képernyővel lefelé a könyvtári QR-kód megnyitásához.</string>

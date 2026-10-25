@@ -174,5 +174,35 @@
         { "icon": "sparkles", "title": "What's new page fixed", "body": "It no longer bounces after a swipe up, and stays clear of the status bar in landscape or split screen." }
       ]
     }
+  },
+  "30": {
+    "zh-Hant": {
+      "title": "2.4.0 新功能",
+      "items": [
+        { "icon": "grades", "title": "Moodle 新功能", "body": "在 App 裡就能查看課程公告、成績、課堂成員、課程教材與作業詳細資料。" },
+        { "icon": "share", "title": "課表分享", "body": "用 QR code 或連結分享課表，對方用 TigerDuck 或任何掃描器都能打開。" },
+        { "icon": "mail", "title": "校園信箱功能增強", "body": "通知可以依來源關閉，例如臺科公告欄與 Moodle 繳交通知，也能設定勿擾時段。" },
+        { "icon": "theme", "title": "更多主題顏色", "body": "新增漸層色，也可以自訂顏色。" },
+        { "icon": "classroom", "title": "空教室查看", "body": "介面更好懂，還會自動推薦離你最近的空教室。" },
+        { "icon": "sync", "title": "TigerSync 與伺服器同步優化", "body": "與 TigerSync 及其他伺服器的同步更穩定。" },
+        { "icon": "privacy", "title": "TLS pin 改從 TigerSync 取得", "body": "學校網站更換憑證時，不必等 App 更新就能繼續安全連線。" },
+        { "icon": "textsize", "title": "自訂介面與文字大小", "body": "App 與小工具的介面和文字大小都能自己調整。" },
+        { "icon": "sparkles", "title": "介面顯示優化", "body": "許多畫面的排版與動畫更順暢。" }
+      ]
+    },
+    "en": {
+      "title": "What's new in 2.4.0",
+      "items": [
+        { "icon": "grades", "title": "More from Moodle", "body": "See course announcements, grades, classmates, course materials and assignment details right in the app." },
+        { "icon": "share", "title": "Share your class table", "body": "Share it as a QR code or a link. It opens in TigerDuck or in any QR scanner." },
+        { "icon": "mail", "title": "School Mail, upgraded", "body": "Turn notifications off by source, such as the NTUST bulletin board and Moodle submission notices, and set quiet hours." },
+        { "icon": "theme", "title": "More theme colors", "body": "Gradients, plus colors of your own." },
+        { "icon": "classroom", "title": "Empty classrooms", "body": "A clearer layout that suggests the nearest free room." },
+        { "icon": "sync", "title": "Better syncing", "body": "Syncing with TigerSync and the other servers is more reliable." },
+        { "icon": "privacy", "title": "TLS pins from TigerSync", "body": "When a school site changes its certificate, secure connections keep working without waiting for an app update." },
+        { "icon": "textsize", "title": "Choose your sizes", "body": "Set the size of the app's and widgets' layout and text." },
+        { "icon": "sparkles", "title": "Display improvements", "body": "Smoother layouts and animations across the app." }
+      ]
+    }
   }
 }

@@ -113,14 +113,21 @@ enum class AppFeature(val id: String) {
          * restores. Calendar until 2.3.0, when Mail took its place — an
          * existing user who never customized keeps Calendar (see
          * [previousDefaultTabs]) and is asked about Mail in What's New.
-         * Library joined when its opt-in switch went away;
-         * [org.ntust.app.tigerduck.data.preferences.LibraryTabAddMigration]
-         * adds it to a stored bar with room.
+         * Library joined in 2.4.0, when its opt-in switch went away; an
+         * existing user who never customized keeps the bar without it (see
+         * [defaultTabsBeforeLibrary]) and is asked about Library in What's New.
          */
         val defaultTabs = listOf(HOME, CLASS_TABLE, SCHOOL_MAIL, LIBRARY)
 
         /** [defaultTabs] before 2.3.0, kept for installs that never customized. */
         val previousDefaultTabs = listOf(HOME, CLASS_TABLE, CALENDAR)
+
+        /**
+         * [defaultTabs] in 2.3.x, before Library joined, kept for installs that
+         * never customized; see
+         * [org.ntust.app.tigerduck.data.preferences.LibraryTabKeepMigration].
+         */
+        val defaultTabsBeforeLibrary = listOf(HOME, CLASS_TABLE, SCHOOL_MAIL)
 
         /** The most tabs a user can pin; the bottom bar adds MORE after them. */
         const val MAX_CUSTOM_TABS = 4
