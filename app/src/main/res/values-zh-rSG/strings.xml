@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">第 %1$s 节</string>
     <string name="a11y_empty_classroom_same_room">同一间教室</string>
     <string name="a11y_empty_classroom_walk_minutes">步行约 %1$d 分钟</string>
+    <string name="a11y_file_viewer_page">第 %1$d 页，共 %2$d 页</string>
     <string name="a11y_rankings_trend_chart">各学期 GPA 趋势</string>
     <string name="a11y_rankings_trend_no_selection">未选择学期</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">关闭</string>
     <string name="action_confirm">确认</string>
     <string name="action_continue">继续</string>
+    <string name="action_delete">删除</string>
     <string name="action_done">完成</string>
     <string name="action_go_to_settings">前往设置</string>
     <string name="action_got_it">收到！</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">历年成绩</string>
     <string name="feature_settings">设置</string>
     <string name="feature_settings_short">设置</string>
+    <string name="file_viewer_cannot_show">无法在这里显示此文件。</string>
+    <string name="file_viewer_open_elsewhere">用其他 App 打开</string>
+    <string name="file_viewer_text_truncated">仅显示此文件的前 %1$s。</string>
     <string name="first_trigger_flip_to_library_keep">保持开启</string>
     <string name="first_trigger_flip_to_library_message">看起来你刚刚将手机翻面。这个手势可以快速打开图书馆 QR，要保留这个功能吗？</string>
     <string name="first_trigger_flip_to_library_title">翻面快速打开图书馆 QR</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">显示与文字大小</string>
     <string name="settings_display_size_ui">显示大小</string>
     <string name="settings_display_size_widget_section">小组件</string>
+    <string name="settings_downloaded_files_delete_all">删除所有已下载的文件</string>
+    <string name="settings_downloaded_files_delete_all_message">下次打开 Moodle 文件和邮件附件时，会重新下载。</string>
+    <string name="settings_downloaded_files_delete_all_title">要删除所有已下载的文件吗？</string>
+    <string name="settings_downloaded_files_footer">在 TigerDuck 浏览器下载的文件会保存到手机的“下载”文件夹，不会在这里删除。</string>
+    <string name="settings_downloaded_files_images">课表图片</string>
+    <string name="settings_downloaded_files_mail">邮件附件</string>
+    <string name="settings_downloaded_files_moodle">Moodle 文件</string>
+    <string name="settings_downloaded_files_title">已下载的文件</string>
     <string name="settings_feedback_bug_report">回馈/问题回报</string>
     <string name="settings_flip_to_library_summary">将手机屏幕朝下即可打开图书馆 QR</string>
     <string name="settings_flip_to_library_title">翻转显示图书馆 QR</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">在课表首页显示教室</string>
     <string name="settings_sign_out_imported_tables">导入的课表也会一并删除。</string>
     <string name="settings_sign_out_unsynced_data">未通过 TigerSync 同步的数据将会删除。</string>
+    <string name="settings_storage_browser_data">网站数据</string>
+    <string name="settings_storage_browser_data_delete_message">在 TigerDuck 浏览器访问过的网站，可能会要求你重新登录。</string>
+    <string name="settings_storage_browser_data_delete_title">要删除网站数据吗？</string>
+    <string name="settings_storage_delete_kind">删除%@</string>
+    <string name="settings_storage_title">存储空间</string>
+    <string name="settings_storage_total">总计</string>
     <string name="settings_sync_brief_description">TigerSync 可让你将所选信息同步至所有已开启 TigerSync 的设备。未启用 TigerSync 的信息仅保留在此设备上。</string>
     <string name="settings_sync_disabled_note">关闭同步后，为了发送作业提醒，TigerDuck 服务器仍会收到你的学号、Moodle token 和此设备的推送凭证</string>
     <string name="settings_sync_status_off">关闭</string>

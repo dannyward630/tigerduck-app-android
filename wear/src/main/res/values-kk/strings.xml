@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">%1$s сабақ</string>
     <string name="a11y_empty_classroom_same_room">Сол аудитория</string>
     <string name="a11y_empty_classroom_walk_minutes">Жаяу шамамен %1$d мин</string>
+    <string name="a11y_file_viewer_page">%1$d/%2$d бет</string>
     <string name="a11y_rankings_trend_chart">Семестр бойынша GPA үрдісі</string>
     <string name="a11y_rankings_trend_no_selection">Семестр таңдалмаған</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Жабу</string>
     <string name="action_confirm">Растау</string>
     <string name="action_continue">Жалғастыру</string>
+    <string name="action_delete">Жою</string>
     <string name="action_done">Дайын</string>
     <string name="action_go_to_settings">Параметрлерге өту</string>
     <string name="action_got_it">Түсінікті</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Бағалар</string>
     <string name="feature_settings">Параметрлер</string>
     <string name="feature_settings_short">Параметрлер</string>
+    <string name="file_viewer_cannot_show">Бұл файлды мұнда көрсету мүмкін емес.</string>
+    <string name="file_viewer_open_elsewhere">Басқа қолданбада ашу</string>
+    <string name="file_viewer_text_truncated">Бұл файлдың алғашқы %1$s көрсетілуде.</string>
     <string name="first_trigger_flip_to_library_keep">Қосулы қалдыру</string>
     <string name="first_trigger_flip_to_library_message">Сіз телефонды аударғанын байқадық. Бұл қимыл кітапхана QR кодын жылдам ашуға мүмкіндік береді. Осы мүмкіндікті қалдырасыз ба?</string>
     <string name="first_trigger_flip_to_library_title">Кітапхана QR кодын ашу үшін аударыңыз</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Интерфейс пен мәтін өлшемі</string>
     <string name="settings_display_size_ui">Интерфейс өлшемі</string>
     <string name="settings_display_size_widget_section">Виджеттер</string>
+    <string name="settings_downloaded_files_delete_all">Барлық жүктелген файлдарды жою</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle файлдары мен пошта тіркемелері келесі ашқанда қайта жүктеледі.</string>
+    <string name="settings_downloaded_files_delete_all_title">Барлық жүктелген файлдарды жою керек пе?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck браузерінде жүктелген файлдар телефонның «Жүктеулер» қалтасында сақталады және мұнда жойылмайды.</string>
+    <string name="settings_downloaded_files_images">Сабақ кестесінің суреттері</string>
+    <string name="settings_downloaded_files_mail">Пошта тіркемелері</string>
+    <string name="settings_downloaded_files_moodle">Moodle файлдары</string>
+    <string name="settings_downloaded_files_title">Жүктелген файлдар</string>
     <string name="settings_feedback_bug_report">Пікір / Мәселені хабарлау</string>
     <string name="settings_flip_to_library_summary">Кітапхана QR-ын ашу үшін телефонды экраны төмен қаратып аудар.</string>
     <string name="settings_flip_to_library_title">Кітапхана QR-ын көрсету үшін аудар</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Кестеде аудиторияларды көрсету</string>
     <string name="settings_sign_out_imported_tables">Импортталған сабақ кестелері де жойылады.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync-пен синхрондалмаған деректер жойылады.</string>
+    <string name="settings_storage_browser_data">Сайт деректері</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck браузерінде ашқан сайттар қайта кіруді сұрауы мүмкін.</string>
+    <string name="settings_storage_browser_data_delete_title">Сайт деректерін жою керек пе?</string>
+    <string name="settings_storage_delete_kind">Жою: %@</string>
+    <string name="settings_storage_title">Жад</string>
+    <string name="settings_storage_total">Барлығы</string>
     <string name="settings_sync_brief_description">TigerSync таңдалған ақпаратты барлық құрылғылар арасында синхрондауға мүмкіндік береді. Синхрондалмаған ақпарат тек осы құрылғыда қалады.</string>
     <string name="settings_sync_disabled_note">Синхрондау өшірулі болса да, тапсырма еске салғыштарын жіберу үшін TigerDuck сервері студент ID-іңізді, Moodle токеніңізді және осы құрылғының push тіркелгі деректерін алады</string>
     <string name="settings_sync_status_off">Өшірулі</string>

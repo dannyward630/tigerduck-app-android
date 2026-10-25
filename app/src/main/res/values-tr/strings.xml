@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Ders saati %1$s</string>
     <string name="a11y_empty_classroom_same_room">Aynı derslik</string>
     <string name="a11y_empty_classroom_walk_minutes">Yaklaşık %1$d dk yürüme</string>
+    <string name="a11y_file_viewer_page">Sayfa %1$d / %2$d</string>
     <string name="a11y_rankings_trend_chart">Döneme göre GPA trendi</string>
     <string name="a11y_rankings_trend_no_selection">Dönem seçilmedi</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Kapat</string>
     <string name="action_confirm">Onayla</string>
     <string name="action_continue">Devam</string>
+    <string name="action_delete">Sil</string>
     <string name="action_done">Tamam</string>
     <string name="action_go_to_settings">Ayarlara git</string>
     <string name="action_got_it">Anladım</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Notlar</string>
     <string name="feature_settings">Ayarlar</string>
     <string name="feature_settings_short">Ayarlar</string>
+    <string name="file_viewer_cannot_show">Bu dosya burada gösterilemiyor.</string>
+    <string name="file_viewer_open_elsewhere">Başka bir uygulamada aç</string>
+    <string name="file_viewer_text_truncated">Bu dosyanın ilk %1$s kısmı gösteriliyor.</string>
     <string name="first_trigger_flip_to_library_keep">Etkin tut</string>
     <string name="first_trigger_flip_to_library_message">Telefonunuzu çevirdiğinizi fark ettik. Bu hareket kütüphane QR\'ını hızlıca açabilir. Bu özelliği tutmak ister misiniz?</string>
     <string name="first_trigger_flip_to_library_title">Kütüphane QR\'ını açmak için çevir</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Ekran ve metin boyutu</string>
     <string name="settings_display_size_ui">Ekran boyutu</string>
     <string name="settings_display_size_widget_section">Widget\'lar</string>
+    <string name="settings_downloaded_files_delete_all">İndirilen tüm dosyaları sil</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle dosyaları ve e-posta ekleri bir sonraki açışınızda yeniden indirilir.</string>
+    <string name="settings_downloaded_files_delete_all_title">İndirilen tüm dosyalar silinsin mi?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck tarayıcısında indirilen dosyalar telefonunuzun İndirilenler klasörüne kaydedilir ve buradan silinmez.</string>
+    <string name="settings_downloaded_files_images">Ders programı görselleri</string>
+    <string name="settings_downloaded_files_mail">E-posta ekleri</string>
+    <string name="settings_downloaded_files_moodle">Moodle dosyaları</string>
+    <string name="settings_downloaded_files_title">İndirilen dosyalar</string>
     <string name="settings_feedback_bug_report">Geri bildirim / Sorun bildir</string>
     <string name="settings_flip_to_library_summary">Kütüphane QR\'ını açmak için telefonu ekran aşağı gelecek şekilde çevir.</string>
     <string name="settings_flip_to_library_title">Kütüphane QR\'ını göstermek için çevir</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Ders programında derslikleri göster</string>
     <string name="settings_sign_out_imported_tables">İçe aktarılan ders programları da silinecek.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync ile senkronize edilmemiş veriler silinecek.</string>
+    <string name="settings_storage_browser_data">Web sitesi verileri</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck tarayıcısında ziyaret ettiğiniz siteler yeniden oturum açmanızı isteyebilir.</string>
+    <string name="settings_storage_browser_data_delete_title">Web sitesi verileri silinsin mi?</string>
+    <string name="settings_storage_delete_kind">Sil: %@</string>
+    <string name="settings_storage_title">Depolama</string>
+    <string name="settings_storage_total">Toplam</string>
     <string name="settings_sync_brief_description">TigerSync, seçtiğiniz bilgileri tüm cihazlarınızda senkronize etmenizi sağlar. Etkinleştirilmemiş bilgiler yalnızca bu cihazda kalır.</string>
     <string name="settings_sync_disabled_note">Senkronizasyon kapalıyken de TigerDuck sunucusu, ödev hatırlatmaları gönderebilmek için öğrenci numaranızı, Moodle jetonunuzu ve bu cihazın push kimlik bilgilerini almaya devam eder</string>
     <string name="settings_sync_status_off">Kapalı</string>

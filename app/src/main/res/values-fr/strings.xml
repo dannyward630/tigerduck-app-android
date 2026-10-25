@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Période %1$s</string>
     <string name="a11y_empty_classroom_same_room">Même salle</string>
     <string name="a11y_empty_classroom_walk_minutes">Environ %1$d min à pied</string>
+    <string name="a11y_file_viewer_page">Page %1$d sur %2$d</string>
     <string name="a11y_rankings_trend_chart">Tendance du GPA par semestre</string>
     <string name="a11y_rankings_trend_no_selection">Aucun semestre sélectionné</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Fermer</string>
     <string name="action_confirm">Confirmer</string>
     <string name="action_continue">Continuer</string>
+    <string name="action_delete">Supprimer</string>
     <string name="action_done">Terminé</string>
     <string name="action_go_to_settings">Ouvrir les paramètres</string>
     <string name="action_got_it">Compris</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Notes</string>
     <string name="feature_settings">Paramètres</string>
     <string name="feature_settings_short">Paramètres</string>
+    <string name="file_viewer_cannot_show">Ce fichier ne peut pas être affiché ici.</string>
+    <string name="file_viewer_open_elsewhere">Ouvrir dans une autre app</string>
+    <string name="file_viewer_text_truncated">Affichage des premiers %1$s de ce fichier.</string>
     <string name="first_trigger_flip_to_library_keep">Garder activé</string>
     <string name="first_trigger_flip_to_library_message">On a remarqué que tu as retourné ton téléphone. Ce geste peut ouvrir rapidement le QR de la bibliothèque. Tu veux garder cette fonctionnalité ?</string>
     <string name="first_trigger_flip_to_library_title">Retourner pour ouvrir le QR de la bibliothèque</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Taille de l\'affichage et du texte</string>
     <string name="settings_display_size_ui">Taille de l\'affichage</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Supprimer tous les fichiers téléchargés</string>
+    <string name="settings_downloaded_files_delete_all_message">Les fichiers Moodle et les pièces jointes des e-mails seront de nouveau téléchargés la prochaine fois que vous les ouvrirez.</string>
+    <string name="settings_downloaded_files_delete_all_title">Supprimer tous les fichiers téléchargés ?</string>
+    <string name="settings_downloaded_files_footer">Les fichiers téléchargés dans le navigateur TigerDuck sont enregistrés dans le dossier Téléchargements de votre téléphone et ne sont pas supprimés ici.</string>
+    <string name="settings_downloaded_files_images">Images de l\'emploi du temps</string>
+    <string name="settings_downloaded_files_mail">Pièces jointes des e-mails</string>
+    <string name="settings_downloaded_files_moodle">Fichiers Moodle</string>
+    <string name="settings_downloaded_files_title">Fichiers téléchargés</string>
     <string name="settings_feedback_bug_report">Commentaires / Signaler un problème</string>
     <string name="settings_flip_to_library_summary">Retournez votre téléphone écran vers le bas pour afficher le QR de la bibliothèque.</string>
     <string name="settings_flip_to_library_title">Retourner pour afficher le QR de la bibliothèque</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Afficher les salles dans l\'emploi du temps</string>
     <string name="settings_sign_out_imported_tables">Les emplois du temps importés seront également supprimés.</string>
     <string name="settings_sign_out_unsynced_data">Les données non synchronisées avec TigerSync seront supprimées.</string>
+    <string name="settings_storage_browser_data">Données des sites web</string>
+    <string name="settings_storage_browser_data_delete_message">Les sites que vous avez visités dans le navigateur TigerDuck pourront vous demander de vous reconnecter.</string>
+    <string name="settings_storage_browser_data_delete_title">Supprimer les données des sites web ?</string>
+    <string name="settings_storage_delete_kind">Supprimer : %@</string>
+    <string name="settings_storage_title">Stockage</string>
+    <string name="settings_storage_total">Total</string>
     <string name="settings_sync_brief_description">TigerSync vous permet de synchroniser vos informations choisies sur tous vos appareils. Les informations non activées restent uniquement sur cet appareil.</string>
     <string name="settings_sync_disabled_note">Lorsque la synchronisation est désactivée, le serveur TigerDuck reçoit toujours votre numéro étudiant, votre jeton Moodle et les identifiants push de cet appareil pour envoyer les rappels de devoirs</string>
     <string name="settings_sync_status_off">Désactivé</string>

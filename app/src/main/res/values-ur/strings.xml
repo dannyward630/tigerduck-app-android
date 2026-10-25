@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">پیریڈ %1$s</string>
     <string name="a11y_empty_classroom_same_room">وہی کلاس روم</string>
     <string name="a11y_empty_classroom_walk_minutes">پیدل تقریباً %1$d منٹ</string>
+    <string name="a11y_file_viewer_page">صفحہ %1$d از %2$d</string>
     <string name="a11y_rankings_trend_chart">سمسٹر کے مطابق GPA رجحان</string>
     <string name="a11y_rankings_trend_no_selection">کوئی سمسٹر منتخب نہیں</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">بند کریں</string>
     <string name="action_confirm">تصدیق کریں</string>
     <string name="action_continue">جاری رکھیں</string>
+    <string name="action_delete">حذف کریں</string>
     <string name="action_done">مکمل</string>
     <string name="action_go_to_settings">ترتیبات پر جائیں</string>
     <string name="action_got_it">سمجھ گیا</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">گریڈ</string>
     <string name="feature_settings">ترتیبات</string>
     <string name="feature_settings_short">ترتیبات</string>
+    <string name="file_viewer_cannot_show">یہ فائل یہاں نہیں دکھائی جا سکتی۔</string>
+    <string name="file_viewer_open_elsewhere">کسی دوسری ایپ میں کھولیں</string>
+    <string name="file_viewer_text_truncated">اس فائل کے پہلے %1$s دکھائے جا رہے ہیں۔</string>
     <string name="first_trigger_flip_to_library_keep">فعال رکھیں</string>
     <string name="first_trigger_flip_to_library_message">ہم نے دیکھا کہ آپ نے فون پلٹایا۔ یہ اشارہ لائبریری QR کو جلدی کھول سکتا ہے۔ کیا آپ یہ خصوصیت رکھنا چاہتے ہیں؟</string>
     <string name="first_trigger_flip_to_library_title">لائبریری QR کھولنے کے لیے پلٹائیں</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">ڈسپلے اور متن کا سائز</string>
     <string name="settings_display_size_ui">ڈسپلے کا سائز</string>
     <string name="settings_display_size_widget_section">ویجٹس</string>
+    <string name="settings_downloaded_files_delete_all">تمام ڈاؤن لوڈ کردہ فائلیں حذف کریں</string>
+    <string name="settings_downloaded_files_delete_all_message">اگلی بار کھولنے پر Moodle فائلیں اور میل کے منسلکات دوبارہ ڈاؤن لوڈ ہوں گے۔</string>
+    <string name="settings_downloaded_files_delete_all_title">تمام ڈاؤن لوڈ کردہ فائلیں حذف کریں؟</string>
+    <string name="settings_downloaded_files_footer">TigerDuck براؤزر میں ڈاؤن لوڈ کردہ فائلیں آپ کے فون کے Downloads فولڈر میں محفوظ ہوتی ہیں اور یہاں سے حذف نہیں ہوتیں۔</string>
+    <string name="settings_downloaded_files_images">کلاس شیڈول کی تصاویر</string>
+    <string name="settings_downloaded_files_mail">میل کے منسلکات</string>
+    <string name="settings_downloaded_files_moodle">Moodle فائلیں</string>
+    <string name="settings_downloaded_files_title">ڈاؤن لوڈ کردہ فائلیں</string>
     <string name="settings_feedback_bug_report">رائے / مسئلہ رپورٹ کریں</string>
     <string name="settings_flip_to_library_summary">لائبریری QR کھولنے کے لیے فون کو اسکرین نیچے کر کے پلٹائیں۔</string>
     <string name="settings_flip_to_library_title">لائبریری QR دکھانے کے لیے پلٹائیں</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">ٹائم ٹیبل میں کلاس روم دکھائیں</string>
     <string name="settings_sign_out_imported_tables">درآمد شدہ کلاس شیڈول بھی حذف ہو جائیں گے۔</string>
     <string name="settings_sign_out_unsynced_data">TigerSync کے ساتھ سنک نہ کیا گیا ڈیٹا حذف ہو جائے گا۔</string>
+    <string name="settings_storage_browser_data">ویب سائٹ کا ڈیٹا</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck براؤزر میں دیکھی گئی سائٹس آپ سے دوبارہ سائن ان کرنے کو کہہ سکتی ہیں۔</string>
+    <string name="settings_storage_browser_data_delete_title">ویب سائٹ کا ڈیٹا حذف کریں؟</string>
+    <string name="settings_storage_delete_kind">%@ حذف کریں</string>
+    <string name="settings_storage_title">اسٹوریج</string>
+    <string name="settings_storage_total">کل</string>
     <string name="settings_sync_brief_description">TigerSync آپ کو تمام آلات پر معلومات مطابقت پذیر کرنے دیتا ہے۔ فعال نہ کی گئی معلومات صرف اس آلے پر رہتی ہیں۔</string>
     <string name="settings_sync_disabled_note">سنک بند ہونے پر بھی، اسائنمنٹ کی یاد دہانیاں بھیجنے کے لیے TigerDuck سرور کو آپ کا طالب علم ID، Moodle ٹوکن اور اس آلے کی پش اسناد ملتی رہتی ہیں</string>
     <string name="settings_sync_status_off">بند</string>

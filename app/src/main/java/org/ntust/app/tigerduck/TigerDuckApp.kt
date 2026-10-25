@@ -36,6 +36,7 @@ import org.ntust.app.tigerduck.wear.WearScheduleBridge
 import org.ntust.app.tigerduck.widget.WidgetUpdater
 import org.ntust.app.tigerduck.ui.theme.preloadKeptCjkCorrections
 import javax.inject.Inject
+import org.ntust.app.tigerduck.debug.PretendMissingApps
 
 @HiltAndroidApp
 class TigerDuckApp : Application(), Configuration.Provider {
@@ -120,6 +121,8 @@ class TigerDuckApp : Application(), Configuration.Provider {
         super.onCreate()
         // The theme reads it on its first frame: start loading it from disk now.
         preloadKeptCjkCorrections(this)
+        // Debug builds: the developer settings' "pretend an app is missing" switches.
+        PretendMissingApps.init(this)
         // First, before anything can read or write DataCache. BootReceiver and
         // BackgroundSyncWorker both run without an Activity, so leaving this
         // to AppState let WorkManager's persisted periodic sync fire on the

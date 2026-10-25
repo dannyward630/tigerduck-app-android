@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Time %1$s</string>
     <string name="a11y_empty_classroom_same_room">Samme lokale</string>
     <string name="a11y_empty_classroom_walk_minutes">Ca. %1$d min til fods</string>
+    <string name="a11y_file_viewer_page">Side %1$d af %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA-tendens pr. semester</string>
     <string name="a11y_rankings_trend_no_selection">Intet semester valgt</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Luk</string>
     <string name="action_confirm">Bekræft</string>
     <string name="action_continue">Fortsæt</string>
+    <string name="action_delete">Slet</string>
     <string name="action_done">Færdig</string>
     <string name="action_go_to_settings">Gå til indstillinger</string>
     <string name="action_got_it">Forstået</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Karakterer</string>
     <string name="feature_settings">Indstillinger</string>
     <string name="feature_settings_short">Indstillinger</string>
+    <string name="file_viewer_cannot_show">Denne fil kan ikke vises her.</string>
+    <string name="file_viewer_open_elsewhere">Åbn i en anden app</string>
+    <string name="file_viewer_text_truncated">Viser de første %1$s af denne fil.</string>
     <string name="first_trigger_flip_to_library_keep">Behold aktiveret</string>
     <string name="first_trigger_flip_to_library_message">Det ser ud til, at du vendte telefonen. Denne bevægelse kan hurtigt åbne bibliotekets QR. Vil du beholde denne funktion?</string>
     <string name="first_trigger_flip_to_library_title">Vend for at åbne bibliotekets QR</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Skærm- og tekststørrelse</string>
     <string name="settings_display_size_ui">Skærmstørrelse</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Slet alle downloadede filer</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-filer og vedhæftninger fra mail downloades igen, næste gang du åbner dem.</string>
+    <string name="settings_downloaded_files_delete_all_title">Vil du slette alle downloadede filer?</string>
+    <string name="settings_downloaded_files_footer">Filer, der downloades i TigerDuck-browseren, gemmes i telefonens Downloads-mappe og slettes ikke her.</string>
+    <string name="settings_downloaded_files_images">Billeder af skemaet</string>
+    <string name="settings_downloaded_files_mail">Vedhæftninger fra mail</string>
+    <string name="settings_downloaded_files_moodle">Moodle-filer</string>
+    <string name="settings_downloaded_files_title">Downloadede filer</string>
     <string name="settings_feedback_bug_report">Feedback / Rapportér problem</string>
     <string name="settings_flip_to_library_summary">Vend telefonen med skærmen nedad for at åbne bibliotekets QR.</string>
     <string name="settings_flip_to_library_title">Vend om for at vise bibliotekets QR</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Vis lokaler i skemaet</string>
     <string name="settings_sign_out_imported_tables">Importerede skemaer slettes også.</string>
     <string name="settings_sign_out_unsynced_data">Data, der ikke er synkroniseret med TigerSync, slettes.</string>
+    <string name="settings_storage_browser_data">Webstedsdata</string>
+    <string name="settings_storage_browser_data_delete_message">Websteder, du har besøgt i TigerDuck-browseren, kan bede dig om at logge ind igen.</string>
+    <string name="settings_storage_browser_data_delete_title">Vil du slette webstedsdata?</string>
+    <string name="settings_storage_delete_kind">Slet %@</string>
+    <string name="settings_storage_title">Lagerplads</string>
+    <string name="settings_storage_total">I alt</string>
     <string name="settings_sync_brief_description">TigerSync lader dig synkronisere dine valgte oplysninger på tværs af alle enheder med TigerSync aktiveret. Oplysninger uden synkronisering forbliver kun på denne enhed.</string>
     <string name="settings_sync_disabled_note">Når synkronisering er slået fra, modtager TigerDuck-serveren stadig dit studie-ID, dit Moodle-token og denne enheds push-legitimationsoplysninger for at kunne sende opgavepåmindelser</string>
     <string name="settings_sync_status_off">Fra</string>

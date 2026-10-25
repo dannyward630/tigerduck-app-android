@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Waktu %1$s</string>
     <string name="a11y_empty_classroom_same_room">Bilik darjah yang sama</string>
     <string name="a11y_empty_classroom_walk_minutes">Kira-kira %1$d min berjalan kaki</string>
+    <string name="a11y_file_viewer_page">Halaman %1$d daripada %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend GPA mengikut semester</string>
     <string name="a11y_rankings_trend_no_selection">Tiada semester dipilih</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Tutup</string>
     <string name="action_confirm">Sahkan</string>
     <string name="action_continue">Teruskan</string>
+    <string name="action_delete">Padam</string>
     <string name="action_done">Selesai</string>
     <string name="action_go_to_settings">Pergi ke tetapan</string>
     <string name="action_got_it">Faham</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Markah</string>
     <string name="feature_settings">Tetapan</string>
     <string name="feature_settings_short">Tetapan</string>
+    <string name="file_viewer_cannot_show">Fail ini tidak dapat dipaparkan di sini.</string>
+    <string name="file_viewer_open_elsewhere">Buka dalam apl lain</string>
+    <string name="file_viewer_text_truncated">Memaparkan %1$s pertama fail ini.</string>
     <string name="first_trigger_flip_to_library_keep">Kekalkan</string>
     <string name="first_trigger_flip_to_library_message">Nampaknya anda baru membalikkan telefon. Gerak isyarat ini boleh membuka QR perpustakaan dengan cepat. Nak kekalkan ciri ini?</string>
     <string name="first_trigger_flip_to_library_title">Balik untuk buka QR perpustakaan</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Saiz paparan dan teks</string>
     <string name="settings_display_size_ui">Saiz paparan</string>
     <string name="settings_display_size_widget_section">Widget</string>
+    <string name="settings_downloaded_files_delete_all">Padam semua fail yang dimuat turun</string>
+    <string name="settings_downloaded_files_delete_all_message">Fail Moodle dan lampiran mel akan dimuat turun semula apabila anda membukanya lain kali.</string>
+    <string name="settings_downloaded_files_delete_all_title">Padam semua fail yang dimuat turun?</string>
+    <string name="settings_downloaded_files_footer">Fail yang dimuat turun dalam pelayar TigerDuck disimpan dalam folder Muat Turun telefon anda dan tidak dipadam di sini.</string>
+    <string name="settings_downloaded_files_images">Imej jadual kelas</string>
+    <string name="settings_downloaded_files_mail">Lampiran mel</string>
+    <string name="settings_downloaded_files_moodle">Fail Moodle</string>
+    <string name="settings_downloaded_files_title">Fail yang dimuat turun</string>
     <string name="settings_feedback_bug_report">Maklum balas / Laporkan isu</string>
     <string name="settings_flip_to_library_summary">Balik telefon dengan skrin menghadap bawah untuk membuka QR perpustakaan.</string>
     <string name="settings_flip_to_library_title">Balik untuk tunjuk QR perpustakaan</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Tunjukkan bilik darjah dalam jadual</string>
     <string name="settings_sign_out_imported_tables">Jadual kelas yang diimport juga akan dipadam.</string>
     <string name="settings_sign_out_unsynced_data">Data yang tidak disegerakkan dengan TigerSync akan dipadam.</string>
+    <string name="settings_storage_browser_data">Data laman web</string>
+    <string name="settings_storage_browser_data_delete_message">Laman yang anda lawati dalam pelayar TigerDuck mungkin meminta anda log masuk semula.</string>
+    <string name="settings_storage_browser_data_delete_title">Padam data laman web?</string>
+    <string name="settings_storage_delete_kind">Padam %@</string>
+    <string name="settings_storage_title">Storan</string>
+    <string name="settings_storage_total">Jumlah</string>
     <string name="settings_sync_brief_description">TigerSync membolehkan anda menyegerakkan maklumat pilihan anda di semua peranti. Maklumat yang tidak didayakan kekal pada peranti ini sahaja.</string>
     <string name="settings_sync_disabled_note">Apabila penyegerakan dimatikan, pelayan TigerDuck masih menerima ID Pelajar, token Moodle dan kelayakan push peranti ini untuk menghantar peringatan tugasan</string>
     <string name="settings_sync_status_off">Mati</string>

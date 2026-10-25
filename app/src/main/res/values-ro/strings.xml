@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Perioada %1$s</string>
     <string name="a11y_empty_classroom_same_room">Aceeași sală</string>
     <string name="a11y_empty_classroom_walk_minutes">Aproximativ %1$d min pe jos</string>
+    <string name="a11y_file_viewer_page">Pagina %1$d din %2$d</string>
     <string name="a11y_rankings_trend_chart">Tendința GPA pe semestru</string>
     <string name="a11y_rankings_trend_no_selection">Niciun semestru selectat</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -39,6 +40,7 @@
     <string name="action_close">Închide</string>
     <string name="action_confirm">Confirmă</string>
     <string name="action_continue">Continuă</string>
+    <string name="action_delete">Șterge</string>
     <string name="action_done">Finalizat</string>
     <string name="action_go_to_settings">Mergi la setări</string>
     <string name="action_got_it">Înțeles</string>
@@ -601,6 +603,9 @@
     <string name="feature_score_short">Note</string>
     <string name="feature_settings">Setări</string>
     <string name="feature_settings_short">Setări</string>
+    <string name="file_viewer_cannot_show">Acest fișier nu poate fi afișat aici.</string>
+    <string name="file_viewer_open_elsewhere">Deschide în altă aplicație</string>
+    <string name="file_viewer_text_truncated">Se afișează primii %1$s din acest fișier.</string>
     <string name="first_trigger_flip_to_library_keep">Păstrează activat</string>
     <string name="first_trigger_flip_to_library_message">Se pare că ai întors telefonul. Acest gest poate deschide rapid QR-ul bibliotecii. Vrei să păstrezi această funcție?</string>
     <string name="first_trigger_flip_to_library_title">Întoarce pentru a deschide QR-ul bibliotecii</string>
@@ -1089,6 +1094,14 @@
     <string name="settings_display_size_title">Dimensiunea afișării și a textului</string>
     <string name="settings_display_size_ui">Dimensiunea afișării</string>
     <string name="settings_display_size_widget_section">Widgeturi</string>
+    <string name="settings_downloaded_files_delete_all">Șterge toate fișierele descărcate</string>
+    <string name="settings_downloaded_files_delete_all_message">Fișierele Moodle și atașamentele din e-mail se vor descărca din nou data viitoare când le deschizi.</string>
+    <string name="settings_downloaded_files_delete_all_title">Ștergi toate fișierele descărcate?</string>
+    <string name="settings_downloaded_files_footer">Fișierele descărcate în browserul TigerDuck sunt salvate în dosarul Descărcări al telefonului și nu sunt șterse de aici.</string>
+    <string name="settings_downloaded_files_images">Imagini ale orarului</string>
+    <string name="settings_downloaded_files_mail">Atașamente din e-mail</string>
+    <string name="settings_downloaded_files_moodle">Fișiere Moodle</string>
+    <string name="settings_downloaded_files_title">Fișiere descărcate</string>
     <string name="settings_feedback_bug_report">Feedback / Raportare problemă</string>
     <string name="settings_flip_to_library_summary">Întoarce telefonul cu ecranul în jos pentru a deschide QR-ul bibliotecii.</string>
     <string name="settings_flip_to_library_title">Întoarce pentru a afișa QR-ul bibliotecii</string>
@@ -1147,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Afișează sălile în orar</string>
     <string name="settings_sign_out_imported_tables">Orarele importate vor fi șterse și ele.</string>
     <string name="settings_sign_out_unsynced_data">Datele nesincronizate cu TigerSync vor fi șterse.</string>
+    <string name="settings_storage_browser_data">Datele site-urilor</string>
+    <string name="settings_storage_browser_data_delete_message">Site-urile vizitate în browserul TigerDuck îți pot cere să te conectezi din nou.</string>
+    <string name="settings_storage_browser_data_delete_title">Ștergi datele site-urilor?</string>
+    <string name="settings_storage_delete_kind">Șterge: %@</string>
+    <string name="settings_storage_title">Stocare</string>
+    <string name="settings_storage_total">Total</string>
     <string name="settings_sync_brief_description">TigerSync vă permite să sincronizați informațiile alese pe toate dispozitivele. Informațiile neactivate rămân doar pe acest dispozitiv.</string>
     <string name="settings_sync_disabled_note">Când sincronizarea este dezactivată, serverul TigerDuck primește în continuare ID-ul dvs. de student, tokenul Moodle și acreditările push ale acestui dispozitiv pentru a trimite mementouri pentru teme</string>
     <string name="settings_sync_status_off">Oprit</string>
