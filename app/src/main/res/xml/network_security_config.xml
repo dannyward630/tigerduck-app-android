@@ -52,11 +52,6 @@
         </pin-set>
     </domain-config>
 
-    <!-- App's own backend: cleartext still blocked but not pinned. -->
-    <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">r.xinshou.tw</domain>
-    </domain-config>
-
     <!-- Local dev backends over HTTP. Debug builds default PUSH_BASE_URL to
          http://10.0.2.2:40000 (the emulator's host-loopback) so a dev build
          never silently hits production. Only these loopback/emulator hosts get
