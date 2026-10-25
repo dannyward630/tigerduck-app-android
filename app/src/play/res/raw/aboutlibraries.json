@@ -4190,6 +4190,135 @@
             ]
         },
         {
+            "uniqueId": "commons-codec:commons-codec",
+            "artifactVersion": "1.19.0",
+            "name": "Apache Commons Codec",
+            "description": "The Apache Commons Codec component contains encoders and decoders for\n     formats such as Base16, Base32, Base64, digest, and Hexadecimal. In addition to these\n     widely used encoders and decoders, the codec package also maintains a\n     collection of phonetic encoding utilities.",
+            "website": "https://commons.apache.org/proper/commons-codec/",
+            "developers": [
+                {
+                    "name": "Julius Davies",
+                    "organisationUrl": "http://juliusdavies.ca/"
+                },
+                {
+                    "name": "David Graham"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Scott Sanders"
+                },
+                {
+                    "name": "Daniel Rall"
+                },
+                {
+                    "name": "Jon S. Stevens"
+                },
+                {
+                    "name": "Thomas Neidhart"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Rob Tompkins"
+                },
+                {
+                    "name": "Tim OBrien"
+                },
+                {
+                    "name": "Matt Sicker"
+                },
+                {
+                    "name": "Rodney Waldhoff"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-codec",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-codec",
+                "url": "https://github.com/apache/commons-codec"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "commons-io:commons-io",
+            "artifactVersion": "2.20.0",
+            "name": "Apache Commons IO",
+            "description": "The Apache Commons IO library contains utility classes, stream implementations, file filters,\nfile comparators, endian transformation classes, and much more.",
+            "website": "https://commons.apache.org/proper/commons-io/",
+            "developers": [
+                {
+                    "name": "Martin Cooper"
+                },
+                {
+                    "name": "dIon Gillard"
+                },
+                {
+                    "name": "Jukka Zitting"
+                },
+                {
+                    "name": "Kristian Rosenvold"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Rob Oxspring"
+                },
+                {
+                    "name": "Niall Pemberton"
+                },
+                {
+                    "name": "Scott Sanders"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Stephen Colebourne"
+                },
+                {
+                    "name": "Jochen Wiedmann"
+                },
+                {
+                    "name": "Nicola Ken Barozzi"
+                },
+                {
+                    "name": "Matthew Hawthorne"
+                },
+                {
+                    "name": "Jeremias Maerki"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-io.git",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-io.git",
+                "url": "https://gitbox.apache.org/repos/asf?p=commons-io.git"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "jakarta.activation:jakarta.activation-api",
             "artifactVersion": "2.1.4",
             "name": "Jakarta Activation API",
@@ -4292,6 +4421,137 @@
             ],
             "scm": {
                 "url": "http://code.google.com/p/atinject/source/checkout"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.apache.commons:commons-compress",
+            "artifactVersion": "1.28.0",
+            "name": "Apache Commons Compress",
+            "description": "Apache Commons Compress defines an API for working with\ncompression and archive formats. These include bzip2, gzip, pack200,\nLZMA, XZ, Snappy, traditional Unix Compress, DEFLATE, DEFLATE64, LZ4,\nBrotli, Zstandard and ar, cpio, jar, tar, zip, dump, 7z, arj.",
+            "website": "https://commons.apache.org/proper/commons-compress/",
+            "developers": [
+                {
+                    "name": "Sebastian Bazley"
+                },
+                {
+                    "name": "Emmanuel Bourg"
+                },
+                {
+                    "name": "Torsten Curdt"
+                },
+                {
+                    "name": "Stefan Bodewig"
+                },
+                {
+                    "name": "Julius Davies"
+                },
+                {
+                    "name": "Damjan Jovanovic"
+                },
+                {
+                    "name": "Christian Grobmeier"
+                },
+                {
+                    "name": "Peter Alfred Lee"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Rob Tompkins"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-compress.git",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-compress.git",
+                "url": "https://gitbox.apache.org/repos/asf?p=commons-compress.git"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.apache.commons:commons-lang3",
+            "artifactVersion": "3.18.0",
+            "name": "Apache Commons Lang",
+            "description": "Apache Commons Lang, a package of Java utility classes for the\n  classes that are in java.lang's hierarchy, or are considered to be so\n  standard as to justify existence in java.lang.\n\n  The code is tested using the latest revision of the JDK for supported\n  LTS releases: 8, 11, 17 and 21 currently.\n  See https://github.com/apache/commons-lang/blob/master/.github/workflows/maven.yml\n  \n  Please ensure your build environment is up-to-date and kindly report any build issues.",
+            "website": "https://commons.apache.org/proper/commons-lang/",
+            "developers": [
+                {
+                    "name": "Duncan Jones"
+                },
+                {
+                    "name": "Oliver Heger"
+                },
+                {
+                    "name": "Joerg Schaible"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Robert Burrell Donkin"
+                },
+                {
+                    "name": "Niall Pemberton"
+                },
+                {
+                    "name": "Daniel Rall"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Rob Tompkins"
+                },
+                {
+                    "name": "Steven Caswell"
+                },
+                {
+                    "name": "Stephen Colebourne"
+                },
+                {
+                    "name": "James Carman"
+                },
+                {
+                    "name": "Matt Benson"
+                },
+                {
+                    "name": "Paul Benedict"
+                },
+                {
+                    "name": "Fredrik Westermarck"
+                },
+                {
+                    "name": "Benedikt Ritter"
+                },
+                {
+                    "name": "Loic Guibert"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-lang.git",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-lang.git",
+                "url": "https://gitbox.apache.org/repos/asf/commons-lang.git"
             },
             "licenses": [
                 "Apache-2.0"
@@ -4726,9 +4986,39 @@
             "funding": [
                 
             ]
+        },
+        {
+            "uniqueId": "org.tukaani:xz",
+            "artifactVersion": "1.12",
+            "name": "XZ for Java",
+            "description": "XZ data compression",
+            "website": "https://tukaani.org/xz/java.html",
+            "developers": [
+                {
+                    "name": "Lasse Collin"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/tukaani-project/xz-java",
+                "url": "https://github.com/tukaani-project/xz-java"
+            },
+            "licenses": [
+                "0BSD"
+            ],
+            "funding": [
+                
+            ]
         }
     ],
     "licenses": {
+        "0BSD": {
+            "name": "BSD Zero Clause License",
+            "url": "https://spdx.org/licenses/0BSD.html",
+            "content": "Permission to use, copy, modify, and/or distribute this\nsoftware for any purpose with or without fee is hereby granted.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL\nWARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL\nTHE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR\nCONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,\nNEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN\nCONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n",
+            "internalHash": "0BSD",
+            "spdxId": "0BSD",
+            "hash": "0BSD"
+        },
         "73252b46f36df25ef51a7994de439aea": {
             "name": "Bouncy Castle Licence",
             "url": "https://www.bouncycastle.org/licence.html",

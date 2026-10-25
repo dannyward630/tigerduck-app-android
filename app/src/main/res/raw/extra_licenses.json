@@ -81,7 +81,10 @@
     ],
     "androidx.glance:glance-appwidget-external-protobuf": [
       "Copyright 2008 Google Inc. All rights reserved."
+    ],
+    "org.tukaani:xz": [
+      "Copyright (C) The XZ for Java authors and contributors"
     ]
   },
-  "_holders_comment": "Copyright lines the artifact's own metadata omits. AndroidX repackages protobuf without its notice, and the POM names the Android Open Source Project rather than the code's author."
+  "_holders_comment": "Copyright lines the artifact's own metadata omits. AndroidX repackages protobuf without its notice, and the POM names the Android Open Source Project rather than the code's author. XZ for Java's jar carries no licence file, and its COPYING's copyright line is in no metadata."
 }
