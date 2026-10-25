@@ -11,6 +11,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import org.ntust.app.tigerduck.mail.store.MailCredentialStore
 import org.ntust.app.tigerduck.shared.LibraryAccountGate
 import org.ntust.app.tigerduck.shared.LibraryCredentialStore
+import org.ntust.app.tigerduck.shared.StoredPasswordSchedule
 import org.ntust.app.tigerduck.shared.sameStudentId
 import org.ntust.app.tigerduck.util.logSummary
 import javax.inject.Inject
@@ -89,18 +90,31 @@ class CredentialManager private constructor(
             .putString("library_password", password)
             .putString("library_token", token)
             .putLong("library_token_expiry", tokenExpiry)
-            // Credentials that work, so the app may sign in with them again.
-            .remove(KEY_LIBRARY_PASSWORD_REFUSED)
+            // Credentials that work, so the app may sign in with them again at once.
+            .remove(KEY_LIBRARY_PASSWORD_REFUSALS)
+            .remove(KEY_LIBRARY_PASSWORD_REFUSED_AT)
             .apply()
     }
 
-    override val libraryPasswordRefused: Boolean
-        get() = prefs.getBoolean(KEY_LIBRARY_PASSWORD_REFUSED, false)
+    init {
+        takeUpLibraryLatch(prefs)
+    }
 
-    override fun refuseLibraryPassword(generation: Int, password: String): Boolean =
+    override val libraryPasswordRefusals: Int
+        get() = prefs.getInt(KEY_LIBRARY_PASSWORD_REFUSALS, 0)
+
+    override val libraryPasswordRefusedAt: Long
+        get() = prefs.getLong(KEY_LIBRARY_PASSWORD_REFUSED_AT, 0L)
+
+    override fun refuseLibraryPassword(generation: Int, password: String, at: Long): Boolean =
         libraryAccount.whileCurrent(generation) {
             if (libraryPassword != password) return@whileCurrent false
-            prefs.edit().putBoolean(KEY_LIBRARY_PASSWORD_REFUSED, true).apply()
+            // Written through before anything reads it: a process the system ends
+            // right after must not start the next one without the wait.
+            prefs.edit()
+                .putInt(KEY_LIBRARY_PASSWORD_REFUSALS, libraryPasswordRefusals + 1)
+                .putLong(KEY_LIBRARY_PASSWORD_REFUSED_AT, at)
+                .commit()
             true
         } ?: false
 
@@ -164,7 +178,8 @@ class CredentialManager private constructor(
                 .remove("library_password")
                 .remove("library_token")
                 .remove("library_token_expiry")
-                .remove(KEY_LIBRARY_PASSWORD_REFUSED)
+                .remove(KEY_LIBRARY_PASSWORD_REFUSALS)
+                .remove(KEY_LIBRARY_PASSWORD_REFUSED_AT)
                 .apply()
         }
     }
@@ -227,7 +242,26 @@ class CredentialManager private constructor(
 
     companion object {
         private const val PREFS_NAME = "tigerduck_credentials"
+        private const val KEY_LIBRARY_PASSWORD_REFUSALS = "library_password_refusals"
+        private const val KEY_LIBRARY_PASSWORD_REFUSED_AT = "library_password_refused_at"
+
+        /** Before the retries, a refusal held every automatic sign-in until the user signed in again. */
         private const val KEY_LIBRARY_PASSWORD_REFUSED = "library_password_refused"
+
+        /**
+         * Moves a refusal kept by a build before the retries onto the count with
+         * the quick ones spent: one try at once, then one every 6 hours, as on
+         * the iPhone (`LibraryPasswordLatchRetryMigration`).
+         */
+        private fun takeUpLibraryLatch(prefs: SharedPreferences) {
+            if (!prefs.contains(KEY_LIBRARY_PASSWORD_REFUSED)) return
+            val edit = prefs.edit().remove(KEY_LIBRARY_PASSWORD_REFUSED)
+            if (prefs.getBoolean(KEY_LIBRARY_PASSWORD_REFUSED, false)) {
+                edit.putInt(KEY_LIBRARY_PASSWORD_REFUSALS, StoredPasswordSchedule.quickRetries)
+                    .putLong(KEY_LIBRARY_PASSWORD_REFUSED_AT, 0L)
+            }
+            edit.commit()
+        }
 
         private fun openEncrypted(context: Context): Opened {
             fun attempt(): SharedPreferences {

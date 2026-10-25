@@ -98,6 +98,9 @@ class TigerDuckApp : Application(), Configuration.Provider {
     @Inject
     lateinit var libraryService: org.ntust.app.tigerduck.shared.LibraryService
 
+    @Inject
+    lateinit var libraryPasswordRetry: org.ntust.app.tigerduck.library.LibraryPasswordRetry
+
     // Injected so it exists from launch: it redraws the widgets on a change
     // of language itself, which no other launch path would start.
     @Inject
@@ -171,8 +174,9 @@ class TigerDuckApp : Application(), Configuration.Provider {
         }
         // The background sync, reminders, notifications and Live Update follow the sign-in from every page.
         accountSessionEffects.start(appScope)
-        // A stored password the school refused goes again once its wait is over.
+        // A stored password the school or the library refused goes again once its wait is over.
         storedPasswordRetry.start(appScope)
+        libraryPasswordRetry.start(appScope)
         // The dot hides itself while signed out, but the tracker is
         // process-wide: a status written before logout would still be here
         // for the next account to inherit, green from the moment the dot
@@ -199,7 +203,7 @@ class TigerDuckApp : Application(), Configuration.Provider {
         }
         // A sign-in with the stored library credentials, at a return to the app
         // or behind the Library page, changes what Settings and the flip read.
-        // A refusal also takes the password off the watch.
+        // A refusal also takes the password off the watch, until the library takes it again.
         appScope.launch {
             libraryService.storedSignIns.collect { outcome ->
                 org.ntust.app.tigerduck.library.onStoredLibrarySignIn(

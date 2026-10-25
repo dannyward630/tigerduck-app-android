@@ -86,8 +86,36 @@ class WatchLibraryCredentialStore @VisibleForTesting internal constructor(
             .putString(KEY_PASSWORD, password)
             .putString(KEY_TOKEN, token)
             .putLong(KEY_TOKEN_EXPIRY, tokenExpiry)
+            // A password the library took, so the page may send it again at once.
+            .remove(KEY_REFUSALS)
+            .remove(KEY_REFUSED_AT)
             .apply()
     }
+
+    /**
+     * The library's refusals in a row of the password the phone sent, counted
+     * by the watch's own sign-ins, so its page waits the schedule the phone
+     * keeps before it sends that password again. The same password sent again
+     * by the phone keeps them: the library refused it all the same. Another
+     * password or account from the phone, a wipe and a sign-in that works end
+     * them.
+     */
+    override val libraryPasswordRefusals: Int
+        get() = prefs.getInt(KEY_REFUSALS, 0)
+
+    override val libraryPasswordRefusedAt: Long
+        get() = prefs.getLong(KEY_REFUSED_AT, 0L)
+
+    override fun refuseLibraryPassword(generation: Int, password: String, at: Long): Boolean =
+        account.whileCurrent(generation) {
+            if (prefs.getString(KEY_PASSWORD, null) != password) return@whileCurrent false
+            // Written through: a page opened again after the process ended must wait too.
+            prefs.edit()
+                .putInt(KEY_REFUSALS, libraryPasswordRefusals + 1)
+                .putLong(KEY_REFUSED_AT, at)
+                .commit()
+            true
+        } ?: false
 
     /** Outcome of an incoming Data Layer push — for caller logging only. */
     enum class ApplyResult { APPLIED, WIPED, REJECTED_REPLAY, MALFORMED }
@@ -116,13 +144,17 @@ class WatchLibraryCredentialStore @VisibleForTesting internal constructor(
         val edit = prefs.edit()
         if (hasCredentials) {
             if (username == null || password == null) return ApplyResult.MALFORMED
+            val sameAccount = sameStudentId(prefs.getString(KEY_USERNAME, null), username)
+            if (!sameAccount || prefs.getString(KEY_PASSWORD, null) != password) {
+                edit.remove(KEY_REFUSALS).remove(KEY_REFUSED_AT)
+            }
             edit.putString(KEY_USERNAME, username)
                 .putString(KEY_PASSWORD, password)
                 .putLong(KEY_TOKEN_EXPIRY, tokenExpiry)
                 .putLong(KEY_ISSUED_AT_MS, issuedAtMs)
             if (token == null) edit.remove(KEY_TOKEN) else edit.putString(KEY_TOKEN, token)
             edit.putLong(KEY_LAST_VERSION, version)
-            if (sameStudentId(prefs.getString(KEY_USERNAME, null), username)) {
+            if (sameAccount) {
                 edit.apply()
             } else {
                 account.replaceAccount { edit.apply() }
@@ -136,6 +168,8 @@ class WatchLibraryCredentialStore @VisibleForTesting internal constructor(
                 .remove(KEY_TOKEN)
                 .remove(KEY_TOKEN_EXPIRY)
                 .remove(KEY_ISSUED_AT_MS)
+                .remove(KEY_REFUSALS)
+                .remove(KEY_REFUSED_AT)
                 .putLong(KEY_LAST_VERSION, version)
                 .apply()
         }
@@ -184,6 +218,8 @@ class WatchLibraryCredentialStore @VisibleForTesting internal constructor(
         private const val KEY_PASSWORD = "library_password"
         private const val KEY_TOKEN = "library_token"
         private const val KEY_TOKEN_EXPIRY = "library_token_expiry"
+        private const val KEY_REFUSALS = "library_password_refusals"
+        private const val KEY_REFUSED_AT = "library_password_refused_at"
 
         // Phone composed-at timestamp; anchors the 7-day TTL.
         private const val KEY_ISSUED_AT_MS = "library_issued_at_ms"

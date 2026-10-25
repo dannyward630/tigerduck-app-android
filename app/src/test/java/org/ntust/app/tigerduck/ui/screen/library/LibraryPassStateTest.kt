@@ -35,6 +35,9 @@ class LibraryPassStateTest {
     /** The library sign-in state Settings and the flip follow. */
     private val signedIn = MutableStateFlow(true)
 
+    /** Whether a sign-in typed on the page is under way. */
+    private var signingIn = false
+
     /** What each code request does; past the end the library answers codes. */
     private val fetches = ArrayDeque<suspend () -> String>()
     private var fetched = 0
@@ -60,6 +63,7 @@ class LibraryPassStateTest {
         },
         render = { "image of $it" },
         signedIn = signedIn,
+        signingIn = { signingIn },
         refreshSession = {
             refreshedWhileLoggedIn += state.isLoggedIn.value
             signedIn.value = hasAccount
@@ -132,6 +136,75 @@ class LibraryPassStateTest {
         pass.retryNow()
         advanceTimeBy(600_000)
         runCurrent()
+        assertEquals(1, fetched)
+    }
+
+    /**
+     * The phone's retry signs in with a stored password the library had refused, once its wait is
+     * over: a page left on the sign-in form shows the pass, as on the iPhone
+     * (tigerduck-app/tigerduck-app#769).
+     */
+    @Test
+    fun `a sign-in the app made by itself shows the pass on a page left on the sign-in form`() = runTest {
+        hasAccount = false
+        signedIn.value = false
+        val pass = pass()
+        pass.load()
+        pass.resume()
+        runCurrent()
+        assertFalse(pass.isLoggedIn.value)
+
+        hasAccount = true
+        signedIn.value = true
+        runCurrent()
+
+        assertTrue(pass.isLoggedIn.value)
+        assertEquals("image of code-1", pass.image.value)
+        assertNull(pass.errors.value)
+    }
+
+    @Test
+    fun `a sign-in made by itself while the page is away shows the pass when it comes back`() = runTest {
+        hasAccount = false
+        signedIn.value = false
+        val pass = pass()
+        pass.load()
+        pass.resume()
+        pass.pause()
+        runCurrent()
+
+        hasAccount = true
+        signedIn.value = true
+        runCurrent()
+        assertFalse(pass.isLoggedIn.value)
+        assertEquals(0, fetched)
+
+        pass.resume()
+        runCurrent()
+        assertTrue(pass.isLoggedIn.value)
+        assertEquals(1, fetched)
+    }
+
+    @Test
+    fun `a sign-in typed on the page switches it once, by itself`() = runTest {
+        hasAccount = false
+        signedIn.value = false
+        val pass = pass()
+        pass.load()
+        pass.resume()
+        runCurrent()
+
+        signingIn = true
+        hasAccount = true
+        signedIn.value = true
+        runCurrent()
+        assertFalse(pass.isLoggedIn.value)
+        assertEquals(0, fetched)
+
+        pass.signedIn()
+        signingIn = false
+        runCurrent()
+        assertTrue(pass.isLoggedIn.value)
         assertEquals(1, fetched)
     }
 

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.ntust.app.tigerduck.library.LibraryQRCache
 
@@ -27,6 +28,8 @@ internal class LibraryPassState<Image : Any>(
     render: suspend (String) -> Image,
     /** The library sign-in state Settings and the flip follow. */
     signedIn: Flow<Boolean>,
+    /** Whether a sign-in typed on the page is under way; it shows the pass itself ([signedIn]). */
+    private val signingIn: () -> Boolean = { false },
     /** Reads that state again. */
     private val refreshSession: () -> Unit,
     describe: (Exception) -> String,
@@ -44,6 +47,9 @@ internal class LibraryPassState<Image : Any>(
 
     /** Whether the page shows the pass rather than the sign-in form. */
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
+
+    // Between a resume and a pause: the page is on screen.
+    private var showing = false
 
     private val cycle = LibraryQRCycle(
         scope = scope,
@@ -100,6 +106,19 @@ internal class LibraryPassState<Image : Any>(
                 _isLoggedIn.value = false
             }
         }
+        // Signed in elsewhere, as the phone's retry does once the library takes
+        // a stored password it had refused: a page left on the sign-in form
+        // shows the pass, as on the iPhone. One away from the screen does when
+        // it comes back ([resume]), and one typing a sign-in when it lands.
+        scope.launch {
+            signedIn.collect {
+                if (it && showing && !_isLoggedIn.value && !signingIn() && hasAccount()) {
+                    errors.value = null
+                    _isLoggedIn.value = true
+                    cycle.start()
+                }
+            }
+        }
     }
 
     /** The page opens: the pass and its code while there is an account. */
@@ -113,6 +132,7 @@ internal class LibraryPassState<Image : Any>(
      * sign-out may have come from another screen meanwhile.
      */
     fun resume() {
+        showing = true
         _isLoggedIn.value = hasAccount()
         if (_isLoggedIn.value) {
             cycle.start()
@@ -122,7 +142,10 @@ internal class LibraryPassState<Image : Any>(
         }
     }
 
-    fun pause() = cycle.stop()
+    fun pause() {
+        showing = false
+        cycle.stop()
+    }
 
     /** A sign-in on the page landed: the pass, with a new code. */
     fun signedIn() {
