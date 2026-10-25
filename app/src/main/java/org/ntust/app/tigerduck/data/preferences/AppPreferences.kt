@@ -675,21 +675,16 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         set(value) = prefs.edit().putBoolean("previousDefaultTabsChecked", value).apply()
 
     /**
-     * Set once this install has been through [LibraryTabAddMigration]. A flag
+     * Set once this install has been through [LibraryTabKeepMigration]. A flag
      * rather than a [dataSchemaVersion] step, like [previousDefaultTabsChecked].
      */
-    var libraryTabAddChecked: Boolean
-        get() = prefs.getBoolean("libraryTabAddChecked", false)
-        set(value) = prefs.edit().putBoolean("libraryTabAddChecked", value).apply()
+    var libraryTabKeepChecked: Boolean
+        get() = prefs.getBoolean("libraryTabKeepChecked", false)
+        set(value) = prefs.edit().putBoolean("libraryTabKeepChecked", value).apply()
 
-    /**
-     * The old library opt-in switch, read once and deleted: whether this
-     * install had the library on before it was always on.
-     */
-    fun takeLegacyLibraryOptIn(): Boolean {
-        val wasOn = prefs.getBoolean(LEGACY_LIBRARY_OPT_IN, false)
+    /** Deletes the old library opt-in switch, from before the library was always on. */
+    fun forgetLegacyLibraryOptIn() {
         prefs.edit().remove(LEGACY_LIBRARY_OPT_IN).apply()
-        return wasOn
     }
 
     var invertSliderDirection: Boolean
@@ -1317,7 +1312,7 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         /** Comma is safe: NTUST semester codes are `[0-9]{3}[12H]`. */
         private const val SEMESTER_LIST_DELIMITER = ","
 
-        /** The library opt-in switch's key, kept only to read it once (see [takeLegacyLibraryOptIn]). */
+        /** The library opt-in switch's key, kept only to delete it once (see [forgetLegacyLibraryOptIn]). */
         private const val LEGACY_LIBRARY_OPT_IN = "libraryFeatureEnabled"
 
         private const val FLIP_TO_LIBRARY = "flipToLibraryEnabled"

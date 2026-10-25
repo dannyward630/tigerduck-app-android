@@ -99,6 +99,11 @@ sealed class WhatsNewPage {
      * Offers a change: [confirmLabel] runs [apply] and advances,
      * [declineLabel] just advances. Skipping the page or closing the sheet
      * leaves the setting as it was.
+     *
+     * [instead] is the page to show in its place when an answer earlier in
+     * the same run took away what it offers: a run keeps the pages it started
+     * with, so the offer can still come up. Read once, when the page comes
+     * up, so confirming on it doesn't swap it out; null shows the offer.
      */
     class OptIn(
         override val id: String,
@@ -109,6 +114,7 @@ sealed class WhatsNewPage {
         val declineLabel: WhatsNewText,
         val apply: () -> Unit,
         override val isApplicable: () -> Boolean = { true },
+        val instead: () -> Feature? = { null },
     ) : WhatsNewPage()
 
     /**

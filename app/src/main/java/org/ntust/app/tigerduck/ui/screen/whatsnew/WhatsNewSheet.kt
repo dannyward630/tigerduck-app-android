@@ -230,17 +230,24 @@ private fun PageStep(page: WhatsNewPage, isLast: Boolean, animate: Boolean, adva
             }
 
             is WhatsNewPage.OptIn -> {
-                PageBody(page.visual, page.title, page.body, animate)
-                ButtonArea {
-                    Button(
-                        onClick = {
-                            page.apply()
-                            advance()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) { Text(page.confirmLabel.resolve()) }
-                    TextButton(onClick = advance, modifier = Modifier.fillMaxWidth()) {
-                        Text(page.declineLabel.resolve())
+                // Settled once, as the page comes up: confirming on it must not swap it out.
+                val instead = remember(page) { page.instead() }
+                if (instead != null) {
+                    PageBody(instead.visual, instead.title, instead.body, animate)
+                    PrimaryButton(primaryLabel, advance)
+                } else {
+                    PageBody(page.visual, page.title, page.body, animate)
+                    ButtonArea {
+                        Button(
+                            onClick = {
+                                page.apply()
+                                advance()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(page.confirmLabel.resolve()) }
+                        TextButton(onClick = advance, modifier = Modifier.fillMaxWidth()) {
+                            Text(page.declineLabel.resolve())
+                        }
                     }
                 }
             }
@@ -748,7 +755,7 @@ private fun stepTitle(flow: WhatsNewFlow, step: Int, language: WhatsNewLanguage)
     val page = flow.pages.getOrNull(step) ?: return flow.summary?.title
     val title = when (page) {
         is WhatsNewPage.Feature -> page.title
-        is WhatsNewPage.OptIn -> page.title
+        is WhatsNewPage.OptIn -> page.instead()?.title ?: page.title
         is WhatsNewPage.Permission -> page.title
         is WhatsNewPage.Choice -> page.title
         is WhatsNewPage.Toggle -> page.title

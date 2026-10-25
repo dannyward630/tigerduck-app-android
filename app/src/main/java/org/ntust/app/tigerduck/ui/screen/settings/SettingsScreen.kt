@@ -171,7 +171,8 @@ fun SettingsScreen(
     // one, minus pages whose "only if this applies" check fails — the same
     // pages an upgrade would show. Keyed on the bottom bar, which those checks
     // read, so the row follows a change made since (in the tab editor, or by
-    // answering a page of this very replay).
+    // answering a page of this very replay). The checks read more than the bar
+    // (the library sign-in, say), so a tap on the row filters the pages again.
     val configuredTabs = viewModel.appState.configuredTabs
     val latestWhatsNew: WhatsNewFlow? = remember(whatsNewReplay, configuredTabs) {
         whatsNewReplay?.let { WhatsNewFlow.from(it, whatsNewCatalog, whatsNewSummaries) }
@@ -580,7 +581,8 @@ fun SettingsScreen(
                         if (latestWhatsNew != null) {
                             HorizontalDivider()
                             SettingsLinkRow(stringResource(R.string.settings_whats_new)) {
-                                manualWhatsNewPageIds = ArrayList(latestWhatsNew.pageIds)
+                                val now = whatsNewReplay?.let { WhatsNewFlow.from(it, whatsNewCatalog, whatsNewSummaries) }
+                                manualWhatsNewPageIds = ArrayList((now ?: latestWhatsNew).pageIds)
                             }
                         }
                         HorizontalDivider()
