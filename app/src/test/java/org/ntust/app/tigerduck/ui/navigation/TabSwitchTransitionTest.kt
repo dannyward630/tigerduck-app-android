@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -89,7 +92,9 @@ class TabSwitchTransitionTest {
     fun `a screen opened over a tab still slides in over it`() {
         justAfter { navigate("settings") }
 
-        composeRule.onNodeWithTag("settings").assertExists()
         composeRule.onNodeWithTag("home").assertExists()
+        // Still on its way in from the end edge, not faded in where it will rest.
+        val left = composeRule.onNodeWithTag("settings").getUnclippedBoundsInRoot().left
+        assertTrue("not sliding: at $left", left > 0.dp)
     }
 }
