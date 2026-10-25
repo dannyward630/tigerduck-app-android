@@ -497,7 +497,12 @@ private fun Modifier.belowStatusBar(state: DetentSheetState, statusBarTop: Int):
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Scrim(visible: Boolean, onClose: () -> Unit) {
-    val alpha by animateFloatAsState(if (visible) 1f else 0f, label = "scrim")
+    // In step with the sheet it dims for.
+    val alpha by animateFloatAsState(
+        if (visible) 1f else 0f,
+        animationSpec = tween(DetentSheetMotion.DURATION_MILLIS),
+        label = "scrim",
+    )
     val closeLabel = stringResource(R.string.action_close)
     Box(
         modifier = Modifier
