@@ -36,7 +36,7 @@ class NavHostTabTapTest {
     private val tabTap = TabTap()
     private lateinit var navController: NavHostController
 
-    /** What the latest pop transition decided: true slides, false fades. */
+    /** What the latest pop transition decided: true slides, false swaps at once. */
     private var lastPopSlides: Boolean? = null
 
     @Before
@@ -72,7 +72,7 @@ class NavHostTabTapTest {
     }
 
     @Test
-    fun `tapping the first tab from a pushed screen fades`() {
+    fun `tapping the first tab from a pushed screen swaps at once`() {
         openSettingsFromMore()
         step { navigateToTab("home", firstTab = "home", tabTap) }
         assertEquals("home", navController.currentBackStackEntry?.destination?.route)
