@@ -472,13 +472,15 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
 }
 
 /**
- * Largest fullscreen-QR square side (in dp) that fits without being clipped by
- * either the round chassis (corners) or the user's configured QR padding.
+ * The fullscreen QR's square side (in dp): the largest square the chassis shows
+ * whole, pulled in by the user's QR padding on each side.
  *
- * On a round face the chassis caps the side at `diameter / √2` — pushing past
- * that even with zero padding would clip the corners through the round mask.
- * The configured padding is a flat per-side inset and only tightens the
- * result when set large enough to drop below the chassis cap.
+ * On a round face that square is `diameter / √2` — pushing past it even with
+ * zero padding would clip the corners through the round mask. The padding
+ * insets from it, not from the screen's edge: measured from the edge, any
+ * padding up to the setting's 24 dp left the side at the round cap, so the
+ * setting did nothing on a round watch. Never under 96 dp, which a scanner
+ * still reads.
  *
  * Shared by [LoggedInState]'s fullscreen rendering and by
  * `QRPaddingSettingsScreen`'s corner-bracket preview so both show the exact
@@ -491,6 +493,5 @@ internal fun qrFullscreenSideDp(
 ): Float {
     val chassisLimit =
         if (isScreenRound) minScreenSideDp / 1.41421356f else minScreenSideDp.toFloat()
-    val paddingLimit = (minScreenSideDp - 2 * qrPaddingDp).coerceAtLeast(0).toFloat()
-    return minOf(chassisLimit, paddingLimit).coerceAtLeast(96f)
+    return (chassisLimit - 2 * qrPaddingDp).coerceAtLeast(96f)
 }

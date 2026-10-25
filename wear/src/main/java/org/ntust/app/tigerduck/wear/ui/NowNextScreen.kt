@@ -18,7 +18,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.material3.LinearProgressIndicator
 import androidx.wear.compose.material3.ProgressIndicatorDefaults
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
@@ -142,8 +141,8 @@ private fun OngoingCard(result: NextClassResult.Ongoing, minuteOfDay: Int, style
             overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(6.dp))
-        LinearProgressIndicator(
-            progress = { progress },
+        FollowingProgressIndicator(
+            value = progress,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(4.dp),

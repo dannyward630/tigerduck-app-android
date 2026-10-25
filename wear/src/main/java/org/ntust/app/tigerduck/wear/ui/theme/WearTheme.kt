@@ -9,6 +9,8 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.MaterialTheme
@@ -54,6 +56,33 @@ fun accentBrush(start: Color, gradient: WearAccentGradient?, bounds: Rect): Brus
         start = Offset(bounds.left + direction.startX * bounds.width, bounds.top + direction.startY * bounds.height),
         end = Offset(bounds.left + direction.endX * bounds.width, bounds.top + direction.endY * bounds.height),
     )
+}
+
+/**
+ * [color] as text and marks on the watch's black take it: itself when it reads there
+ * (4.5:1, WCAG's bar for text), otherwise lifted toward white until it does, its hue kept.
+ * A dark accent, such as the iPhone's own Indigo preset, would otherwise all but vanish.
+ */
+internal fun readableOnBlack(color: Color): Color {
+    if (contrast(color, Color.Black) >= 4.5f) return color
+    var lift = 0.05f
+    while (lift < 1f) {
+        val lifted = lerp(color, Color.White, lift)
+        if (contrast(lifted, Color.Black) >= 4.5f) return lifted
+        lift += 0.05f
+    }
+    return Color.White
+}
+
+/** Black or white, whichever reads better on [background]. */
+fun textOn(background: Color): Color =
+    if (contrast(Color.Black, background) >= contrast(Color.White, background)) Color.Black else Color.White
+
+/** WCAG's contrast ratio between [a] and [b], from 1 to 21. */
+internal fun contrast(a: Color, b: Color): Float {
+    val la = a.luminance()
+    val lb = b.luminance()
+    return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)
 }
 
 /**

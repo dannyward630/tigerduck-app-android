@@ -20,9 +20,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * The watch's marks in the accent, drawn for real: the library QR's countdown
- * ring, the screen padding ring and the QR padding corners. With a gradient
- * picked on the phone, each runs from its start to its end across the mark.
+ * The watch's marks, drawn for real: the library QR's countdown ring in the
+ * accent, which runs from its start to its end across the ring when the phone
+ * picked a gradient; the screen padding ring and the QR padding corners in one
+ * neutral color.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -80,35 +81,29 @@ class AccentMarksDrawingTest {
         assertEquals(0.18f, ring.alpha(50, 97), 0.05f)
     }
 
-    // Across the ring, not the whole screen, which is wider than the ring here.
+    // The padding previews are in one neutral color: the accent is the bar's alone (Sam's call).
+    private val gray = Color(0xFF808080)
+
+    private fun Bitmap.isGray(x: Int, y: Int): Boolean {
+        val pixel = Color(getPixel(x, y))
+        return pixel.alpha > 0.1f && kotlin.math.abs(pixel.red - pixel.blue) < 0.05f && kotlin.math.abs(pixel.red - pixel.green) < 0.05f
+    }
+
     @Test
-    fun `the padding ring runs from the start on its left to the end on its right`() {
-        val ring = render(300, 200) {
-            drawPaddingEdgeRing(
-                paddingPx = 20f, strokePx = 4f, accent = red,
-                gradient = WearAccentGradient(blue, AccentGradientDirection.LeftToRight),
-            )
-        }
+    fun `the padding ring is one color all round, at the padding's inset`() {
+        val ring = render(300, 200) { drawPaddingEdgeRing(paddingPx = 20f, strokePx = 4f, color = gray) }
         // A ring of radius 80 round the middle, 150, 100.
-        assertTrue(ring.towardBlue(70, 100) < 0.1f)
-        assertTrue(ring.towardBlue(230, 100) > 0.9f)
+        assertTrue(ring.isGray(70, 100))
+        assertTrue(ring.isGray(230, 100))
         assertEquals(0.6f, ring.alpha(70, 100), 0.05f)
     }
 
-    // Across the QR square the corners mark, not the whole screen: the
-    // corners are then as far apart in color as the gradient goes.
     @Test
-    fun `the QR corners run from the start at the top left to the end at the bottom right`() {
-        val corners = render(300, 200) {
-            drawQrCornerBrackets(
-                sidePx = 100f, legPx = 20f, strokePx = 4f, accent = red,
-                gradient = WearAccentGradient(blue, AccentGradientDirection.TopLeftToBottomRight),
-            )
-        }
-        // The square spans 100 to 200 across and 50 to 150 down; each
-        // corner's top or bottom leg.
-        assertTrue(corners.towardBlue(104, 50) < 0.1f)
-        assertTrue(corners.towardBlue(196, 150) > 0.9f)
+    fun `the QR corners are one color at each corner of the square`() {
+        val corners = render(300, 200) { drawQrCornerBrackets(sidePx = 100f, legPx = 20f, strokePx = 4f, color = gray) }
+        // The square spans 100 to 200 across and 50 to 150 down; each corner's top or bottom leg.
+        assertTrue(corners.isGray(104, 50))
+        assertTrue(corners.isGray(196, 150))
         assertEquals(0.85f, corners.alpha(104, 50), 0.05f)
     }
 }
