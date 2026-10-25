@@ -56,6 +56,33 @@ class BrowserDataCleanerTest {
     }
 
     @Test
+    fun `clearing website data clears the WebView's stores, and the downloads and each site's choices stay`() = runTest {
+        val context = RuntimeEnvironment.getApplication()
+        val settings = BrowserSettings(context).apply { setZoom("moodle2.ntust.edu.tw", 150) }
+        val never = CompletableDeferred<android.net.Uri>()
+        val downloads = BrowserDownloads(this) { _, _ -> never.await() }
+        downloads.start(DownloadPlan.Save("https://moodle2.ntust.edu.tw/a.pdf", "a.pdf", "application/pdf"))
+        var storageCleared = 0
+        val before = BrowserSession.generation.value
+
+        BrowserDataCleaner(
+            storage = { storageCleared++; StorageClearing(inTime = true) },
+            settings = settings,
+            downloads = downloads,
+            cleanup = BrowserCleanup(context),
+            scope = backgroundScope,
+        ).clearWebsiteData()
+
+        assertEquals(1, storageCleared)
+        // The screens open close, as the stores they show go.
+        assertEquals(before + 2, BrowserSession.generation.value)
+        assertEquals(1, downloads.items.value.size)
+        assertEquals(150, settings.zoom("moodle2.ntust.edu.tw"))
+        assertFalse(BrowserCleanup(context).isPending())
+        never.cancel()
+    }
+
+    @Test
     fun `a WebView store that fails to clear does not stop the rest`() = runTest {
         val context = RuntimeEnvironment.getApplication()
         val settings = BrowserSettings(context).apply { setDesktopSite("moodle2.ntust.edu.tw", true) }

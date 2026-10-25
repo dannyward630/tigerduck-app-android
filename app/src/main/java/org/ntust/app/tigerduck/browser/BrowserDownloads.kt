@@ -164,7 +164,9 @@ class BrowserDownloads(
  * itself, so the WebView's own host, path and expiry rules decide what the
  * next hop sends. They cannot outlive a sign-out's clearing: each is set,
  * and done, inside the download, which the clearing stops and waits for
- * before it removes the browser's cookies.
+ * before it removes the browser's cookies. Nor one that leaves the download
+ * running (Settings' website data): a cookie is kept only while the session
+ * the download began in goes on, and then no more.
  * Redirects are followed here, one at a time, so a cookie never goes to a
  * host it is not for and a redirect off the allowlist stops the download.
  * The file is written to MediaStore's Downloads, pending until complete and
@@ -184,6 +186,7 @@ class MediaStoreDownloadTransfer(
 ) : DownloadTransfer {
 
     override suspend fun download(plan: DownloadPlan.Save, progress: (Long, Long?) -> Unit): Uri = withContext(Dispatchers.IO) {
+        val session = BrowserSession.generation.value
         var url = plan.url
         repeat(MAX_REDIRECTS + 1) {
             // A download stopped at a sign-out asks for nothing more, under anyone's cookies.
@@ -198,7 +201,8 @@ class MediaStoreDownloadTransfer(
                     for (cookie in hop.cookies) {
                         // Stopped by a clearing meanwhile: nothing more goes into the browser's cookies.
                         currentCoroutineContext().ensureActive()
-                        keepCookie(url, cookie)
+                        // Nor after one that let it run: the cookies it cleared stay gone.
+                        BrowserSession.ifStill(session) { keepCookie(url, cookie) }
                     }
                     url = hop.url
                 }

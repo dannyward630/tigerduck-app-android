@@ -775,7 +775,7 @@ class SchoolMailComposeViewModel @Inject constructor(
             // As in [runPrefill]: the sign-in a rejection is for.
             val generation = account.accountGeneration
             _state.update { it.copy(sending = true, error = null, errorAcknowledged = false) }
-            val staging = File(cache.attachmentsDir, "outgoing-${UUID.randomUUID()}")
+            val staging = File(cache.attachmentsDir, "${MailCache.OUTGOING_PREFIX}${UUID.randomUUID()}")
             try {
                 val attachments = _state.value.attachments.map { a ->
                     when (val src = a.source) {

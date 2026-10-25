@@ -91,6 +91,7 @@ fun SettingsScreen(
     onNavigateToNotificationDebug: () -> Unit = {},
     onNavigateToTriggersDebug: () -> Unit = {},
     onNavigateToServerFailureDebug: () -> Unit = {},
+    onNavigateToOutsideAppsDebug: () -> Unit = {},
     onNavigateToMailDevServerDebug: () -> Unit = {},
     onNavigateToBrowserAllowlistDebug: () -> Unit = {},
 ) {
@@ -608,6 +609,9 @@ fun SettingsScreen(
                             SettingsLinkRow("Notification") { onNavigateToNotificationDebug() }
                             HorizontalDivider()
                             SettingsLinkRow("Server failure simulation") { onNavigateToServerFailureDebug() }
+                            HorizontalDivider()
+                            // Acts as a phone without the Moodle app, a browser, a mail app and so on.
+                            SettingsLinkRow("Missing apps") { onNavigateToOutsideAppsDebug() }
                             HorizontalDivider()
                             // Which sites the TigerDuck browser loads inside.
                             SettingsLinkRow("Browser allowlist") { onNavigateToBrowserAllowlistDebug() }

@@ -85,6 +85,7 @@ import org.ntust.app.tigerduck.update.UpdateChecker
 import org.ntust.app.tigerduck.update.WhatsNewGate
 import org.ntust.app.tigerduck.update.WhatsNewRepository
 import org.ntust.app.tigerduck.widget.LibraryShortcutWidget
+import org.ntust.app.tigerduck.debug.PretendMissingApps
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -191,6 +192,11 @@ class MainActivity : AppCompatActivity() {
         appScale = AppScale.stored(newBase)
         attachedConfiguration = Configuration(newBase.resources.configuration)
         super.attachBaseContext(appScale.wrap(newBase))
+    }
+
+    /** In debug builds, as a phone without the apps the developer settings mark missing would: see [PretendMissingApps]. */
+    override fun startActivity(intent: Intent, options: Bundle?) {
+        super.startActivity(PretendMissingApps.filter(intent, packageName, packageManager), options)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
