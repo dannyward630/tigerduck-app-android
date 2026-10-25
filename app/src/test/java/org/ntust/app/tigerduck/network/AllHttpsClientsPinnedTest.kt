@@ -4,7 +4,9 @@ import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
@@ -65,6 +67,31 @@ class AllHttpsClientsPinnedTest {
         val starts = Regex("""OkHttpClient\s*\.\s*Builder\s*\(\s*\)|OkHttpClient\s*\(\s*\)""")
         assertEquals(emptyList<String>(), offenders(starts, except = allowed))
     }
+
+    @Test
+    fun `every Retrofit sends through a client it is given`() {
+        val offenders = sources.filter { (_, text) -> startsRetrofitWithoutClient(text) }.keys
+        assertEquals(emptyList<String>(), offenders.map { it.substringAfterLast("/java/") }.sorted())
+    }
+
+    @Test
+    fun `a Retrofit given no client is caught`() {
+        assertTrue(startsRetrofitWithoutClient("val api = Retrofit.Builder().baseUrl(base).build()"))
+        assertTrue(startsRetrofitWithoutClient("Retrofit.Builder()\n    .baseUrl(base)\n    .addConverterFactory(f)\n    .build()"))
+        assertFalse(startsRetrofitWithoutClient("Retrofit.Builder().baseUrl(base).callFactory(calls).build()"))
+        assertFalse(startsRetrofitWithoutClient("Retrofit.Builder()\n    .baseUrl(base)\n    .client(client)\n    .build()"))
+    }
+
+    /**
+     * Whether [text] makes a Retrofit without naming the client it sends through, up to its
+     * `build()`. Such a Retrofit makes an OkHttpClient of its own, inside the library, where the
+     * check on `OkHttpClient` above cannot see it: an unpinned one.
+     */
+    private fun startsRetrofitWithoutClient(text: String): Boolean =
+        Regex("""Retrofit\s*\.\s*Builder\s*\(\s*\)""").findAll(text).any { start ->
+            val chain = text.substring(start.range.last).substringBefore(".build()")
+            !Regex("""\.\s*(client|callFactory)\s*\(""").containsMatchIn(chain)
+        }
 
     @Test
     fun `no production code asks the pinned builder for the platform's trust`() {

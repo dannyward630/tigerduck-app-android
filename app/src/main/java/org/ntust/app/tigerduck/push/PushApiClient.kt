@@ -10,6 +10,8 @@ import okhttp3.Request
 import org.json.JSONObject
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.ntust.app.tigerduck.BuildConfig
+import org.ntust.app.tigerduck.network.BackendServices
+import org.ntust.app.tigerduck.network.EmptyBody
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.NotSignedInException
 import org.ntust.app.tigerduck.auth.guardedBy
@@ -60,16 +62,18 @@ class PushApiClient @Inject constructor(
         .guardedBy(authTokenManager)
         .build()
 
+    // The endpoints, each sent through the client its call went through before Retrofit.
+    private val api = BackendServices(PushApi::class.java, client)
+    private val deletes by lazy { BackendServices(PushApi::class.java, deleteClient) }
+    private val uploads = BackendServices(PushApi::class.java) { request -> uploadCall(request) }
+
     /**
-     * Adds the Bearer Authorization header, signing in first when there is no
+     * The Bearer Authorization header, signing in first when there is no
      * session. Without one it throws [NotSignedInException] and the request
      * is not sent.
      */
-    private suspend fun Request.Builder.addAuthHeader(signIn: Int? = null): Request.Builder =
-        header(
-            "Authorization",
-            if (signIn == null) authTokenManager.requireAuthHeader() else authTokenManager.requireAuthHeader(signIn),
-        )
+    private suspend fun authHeader(signIn: Int? = null): String =
+        if (signIn == null) authTokenManager.requireAuthHeader() else authTokenManager.requireAuthHeader(signIn)
 
     /**
      * Register the device with no account attached.
@@ -81,12 +85,7 @@ class PushApiClient @Inject constructor(
      */
     suspend fun registerAnonymous(req: AnonymousDeviceRequest): Unit =
         withContext(Dispatchers.IO) {
-            val body = gson.toJson(req).toRequestBody(jsonType)
-            val request = Request.Builder()
-                .url("$baseUrl/devices/anonymous")
-                .post(body)
-                .build()
-            client.newCall(request).execute().use { response ->
+            api.at(baseUrl).anonymousDevice(req).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw PushApiException(
                         "anonymous register failed: HTTP ${response.code} ${response.body.string()}"
@@ -97,13 +96,8 @@ class PushApiClient @Inject constructor(
 
     suspend fun register(req: DeviceRegisterRequest): DeviceRegisterResponse =
         withContext(Dispatchers.IO) {
-            val body = gson.toJson(req).toRequestBody(jsonType)
-            val request = Request.Builder()
-                .url("$baseUrl/devices/register")
-                .post(body)
-                .addAuthHeader()
-                .build()
-            client.newCall(request).execute().use { response ->
+            val service = api.at(baseUrl)
+            service.registeredDevice(authHeader(), req).execute().use { response ->
                 val text = response.body.string()
                 if (!response.isSuccessful) {
                     throw PushApiException("register failed: HTTP ${response.code} $text")
@@ -130,12 +124,7 @@ class PushApiClient @Inject constructor(
     ): Int = withContext(Dispatchers.IO) {
         // v3: DELETE /devices/{client_device_id}, scoped to the authed user
         // (matches iOS + the server). `deviceId` is PushIdentity.uuid().
-        val request = Request.Builder()
-            .url("$base/devices/$deviceId")
-            .delete()
-            .header("Authorization", "Bearer $accessToken")
-            .build()
-        deleteClient.newCall(request).execute().use { response -> response.code }
+        deletes.at(base).removeDevice("Bearer $accessToken", deviceId, EmptyBody).execute().use { response -> response.code }
     }
 
     // A sign-in of the same student waits for the sign-out's unregister, so its
@@ -161,13 +150,8 @@ class PushApiClient @Inject constructor(
     suspend fun putHolidayOverride(holidayId: Int, notify: Boolean, signIn: Int? = null): Boolean =
         withContext(Dispatchers.IO) {
             if (!isSyncCapable) return@withContext false
-            val body = gson.toJson(HolidayOverrideRequest(notify)).toRequestBody(jsonType)
-            val request = Request.Builder()
-                .url("$baseUrl/sync/holiday-overrides/$holidayId")
-                .put(body)
-                .addAuthHeader(signIn)
-                .build()
-            client.newCall(request).execute().use { response ->
+            val service = api.at(baseUrl)
+            service.holidayOverride(authHeader(signIn), holidayId, HolidayOverrideRequest(notify)).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw PushApiException(
                         "holiday override failed: HTTP ${response.code}"
@@ -208,13 +192,8 @@ class PushApiClient @Inject constructor(
         if (preferencesPatchBlockedOnFdroid(payload)) {
             throw PushApiException("updateDevicePreferences refused: fdroid cannot change sync or push preferences")
         }
-        val body = gson.toJson(payload).toRequestBody(jsonType)
-        val request = Request.Builder()
-            .url("$baseUrl/devices/$deviceId/preferences")
-            .patch(body)
-            .addAuthHeader()
-            .build()
-        client.newCall(request).execute().use { response ->
+        val service = api.at(baseUrl)
+        service.devicePreferences(authHeader(), deviceId, payload).execute().use { response ->
             val text = response.body.string()
             if (!response.isSuccessful) {
                 throw PushApiException("updateDevicePreferences failed: HTTP ${response.code} $text")
@@ -233,13 +212,8 @@ class PushApiClient @Inject constructor(
             "moodle_token" to moodleToken,
             "moodle_private_token" to moodlePrivateToken,
         )
-        val body = gson.toJson(payload).toRequestBody(jsonType)
-        val request = Request.Builder()
-            .url("$baseUrl/auth/credentials")
-            .patch(body)
-            .addAuthHeader()
-            .build()
-        client.newCall(request).execute().use { response ->
+        val service = api.at(baseUrl)
+        service.credentials(authHeader(), payload).execute().use { response ->
             if (!response.isSuccessful) {
                 throw PushApiException("updateCredentials failed: HTTP ${response.code}")
             }
@@ -258,13 +232,8 @@ class PushApiClient @Inject constructor(
     ) = withContext(Dispatchers.IO) {
         if (!isSyncCapable || !prefs.syncAssignments) return@withContext
         val payload = mapOf("local_status" to localStatus)
-        val body = gson.toJson(payload).toRequestBody(jsonType)
-        val request = Request.Builder()
-            .url("$baseUrl/sync/assignments/$assignmentId/override")
-            .patch(body)
-            .addAuthHeader(signIn)
-            .build()
-        client.newCall(request).execute().use { response ->
+        val service = api.at(baseUrl)
+        service.assignmentOverride(authHeader(signIn), assignmentId, payload).execute().use { response ->
             if (!response.isSuccessful) {
                 throw PushApiException("patchAssignmentOverride failed: HTTP ${response.code}", response.code)
             }
@@ -294,17 +263,13 @@ class PushApiClient @Inject constructor(
         if (colorHex != null) payload["color_hex"] = colorHex
         if (customName != null) payload["custom_name"] = customName
         if (locale != null) payload["locale"] = locale
-        val body = gson.toJson(payload).toRequestBody(jsonType)
-        val request = Request.Builder()
-            .url("$baseUrl/sync/courses/$courseId/override")
-            .patch(body)
-            .addAuthHeader(signIn)
-            .build()
+        val service = api.at(baseUrl)
+        val call = service.courseOverride(authHeader(signIn), courseId.toString(), payload)
         // Read once the header is made, which can renew the session and so
         // suspend: a hold the course outbox put on the kind meanwhile must
         // stop the request, which the switches above alone would let through.
         if (!allowed()) return@withContext false
-        client.newCall(request).execute().use { response ->
+        call.execute().use { response ->
             if (!response.isSuccessful) {
                 throw PushApiException("patchCourseOverride failed: HTTP ${response.code}", response.code)
             }
@@ -333,12 +298,8 @@ class PushApiClient @Inject constructor(
         if (ignore != null) payload["ignore_assignments"] = ignore
         if (moodleCourseId != null && moodleCourseId >= 1) payload["moodle_course_id"] = moodleCourseId
         if (payload.isEmpty()) return@withContext null
-        val request = Request.Builder()
-            .url("$baseUrl/sync/courses/$moodleId/override")
-            .patch(gson.toJson(payload).toRequestBody(jsonType))
-            .addAuthHeader()
-            .build()
-        client.newCall(request).execute().use { response ->
+        val service = api.at(baseUrl)
+        service.courseIgnore(authHeader(), moodleId, payload).execute().use { response ->
             if (!response.isSuccessful) {
                 throw PushApiException("patchCourseIgnore failed: HTTP ${response.code}", response.code)
             }
@@ -416,12 +377,8 @@ class PushApiClient @Inject constructor(
             ifCurrent = { record -> authTokenManager.runIfSignedIn(signIn, record) },
             signIn = signIn,
         ) {
-            val request = Request.Builder()
-                .url("$base/sync/assignments/upload")
-                .post(json.toRequestBody(jsonType))
-                .addAuthHeader(signIn)
-                .build()
-            client.newCall(request).execute().use { response ->
+            val service = api.at(base)
+            service.assignmentsUpload(authHeader(signIn), json.toRequestBody(jsonType)).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw PushApiException("uploadAssignments failed: HTTP ${response.code}", response.code)
                 }
@@ -490,12 +447,9 @@ class PushApiClient @Inject constructor(
             always = resend || forceKeys.isNotEmpty(),
             signIn = startedIn,
         ) {
-            val request = Request.Builder()
-                .url("$base/sync/courses/upload")
-                .post(body)
-                .addAuthHeader(signIn)
-                .build()
-            accepted = uploadCall(request).execute().use { response ->
+            // Through uploadCall, with its deadline for the whole call.
+            val service = uploads.at(base)
+            accepted = service.coursesUpload(authHeader(signIn), body).execute().use { response ->
                 if (!response.isSuccessful) {
                     throw PushApiException("uploadCourses failed: HTTP ${response.code}", response.code)
                 }
@@ -519,12 +473,8 @@ class PushApiClient @Inject constructor(
      */
     suspend fun deleteCourse(courseKey: String, signIn: Int? = null) = withContext(Dispatchers.IO) {
         if (!isSyncCapable || !prefs.syncCourses) return@withContext
-        val request = Request.Builder()
-            .url("$baseUrl/sync/courses/$courseKey")
-            .delete()
-            .addAuthHeader(signIn)
-            .build()
-        client.newCall(request).execute().use { response ->
+        val service = api.at(baseUrl)
+        service.removeCourse(authHeader(signIn), courseKey, EmptyBody).execute().use { response ->
             if (!response.isSuccessful) {
                 throw PushApiException("deleteCourse failed: HTTP ${response.code}")
             }
@@ -543,16 +493,14 @@ class PushApiClient @Inject constructor(
      */
     suspend fun deleteAllCourses(semester: String? = null) = withContext(Dispatchers.IO) {
         if (!isSyncCapable || !prefs.syncCourses) return@withContext
-        val url = "$baseUrl/sync/courses".let {
-            if (semester != null) "$it?semester=${java.net.URLEncoder.encode(semester, "UTF-8")}" else it
-        }
-        val request = Request.Builder()
-            .url(url)
-            .delete()
-            .addAuthHeader()
-            .build()
+        val service = api.at(baseUrl)
+        val call = service.removeCourses(
+            authHeader(),
+            semester?.let { java.net.URLEncoder.encode(it, "UTF-8") },
+            EmptyBody,
+        )
         val reset: suspend () -> Unit = {
-            client.newCall(request).execute().use { response ->
+            call.execute().use { response ->
                 if (!response.isSuccessful) {
                     throw PushApiException("deleteAllCourses failed: HTTP ${response.code}")
                 }
