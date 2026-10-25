@@ -40,6 +40,7 @@
     <string name="action_close">ปิด</string>
     <string name="action_confirm">ยืนยัน</string>
     <string name="action_continue">ดำเนินการต่อ</string>
+    <string name="action_delete">ลบ</string>
     <string name="action_done">เสร็จสิ้น</string>
     <string name="action_go_to_settings">ไปที่การตั้งค่า</string>
     <string name="action_got_it">เข้าใจแล้ว</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">ขนาดการแสดงผลและข้อความ</string>
     <string name="settings_display_size_ui">ขนาดการแสดงผล</string>
     <string name="settings_display_size_widget_section">วิดเจ็ต</string>
+    <string name="settings_downloaded_files_delete_all">ลบไฟล์ที่ดาวน์โหลดทั้งหมด</string>
+    <string name="settings_downloaded_files_delete_all_message">ไฟล์ Moodle และไฟล์แนบในอีเมลจะดาวน์โหลดใหม่เมื่อคุณเปิดครั้งถัดไป</string>
+    <string name="settings_downloaded_files_delete_all_title">ลบไฟล์ที่ดาวน์โหลดทั้งหมดใช่ไหม</string>
+    <string name="settings_downloaded_files_footer">ไฟล์ที่ดาวน์โหลดในเบราว์เซอร์ของ TigerDuck จะบันทึกไว้ในโฟลเดอร์ดาวน์โหลดของโทรศัพท์ และจะไม่ถูกลบที่นี่</string>
+    <string name="settings_downloaded_files_images">รูปตารางเรียน</string>
+    <string name="settings_downloaded_files_mail">ไฟล์แนบในอีเมล</string>
+    <string name="settings_downloaded_files_moodle">ไฟล์ Moodle</string>
+    <string name="settings_downloaded_files_title">ไฟล์ที่ดาวน์โหลด</string>
     <string name="settings_feedback_bug_report">ความคิดเห็น / รายงานปัญหา</string>
     <string name="settings_flip_to_library_summary">พลิกโทรศัพท์คว่ำหน้าลงเพื่อเปิด QR ห้องสมุด</string>
     <string name="settings_flip_to_library_title">พลิกเพื่อแสดง QR ห้องสมุด</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">แสดงห้องเรียนในตารางเรียน</string>
     <string name="settings_sign_out_imported_tables">ตารางเรียนที่นำเข้าจะถูกลบด้วย</string>
     <string name="settings_sign_out_unsynced_data">ข้อมูลที่ไม่ได้ซิงค์กับ TigerSync จะถูกลบ</string>
+    <string name="settings_storage_browser_data">ข้อมูลเว็บไซต์</string>
+    <string name="settings_storage_browser_data_delete_message">เว็บไซต์ที่คุณเข้าชมในเบราว์เซอร์ของ TigerDuck อาจขอให้คุณลงชื่อเข้าใช้อีกครั้ง</string>
+    <string name="settings_storage_browser_data_delete_title">ลบข้อมูลเว็บไซต์ใช่ไหม</string>
+    <string name="settings_storage_delete_kind">ลบ%@</string>
+    <string name="settings_storage_title">พื้นที่เก็บข้อมูล</string>
+    <string name="settings_storage_total">ทั้งหมด</string>
     <string name="settings_sync_brief_description">TigerSync ช่วยให้คุณซิงค์ข้อมูลที่เลือกในอุปกรณ์ทั้งหมด ข้อมูลที่ไม่ได้เปิดใช้จะอยู่ในอุปกรณ์นี้เท่านั้น</string>
     <string name="settings_sync_disabled_note">แม้จะปิดการซิงค์ เซิร์ฟเวอร์ TigerDuck ยังคงได้รับรหัสนักศึกษา โทเค็น Moodle และข้อมูลรับรอง push ของอุปกรณ์นี้เพื่อส่งการแจ้งเตือนงาน</string>
     <string name="settings_sync_status_off">ปิด</string>

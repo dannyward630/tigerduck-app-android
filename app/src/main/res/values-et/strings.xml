@@ -40,6 +40,7 @@
     <string name="action_close">Sulge</string>
     <string name="action_confirm">Kinnita</string>
     <string name="action_continue">Jätka</string>
+    <string name="action_delete">Kustuta</string>
     <string name="action_done">Valmis</string>
     <string name="action_go_to_settings">Mine seadetesse</string>
     <string name="action_got_it">Selge</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">Kuva- ja tekstisuurus</string>
     <string name="settings_display_size_ui">Kuvasuurus</string>
     <string name="settings_display_size_widget_section">Vidinad</string>
+    <string name="settings_downloaded_files_delete_all">Kustuta kõik allalaaditud failid</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle\'i failid ja e-kirjade manused laaditakse järgmisel avamisel uuesti alla.</string>
+    <string name="settings_downloaded_files_delete_all_title">Kas kustutada kõik allalaaditud failid?</string>
+    <string name="settings_downloaded_files_footer">TigerDucki brauseris allalaaditud failid salvestatakse telefoni kausta Allalaadimised ja neid siin ei kustutata.</string>
+    <string name="settings_downloaded_files_images">Tunniplaani pildid</string>
+    <string name="settings_downloaded_files_mail">E-kirjade manused</string>
+    <string name="settings_downloaded_files_moodle">Moodle\'i failid</string>
+    <string name="settings_downloaded_files_title">Allalaaditud failid</string>
     <string name="settings_feedback_bug_report">Tagasiside / Vea aruanne</string>
     <string name="settings_flip_to_library_summary">Pööra telefon ekraaniga allapoole, et avada raamatukogu QR.</string>
     <string name="settings_flip_to_library_title">Pööra raamatukogu QR-i näitamiseks</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Näita tunniplaanis ruume</string>
     <string name="settings_sign_out_imported_tables">Ka imporditud tunniplaanid kustutatakse.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync\'iga sünkroonimata andmed kustutatakse.</string>
+    <string name="settings_storage_browser_data">Veebisaitide andmed</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDucki brauseris külastatud saidid võivad paluda teil uuesti sisse logida.</string>
+    <string name="settings_storage_browser_data_delete_title">Kas kustutada veebisaitide andmed?</string>
+    <string name="settings_storage_delete_kind">Kustuta: %@</string>
+    <string name="settings_storage_title">Salvestusruum</string>
+    <string name="settings_storage_total">Kokku</string>
     <string name="settings_sync_brief_description">TigerSync võimaldab sünkroonida valitud teavet kõigi seadmete vahel. Sünkroonimata teave jääb ainult sellesse seadmesse.</string>
     <string name="settings_sync_disabled_note">Kui sünkroonimine on välja lülitatud, saab TigerDuck server ülesannete meeldetuletuste saatmiseks endiselt sinu tudengi ID, Moodle\'i tokeni ja selle seadme push-mandaadid</string>
     <string name="settings_sync_status_off">Väljas</string>

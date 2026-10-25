@@ -40,6 +40,7 @@
     <string name="action_close">Tanca</string>
     <string name="action_confirm">Confirma</string>
     <string name="action_continue">Continua</string>
+    <string name="action_delete">Elimina</string>
     <string name="action_done">Fet</string>
     <string name="action_go_to_settings">Ves a la configuració</string>
     <string name="action_got_it">Entès</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">Mida de visualització i del text</string>
     <string name="settings_display_size_ui">Mida de visualització</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Elimina tots els fitxers baixats</string>
+    <string name="settings_downloaded_files_delete_all_message">Els fitxers de Moodle i els adjunts del correu es tornaran a baixar la propera vegada que els obriu.</string>
+    <string name="settings_downloaded_files_delete_all_title">Voleu eliminar tots els fitxers baixats?</string>
+    <string name="settings_downloaded_files_footer">Els fitxers baixats al navegador de TigerDuck es desen a la carpeta Baixades del vostre telèfon i no s\'eliminen aquí.</string>
+    <string name="settings_downloaded_files_images">Imatges de l\'horari</string>
+    <string name="settings_downloaded_files_mail">Fitxers adjunts del correu</string>
+    <string name="settings_downloaded_files_moodle">Fitxers de Moodle</string>
+    <string name="settings_downloaded_files_title">Fitxers baixats</string>
     <string name="settings_feedback_bug_report">Comentaris / Informeu d\'un problema</string>
     <string name="settings_flip_to_library_summary">Gira el telèfon amb la pantalla cap avall per obrir el QR de la biblioteca.</string>
     <string name="settings_flip_to_library_title">Gira per mostrar el QR de la biblioteca</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Mostra les aules a l\'horari</string>
     <string name="settings_sign_out_imported_tables">També s\'eliminaran els horaris importats.</string>
     <string name="settings_sign_out_unsynced_data">S\'eliminaran les dades no sincronitzades amb TigerSync.</string>
+    <string name="settings_storage_browser_data">Dades de llocs web</string>
+    <string name="settings_storage_browser_data_delete_message">És possible que els llocs que heu visitat al navegador de TigerDuck us demanin que torneu a iniciar la sessió.</string>
+    <string name="settings_storage_browser_data_delete_title">Voleu eliminar les dades de llocs web?</string>
+    <string name="settings_storage_delete_kind">Elimina: %@</string>
+    <string name="settings_storage_title">Emmagatzematge</string>
+    <string name="settings_storage_total">Total</string>
     <string name="settings_sync_brief_description">TigerSync permet sincronitzar la informació seleccionada entre tots els dispositius amb TigerSync activat. La informació no activada es queda només en aquest dispositiu.</string>
     <string name="settings_sync_disabled_note">Amb la sincronització desactivada, el servidor de TigerDuck continua rebent el teu ID d\'estudiant, el token de Moodle i les credencials push d\'aquest dispositiu per enviar recordatoris de tasques</string>
     <string name="settings_sync_status_off">Desactivat</string>

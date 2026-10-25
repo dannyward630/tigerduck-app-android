@@ -40,6 +40,7 @@
     <string name="action_close">ಮುಚ್ಚಿ</string>
     <string name="action_confirm">ದೃಢಪಡಿಸಿ</string>
     <string name="action_continue">ಮುಂದುವರಿಸಿ</string>
+    <string name="action_delete">ಅಳಿಸಿ</string>
     <string name="action_done">ಮುಗಿಯಿತು</string>
     <string name="action_go_to_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳಿಗೆ ಹೋಗಿ</string>
     <string name="action_got_it">ತಿಳಿಯಿತು</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">ಡಿಸ್‌ಪ್ಲೇ ಮತ್ತು ಪಠ್ಯದ ಗಾತ್ರ</string>
     <string name="settings_display_size_ui">ಡಿಸ್‌ಪ್ಲೇ ಗಾತ್ರ</string>
     <string name="settings_display_size_widget_section">ವಿಜೆಟ್‌ಗಳು</string>
+    <string name="settings_downloaded_files_delete_all">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಎಲ್ಲಾ ಫೈಲ್‌ಗಳನ್ನು ಅಳಿಸಿ</string>
+    <string name="settings_downloaded_files_delete_all_message">ಮುಂದಿನ ಬಾರಿ ತೆರೆದಾಗ Moodle ಫೈಲ್‌ಗಳು ಮತ್ತು ಮೇಲ್ ಲಗತ್ತುಗಳು ಮತ್ತೆ ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತವೆ.</string>
+    <string name="settings_downloaded_files_delete_all_title">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಎಲ್ಲಾ ಫೈಲ್‌ಗಳನ್ನು ಅಳಿಸಬೇಕೆ?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck ಬ್ರೌಸರ್‌ನಲ್ಲಿ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಫೈಲ್‌ಗಳು ನಿಮ್ಮ ಫೋನ್‌ನ Downloads ಫೋಲ್ಡರ್‌ನಲ್ಲಿ ಉಳಿಯುತ್ತವೆ ಮತ್ತು ಇಲ್ಲಿಂದ ಅಳಿಸಲಾಗುವುದಿಲ್ಲ.</string>
+    <string name="settings_downloaded_files_images">ತರಗತಿ ವೇಳಾಪಟ್ಟಿಯ ಚಿತ್ರಗಳು</string>
+    <string name="settings_downloaded_files_mail">ಮೇಲ್ ಲಗತ್ತುಗಳು</string>
+    <string name="settings_downloaded_files_moodle">Moodle ಫೈಲ್‌ಗಳು</string>
+    <string name="settings_downloaded_files_title">ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಫೈಲ್‌ಗಳು</string>
     <string name="settings_feedback_bug_report">ಪ್ರತಿಕ್ರಿಯೆ / ಸಮಸ್ಯೆ ವರದಿ</string>
     <string name="settings_flip_to_library_summary">ಲೈಬ್ರರಿ QR ತೆರೆಯಲು ಫೋನ್ ಅನ್ನು ಸ್ಕ್ರೀನ್ ಕೆಳಕ್ಕೆ ಮಾಡಿ ಫ್ಲಿಪ್ ಮಾಡಿ.</string>
     <string name="settings_flip_to_library_title">ಲೈಬ್ರರಿ QR ತೋರಿಸಲು ಫ್ಲಿಪ್ ಮಾಡಿ</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">ವೇಳಾಪಟ್ಟಿಯಲ್ಲಿ ತರಗತಿ ಕೊಠಡಿ ತೋರಿಸಿ</string>
     <string name="settings_sign_out_imported_tables">ಆಮದು ಮಾಡಿದ ತರಗತಿ ವೇಳಾಪಟ್ಟಿಗಳನ್ನೂ ಅಳಿಸಲಾಗುತ್ತದೆ.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync ಜೊತೆ ಸಿಂಕ್ ಆಗದ ಡೇಟಾವನ್ನು ಅಳಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="settings_storage_browser_data">ವೆಬ್‌ಸೈಟ್ ಡೇಟಾ</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck ಬ್ರೌಸರ್‌ನಲ್ಲಿ ನೀವು ಭೇಟಿ ನೀಡಿದ ಸೈಟ್‌ಗಳು ಮತ್ತೆ ಸೈನ್ ಇನ್ ಮಾಡಲು ಕೇಳಬಹುದು.</string>
+    <string name="settings_storage_browser_data_delete_title">ವೆಬ್‌ಸೈಟ್ ಡೇಟಾವನ್ನು ಅಳಿಸಬೇಕೆ?</string>
+    <string name="settings_storage_delete_kind">%@ ಅಳಿಸಿ</string>
+    <string name="settings_storage_title">ಸಂಗ್ರಹಣೆ</string>
+    <string name="settings_storage_total">ಒಟ್ಟು</string>
     <string name="settings_sync_brief_description">TigerSync ನಿಮ್ಮ ಎಲ್ಲ ಸಾಧನಗಳಲ್ಲಿ ಮಾಹಿತಿಯನ್ನು ಸಿಂಕ್ ಮಾಡಲು ಅನುಮತಿಸುತ್ತದೆ. ಸಿಂಕ್‌ಗೆ ಸಕ್ರಿಯವಲ್ಲದ ಮಾಹಿತಿ ಈ ಸಾಧನದಲ್ಲಿ ಮಾತ್ರ ಉಳಿಯುತ್ತದೆ.</string>
     <string name="settings_sync_disabled_note">ಸಿಂಕ್ ಆಫ್ ಆಗಿದ್ದರೂ, ಅಸೈನ್‌ಮೆಂಟ್ ಜ್ಞಾಪನೆಗಳನ್ನು ಕಳುಹಿಸಲು TigerDuck ಸರ್ವರ್ ನಿಮ್ಮ ವಿದ್ಯಾರ್ಥಿ ID, Moodle ಟೋಕನ್ ಮತ್ತು ಈ ಸಾಧನದ ಪುಶ್ ರುಜುವಾತುಗಳನ್ನು ಪಡೆಯುತ್ತದೆ</string>
     <string name="settings_sync_status_off">ಆಫ್</string>

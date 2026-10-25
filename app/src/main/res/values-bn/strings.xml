@@ -40,6 +40,7 @@
     <string name="action_close">বন্ধ করুন</string>
     <string name="action_confirm">নিশ্চিত করুন</string>
     <string name="action_continue">এগিয়ে যান</string>
+    <string name="action_delete">মুছুন</string>
     <string name="action_done">সম্পন্ন</string>
     <string name="action_go_to_settings">সেটিংসে যান</string>
     <string name="action_got_it">বুঝেছি</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">ডিসপ্লে ও লেখার আকার</string>
     <string name="settings_display_size_ui">ডিসপ্লের আকার</string>
     <string name="settings_display_size_widget_section">উইজেট</string>
+    <string name="settings_downloaded_files_delete_all">সব ডাউনলোড করা ফাইল মুছুন</string>
+    <string name="settings_downloaded_files_delete_all_message">পরের বার খুললে Moodle ফাইল ও মেইলের অ্যাটাচমেন্ট আবার ডাউনলোড হবে।</string>
+    <string name="settings_downloaded_files_delete_all_title">সব ডাউনলোড করা ফাইল মুছবেন?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck ব্রাউজারে ডাউনলোড করা ফাইল আপনার ফোনের Downloads ফোল্ডারে সেভ হয় এবং এখান থেকে মোছা হয় না।</string>
+    <string name="settings_downloaded_files_images">ক্লাস তালিকার ছবি</string>
+    <string name="settings_downloaded_files_mail">মেইলের অ্যাটাচমেন্ট</string>
+    <string name="settings_downloaded_files_moodle">Moodle ফাইল</string>
+    <string name="settings_downloaded_files_title">ডাউনলোড করা ফাইল</string>
     <string name="settings_feedback_bug_report">মতামত / সমস্যা রিপোর্ট করুন</string>
     <string name="settings_flip_to_library_summary">লাইব্রেরি QR খুলতে ফোনটি স্ক্রিন নিচু করে উল্টান।</string>
     <string name="settings_flip_to_library_title">লাইব্রেরি QR দেখাতে উল্টান</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">রুটিনে শ্রেণিকক্ষ দেখান</string>
     <string name="settings_sign_out_imported_tables">আমদানি করা ক্লাস তালিকাগুলোও মুছে ফেলা হবে।</string>
     <string name="settings_sign_out_unsynced_data">TigerSync-এর সঙ্গে সিঙ্ক না করা ডেটা মুছে ফেলা হবে।</string>
+    <string name="settings_storage_browser_data">ওয়েবসাইটের ডেটা</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck ব্রাউজারে দেখা সাইটগুলো আবার সাইন ইন করতে বলতে পারে।</string>
+    <string name="settings_storage_browser_data_delete_title">ওয়েবসাইটের ডেটা মুছবেন?</string>
+    <string name="settings_storage_delete_kind">%@ মুছুন</string>
+    <string name="settings_storage_title">স্টোরেজ</string>
+    <string name="settings_storage_total">মোট</string>
     <string name="settings_sync_brief_description">TigerSync আপনাকে আপনার সমস্ত ডিভাইসে তথ্য সিঙ্ক করতে দেয়। সিঙ্কের জন্য সক্ষম নয় এমন তথ্য শুধুমাত্র এই ডিভাইসে থাকে।</string>
     <string name="settings_sync_disabled_note">সিঙ্ক বন্ধ থাকলেও, অ্যাসাইনমেন্টের রিমাইন্ডার পাঠাতে TigerDuck সার্ভার আপনার ছাত্র আইডি, Moodle টোকেন এবং এই ডিভাইসের পুশ শংসাপত্র পায়</string>
     <string name="settings_sync_status_off">বন্ধ</string>

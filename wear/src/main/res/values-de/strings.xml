@@ -40,6 +40,7 @@
     <string name="action_close">Schließen</string>
     <string name="action_confirm">Bestätigen</string>
     <string name="action_continue">Fortfahren</string>
+    <string name="action_delete">Löschen</string>
     <string name="action_done">Fertig</string>
     <string name="action_go_to_settings">Zu den Einstellungen</string>
     <string name="action_got_it">Verstanden</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">Anzeige- und Textgröße</string>
     <string name="settings_display_size_ui">Anzeigegröße</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Alle heruntergeladenen Dateien löschen</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-Dateien und E-Mail-Anhänge werden erneut heruntergeladen, wenn Sie sie das nächste Mal öffnen.</string>
+    <string name="settings_downloaded_files_delete_all_title">Alle heruntergeladenen Dateien löschen?</string>
+    <string name="settings_downloaded_files_footer">Im TigerDuck-Browser heruntergeladene Dateien werden im Download-Ordner Ihres Telefons gespeichert und hier nicht gelöscht.</string>
+    <string name="settings_downloaded_files_images">Stundenplanbilder</string>
+    <string name="settings_downloaded_files_mail">E-Mail-Anhänge</string>
+    <string name="settings_downloaded_files_moodle">Moodle-Dateien</string>
+    <string name="settings_downloaded_files_title">Heruntergeladene Dateien</string>
     <string name="settings_feedback_bug_report">Feedback / Fehler melden</string>
     <string name="settings_flip_to_library_summary">Lege das Handy mit dem Display nach unten, um den Bibliotheks-QR zu öffnen.</string>
     <string name="settings_flip_to_library_title">Bibliotheks-QR per Umdrehen anzeigen</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Räume im Stundenplan anzeigen</string>
     <string name="settings_sign_out_imported_tables">Importierte Stundenpläne werden ebenfalls gelöscht.</string>
     <string name="settings_sign_out_unsynced_data">Nicht mit TigerSync synchronisierte Daten werden gelöscht.</string>
+    <string name="settings_storage_browser_data">Websitedaten</string>
+    <string name="settings_storage_browser_data_delete_message">Websites, die Sie im TigerDuck-Browser besucht haben, fordern Sie möglicherweise erneut zur Anmeldung auf.</string>
+    <string name="settings_storage_browser_data_delete_title">Websitedaten löschen?</string>
+    <string name="settings_storage_delete_kind">%@ löschen</string>
+    <string name="settings_storage_title">Speicher</string>
+    <string name="settings_storage_total">Gesamt</string>
     <string name="settings_sync_brief_description">Mit TigerSync kannst du ausgewählte Daten auf allen Geräten synchronisieren, auf denen TigerSync aktiviert ist. Nicht aktivierte Daten bleiben nur auf diesem Gerät.</string>
     <string name="settings_sync_disabled_note">Wenn die Synchronisierung aus ist, erhält der TigerDuck-Server weiterhin deine Matrikelnummer, dein Moodle-Token und die Push-Zugangsdaten dieses Geräts, um Aufgabenerinnerungen zu senden</string>
     <string name="settings_sync_status_off">Aus</string>

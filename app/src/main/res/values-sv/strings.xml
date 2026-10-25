@@ -40,6 +40,7 @@
     <string name="action_close">Stäng</string>
     <string name="action_confirm">Bekräfta</string>
     <string name="action_continue">Fortsätt</string>
+    <string name="action_delete">Ta bort</string>
     <string name="action_done">Klar</string>
     <string name="action_go_to_settings">Gå till inställningar</string>
     <string name="action_got_it">Förstår</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">Visnings- och textstorlek</string>
     <string name="settings_display_size_ui">Visningsstorlek</string>
     <string name="settings_display_size_widget_section">Widgetar</string>
+    <string name="settings_downloaded_files_delete_all">Ta bort alla nedladdade filer</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-filer och bilagor från mejl laddas ned igen nästa gång du öppnar dem.</string>
+    <string name="settings_downloaded_files_delete_all_title">Vill du ta bort alla nedladdade filer?</string>
+    <string name="settings_downloaded_files_footer">Filer som laddas ned i TigerDucks webbläsare sparas i mappen Nedladdningar på telefonen och tas inte bort här.</string>
+    <string name="settings_downloaded_files_images">Bilder av schemat</string>
+    <string name="settings_downloaded_files_mail">Bilagor från mejl</string>
+    <string name="settings_downloaded_files_moodle">Moodle-filer</string>
+    <string name="settings_downloaded_files_title">Nedladdade filer</string>
     <string name="settings_feedback_bug_report">Feedback / Rapportera problem</string>
     <string name="settings_flip_to_library_summary">Vänd telefonen med skärmen nedåt för att öppna bibliotekets QR.</string>
     <string name="settings_flip_to_library_title">Vänd för att visa bibliotekets QR</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Visa salar i schemat</string>
     <string name="settings_sign_out_imported_tables">Importerade scheman tas också bort.</string>
     <string name="settings_sign_out_unsynced_data">Data som inte har synkats med TigerSync tas bort.</string>
+    <string name="settings_storage_browser_data">Webbplatsdata</string>
+    <string name="settings_storage_browser_data_delete_message">Webbplatser du besökt i TigerDucks webbläsare kan be dig logga in igen.</string>
+    <string name="settings_storage_browser_data_delete_title">Vill du ta bort webbplatsdata?</string>
+    <string name="settings_storage_delete_kind">Ta bort %@</string>
+    <string name="settings_storage_title">Lagring</string>
+    <string name="settings_storage_total">Totalt</string>
     <string name="settings_sync_brief_description">TigerSync låter dig synkronisera vald information på alla enheter. Information utan synkronisering förblir bara på den här enheten.</string>
     <string name="settings_sync_disabled_note">När synkronisering är av får TigerDuck-servern ändå ditt student-ID, din Moodle-token och den här enhetens push-uppgifter för att skicka påminnelser om uppgifter</string>
     <string name="settings_sync_status_off">Av</string>
