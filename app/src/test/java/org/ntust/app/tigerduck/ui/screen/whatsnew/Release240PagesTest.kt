@@ -65,6 +65,25 @@ class Release240PagesTest {
         assertEquals(false, runFor(withCalendar, asked = true)?.contains("mail-bottom-bar"))
     }
 
+    /** A run from before 2.3.0, which shows both releases' pages. */
+    private fun runFrom2_2(bar: List<AppFeature>, asked: Boolean): List<String>? {
+        val pages = mapOf(
+            28 to release230Pages(tabs = { bar }, setTabs = {}, mailBarQuestionAsked = { asked }),
+            30 to release240Pages(isLibrarySignedIn = { false }, tabs = { bar }, setTabs = {}, mailBarQuestionAsked = { asked }),
+        )
+        return WhatsNewFlow.from(Plan.Show(listOf(28, 30), summaryVersion = null, replay = false), pages, emptyMap())?.pageIds
+    }
+
+    @Test
+    fun `a run from before 2_3_0 asks the Mail question once`() {
+        assertEquals(1, runFrom2_2(withCalendar, asked = false)?.count { it == "mail-bottom-bar" })
+    }
+
+    @Test
+    fun `a run from before 2_3_0, restarted after Keep Mine, does not ask the Mail question again`() {
+        assertEquals(false, runFrom2_2(withCalendar, asked = true)?.contains("mail-bottom-bar"))
+    }
+
     @Test
     fun `either answer to the Mail question marks it asked`() {
         var marked = 0

@@ -5,14 +5,13 @@ import androidx.compose.material.icons.filled.Mail
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import org.ntust.app.tigerduck.data.model.AppFeature
-import org.ntust.app.tigerduck.ui.AppState
 
 /**
  * "School Mail is here!" — introduces School Mail in 2.3.0; it shipped in
  * 2.2.0, but few noticed. Says "2.2.0" rather than "the last version"
  * because someone upgrading from further back sees this page too.
  */
-internal fun schoolMailPage(appState: AppState) = WhatsNewPage.Feature(
+internal fun schoolMailPage(tabs: () -> List<AppFeature>) = WhatsNewPage.Feature(
     id = "school-mail",
     visual = WhatsNewVisual.Icon(Icons.Filled.Mail, WhatsNewEffect.Bounce),
     title = WhatsNewText(
@@ -23,7 +22,7 @@ internal fun schoolMailPage(appState: AppState) = WhatsNewPage.Feature(
         en = "Since version 2.2.0, you can read, search and send your NTUST mail right in TigerDuck.",
         zhHant = "從 2.2.0 版開始，可以直接在 TigerDuck 收發、搜尋臺科大信件。",
     ),
-    isApplicable = { offersMailPages(appState.configuredTabs) },
+    isApplicable = { offersMailPages(tabs()) },
 )
 
 /**
