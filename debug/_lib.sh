@@ -15,6 +15,11 @@ case "$CHECKOUT_DIR" in
 esac
 LOCAL_BUILD_ROOT="$HOME/.tigerduck-build/checkouts/$CHECKOUT_KEY"
 
+# Filled by choose_devices and install_each.
+CHOSEN=()
+CLOCK_PAIRS=()
+FAILED_ON=()
+
 # Echo the absolute path to a module's outputs/ dir, accounting for the local
 # redirect. Usage: module_outputs_dir app  → /…/app/outputs (or app/build/outputs)
 module_outputs_dir() {
@@ -66,17 +71,18 @@ run_with_timeout() {
   return "$rc"
 }
 
-# Print a serial for an interactive device pick. Lists every connected adb
-# device (phones, watches, emulators) and lets the user choose. If exactly
-# one is connected, returns it without prompting. Optional first arg is a
-# label used in prompts/errors ("phone", "watch", etc.) — display only,
-# does not filter.
-pick_device() {
-  local label="${1:-device}"
+# Fill DEVICE_SERIALS and DEVICE_LABELS with the connected adb devices. With
+# kind "phone" or "watch" it keeps the devices whose ro.build.characteristics
+# say so, and any that didn't answer, since those could be either; with any
+# other kind it keeps them all.
+_list_devices() {
+  local kind="$1"
+  DEVICE_SERIALS=()
+  DEVICE_LABELS=()
 
   require adb
 
-  local serials=() labels=()
+  local line
   # Read via fd 3 so the inner `adb shell` calls don't drain the device list
   # (adb shell inherits stdin and would consume the remaining lines, leaving
   # us with only the first device — and a silent auto-pick).
@@ -103,13 +109,30 @@ pick_device() {
     else
       tag=" [unresponsive]"
     fi
+    case "$kind" in
+      phone) [[ "$chars" == *watch* ]] && continue ;;
+      watch) [[ -n "$chars" && "$chars" != *watch* ]] && continue ;;
+    esac
     [[ "$chars" == *watch* ]] && tag="$tag [watch]"
     [[ "$serial" == emulator-* ]] && tag="$tag [emulator]"
-    serials+=("$serial")
-    labels+=("$serial  ${model:-?}$tag")
+    DEVICE_SERIALS+=("$serial")
+    DEVICE_LABELS+=("$serial  ${model:-?}$tag")
   done 3< <(adb devices)
+}
 
-  if [[ ${#serials[@]} -eq 0 ]]; then
+# Print a serial for an interactive device pick. Lists every connected adb
+# device (phones, watches, emulators) and lets the user choose. If exactly
+# one is connected, returns it without prompting. Optional first arg is a
+# label used in prompts/errors ("phone", "watch", etc.) — display only,
+# does not filter.
+pick_device() {
+  local label="${1:-device}"
+
+  _list_devices all
+  local serials=("${DEVICE_SERIALS[@]+"${DEVICE_SERIALS[@]}"}")
+  local labels=("${DEVICE_LABELS[@]+"${DEVICE_LABELS[@]}"}")
+
+  if [[ ${#DEVICE_SERIALS[@]} -eq 0 ]]; then
     echo "error: no connected adb $label found. Run 'adb devices' to check." >&2
     return 1
   fi
@@ -132,6 +155,168 @@ pick_device() {
     fi
     echo "invalid choice; enter a number 0..$((${#serials[@]} - 1))" >&2
   done
+}
+
+# Let the user pick one or more of the connected devices of <kind> ("phone" or
+# "watch"), and leave their serials in CHOSEN. One matching device is chosen
+# without asking. Otherwise a menu on the terminal: ↑/↓ or k/j move, space
+# ticks, a ticks all (or clears them), Enter takes the ticked ones — or the
+# highlighted one when none is ticked — and q cancels. Without a terminal it
+# asks for numbers instead. Returns 1 when nothing was chosen.
+choose_devices() {
+  local kind="$1"
+  CHOSEN=()
+
+  _list_devices "$kind"
+  local n=${#DEVICE_SERIALS[@]}
+  if (( n == 0 )); then
+    echo "error: no connected adb $kind found. Run 'adb devices' to check." >&2
+    return 1
+  fi
+  if (( n == 1 )); then
+    CHOSEN=("${DEVICE_SERIALS[0]}")
+    echo "==> Only one $kind connected: ${DEVICE_LABELS[0]}" >&2
+    return 0
+  fi
+
+  local picks
+  if { : >/dev/tty; } 2>/dev/null; then
+    picks="$(_tick_menu "Install on which ${kind}s?" "${DEVICE_LABELS[@]}" </dev/tty 2>/dev/tty)" || return 1
+  else
+    picks="$(_number_menu "Install on which ${kind}s?" "${DEVICE_LABELS[@]}")" || return 1
+  fi
+  local i
+  for i in $picks; do
+    CHOSEN+=("${DEVICE_SERIALS[$i]}")
+  done
+  (( ${#CHOSEN[@]} > 0 ))
+}
+
+# The menu choose_devices draws: <title>, then one row per item. Reads keys
+# from stdin and draws on stderr, both the terminal; prints the picked
+# indexes on stdout, space-separated. Returns 1 when cancelled.
+_tick_menu() {
+  local title="$1"; shift
+  local items=("$@")
+  local n=${#items[@]} cur=0 i key rest
+  local ticked=()
+  for ((i = 0; i < n; i++)); do ticked[i]=0; done
+
+  local saved_stty
+  saved_stty="$(stty -g)"
+  # Restored on every way out, Ctrl-C included, so the shell is never left
+  # with no echo and no cursor.
+  trap 'stty "$saved_stty"; printf "\e[?25h" >&2; exit 130' INT TERM
+  stty -echo
+  printf '\e[?25l' >&2
+
+  local drawn=0
+  _draw() {
+    (( drawn )) && printf '\e[%dA' $((n + 1)) >&2
+    printf '\r\e[2K%s  \e[2m(space: tick · a: all · Enter: install · q: cancel)\e[0m\n' "$title" >&2
+    for ((i = 0; i < n; i++)); do
+      local box="[ ]"
+      (( ticked[i] )) && box="[x]"
+      if (( i == cur )); then
+        printf '\r\e[2K\e[7m> %s %s\e[0m\n' "$box" "${items[i]}" >&2
+      else
+        printf '\r\e[2K  %s %s\n' "$box" "${items[i]}" >&2
+      fi
+    done
+    drawn=1
+  }
+
+  local done=0 cancelled=0
+  while (( ! done )); do
+    _draw
+    IFS= read -rsn1 key || { cancelled=1; break; }
+    case "$key" in
+      $'\e')
+        rest=""
+        IFS= read -rsn2 -t 1 rest || true
+        case "$rest" in
+          '[A'|'OA') (( cur = (cur + n - 1) % n )) ;;
+          '[B'|'OB') (( cur = (cur + 1) % n )) ;;
+          '') cancelled=1; done=1 ;;
+        esac
+        ;;
+      k) (( cur = (cur + n - 1) % n )) ;;
+      j) (( cur = (cur + 1) % n )) ;;
+      ' ') (( ticked[cur] = ! ticked[cur] )) ;;
+      a|A)
+        local all=1
+        for ((i = 0; i < n; i++)); do (( ticked[i] )) || all=0; done
+        for ((i = 0; i < n; i++)); do ticked[i]=$(( ! all )); done
+        ;;
+      q|Q) cancelled=1; done=1 ;;
+      '') done=1 ;;
+    esac
+  done
+
+  stty "$saved_stty"
+  printf '\e[?25h' >&2
+  trap - INT TERM
+
+  if (( cancelled )); then
+    echo "Cancelled." >&2
+    return 1
+  fi
+  local picks=()
+  for ((i = 0; i < n; i++)); do (( ticked[i] )) && picks+=("$i"); done
+  (( ${#picks[@]} )) || picks=("$cur")
+  echo "${picks[*]}"
+}
+
+# choose_devices' fallback with no terminal: numbers from stdin, several at
+# once ("0 2"), or "a" for all. Prints the picked indexes, space-separated.
+_number_menu() {
+  local title="$1"; shift
+  local items=("$@") n=$# i choice
+  echo "$title" >&2
+  for ((i = 0; i < n; i++)); do echo "  [$i] ${items[i]}" >&2; done
+  while true; do
+    read -r -p "Numbers, space-separated, or a for all > " choice || return 1
+    choice="${choice//,/ }"
+    if [[ "$choice" =~ ^[[:space:]]*[aA][[:space:]]*$ ]]; then
+      seq -s ' ' 0 $((n - 1))
+      return 0
+    fi
+    local ok=1 c
+    [[ -n "${choice// /}" ]] || ok=0
+    for c in $choice; do
+      [[ "$c" =~ ^[0-9]+$ ]] && (( c < n )) || ok=0
+    done
+    if (( ok )); then
+      echo "$choice"
+      return 0
+    fi
+    echo "invalid choice; enter numbers 0..$((n - 1))" >&2
+  done
+}
+
+# adb_install the APK on each serial in turn, going on past a failure. Each
+# serial installed on is added to CLOCK_PAIRS with <pkg>, for
+# maybe_preset_clock; each that failed, to FAILED_ON.
+install_each() {
+  local pkg="$1" apk="$2"; shift 2
+  local serial
+  for serial in "$@"; do
+    echo "==> Installing $apk → $serial"
+    if adb_install "$serial" "$pkg" "$apk"; then
+      CLOCK_PAIRS+=("$serial" "$pkg")
+    else
+      FAILED_ON+=("$serial")
+    fi
+  done
+}
+
+# Exit 1, naming them, when any install_each install failed.
+exit_if_any_failed() {
+  if (( ${#FAILED_ON[@]} )); then
+    echo "error: install failed on:" >&2
+    printf '  %s\n' "${FAILED_ON[@]}" >&2
+    exit 1
+  fi
 }
 
 # Interactive: ask whether to pre-set the debug clock override and push the
