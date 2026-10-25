@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.ui.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -39,41 +40,44 @@ class CjkCenteringTest {
         val cjkDescent: Float = 14f,
         val cjkInkBelowMiddle: Float = 2.5f,
     ) : CjkCentering.LineLayout, CjkCentering.Glyphs {
-        val latinAscent = 44f
-        val latinDescent = 12f
+        /** The fonts' metrics above are at 18sp; another size scales them. */
+        fun scale(style: TextStyle) = if (style.fontSize.isSpecified) style.fontSize.value / 18f else 1f
 
-        override fun ascent(style: TextStyle) = latinAscent
+        fun latinAscent(style: TextStyle) = 44f * scale(style)
+        fun latinDescent(style: TextStyle) = 12f * scale(style)
 
-        override fun inkMiddle(text: String, style: TextStyle) =
+        override fun ascent(style: TextStyle) = latinAscent(style)
+
+        override fun inkMiddle(text: String, style: TextStyle) = scale(style) *
             if (text == CjkCentering.CJK_SAMPLE) -(cjkAscent - cjkDescent) / 2f + cjkInkBelowMiddle else -15f
 
         /** The px a shift moves glyphs by: negative is up. */
-        fun shiftPx(shift: Float) = ceil(-latinAscent * shift)
+        fun shiftPx(style: TextStyle, shift: Float) = ceil(-latinAscent(style) * shift)
 
-        override fun line(text: String, style: TextStyle, topRatio: Float, shift: Float): CjkCentering.Line {
+        override fun line(text: String, style: TextStyle, shift: Float): CjkCentering.Line {
             val cjk = text == CjkCentering.CJK_SAMPLE
             // A shift up makes room above the primary font, as Android's measure does.
-            val primaryAscent = latinAscent - shiftPx(shift)
-            val ascent = if (cjk) maxOf(primaryAscent, cjkAscent) else primaryAscent
-            val descent = if (cjk) maxOf(latinDescent, cjkDescent) else latinDescent
+            val primaryAscent = latinAscent(style) - shiftPx(style, shift)
+            val ascent = if (cjk) maxOf(primaryAscent, cjkAscent * scale(style)) else primaryAscent
+            val descent = if (cjk) maxOf(latinDescent(style), cjkDescent * scale(style)) else latinDescent(style)
             if (cjkKeepsItsHeight && ascent + descent >= lineHeight) {
                 return CjkCentering.Line(baseline = ascent, height = ascent + descent)
             }
             // Compose's LineHeightStyleSpan: the line made `lineHeight` tall, the difference
-            // shared out by the top ratio.
-            val ratio = topRatio
+            // shared out evenly, as Material's Center alignment does.
+            val ratio = 0.5f
             val diff = lineHeight - (ascent + descent).toInt()
             val descentDiff = if (diff <= 0) ceil(diff * ratio) else ceil(diff * (1f - ratio))
             val newDescent = descent + descentDiff
             return CjkCentering.Line(baseline = lineHeight - newDescent, height = lineHeight.toFloat())
         }
 
-        fun cjkLow(c: CjkCentering.Correction?) =
-            CjkCentering.cjkOffset(TextStyle(), c?.topRatio ?: 0.5f, c?.shift ?: 0f, this, this)
+        fun cjkLow(c: CjkCentering.Correction?, style: TextStyle = TextStyle()) =
+            CjkCentering.cjkOffset(style, c?.shift ?: 0f, this, this)
 
         /** Where a Latin line's glyphs sit from its middle, where a row centers it: its baseline plus the shift. */
-        fun latinGlyphs(c: CjkCentering.Correction?) =
-            line(CjkCentering.LATIN_SAMPLE, TextStyle(), c?.topRatio ?: 0.5f, c?.shift ?: 0f).fromMiddle + shiftPx(c?.shift ?: 0f)
+        fun latinGlyphs(c: CjkCentering.Correction?, style: TextStyle = TextStyle()) =
+            line(CjkCentering.LATIN_SAMPLE, style, c?.shift ?: 0f).fromMiddle + shiftPx(style, c?.shift ?: 0f)
 
         fun correction(style: TextStyle) = CjkCentering.correction(style, this, this)
     }
@@ -89,12 +93,23 @@ class CjkCenteringTest {
     }
 
     @Test
-    fun `and a latin line stays where it was`() {
+    fun `and a latin line moves no more than a px`() {
         val device = Device(cjkKeepsItsHeight = true)
 
         val c = device.correction(style)
 
-        assertEquals(device.latinGlyphs(null), device.latinGlyphs(c), 0.5f)
+        assertEquals(device.latinGlyphs(null), device.latinGlyphs(c), 1f)
+    }
+
+    @Test
+    fun `a smaller size taken from a corrected style keeps latin where it was`() {
+        // As Text(fontSize = …) under the theme's style, or a room name shrunk to fit:
+        // the size changes, the line height and the correction stay.
+        val device = Device(cjkKeepsItsHeight = true)
+        val c = device.correction(style)
+        val smaller = style.copy(fontSize = 18.sp * 0.6f)
+
+        assertEquals(device.latinGlyphs(null, smaller), device.latinGlyphs(c, smaller), 1f)
     }
 
     @Test
@@ -114,13 +129,14 @@ class CjkCenteringTest {
     }
 
     @Test
-    fun `a font that sits further down is raised further`() {
+    fun `a font that sits further down is raised further, as far as latin lets it`() {
         val device = Device(cjkKeepsItsHeight = true, cjkInkBelowMiddle = 5f)
 
         val c = device.correction(style)
 
-        assertTrue(abs(device.cjkLow(c)) <= 0.5f)
-        assertEquals(device.latinGlyphs(null), device.latinGlyphs(c), 1f)
+        val cjkLow = abs(device.cjkLow(c))
+        val latinMoved = abs(device.latinGlyphs(c) - device.latinGlyphs(null))
+        assertTrue("CJK $cjkLow px off, Latin moved $latinMoved px", maxOf(cjkLow, latinMoved) <= 2.5f)
     }
 
     @Test
@@ -147,14 +163,14 @@ class CjkCenteringTest {
         val applied = CjkCentering.applied(base, corrections)
 
         assertEquals(15, corrections.size)
-        assertEquals(with(CjkCentering) { style.aligned(device.correction(style)!!.topRatio, device.correction(style)!!.shift) }, applied.bodyLarge)
+        assertEquals(with(CjkCentering) { style.raised(device.correction(style)!!.shift) }, applied.bodyLarge)
         assertEquals(CjkCentering.centered(other, device, device), applied.labelLarge)
         assertNotEquals(style, applied.titleSmall)
     }
 
     @Test
     fun `corrections are kept and read back as they were`() {
-        val corrections = listOf(CjkCentering.Correction(0.068f, 0.75f), null) + List(13) { CjkCentering.Correction(0.1f, 0.5f) }
+        val corrections = listOf(CjkCentering.Correction(0.068f), null) + List(13) { CjkCentering.Correction(0.1f) }
 
         assertEquals(corrections, CjkCentering.decode(CjkCentering.encode(corrections)))
     }
@@ -162,8 +178,8 @@ class CjkCenteringTest {
     @Test
     fun `kept corrections that don't read back whole are measured again`() {
         assertNull(CjkCentering.decode(""))
-        assertNull(CjkCentering.decode("0.1,0.5;-"))
-        assertNull(CjkCentering.decode(List(15) { "0.1,2.0" }.joinToString(";")))
-        assertNull(CjkCentering.decode(List(15) { "x,0.5" }.joinToString(";")))
+        assertNull(CjkCentering.decode("0.1;-"))
+        assertNull(CjkCentering.decode(List(15) { "2.0" }.joinToString(";")))
+        assertNull(CjkCentering.decode(List(15) { "x" }.joinToString(";")))
     }
 }
