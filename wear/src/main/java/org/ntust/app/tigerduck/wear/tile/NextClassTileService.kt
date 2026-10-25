@@ -2,10 +2,7 @@ package org.ntust.app.tigerduck.wear.tile
 
 import android.content.Context
 import androidx.concurrent.futures.CallbackToFutureAdapter
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.wear.protolayout.ActionBuilders
-import androidx.wear.protolayout.ColorBuilders
 import androidx.wear.protolayout.LayoutElementBuilders
 import androidx.wear.protolayout.ModifiersBuilders
 import androidx.wear.protolayout.ResourceBuilders
@@ -26,9 +23,7 @@ import org.ntust.app.tigerduck.shared.NextClassResult
 import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.wear.MainActivity
 import org.ntust.app.tigerduck.wear.R
-import org.ntust.app.tigerduck.wear.data.SchedulePersistence
 import org.ntust.app.tigerduck.wear.data.SchedulePersistenceHolder
-import org.ntust.app.tigerduck.wear.ui.theme.readableOnBlack
 import org.ntust.app.tigerduck.wear.data.WatchSnapshot
 import org.ntust.app.tigerduck.wear.ui.weekdayCaptionRes
 import java.time.LocalDate
@@ -192,12 +187,10 @@ class NextClassTileService : TileService() {
             }
         }
 
-        // The status line in the phone's accent, as the app's titles are. A tile's text
-        // takes one color, so a gradient shows its start.
         val column = LayoutElementBuilders.Column.Builder()
-            .addContent(tileTextLine(label, tileAccentArgb(snapshot.accentHex)))
-            .addContent(tileTextLine(body, accentArgb = null))
-            .apply { if (sub.isNotEmpty()) addContent(tileTextLine(sub, accentArgb = null)) }
+            .addContent(textLine(label))
+            .addContent(textLine(body))
+            .apply { if (sub.isNotEmpty()) addContent(textLine(sub)) }
             .build()
 
         val launchClick = ModifiersBuilders.Clickable.Builder()
@@ -221,6 +214,11 @@ class NextClassTileService : TileService() {
         return LayoutElementBuilders.Layout.Builder().setRoot(root).build()
     }
 
+    private fun textLine(text: String): LayoutElementBuilders.LayoutElement =
+        LayoutElementBuilders.Text.Builder()
+            .setText(TypeBuilders.StringProp.Builder(text).build())
+            .build()
+
     private fun formatHm(minuteOfDay: Int): String =
         "%02d:%02d".format(minuteOfDay / 60, minuteOfDay % 60)
 
@@ -233,25 +231,4 @@ class NextClassTileService : TileService() {
             getUpdater(context).requestUpdate(NextClassTileService::class.java)
         }
     }
-}
-
-/** One line of the tile: in [accentArgb] when given, otherwise the color the system gives text. */
-internal fun tileTextLine(text: String, accentArgb: Int?): LayoutElementBuilders.LayoutElement =
-    LayoutElementBuilders.Text.Builder()
-        .setText(TypeBuilders.StringProp.Builder(text).build())
-        .apply {
-            if (accentArgb != null) {
-                setFontStyle(LayoutElementBuilders.FontStyle.Builder().setColor(ColorBuilders.argb(accentArgb)).build())
-            }
-        }
-        .build()
-
-/**
- * The phone's accent as the tile paints it, [made readable on black][readableOnBlack];
- * the watch's default blue for one it can't read.
- */
-internal fun tileAccentArgb(hex: String): Int {
-    val accent = runCatching { android.graphics.Color.parseColor(hex) }
-        .getOrDefault(android.graphics.Color.parseColor(SchedulePersistence.DEFAULT_ACCENT))
-    return readableOnBlack(Color(accent)).toArgb()
 }

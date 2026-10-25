@@ -1,0 +1,71 @@
+package org.ntust.app.tigerduck.wear.ui
+
+import android.graphics.Bitmap
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.MaterialTheme
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.GraphicsMode
+import kotlin.math.abs
+
+/**
+ * The bars on the two padding screens: they show the value's own place, from
+ * empty at the least padding to full at the most, as it changes.
+ */
+@RunWith(RobolectricTestRunner::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class PaddingBarTest {
+
+    @get:Rule
+    val rule = createComposeRule()
+
+    private fun bar(): Bitmap = rule.onNodeWithTag("bar").captureToImage().asAndroidBitmap()
+
+    private fun Bitmap.at(fraction: Float): Color = Color(getPixel((width * fraction).toInt(), height / 2))
+
+    private fun Color.near(other: Color) =
+        abs(red - other.red) + abs(green - other.green) + abs(blue - other.blue) < 0.15f
+
+    @Test
+    fun `the bar follows the value to either end, not only its first`() {
+        var dp by mutableIntStateOf(12)
+        rule.setContent {
+            MaterialTheme { PaddingBar({ dp }, minDp = 0, maxDp = 24, modifier = Modifier.size(200.dp, 8.dp).testTag("bar")) }
+        }
+
+        dp = 24
+        rule.waitForIdle()
+        val full = bar()
+        val fill = full.at(0.05f)
+        assertTrue("filled at 85% when full", full.at(0.85f).near(fill))
+
+        dp = 0
+        rule.waitForIdle()
+        assertFalse("not filled at 40% when empty", bar().at(0.4f).near(fill))
+    }
+
+    @Test
+    fun `the value's place runs from 0 to 1 and stops at the ends`() {
+        assertEquals(0f, paddingFraction(0, 0, 24), 0f)
+        assertEquals(0.5f, paddingFraction(12, 0, 24), 0f)
+        assertEquals(1f, paddingFraction(24, 0, 24), 0f)
+        assertEquals(1f, paddingFraction(30, 0, 24), 0f)
+        assertEquals(0f, paddingFraction(5, 5, 5), 0f)
+    }
+}

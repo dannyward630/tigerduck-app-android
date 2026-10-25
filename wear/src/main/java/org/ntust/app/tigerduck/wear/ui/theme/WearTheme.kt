@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
@@ -14,7 +13,6 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.shared.Course
@@ -61,26 +59,6 @@ fun accentBrush(start: Color, gradient: WearAccentGradient?, bounds: Rect): Brus
 }
 
 /**
- * Wear's Material colors with the phone's [accent] as primary, as the iPhone
- * tints its watch app with it (`.accentColor`): buttons, sliders, toggles and
- * the icons on them follow it. The accent is [made readable on black][readableOnBlack]
- * first, as the watch's background is. Text on it and on its dark container is
- * black or white, or a light tone of the accent, whichever reads.
- */
-fun accentColorScheme(accent: Color): ColorScheme {
-    val primary = readableOnBlack(accent)
-    val container = lerp(Color.Black, accent, 0.4f)
-    val lightAccent = lerp(accent, Color.White, 0.7f)
-    return ColorScheme().copy(
-        primary = primary,
-        primaryDim = lerp(primary, Color.Black, 0.2f),
-        primaryContainer = container,
-        onPrimary = readableOn(primary),
-        onPrimaryContainer = if (contrast(lightAccent, container) >= 4.5f) lightAccent else readableOn(container),
-    )
-}
-
-/**
  * [color] as text and marks on the watch's black take it: itself when it reads there
  * (4.5:1, WCAG's bar for text), otherwise lifted toward white until it does, its hue kept.
  * A dark accent, such as the iPhone's own Indigo preset, would otherwise all but vanish.
@@ -97,7 +75,7 @@ internal fun readableOnBlack(color: Color): Color {
 }
 
 /** Black or white, whichever reads better on [background]. */
-private fun readableOn(background: Color): Color =
+fun textOn(background: Color): Color =
     if (contrast(Color.Black, background) >= contrast(Color.White, background)) Color.Black else Color.White
 
 /** WCAG's contrast ratio between [a] and [b], from 1 to 21. */
@@ -154,6 +132,6 @@ fun WearTheme(
         LocalAccentGradient provides accentGradient,
         LocalScreenPadding provides paddingDp.dp,
     ) {
-        MaterialTheme(colorScheme = remember(accent) { accentColorScheme(accent) }, content = content)
+        MaterialTheme(content = content)
     }
 }

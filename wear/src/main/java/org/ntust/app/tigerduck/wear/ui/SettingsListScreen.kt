@@ -24,6 +24,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material3.ButtonColors
+import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
 import androidx.wear.compose.material3.ListHeader
@@ -34,8 +36,11 @@ import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.wear.BuildConfig
 import org.ntust.app.tigerduck.wear.R
 import org.ntust.app.tigerduck.wear.data.WatchSnapshot
+import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
 import org.ntust.app.tigerduck.wear.ui.theme.LocalScreenPadding
 import java.util.concurrent.TimeUnit
+import org.ntust.app.tigerduck.wear.ui.theme.readableOnBlack
+import org.ntust.app.tigerduck.wear.ui.theme.textOn
 
 @Composable
 fun SettingsListScreen(
@@ -62,6 +67,7 @@ fun SettingsListScreen(
                 FilledTonalButton(
                     onClick = onPaddingClick,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = accentButtonColors(),
                 ) {
                     Text(
                         text = stringResource(R.string.watch_screen_padding),
@@ -73,6 +79,7 @@ fun SettingsListScreen(
                 FilledTonalButton(
                     onClick = onQrPaddingClick,
                     modifier = Modifier.fillMaxWidth(),
+                    colors = accentButtonColors(),
                 ) {
                     Text(
                         text = stringResource(R.string.watch_qr_padding),
@@ -172,4 +179,14 @@ private fun VersionRow() {
         color = Color.Gray,
         modifier = Modifier.fillMaxWidth(),
     )
+}
+
+/**
+ * The two padding buttons in the phone's accent, lifted until it reads on the
+ * watch's black, with black or white text, whichever reads on it.
+ */
+@Composable
+private fun accentButtonColors(): ButtonColors {
+    val fill = readableOnBlack(LocalAccentColor.current)
+    return ButtonDefaults.filledTonalButtonColors(containerColor = fill, contentColor = textOn(fill))
 }
