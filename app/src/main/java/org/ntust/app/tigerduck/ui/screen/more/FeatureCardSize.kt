@@ -81,7 +81,7 @@ internal fun rememberFeatureCardSize(labels: List<String>, gridWidthPx: Int, col
     val measurer = rememberTextMeasurer()
     val style = featureLabelStyle()
     val density = LocalDensity.current
-    val locale = LocalConfiguration.current.locales[0] ?: java.util.Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     return remember(measurer, style, density, locale, labels, gridWidthPx, columns) {
         with(density) {
             // Rounded as the padding and spacing modifiers round them, and floored where the row

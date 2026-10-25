@@ -41,7 +41,7 @@ internal fun WholeWordsText(
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
 ) {
-    val locale = LocalConfiguration.current.locales[0] ?: java.util.Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val whole = style.copy(localeList = LocaleList(Locale(locale.toLanguageTag())))
     val breaks = remember(locale) { BreakIterator.getLineInstance(locale) }
     val measurer = rememberTextMeasurer()
