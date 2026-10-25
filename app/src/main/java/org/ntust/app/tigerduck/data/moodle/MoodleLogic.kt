@@ -241,6 +241,17 @@ object MoodleGrades {
     private val NUMBER = Regex("-?[0-9]+([.,][0-9]+)?")
 
     /**
+     * The grade as the screen writes and speaks it: a number without the zeros ending its decimals,
+     * "85" for Moodle's "85.00", as the iPhone shows it. A letter, a percentage or a scale's word
+     * stays whole, and a whole number keeps its own zeros.
+     */
+    fun shownGrade(item: MoodleGradeItem): String? {
+        val grade = item.grade ?: return null
+        if (!NUMBER.matches(grade) || grade.none { it == '.' || it == ',' }) return grade
+        return grade.trimEnd('0').trimEnd('.', ',')
+    }
+
+    /**
      * The most the grade could be, written only beside a grade that is a number: over a letter, a
      * percentage or a scale's word, the maximum would misread. Its digits follow Moodle's,
      * whatever the device's region.

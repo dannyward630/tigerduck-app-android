@@ -187,7 +187,7 @@ private fun GradeTotalCard(total: MoodleGradeItem) {
             )
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
-                    text = total.grade.orEmpty(),
+                    text = MoodleGrades.shownGrade(total).orEmpty(),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -269,7 +269,7 @@ private fun GradeRow(item: MoodleGradeItem, expanded: Boolean, onToggle: () -> U
                 Box(Modifier.width(12.dp))
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = item.grade.orEmpty(),
+                        text = MoodleGrades.shownGrade(item).orEmpty(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -322,7 +322,7 @@ private fun gradeIcon(item: MoodleGradeItem): ImageVector = when (item.module) {
 /** "95, out of 100" for a number, the grade alone otherwise. */
 @Composable
 private fun spokenGrade(item: MoodleGradeItem): String {
-    val grade = item.grade ?: return ""
+    val grade = MoodleGrades.shownGrade(item) ?: return ""
     val max = MoodleGrades.maxText(item) ?: return grade
     return "$grade, " + stringResource(R.string.course_moodle_grade_out_of, max)
 }
