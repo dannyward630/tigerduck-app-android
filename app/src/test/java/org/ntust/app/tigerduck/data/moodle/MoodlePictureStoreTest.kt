@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.data.moodle
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.SupervisorJob
@@ -30,6 +31,7 @@ import java.lang.reflect.Type
  * The account's own picture (#446): a change Moodle takes fetches the members again, so the list
  * and the page show the new picture; one it refuses leaves the old picture and says why.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class MoodlePictureStoreTest {
 
     private val dispatcher = StandardTestDispatcher()

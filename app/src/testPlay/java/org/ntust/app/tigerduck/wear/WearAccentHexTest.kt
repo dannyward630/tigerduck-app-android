@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -25,6 +26,7 @@ import org.robolectric.annotation.Config
  * the watch: the swatch or gradient last picked, as the watch has no wallpaper
  * colors of its own to follow.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
 @Config(application = Application::class)

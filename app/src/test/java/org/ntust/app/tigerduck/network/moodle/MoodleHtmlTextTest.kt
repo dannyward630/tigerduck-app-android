@@ -160,7 +160,7 @@ class MoodleHtmlTextTest {
     }
 
     /** How deep the renderer's parser, which reads this Markdown on screen, finds lists and quotes nested. */
-    private fun nestingOf(markdown: String): Int {
+    private fun nestingOf(markdown: CharSequence): Int {
         val nests = setOf(MarkdownElementTypes.BLOCK_QUOTE, MarkdownElementTypes.UNORDERED_LIST, MarkdownElementTypes.ORDERED_LIST)
         fun depth(node: ASTNode): Int = (if (node.type in nests) 1 else 0) + (node.children.maxOfOrNull { depth(it) } ?: 0)
         return depth(MarkdownParser(GFMFlavourDescriptor(), true, CancellationToken.NonCancellable).buildMarkdownTreeFromString(markdown))
