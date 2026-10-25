@@ -36,7 +36,7 @@ class LibraryPassStateTest {
     private val signedIn = MutableStateFlow(true)
 
     /** Whether a sign-in typed on the page is under way. */
-    private var signingIn = false
+    private val signingIn = MutableStateFlow(false)
 
     /** What each code request does; past the end the library answers codes. */
     private val fetches = ArrayDeque<suspend () -> String>()
@@ -63,7 +63,7 @@ class LibraryPassStateTest {
         },
         render = { "image of $it" },
         signedIn = signedIn,
-        signingIn = { signingIn },
+        signingIn = signingIn,
         refreshSession = {
             refreshedWhileLoggedIn += state.isLoggedIn.value
             signedIn.value = hasAccount
@@ -194,7 +194,7 @@ class LibraryPassStateTest {
         pass.resume()
         runCurrent()
 
-        signingIn = true
+        signingIn.value = true
         hasAccount = true
         signedIn.value = true
         runCurrent()
@@ -202,10 +202,35 @@ class LibraryPassStateTest {
         assertEquals(0, fetched)
 
         pass.signedIn()
-        signingIn = false
+        signingIn.value = false
         runCurrent()
         assertTrue(pass.isLoggedIn.value)
         assertEquals(1, fetched)
+    }
+
+    @Test
+    fun `a sign-in made by itself while one typed on the page fails shows the pass once that ends`() = runTest {
+        hasAccount = false
+        signedIn.value = false
+        val pass = pass()
+        pass.load()
+        pass.resume()
+        runCurrent()
+
+        signingIn.value = true
+        hasAccount = true
+        signedIn.value = true
+        runCurrent()
+        assertFalse(pass.isLoggedIn.value)
+
+        // The typed one failed: the page's form says so, but the account the app signed in stands.
+        pass.errors.value = "wrong password"
+        signingIn.value = false
+        runCurrent()
+
+        assertTrue(pass.isLoggedIn.value)
+        assertEquals(1, fetched)
+        assertNull(pass.errors.value)
     }
 
     /** Retry on the page's error banner asks for a code at once (tigerduck-app/tigerduck-app#556). */

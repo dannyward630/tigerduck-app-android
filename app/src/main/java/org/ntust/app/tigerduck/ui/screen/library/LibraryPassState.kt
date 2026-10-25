@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -29,7 +30,7 @@ internal class LibraryPassState<Image : Any>(
     /** The library sign-in state Settings and the flip follow. */
     signedIn: Flow<Boolean>,
     /** Whether a sign-in typed on the page is under way; it shows the pass itself ([signedIn]). */
-    private val signingIn: () -> Boolean = { false },
+    signingIn: Flow<Boolean> = flowOf(false),
     /** Reads that state again. */
     private val refreshSession: () -> Unit,
     describe: (Exception) -> String,
@@ -109,10 +110,11 @@ internal class LibraryPassState<Image : Any>(
         // Signed in elsewhere, as the phone's retry does once the library takes
         // a stored password it had refused: a page left on the sign-in form
         // shows the pass, as on the iPhone. One away from the screen does when
-        // it comes back ([resume]), and one typing a sign-in when it lands.
+        // it comes back ([resume]), and one typing a sign-in once that ends:
+        // it shows the pass itself when it lands.
         scope.launch {
-            signedIn.collect {
-                if (it && showing && !_isLoggedIn.value && !signingIn() && hasAccount()) {
+            combine(signedIn, signingIn) { signedIn, signingIn -> signedIn && !signingIn }.collect {
+                if (it && showing && !_isLoggedIn.value && hasAccount()) {
                     errors.value = null
                     _isLoggedIn.value = true
                     cycle.start()

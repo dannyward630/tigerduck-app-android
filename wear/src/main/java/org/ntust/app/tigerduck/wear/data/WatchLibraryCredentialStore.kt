@@ -144,22 +144,26 @@ class WatchLibraryCredentialStore @VisibleForTesting internal constructor(
         val edit = prefs.edit()
         if (hasCredentials) {
             if (username == null || password == null) return ApplyResult.MALFORMED
-            val sameAccount = sameStudentId(prefs.getString(KEY_USERNAME, null), username)
-            if (!sameAccount || prefs.getString(KEY_PASSWORD, null) != password) {
-                edit.remove(KEY_REFUSALS).remove(KEY_REFUSED_AT)
+            // Atomic with a refusal being counted, which checks the password it
+            // counts against is still the stored one.
+            return account.atomically {
+                val sameAccount = sameStudentId(prefs.getString(KEY_USERNAME, null), username)
+                if (!sameAccount || prefs.getString(KEY_PASSWORD, null) != password) {
+                    edit.remove(KEY_REFUSALS).remove(KEY_REFUSED_AT)
+                }
+                edit.putString(KEY_USERNAME, username)
+                    .putString(KEY_PASSWORD, password)
+                    .putLong(KEY_TOKEN_EXPIRY, tokenExpiry)
+                    .putLong(KEY_ISSUED_AT_MS, issuedAtMs)
+                if (token == null) edit.remove(KEY_TOKEN) else edit.putString(KEY_TOKEN, token)
+                edit.putLong(KEY_LAST_VERSION, version)
+                if (sameAccount) {
+                    edit.apply()
+                } else {
+                    account.replaceAccount { edit.apply() }
+                }
+                ApplyResult.APPLIED
             }
-            edit.putString(KEY_USERNAME, username)
-                .putString(KEY_PASSWORD, password)
-                .putLong(KEY_TOKEN_EXPIRY, tokenExpiry)
-                .putLong(KEY_ISSUED_AT_MS, issuedAtMs)
-            if (token == null) edit.remove(KEY_TOKEN) else edit.putString(KEY_TOKEN, token)
-            edit.putLong(KEY_LAST_VERSION, version)
-            if (sameAccount) {
-                edit.apply()
-            } else {
-                account.replaceAccount { edit.apply() }
-            }
-            return ApplyResult.APPLIED
         }
 
         account.signOut {

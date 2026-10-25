@@ -60,7 +60,7 @@ class LibraryViewModel @Inject constructor(
         // the countdown animation and any ongoing gestures don't stutter.
         render = { payload -> withContext(Dispatchers.Default) { generateQRBitmap(payload) } },
         signedIn = librarySession.signedIn,
-        signingIn = { _isLoggingIn.value },
+        signingIn = _isLoggingIn,
         refreshSession = { librarySession.refresh() },
         describe = { e -> libraryErrorMessage(e, R.string.library_qr_generate_failed, context::getString) },
         cache = qrCache,
