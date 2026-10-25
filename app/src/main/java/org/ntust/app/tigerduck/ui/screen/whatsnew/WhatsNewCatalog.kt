@@ -20,12 +20,18 @@ object WhatsNewCatalog {
         // lands on 2.3.0, so it's introduced here.
         28 to listOf(
             schoolMailPage(appState),
-            mailBottomBarPage(appState),
+            mailBottomBarPage(
+                tabs = { appState.configuredTabs },
+                setTabs = { appState.configuredTabs = it },
+                markAsked = { appState.prefs.mailBarQuestionAsked = true },
+            ),
         ),
         30 to release240Pages(
             isLibrarySignedIn = { appState.isLibraryLoggedIn },
             tabs = { appState.configuredTabs },
             setTabs = { appState.configuredTabs = it },
+            mailBarQuestionAsked = { appState.prefs.mailBarQuestionAsked },
+            markMailBarQuestionAsked = { appState.prefs.mailBarQuestionAsked = true },
         ),
     )
 }
@@ -35,12 +41,16 @@ internal fun release240Pages(
     isLibrarySignedIn: () -> Boolean,
     tabs: () -> List<AppFeature>,
     setTabs: (List<AppFeature>) -> Unit,
+    mailBarQuestionAsked: () -> Boolean = { false },
+    markMailBarQuestionAsked: () -> Unit = {},
 ): List<WhatsNewPage> = listOf(
     replayPage(),
     moodleCoursePage(),
     moodleAssignmentPage(),
     classTableSharePage(),
     libraryPage(isSignedIn = isLibrarySignedIn),
+    // Before the Library question: Mail in a slot of its own can fill the bar, which that page then tells.
+    mailBottomBarPage(tabs = tabs, setTabs = setTabs, markAsked = markMailBarQuestionAsked, wasAsked = mailBarQuestionAsked),
     libraryBottomBarPage(isSignedIn = isLibrarySignedIn, tabs = tabs, setTabs = setTabs),
     bottomBarEditorPage(),
     mailNotificationsPage(),

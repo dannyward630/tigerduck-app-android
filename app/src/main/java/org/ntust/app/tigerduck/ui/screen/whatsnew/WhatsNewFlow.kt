@@ -45,7 +45,10 @@ class WhatsNewFlow(
                     restoredPageIds != null -> page.id in restoredPageIds
                     else -> page.isApplicable()
                 }
-            }.sortedByDescending { it.leadsTheRun }
+            }
+                // A page two releases both ask shows once, where the older release asks it.
+                .distinctBy { it.id }
+                .sortedByDescending { it.leadsTheRun }
             val summary = plan.summaryVersion?.let(summaries::get)
             if (pages.isEmpty() && summary == null) return null
             return WhatsNewFlow(pages, summary)

@@ -122,6 +122,8 @@ sealed class WhatsNewPage {
         val apply: () -> Unit,
         override val isApplicable: () -> Boolean = { true },
         val instead: () -> Feature? = { null },
+        /** Runs on [declineLabel], before the flow advances: the question was answered too. */
+        val onDecline: () -> Unit = {},
     ) : WhatsNewPage()
 
     /**

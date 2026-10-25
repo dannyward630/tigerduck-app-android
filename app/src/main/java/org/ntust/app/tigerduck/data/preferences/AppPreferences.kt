@@ -682,6 +682,14 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         get() = prefs.getBoolean("libraryTabKeepChecked", false)
         set(value) = prefs.edit().putBoolean("libraryTabKeepChecked", value).apply()
 
+    /**
+     * Set once What's New has asked whether Mail takes Calendar's place in the bottom bar, and
+     * answered either way, or the install ran 2.3.0 or 2.3.1, whose What's New asked it.
+     */
+    var mailBarQuestionAsked: Boolean
+        get() = prefs.getBoolean("mailBarQuestionAsked", false)
+        set(value) = prefs.edit().putBoolean("mailBarQuestionAsked", value).apply()
+
     /** Deletes the old library opt-in switch, from before the library was always on. */
     fun forgetLegacyLibraryOptIn() {
         prefs.edit().remove(LEGACY_LIBRARY_OPT_IN).apply()
