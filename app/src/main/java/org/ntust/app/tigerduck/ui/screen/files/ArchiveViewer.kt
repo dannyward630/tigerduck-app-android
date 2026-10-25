@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -47,6 +48,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -223,6 +225,7 @@ private fun FolderRow(folder: ArchiveNode.Folder, onClick: () -> Unit) {
     ListItem(
         headlineContent = { Text(folder.name, maxLines = 2, overflow = TextOverflow.Ellipsis) },
         leadingContent = { Icon(Icons.Outlined.Folder, contentDescription = stringResource(R.string.file_viewer_archive_folder)) },
+        colors = rowColors(),
         modifier = Modifier.clickable(onClick = onClick),
     )
 }
@@ -249,9 +252,14 @@ private fun FileRow(node: ArchiveNode.File, enabled: Boolean, onClick: () -> Uni
             }
             Icon(icon, contentDescription = reason)
         },
+        colors = rowColors(),
         modifier = Modifier.clickable(enabled = enabled, onClick = onClick),
     )
 }
+
+/** Rows on the page's own background, as the other viewers show their content. */
+@Composable
+private fun rowColors() = ListItemDefaults.colors(containerColor = Color.Transparent)
 
 /** What the viewer says about [ArchiveProblem], under "This file can't be shown here"; nothing for a damaged one. */
 internal fun ArchiveProblem.reason(): Int? = when (this) {
