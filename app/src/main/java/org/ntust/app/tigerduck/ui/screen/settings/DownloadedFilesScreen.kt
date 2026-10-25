@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -44,6 +46,7 @@ import org.ntust.app.tigerduck.ui.component.ContentCard
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.util.replaceIosArg
 
 /**
  * 已下載的檔案, under 其他設定: what the files the app downloaded take, the total and each kind,
@@ -89,7 +92,7 @@ fun DownloadedFilesScreen(
         ) {
             item {
                 ContentCard {
-                    SizeRow(stringResource(R.string.settings_downloaded_files_total), total, onDelete = null)
+                    SizeRow(stringResource(R.string.settings_downloaded_files_total), total)
                 }
             }
 
@@ -100,7 +103,13 @@ fun DownloadedFilesScreen(
                     Column {
                         Kind.entries.forEachIndexed { index, kind ->
                             if (index > 0) HorizontalDivider()
-                            SizeRow(stringResource(kind.label), sizes?.get(kind), onDelete = { viewModel.delete(kind) })
+                            val label = stringResource(kind.label)
+                            SizeRow(
+                                label,
+                                sizes?.get(kind),
+                                deleteDescription = stringResource(R.string.settings_downloaded_files_delete_kind).replaceIosArg(label),
+                                onDelete = { viewModel.delete(kind) },
+                            )
                         }
                     }
                 }
@@ -166,9 +175,12 @@ private val Kind.label: Int
         Kind.CLASS_TABLE_IMAGES -> R.string.settings_downloaded_files_images
     }
 
-/** A label, its size ("…" until measured), and Delete when [onDelete] is given. */
+/**
+ * A label, its size ("…" until measured), and Delete when [onDelete] is given, which TalkBack
+ * hears as [deleteDescription]: "Delete Moodle files", not one of three alike.
+ */
 @Composable
-private fun SizeRow(label: String, bytes: Long?, onDelete: (() -> Unit)?) {
+private fun SizeRow(label: String, bytes: Long?, deleteDescription: String? = null, onDelete: (() -> Unit)? = null) {
     val context = LocalContext.current
     Row(
         modifier = Modifier
@@ -184,7 +196,11 @@ private fun SizeRow(label: String, bytes: Long?, onDelete: (() -> Unit)?) {
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY),
         )
         if (onDelete != null) {
-            TextButton(onClick = onDelete, enabled = (bytes ?: 0L) > 0L) {
+            TextButton(
+                onClick = onDelete,
+                enabled = (bytes ?: 0L) > 0L,
+                modifier = Modifier.semantics { deleteDescription?.let { contentDescription = it } },
+            ) {
                 Text(stringResource(R.string.action_delete))
             }
         }

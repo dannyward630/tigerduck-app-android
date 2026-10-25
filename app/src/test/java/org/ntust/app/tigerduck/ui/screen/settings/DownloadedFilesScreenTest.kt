@@ -10,6 +10,7 @@ import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +28,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.moodle.MoodleFileDownloads
 import org.ntust.app.tigerduck.data.storage.DownloadedFiles
 import org.ntust.app.tigerduck.mail.store.MailCache
+import org.ntust.app.tigerduck.util.replaceIosArg
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
@@ -66,12 +68,13 @@ class DownloadedFilesScreenTest {
         write(image, 50_000)
         val files = DownloadedFiles(
             moodle = MoodleFileDownloads(root = { File(temp.root, "files/moodle_files") }, scope = scope, io = Dispatchers.Unconfined),
-            mail = MailCache(File(temp.root, "cache/mail")),
+            mailAttachments = { MailCache(File(temp.root, "cache/mail")).attachmentsDir },
             classTableImages = { File(temp.root, "cache/class_table_export") },
+            now = { System.currentTimeMillis() + 60 * 60 * 1000L },
             io = Dispatchers.Unconfined,
         )
         composeRule.setContent {
-            MaterialTheme { DownloadedFilesScreen(onBack = {}, viewModel = DownloadedFilesViewModel(files)) }
+            MaterialTheme { DownloadedFilesScreen(onBack = {}, viewModel = DownloadedFilesViewModel(files, scope)) }
         }
         composeRule.waitUntil { composeRule.onAllNodesWithText(size(1_350_000)).fetchSemanticsNodes().isNotEmpty() }
     }
@@ -114,6 +117,15 @@ class DownloadedFilesScreenTest {
         composeRule.waitUntil { !moodleFile.exists() && !attachment.exists() && !image.exists() }
 
         assertFalse(image.exists())
+    }
+
+    @Test
+    fun `talkback hears which kind each delete deletes`() {
+        openPage()
+
+        for (kind in listOf(R.string.settings_downloaded_files_moodle, R.string.settings_downloaded_files_mail, R.string.settings_downloaded_files_images)) {
+            composeRule.onNodeWithContentDescription(string(R.string.settings_downloaded_files_delete_kind).replaceIosArg(string(kind))).assertExists()
+        }
     }
 
     @Test

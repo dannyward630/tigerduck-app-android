@@ -145,22 +145,6 @@ class MailCache(
         root.deleteRecursively()
     }
 
-    /** The attachments opened from mail, not the files a send is staging ([OUTGOING_PREFIX]). */
-    @Synchronized
-    fun attachmentsBytes(): Long = openedAttachments().sumOf { dir -> dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } }
-
-    /**
-     * Deletes the attachments opened from mail, as Settings' "Downloaded files" does. The cached
-     * mail stays, and so do the files a send is staging, which it still has to read.
-     */
-    @Synchronized
-    fun clearAttachments() {
-        openedAttachments().forEach { it.deleteRecursively() }
-    }
-
-    private fun openedAttachments(): List<File> =
-        attachmentsDir.listFiles()?.filterNot { it.name.startsWith(OUTGOING_PREFIX) }.orEmpty()
-
     private fun <T> read(file: File, type: Class<T>): T? {
         if (!file.exists()) return null
         return try {

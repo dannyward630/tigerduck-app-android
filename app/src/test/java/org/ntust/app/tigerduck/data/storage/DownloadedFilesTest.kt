@@ -4,6 +4,7 @@ import android.app.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -15,6 +16,7 @@ import org.ntust.app.tigerduck.mail.store.MailCache
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
+import java.nio.file.Files
 
 /**
  * Settings' "Downloaded files": what each kind of file the app downloaded takes, and deleting a
@@ -33,16 +35,21 @@ class DownloadedFilesTest {
     private val mailRoot get() = File(cache, "mail")
     private val imagesRoot get() = File(cache, DownloadedFiles.CLASS_TABLE_EXPORT_DIR)
 
-    private fun write(file: File, bytes: Int): File {
+    private val now = 1_800_000_000_000L
+
+    /** [bytes] at [file], last written [ago] ms before [now]: an hour, unless a test says otherwise. */
+    private fun write(file: File, bytes: Int, ago: Long = 60 * 60 * 1000L): File {
         file.parentFile!!.mkdirs()
         file.writeBytes(ByteArray(bytes))
+        file.setLastModified(now - ago)
         return file
     }
 
     private fun downloaded(scope: kotlinx.coroutines.CoroutineScope) = DownloadedFiles(
         moodle = MoodleFileDownloads(root = { moodleRoot }, scope = scope, io = Dispatchers.Unconfined),
-        mail = MailCache(mailRoot),
+        mailAttachments = { MailCache(mailRoot).attachmentsDir },
         classTableImages = { imagesRoot },
+        now = { now },
         io = Dispatchers.Unconfined,
     )
 
@@ -58,7 +65,7 @@ class DownloadedFilesTest {
     private val staged get() = File(mailRoot, "attachments/outgoing-9d2e/1-Report.pdf")
     private val cachedMail get() = File(mailRoot, "folders/inbox.json")
     private val browserDownload get() = File(temp.root, "Download/Handout.pdf")
-    private val heldSend get() = File(files, "../no_backup/mail_held_sends/held.json")
+    private val heldSend get() = File(temp.root, "no_backup/mail_held_sends/held.json")
 
     @Test
     fun `each kind is measured on its own`() = runTest {
@@ -109,6 +116,46 @@ class DownloadedFilesTest {
         assertTrue(staged.exists())
         assertTrue(cachedMail.exists())
         assertTrue(browserDownload.exists())
+        assertTrue(heldSend.exists())
+    }
+
+    @Test
+    fun `an attachment opened in the last few minutes stays, and isn't counted yet`() = runTest {
+        // Another app may still be reading it, or it may still be downloading.
+        val opened = write(File(mailRoot, "attachments/77aa/Slides.pdf"), 2_000, ago = 60_000)
+        write(File(mailRoot, "attachments/0b5e/Syllabus.pdf"), 3_000)
+        val downloaded = downloaded(backgroundScope)
+        assertEquals(3_000L, downloaded.measure()[Kind.MAIL_ATTACHMENTS])
+
+        downloaded.delete(Kind.MAIL_ATTACHMENTS)
+
+        assertTrue(opened.exists())
+        assertFalse(File(mailRoot, "attachments/0b5e").exists())
+    }
+
+    @Test
+    fun `a class table image shared in the last few minutes stays`() = runTest {
+        val shared = write(File(imagesRoot, "9e2b/class table.png"), 800, ago = 60_000)
+        write(File(imagesRoot, "4f1c/class table.png"), 500)
+        val downloaded = downloaded(backgroundScope)
+
+        downloaded.delete(Kind.CLASS_TABLE_IMAGES)
+
+        assertTrue(shared.exists())
+        assertEquals(0L, downloaded.measure()[Kind.CLASS_TABLE_IMAGES])
+    }
+
+    @Test
+    fun `a link in a folder goes, not what it points to`() = runTest {
+        write(heldSend, 60)
+        imagesRoot.mkdirs()
+        val link = File(imagesRoot, "4f1c")
+        Files.createSymbolicLink(link.toPath(), heldSend.parentFile!!.toPath())
+        val downloaded = downloaded(backgroundScope)
+        assertEquals(0L, downloaded.measure()[Kind.CLASS_TABLE_IMAGES])
+
+        downloaded.delete(Kind.CLASS_TABLE_IMAGES)
+
         assertTrue(heldSend.exists())
     }
 
