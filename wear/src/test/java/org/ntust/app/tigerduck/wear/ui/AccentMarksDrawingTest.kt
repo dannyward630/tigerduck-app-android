@@ -16,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.wear.ui.theme.WearAccentGradient
+import org.ntust.app.tigerduck.wear.ui.theme.accentTitleBrush
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 
@@ -47,6 +48,23 @@ class AccentMarksDrawingTest {
     }
 
     private fun Bitmap.alpha(x: Int, y: Int): Float = Color(getPixel(x, y)).alpha
+
+    @Test
+    fun `a title's brush runs from the start on its left to the end on its right, whatever its size`() {
+        // A title doesn't know its size until it's laid out: the brush must lay the gradient across it then.
+        val title = render(200, 30) {
+            drawRect(accentTitleBrush(red, WearAccentGradient(blue, AccentGradientDirection.LeftToRight)))
+        }
+        assertTrue(title.towardBlue(2, 15) < 0.1f)
+        assertTrue(title.towardBlue(197, 15) > 0.9f)
+    }
+
+    @Test
+    fun `with a single color a title's brush is that color`() {
+        val title = render(200, 30) { drawRect(accentTitleBrush(red, null)) }
+        assertEquals(0f, title.towardBlue(2, 15), 0.01f)
+        assertEquals(0f, title.towardBlue(197, 15), 0.01f)
+    }
 
     @Test
     fun `the countdown ring runs from the start on its left to the end on its right`() {

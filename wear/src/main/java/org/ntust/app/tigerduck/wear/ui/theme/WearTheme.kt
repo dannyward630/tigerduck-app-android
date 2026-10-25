@@ -4,13 +4,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.LinearGradientShader
+import androidx.compose.ui.graphics.Shader
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.shared.Course
@@ -54,6 +62,54 @@ fun accentBrush(start: Color, gradient: WearAccentGradient?, bounds: Rect): Brus
         start = Offset(bounds.left + direction.startX * bounds.width, bounds.top + direction.startY * bounds.height),
         end = Offset(bounds.left + direction.endX * bounds.width, bounds.top + direction.endY * bounds.height),
     )
+}
+
+/**
+ * What a title in the accent paints with: [start] alone, or the gradient from it
+ * laid across the title's own box, whatever size it turns out to be, in
+ * [gradient]'s direction.
+ */
+fun accentTitleBrush(start: Color, gradient: WearAccentGradient?): Brush {
+    gradient ?: return SolidColor(start)
+    return object : ShaderBrush() {
+        override fun createShader(size: Size): Shader {
+            val direction = gradient.direction
+            return LinearGradientShader(
+                from = Offset(direction.startX * size.width, direction.startY * size.height),
+                to = Offset(direction.endX * size.width, direction.endY * size.height),
+                colors = listOf(start, gradient.end),
+            )
+        }
+    }
+}
+
+/**
+ * Wear's Material colors with the phone's [accent] as primary, as the iPhone
+ * tints its watch app with it (`.accentColor`): buttons, sliders, toggles and
+ * the icons on them follow it. Text on the accent and on its dark container is
+ * black or white, or a light tone of the accent, whichever reads.
+ */
+fun accentColorScheme(accent: Color): ColorScheme {
+    val container = lerp(Color.Black, accent, 0.4f)
+    val lightAccent = lerp(accent, Color.White, 0.7f)
+    return ColorScheme().copy(
+        primary = accent,
+        primaryDim = lerp(accent, Color.Black, 0.2f),
+        primaryContainer = container,
+        onPrimary = readableOn(accent),
+        onPrimaryContainer = if (contrast(lightAccent, container) >= 4.5f) lightAccent else readableOn(container),
+    )
+}
+
+/** Black or white, whichever reads better on [background]. */
+private fun readableOn(background: Color): Color =
+    if (contrast(Color.Black, background) >= contrast(Color.White, background)) Color.Black else Color.White
+
+/** WCAG's contrast ratio between [a] and [b], from 1 to 21. */
+private fun contrast(a: Color, b: Color): Float {
+    val la = a.luminance()
+    val lb = b.luminance()
+    return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)
 }
 
 /**
@@ -103,6 +159,6 @@ fun WearTheme(
         LocalAccentGradient provides accentGradient,
         LocalScreenPadding provides paddingDp.dp,
     ) {
-        MaterialTheme(content = content)
+        MaterialTheme(colorScheme = remember(accent) { accentColorScheme(accent) }, content = content)
     }
 }

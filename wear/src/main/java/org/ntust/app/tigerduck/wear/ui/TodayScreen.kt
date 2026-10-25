@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.items
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import org.ntust.app.tigerduck.shared.TodayClassEntry
@@ -53,7 +52,7 @@ fun TodayScreen(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             item {
-                ListHeader { Text(stringResource(R.string.watch_today)) }
+                AccentHeader(stringResource(R.string.watch_today))
             }
             if (entries.isEmpty()) {
                 item {

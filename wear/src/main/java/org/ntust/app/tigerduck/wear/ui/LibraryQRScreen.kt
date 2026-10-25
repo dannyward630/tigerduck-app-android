@@ -57,7 +57,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.CircularProgressIndicator
-import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import androidx.wear.remote.interactions.RemoteActivityHelper
@@ -96,7 +95,7 @@ fun LibraryQRScreen() {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ListHeader { Text(stringResource(R.string.library_virtual_pass_title)) }
+                AccentHeader(stringResource(R.string.library_virtual_pass_title))
                 NotLoggedInState()
             }
         }
@@ -209,7 +208,7 @@ private fun LoggedInState(username: String?) {
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                ListHeader { Text(stringResource(R.string.library_virtual_pass_title)) }
+                AccentHeader(stringResource(R.string.library_virtual_pass_title))
                 NormalQR(
                     bitmap = bitmap,
                     isLoading = isLoading,

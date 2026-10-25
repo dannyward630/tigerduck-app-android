@@ -11,7 +11,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
-import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import org.ntust.app.tigerduck.shared.Course
@@ -31,7 +30,7 @@ fun CourseDetailScreen(course: Course) {
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             item {
-                ListHeader { Text(stringResource(R.string.watch_course_detail_title)) }
+                AccentHeader(stringResource(R.string.watch_course_detail_title))
             }
             item { Text(text = course.displayName) }
             item { Spacer(Modifier.height(2.dp)) }

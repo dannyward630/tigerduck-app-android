@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.LinearProgressIndicator
-import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import org.ntust.app.tigerduck.shared.Course
@@ -62,7 +61,7 @@ fun NowNextScreen(snapshot: WatchSnapshot) {
             verticalArrangement = Arrangement.spacedBy(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { ListHeader { Text(stringResource(R.string.watch_now_next_title)) } }
+            item { AccentHeader(stringResource(R.string.watch_now_next_title)) }
             when (result) {
                 is NextClassResult.Ongoing -> {
                     item { OngoingCard(result, minuteOfDay) }

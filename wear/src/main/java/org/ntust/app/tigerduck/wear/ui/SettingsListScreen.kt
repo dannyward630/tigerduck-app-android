@@ -26,7 +26,6 @@ import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
 import androidx.wear.compose.material3.FilledTonalButton
 import androidx.wear.compose.material3.Icon
-import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
 import kotlinx.coroutines.delay
@@ -54,7 +53,7 @@ fun SettingsListScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             item {
-                ListHeader { Text(stringResource(R.string.watch_settings)) }
+                AccentHeader(stringResource(R.string.watch_settings))
             }
             item { SignedInRow(loggedIn = snapshot.loggedIn) }
             item { LastSyncRow(syncedAtMs = snapshot.syncedAtMs) }
