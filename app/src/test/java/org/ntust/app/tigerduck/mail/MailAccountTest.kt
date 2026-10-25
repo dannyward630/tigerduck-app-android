@@ -15,6 +15,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.ntust.app.tigerduck.mail.model.MailAddress
 import org.ntust.app.tigerduck.mail.index.InMemoryMailSearchIndex
+import org.ntust.app.tigerduck.mail.index.MailSearchIndex
 import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import java.io.File
@@ -42,8 +43,13 @@ class MailAccountTest {
 
     private val searchIndex = InMemoryMailSearchIndex()
 
-    private fun account() =
-        MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope, heldSends, searchIndex)
+    private fun account(index: MailSearchIndex = searchIndex) =
+        MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope, heldSends, index)
+
+    /** An index that cannot be emptied, as a full disk fails SQLite's VACUUM. */
+    private class UnclearableIndex(inner: MailSearchIndex = InMemoryMailSearchIndex()) : MailSearchIndex by inner {
+        override fun clearUnless(keep: (owner: String?) -> Boolean) = throw IllegalStateException("database or disk is full")
+    }
 
     /** Mail of [owner]'s downloaded for search, as the index worker would. */
     private fun indexMail(owner: String) = assertTrue(searchIndex.open(owner, "INBOX", 1L) { true })
@@ -250,6 +256,32 @@ class MailAccountTest {
             withTimeout(5_000) { while (notifier.cancelledAll == 0) delay(10) }
         }
         assertNull(searchIndex.uidValidity("b10000001@mail.ntust.edu.tw", "INBOX"))
+    }
+
+    @Test
+    fun `an index that cannot be emptied still lets the sign-out cancel the notifications and delete the cache`() = runTest {
+        val account = account(UnclearableIndex())
+        account.signIn("b10000001", "pw")
+        cache.attachmentsDir.mkdirs()
+        File(cache.attachmentsDir, "a.pdf").writeText("x")
+
+        account.signOut()
+
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (notifier.cancelledAll == 0) delay(10) }
+        }
+        assertEquals(1, notifier.cancelledAll)
+        assertFalse(File(cache.attachmentsDir, "a.pdf").exists())
+    }
+
+    @Test
+    fun `an index that cannot be emptied does not stop another student signing in`() = runTest {
+        val account = account(UnclearableIndex())
+        account.signIn("b10000001", "pw")
+        server.passwords["B10000002"] = "pw"
+
+        assertNull(account.signIn("b10000002", "pw"))
+        assertEquals("b10000002", credentials.mailStudentId)
     }
 
     @Test

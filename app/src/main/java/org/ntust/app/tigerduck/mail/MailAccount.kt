@@ -204,9 +204,11 @@ class MailAccount @Inject constructor(
         heldSends?.clear(departing, below = keptBefore)
         // Kept only when it is no longer the departing student's but the one signed in now, as
         // the repository's own clearing keeps it: by now the next student may have downloaded
-        // mail of theirs.
+        // mail of theirs. An index that can't be emptied now (a full disk fails the VACUUM) must
+        // not stop the rest of the leaving, or a sign-in: no read shows its rows to anyone but
+        // their owner, and the next student's first download empties it.
         val left = departing?.lowercase()
-        searchIndex?.clearUnless { owner -> owner != null && owner != left && owner == ownAddress?.lowercase() }
+        runCatching { searchIndex?.clearUnless { owner -> owner != null && owner != left && owner == ownAddress?.lowercase() } }
     }
 
     /** A password typed again keeps what the student chose; see [MailStateStore.clearSignIn]. */
@@ -237,8 +239,11 @@ class MailAccount @Inject constructor(
         scope.launch(Dispatchers.IO) {
             // Only the mail of the sign-in that left: by now the same student may have signed in
             // again and kept a mail of the new sign-in's.
-            leaveMailOf(departing, keptBefore = leftAt)
-            notifier.cancelAll()
+            try {
+                leaveMailOf(departing, keptBefore = leftAt)
+            } finally {
+                notifier.cancelAll()
+            }
         }
     }
 
