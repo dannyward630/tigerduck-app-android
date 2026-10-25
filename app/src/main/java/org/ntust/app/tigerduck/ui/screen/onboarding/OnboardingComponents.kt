@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -325,6 +327,20 @@ internal fun OnboardingPageScaffold(
                     actions()
                 }
             }
+        }
+    }
+}
+
+/**
+ * The last page's "Start using TigerDuck": at least as wide as the other pages' buttons, and
+ * wider when its label needs it, up to the page's width, so it breaks onto a second line only
+ * when the page itself is too narrow.
+ */
+@Composable
+internal fun OnboardingStartButton(label: String, onClick: () -> Unit) {
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Button(onClick = onClick, modifier = Modifier.widthIn(min = maxWidth * 0.6f)) {
+            Text(label, textAlign = TextAlign.Center)
         }
     }
 }

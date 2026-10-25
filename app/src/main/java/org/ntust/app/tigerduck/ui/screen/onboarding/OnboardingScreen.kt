@@ -561,10 +561,10 @@ fun OnboardingScreen(
                     title = stringResource(R.string.onboarding_ready_title),
                     subtitle = stringResource(R.string.onboarding_ready_subtitle),
                     actions = {
-                        Button(
+                        OnboardingStartButton(
+                            label = stringResource(R.string.onboarding_start_button),
                             onClick = { viewModel.completeOnboarding() },
-                            modifier = Modifier.fillMaxWidth(0.6f)
-                        ) { Text(stringResource(R.string.onboarding_start_button)) }
+                        )
                     },
                 ) {}
             }
