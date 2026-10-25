@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,7 +23,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -35,14 +40,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.LayoutCoordinates
+import androidx.compose.ui.layout.onPlaced
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -91,16 +98,50 @@ internal fun MockScreen(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(24.dp)
+    val targets = remember { TapTargets() }
     Box(
         modifier
             .width(width)
             .height(height)
+            .onPlaced { targets.screen = it }
             .clip(shape)
             .background(MaterialTheme.colorScheme.surface)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shape)
             .clearAndSetSemantics { if (description != null) contentDescription = description },
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(LocalTapTargets provides targets) { content() }
+    }
+}
+
+/**
+ * The parts a demo's fingertip taps ([tapTarget]), so the fingertip lands on
+ * them whatever the fonts make of the rows above: a position worked out in dp
+ * drifts on a phone whose CJK font is taller. Their coordinates are live, so
+ * they're measured where they are now: a graphics layer sliding a screen in
+ * moves a target without laying it out again.
+ */
+internal class TapTargets {
+    /** The mock screen, once it's placed. */
+    var screen by mutableStateOf<LayoutCoordinates?>(null)
+
+    /** Each target, once it's placed. */
+    val placed = mutableStateMapOf<String, LayoutCoordinates>()
+
+    /** [id]'s center as seen from [from], the mock screen's top left unless given, in px; null until both are placed. */
+    fun center(id: String, from: LayoutCoordinates? = screen): Offset? {
+        val target = placed[id]?.takeIf { it.isAttached } ?: return null
+        val here = from?.takeIf { it.isAttached } ?: return null
+        return here.localPositionOf(target, Offset(target.size.width / 2f, target.size.height / 2f))
+    }
+}
+
+internal val LocalTapTargets = staticCompositionLocalOf<TapTargets?> { null }
+
+/** Marks what the fingertip tapping [id] lands on. */
+@Composable
+internal fun Modifier.tapTarget(id: String): Modifier {
+    val targets = LocalTapTargets.current ?: return this
+    return onPlaced { targets.placed[id] = it }
 }
 
 /**
@@ -117,12 +158,31 @@ internal fun Modifier.demoDescription(description: String): Modifier =
  */
 @Composable
 internal fun Fingertip(x: Dp, y: Dp, shown: () -> Float, press: () -> Float) {
+    FingertipAt({ Offset(x.toPx(), y.toPx()) }, shown, press)
+}
+
+/** A fingertip on the part marked [target] with [tapTarget], wherever that is now; nowhere until it's placed. */
+@Composable
+internal fun Fingertip(target: String, shown: () -> Float, press: () -> Float) {
+    val targets = LocalTapTargets.current
+    FingertipAt({ here -> targets?.center(target, from = here) ?: Offset(-1_000f, -1_000f) }, shown, press)
+}
+
+/**
+ * The fingertip's ring and dot, centered on what [at] gives, from where the
+ * fingertip is placed. Moved by their layers, which follow the demo's clock,
+ * so a target that's moving is followed.
+ */
+@Composable
+private fun FingertipAt(at: Density.(here: LayoutCoordinates?) -> Offset, shown: () -> Float, press: () -> Float) {
     val color = MaterialTheme.colorScheme.onSurface
+    var here by remember { mutableStateOf<LayoutCoordinates?>(null) }
     Box(
         Modifier
-            .offset { IntOffset((x - 14.dp).roundToPx(), (y - 14.dp).roundToPx()) }
+            .onPlaced { here = it }
             .size(28.dp)
             .graphicsLayer {
+                at(here).let { translationX = it.x - 14.dp.toPx(); translationY = it.y - 14.dp.toPx() }
                 val p = press()
                 alpha = shown() * (1f - p) * 0.9f
                 scaleX = 1f + p * 1.2f
@@ -132,9 +192,9 @@ internal fun Fingertip(x: Dp, y: Dp, shown: () -> Float, press: () -> Float) {
     )
     Box(
         Modifier
-            .offset { IntOffset((x - 14.dp).roundToPx(), (y - 14.dp).roundToPx()) }
             .size(28.dp)
             .graphicsLayer {
+                at(here).let { translationX = it.x - 14.dp.toPx(); translationY = it.y - 14.dp.toPx() }
                 alpha = shown() * 0.9f
                 val s = 1f - press() * 0.15f
                 scaleX = s
@@ -213,10 +273,10 @@ internal fun window(t: Float, from: Float, to: Float, fade: Float = 0.02f): Floa
 
 /**
  * Something that looks like a QR code, [size] square: three finder squares and
- * a fixed scatter of modules. It encodes nothing.
+ * a fixed scatter of modules, another for another [seed]. It encodes nothing.
  */
 @Composable
-internal fun MockQr(size: Dp, modifier: Modifier = Modifier) {
+internal fun MockQr(size: Dp, modifier: Modifier = Modifier, seed: Int = 0x2545F491) {
     Canvas(
         modifier
             .size(size)
@@ -237,7 +297,7 @@ internal fun MockQr(size: Dp, modifier: Modifier = Modifier) {
         finder(QR_CELLS - 7, 0)
         finder(0, QR_CELLS - 7)
         // A fixed scatter: the same "code" on every frame and every device.
-        var seed = 0x2545F491
+        var seed = seed
         for (y in 0 until QR_CELLS) for (x in 0 until QR_CELLS) {
             val inFinder = (x < 8 && y < 8) || (x >= QR_CELLS - 8 && y < 8) || (x < 8 && y >= QR_CELLS - 8)
             seed = seed xor (seed shl 13); seed = seed xor (seed ushr 17); seed = seed xor (seed shl 5)

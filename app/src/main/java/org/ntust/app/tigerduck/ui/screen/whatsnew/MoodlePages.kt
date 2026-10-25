@@ -64,8 +64,8 @@ internal fun moodleCoursePage() = WhatsNewPage.Feature(
         zhHant = "在課表裡就能看 Moodle",
     ),
     body = WhatsNewText(
-        en = "Open a course and scroll down for its announcements, materials, assignments, grades and members. Open in Moodle takes you to the Moodle app, or, without it, to the web page with you already signed in.",
-        zhHant = "點開課程往下滑，就能看到公告、教材、作業、成績與成員。點「在 Moodle 開啟」會打開 Moodle App；沒有安裝 App 時，會直接開啟已經幫你登入的網頁。",
+        en = "Open a course and scroll down for its announcements, materials, assignments, grades and members.\nOpen in Moodle takes you to the Moodle app, or, without it, to the web page with you already signed in.",
+        zhHant = "點開課程往下滑，就能看到公告、教材、作業、成績與成員。\n點「在 Moodle 開啟」會打開 Moodle App；沒有安裝 App 時，會直接開啟已經幫你登入的網頁。",
     ),
 )
 
@@ -78,8 +78,8 @@ internal fun moodleAssignmentPage() = WhatsNewPage.Feature(
         zhHant = "作業細節一目了然",
     ),
     body = WhatsNewText(
-        en = "Open an assignment to see its attachments, due time, submission status and grade. Attachments download right there.",
-        zhHant = "點開作業就能看到附件、截止時間、繳交狀態與評分，附件也能直接下載。",
+        en = "Open an assignment to see its attachments, due time, submission status and grade. Attachments download and open right there.",
+        zhHant = "點開作業就能看到附件、截止時間、繳交狀態與評分，附件也能直接下載查看。",
     ),
 )
 

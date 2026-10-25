@@ -40,14 +40,14 @@ internal fun mailNotificationsPage() = WhatsNewPage.Feature(
         zhHant = "信件通知由你決定",
     ),
     body = WhatsNewText(
-        en = "In School Mail notifications, mute mail from the NTUST Bulletin Board and Moodle's submission receipts, and set quiet hours.",
-        zhHant = "在「校園信箱通知」裡，可以不通知台科公告欄與 Moodle 繳交通知的信，也能設定勿擾時段。",
+        en = "In Settings › Notifications › School Mail notifications, mute mail from the NTUST Bulletin Board and Moodle's submission receipts, and set quiet hours.",
+        zhHant = "在「設定 › 通知 › 校園信箱通知」裡，可以不通知台科公告欄與 Moodle 繳交通知的信，也能設定勿擾時段。",
     ),
 )
 
 private val mailDemoDescription = WhatsNewText(
-    en = "Demo: in School Mail notifications, quiet hours turn on from 23:00 to 07:00, then the NTUST Bulletin Board and Moodle submission receipts are muted.",
-    zhHant = "示範：在校園信箱通知裡開啟 23:00 到 07:00 的勿擾時段，再關閉台科公告欄與 Moodle 繳交通知。",
+    en = "Demo: from Settings, Notifications, School Mail notifications: quiet hours turn on from 23:00 to 07:00, then the NTUST Bulletin Board and Moodle submission receipts are muted.",
+    zhHant = "示範：從設定的「通知」進入「校園信箱通知」，開啟 23:00 到 07:00 的勿擾時段，再關閉台科公告欄與 Moodle 繳交通知。",
 )
 
 private const val MAIL_LOOP_MILLIS = 8_000
@@ -55,45 +55,65 @@ private const val ALL_OFF = 0.94f
 
 @Composable
 private fun MailNotificationsDemo(animate: Boolean) {
-    // Still: everything on.
-    val clock = demoClock(animate, MAIL_LOOP_MILLIS, still = 0.85f)
-    val t = { clock.value }
+    PathDemo(
+        description = mailDemoDescription.resolve(),
+        animate = animate,
+        featureMillis = MAIL_LOOP_MILLIS,
+        start = PathStart.SettingsGear,
+        stops = listOf(
+            PathStop(
+                title = stringResource(R.string.feature_settings),
+                section = stringResource(R.string.settings_section_notifications),
+                rows = listOf(
+                    stringResource(R.string.settings_class_reminder),
+                    stringResource(R.string.school_mail_notification_settings_title),
+                    stringResource(R.string.live_activity_channel_name),
+                ),
+                tapped = 1,
+            ),
+        ),
+        // Still: everything on.
+        featureStill = 0.85f,
+    ) { t -> MailNotificationsScene(t) }
+}
+
+/** School Mail's notification settings, its switches turned on one by one through [t] (0 to 1). */
+@Composable
+private fun MailNotificationsScene(t: () -> Float) {
     // Each switch goes on after its tap, and they all go back off before the loop starts again.
     fun turnedOn(at: Float) = { span(t(), at, at + 0.04f) * (1f - span(t(), ALL_OFF, ALL_OFF + 0.04f)) }
     val quiet = turnedOn(0.16f)
     val bulletin = turnedOn(0.42f)
     val moodle = turnedOn(0.62f)
     val colors = MaterialTheme.colorScheme
-    MockScreen(mailDemoDescription.resolve()) {
-        Column(
-            Modifier.fillMaxSize().background(colors.surfaceContainerLow).padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(6.dp))
-                MockText(stringResource(R.string.school_mail_notification_settings_title), size = 12.sp, weight = FontWeight.Bold)
-            }
-            SettingsCard { SwitchRow(stringResource(R.string.school_mail_settings_notifications), on = { 1f }) }
-            SectionLabel(stringResource(R.string.school_mail_quiet_hours))
-            SettingsCard {
-                SwitchRow(stringResource(R.string.school_mail_quiet_hours), on = quiet)
-                Column(Modifier.graphicsLayer { alpha = quiet(); translationY = (1f - quiet()) * -6.dp.toPx() }) {
-                    ValueRow(stringResource(R.string.school_mail_quiet_hours_start), "23:00")
-                    ValueRow(stringResource(R.string.school_mail_quiet_hours_end), "07:00")
-                }
-            }
-            SectionLabel(stringResource(R.string.school_mail_filters))
-            SettingsCard {
-                SwitchRow(stringResource(R.string.school_mail_filter_preset_bulletin), on = bulletin)
-                SwitchRow(stringResource(R.string.school_mail_filter_preset_moodle_submission), on = moodle)
+    Column(
+        Modifier.fillMaxSize().background(colors.surfaceContainerLow).padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(6.dp))
+            MockText(stringResource(R.string.school_mail_notification_settings_title), size = 12.sp, weight = FontWeight.Bold)
+        }
+        SettingsCard { SwitchRow(stringResource(R.string.school_mail_settings_notifications), on = { 1f }) }
+        SectionLabel(stringResource(R.string.school_mail_quiet_hours))
+        SettingsCard {
+            SwitchRow(stringResource(R.string.school_mail_quiet_hours), on = quiet, target = "quiet hours")
+            Column(Modifier.graphicsLayer { alpha = quiet(); translationY = (1f - quiet()) * -6.dp.toPx() }) {
+                ValueRow(stringResource(R.string.school_mail_quiet_hours_start), "23:00")
+                ValueRow(stringResource(R.string.school_mail_quiet_hours_end), "07:00")
             }
         }
-        // The quiet hours switch, then the two mutes.
-        Fingertip(192.dp, 90.dp, shown = { window(t(), 0.08f, 0.18f) }, press = { span(t(), 0.13f, 0.17f) })
-        Fingertip(192.dp, 196.dp, shown = { window(t(), 0.34f, 0.44f) }, press = { span(t(), 0.39f, 0.43f) })
-        Fingertip(192.dp, 222.dp, shown = { window(t(), 0.54f, 0.64f) }, press = { span(t(), 0.59f, 0.63f) })
+        SectionLabel(stringResource(R.string.school_mail_filters))
+        SettingsCard {
+            SwitchRow(stringResource(R.string.school_mail_filter_preset_bulletin), on = bulletin, target = "bulletin")
+            SwitchRow(stringResource(R.string.school_mail_filter_preset_moodle_submission), on = moodle, target = "moodle")
+        }
     }
+    // On each switch where it was laid out: the quiet hours switch, then the two mutes.
+    Fingertip("quiet hours", shown = { window(t(), 0.08f, 0.18f) }, press = { span(t(), 0.13f, 0.17f) })
+    Fingertip("bulletin", shown = { window(t(), 0.34f, 0.44f) }, press = { span(t(), 0.39f, 0.43f) })
+    Fingertip("moodle", shown = { window(t(), 0.54f, 0.64f) }, press = { span(t(), 0.59f, 0.63f) })
 }
 
 @Composable
@@ -110,10 +130,10 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-private fun SwitchRow(label: String, on: () -> Float) {
+private fun SwitchRow(label: String, on: () -> Float, target: String? = null) {
     Row(Modifier.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         MockText(label, Modifier.weight(1f), size = 10.sp)
-        MockSwitch(on)
+        MockSwitch(on, if (target != null) Modifier.tapTarget(target) else Modifier)
     }
 }
 

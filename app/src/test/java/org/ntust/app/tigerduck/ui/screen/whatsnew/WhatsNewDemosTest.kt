@@ -3,6 +3,9 @@ package org.ntust.app.tigerduck.ui.screen.whatsnew
 import android.app.Application
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -11,9 +14,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.getBoundsInRoot
@@ -32,6 +39,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.model.AppFeature
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
@@ -50,39 +58,66 @@ class WhatsNewDemosTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private class Demo(val page: WhatsNewPage, val description: WhatsNewText, val captions: List<WhatsNewText>)
+    /** A demo: its page, the start of its description, and text it shows that TalkBack mustn't hear separately. */
+    private class Demo(val page: WhatsNewPage, val description: WhatsNewText, val hidden: List<WhatsNewText>)
 
-    private val demos = listOf(
-        Demo(
-            moodleCoursePage(),
-            WhatsNewText(en = "Demo: a course opens", zhHant = "示範：從課表點開課程"),
-            listOf(WhatsNewText(en = "Without the Moodle app", zhHant = "沒有 Moodle App 時")),
-        ),
-        Demo(moodleAssignmentPage(), WhatsNewText(en = "Demo: an assignment opens", zhHant = "示範：點開作業"), emptyList()),
-        Demo(
-            classTableSharePage(),
-            WhatsNewText(en = "Demo: one phone shows", zhHant = "示範：一支手機顯示"),
-            listOf(
-                WhatsNewText(en = "Scanned in TigerDuck", zhHant = "用 TigerDuck 掃描"),
-                WhatsNewText(en = "Any QR scanner", zhHant = "用任何 QR code 掃描器"),
+    /** An app string: the same in both of the demo's languages, which follow the app's locale for these. */
+    private fun string(id: Int) = composeRule.activity.getString(id).let { WhatsNewText(en = it, zhHant = it) }
+
+    private val demos: List<Demo> by lazy {
+        listOf(
+            Demo(
+                replayPage(),
+                WhatsNewText(en = "Demo: from More, Settings opens", zhHant = "示範：從「更多」打開設定"),
+                listOf(string(R.string.settings_whats_new), string(R.string.settings_section_about)),
             ),
-        ),
-        Demo(
-            libraryPage(isSignedIn = { false }),
-            WhatsNewText(en = "Demo: the library pass opens", zhHant = "示範：從底部功能列"),
-            listOf(WhatsNewText(en = "From More", zhHant = "從「更多」")),
-        ),
-        Demo(mailNotificationsPage(), WhatsNewText(en = "Demo: in School Mail", zhHant = "示範：在校園信箱通知"), emptyList()),
-        Demo(
-            emptyClassroomPage(),
-            WhatsNewText(en = "Demo: a suggested free room", zhHant = "示範：推薦兩堂課之間"),
-            listOf(
-                WhatsNewText(en = "Along the same floor", zhHant = "本樓平移"),
-                WhatsNewText(en = "Over to another building", zhHant = "去其他棟"),
+            Demo(
+                moodleCoursePage(),
+                WhatsNewText(en = "Demo: a course opens", zhHant = "示範：從課表點開課程"),
+                listOf(WhatsNewText(en = "Without the Moodle app", zhHant = "沒有 Moodle App 時"), string(R.string.course_detail_members_label)),
             ),
-        ),
-        Demo(displaySizePage(), WhatsNewText(en = "Demo: the display size slider", zhHant = "示範：拉動顯示大小滑桿"), emptyList()),
-    )
+            Demo(moodleAssignmentPage(), WhatsNewText(en = "Demo: an assignment opens", zhHant = "示範：點開作業"), listOf(string(R.string.school_mail_attachments))),
+            Demo(
+                classTableSharePage(),
+                WhatsNewText(en = "Demo: on one phone", zhHant = "示範：在一支手機的課表"),
+                listOf(
+                    WhatsNewText(en = "Scanned in TigerDuck", zhHant = "用 TigerDuck 掃描"),
+                    WhatsNewText(en = "Any QR scanner", zhHant = "用任何 QR code 掃描器"),
+                    WhatsNewText(en = "TAT works too", zhHant = "也支援臺科 TAT"),
+                    string(R.string.class_table_share_tat_compatible),
+                ),
+            ),
+            Demo(
+                libraryPage(isSignedIn = { false }),
+                WhatsNewText(en = "Demo: the library pass opens", zhHant = "示範：從底部功能列"),
+                listOf(WhatsNewText(en = "From More", zhHant = "從「更多」"), string(R.string.library_virtual_pass_title)),
+            ),
+            Demo(
+                bottomBarEditorPage(),
+                WhatsNewText(en = "Demo: from Settings, Customization", zhHant = "示範：從設定的「自訂」"),
+                listOf(string(R.string.tab_editor_title), string(R.string.tab_editor_section_current_tabs)),
+            ),
+            Demo(
+                mailNotificationsPage(),
+                WhatsNewText(en = "Demo: from Settings, Notifications", zhHant = "示範：從設定的「通知」"),
+                listOf(string(R.string.school_mail_notification_settings_title), string(R.string.school_mail_filter_preset_bulletin)),
+            ),
+            Demo(
+                emptyClassroomPage(),
+                WhatsNewText(en = "Demo: Empty classroom opens from More", zhHant = "示範：從「更多」打開空教室"),
+                listOf(
+                    WhatsNewText(en = "Along the same floor", zhHant = "本樓平移"),
+                    WhatsNewText(en = "Over to another building", zhHant = "去其他棟"),
+                    string(R.string.feature_empty_classroom),
+                ),
+            ),
+            Demo(
+                displaySizePage(),
+                WhatsNewText(en = "Demo: from Settings, Other settings", zhHant = "示範：從設定的「其他設定」"),
+                listOf(string(R.string.settings_display_size_title), string(R.string.settings_display_size_ui)),
+            ),
+        )
+    }
 
     private fun WhatsNewPage.visual(): WhatsNewVisual.Custom = when (this) {
         is WhatsNewPage.Feature -> visual as WhatsNewVisual.Custom
@@ -110,13 +145,13 @@ class WhatsNewDemosTest {
             animate = moving
             // With the clock held, the change reaches the screen once the main thread has run.
             composeRule.waitForIdle()
-            // Through a whole loop, a step at a time.
-            repeat(12) { composeRule.mainClock.advanceTimeBy(1_000) }
+            // Through two whole loops (the longest, sharing, is 18 s), past the reset, a step at a time.
+            repeat(40) { composeRule.mainClock.advanceTimeBy(1_000) }
             val demo = demos[i]
             composeRule.onAllNodesWithContentDescription(demo.description.resolve(lang), substring = true)
                 .assertCountEquals(1)
-            demo.captions.forEach { caption ->
-                composeRule.onAllNodesWithText(caption.resolve(lang), substring = true).assertCountEquals(0)
+            demo.hidden.forEach { text ->
+                composeRule.onAllNodesWithText(text.resolve(lang), substring = true).assertCountEquals(0)
             }
         }
     }
@@ -182,6 +217,63 @@ class WhatsNewDemosTest {
             height("plain 2.0") > height("plain 1.0"),
         )
         assertEquals(height("mock 1.0"), height("mock 2.0"))
+    }
+
+    @Test
+    fun `a tap target is found where it was laid out, from its mock screen's corner`() {
+        var targets: TapTargets? = null
+        composeRule.setContent {
+            Box(Modifier.padding(start = 30.dp, top = 40.dp)) {
+                MockScreen {
+                    targets = LocalTapTargets.current
+                    Box(Modifier.padding(start = 50.dp, top = 100.dp).size(20.dp).tapTarget("switch"))
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        val density = composeRule.density.density
+        val center = targets!!.center("switch")!!
+        assertEquals(60f * density, center.x, 1f)
+        assertEquals(110f * density, center.y, 1f)
+    }
+
+    @Test
+    fun `a tap target in a screen that slides in is found where it comes to rest, each loop`() {
+        var targets: TapTargets? = null
+        // Where a fingertip drawn in the same screen is placed: it slides with it.
+        var fingertip: LayoutCoordinates? = null
+        // Starts off the screen to the right, as a screen on the way does.
+        var away by mutableFloatStateOf(1f)
+        composeRule.setContent {
+            Box(Modifier.padding(start = 30.dp, top = 40.dp)) {
+                MockScreen {
+                    targets = LocalTapTargets.current
+                    Box(Modifier.fillMaxSize().graphicsLayer { translationX = away * size.width }) {
+                        Box(Modifier.padding(start = 50.dp, top = 100.dp).size(20.dp).tapTarget("switch"))
+                        Box(Modifier.size(1.dp).onPlaced { fingertip = it })
+                    }
+                }
+            }
+        }
+        val density = composeRule.density.density
+        repeat(2) {
+            away = 1f
+            composeRule.waitForIdle()
+            // From the fingertip's place, the target is where it is in the screen, however far that has slid.
+            for (slid in listOf(0.5f, 0f)) {
+                away = slid
+                composeRule.waitForIdle()
+
+                val fromFingertip = targets!!.center("switch", from = fingertip)!!
+                assertEquals(60f * density, fromFingertip.x, 1f)
+                assertEquals(110f * density, fromFingertip.y, 1f)
+            }
+
+            val fromScreen = targets!!.center("switch")!!
+            assertEquals(60f * density, fromScreen.x, 1f)
+            assertEquals(110f * density, fromScreen.y, 1f)
+        }
     }
 
     @Test
