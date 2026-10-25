@@ -4,9 +4,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.ntust.app.tigerduck.shared.StoredPasswordSchedule
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
@@ -32,22 +34,40 @@ class StoredPasswordRetry internal constructor(
 
     /** Keeps the tries going in [scope] while it runs. */
     fun start(scope: CoroutineScope): Job = scope.launch {
-        latch.changes.collectLatest {
-            if (latch.refusals.value == 0) return@collectLatest
-            var misses = 0
-            var wait = (latch.retryAt() ?: return@collectLatest) - now()
-            while (true) {
-                delay(wait.coerceAtLeast(0))
-                val retryAt = latch.retryAt() ?: return@collectLatest
-                if (retryAt > now()) {
-                    wait = retryAt - now()
-                    continue
-                }
-                // Not cut short when a refusal it gets moves the count, which starts the next wait.
-                if (withContext(NonCancellable) { retry() }) return@collectLatest
-                misses++
-                wait = StoredPasswordSchedule.delayMs(latch.refusals.value + misses)
+        retryWhenDue(latch.changes, { latch.refusals.value }, latch::retryAt, now, retry)
+    }
+}
+
+/**
+ * The tries behind [StoredPasswordRetry] and the library's: on each of [changes], which move with
+ * every refusal counted and every end of the count, waits until [retryAt] and runs [retry] once.
+ * A try that stops short of an answer goes again a step further down the schedule than the
+ * [refusals] counted. A wait is taken up again from [retryAt] itself, so one a relaunch finds run
+ * out goes at once.
+ */
+internal suspend fun retryWhenDue(
+    changes: Flow<*>,
+    refusals: () -> Int,
+    retryAt: () -> Long?,
+    now: () -> Long,
+    /** One try; true once it got an answer, or there is nothing left to try. */
+    retry: suspend () -> Boolean,
+) {
+    changes.collectLatest {
+        if (refusals() == 0) return@collectLatest
+        var misses = 0
+        var wait = (retryAt() ?: return@collectLatest) - now()
+        while (true) {
+            delay(wait.coerceAtLeast(0))
+            val at = retryAt() ?: return@collectLatest
+            if (at > now()) {
+                wait = at - now()
+                continue
             }
+            // Not cut short when a refusal it gets moves the count, which starts the next wait.
+            if (withContext(NonCancellable) { retry() }) return@collectLatest
+            misses++
+            wait = StoredPasswordSchedule.delayMs(refusals() + misses)
         }
     }
 }

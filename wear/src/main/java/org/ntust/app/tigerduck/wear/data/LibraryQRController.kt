@@ -136,6 +136,9 @@ class LibraryQRController(
             // from logcat alone is painful and the screen has room for it.
             android.util.Log.w("LibraryQRController", "QR refresh failed: ${e.javaClass.simpleName}")
             // A pin mismatch is the phone's to settle (TLS pins spec, A8): the watch has no prompt.
+            // So is a password the library refused, which reads as no credentials while its wait
+            // holds: the phone hands over a live token, or takes the password away and asks for
+            // the right one, which ends the wait. Waiting it out sends the same password again.
             _error.value = if (e is LibraryServiceError.CredentialsNotFound || e.pinMismatch() != null) {
                 accountChangedMessage
             } else {
