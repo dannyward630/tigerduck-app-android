@@ -40,6 +40,7 @@
     <string name="action_close">Lukk</string>
     <string name="action_confirm">Bekreft</string>
     <string name="action_continue">Fortsett</string>
+    <string name="action_delete">Slett</string>
     <string name="action_done">Ferdig</string>
     <string name="action_go_to_settings">Gå til innstillinger</string>
     <string name="action_got_it">Forstått</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">Skjerm- og tekststørrelse</string>
     <string name="settings_display_size_ui">Skjermstørrelse</string>
     <string name="settings_display_size_widget_section">Widgeter</string>
+    <string name="settings_downloaded_files_delete_all">Slett alle nedlastede filer</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-filer og e-postvedlegg lastes ned på nytt neste gang du åpner dem.</string>
+    <string name="settings_downloaded_files_delete_all_title">Vil du slette alle nedlastede filer?</string>
+    <string name="settings_downloaded_files_footer">Filer som lastes ned i TigerDuck-nettleseren, lagres i Nedlastinger-mappen på telefonen og slettes ikke her.</string>
+    <string name="settings_downloaded_files_images">Bilder av timeplanen</string>
+    <string name="settings_downloaded_files_mail">E-postvedlegg</string>
+    <string name="settings_downloaded_files_moodle">Moodle-filer</string>
+    <string name="settings_downloaded_files_title">Nedlastede filer</string>
     <string name="settings_feedback_bug_report">Tilbakemelding / Rapporter problem</string>
     <string name="settings_flip_to_library_summary">Snu telefonen med skjermen ned for å åpne bibliotekets QR.</string>
     <string name="settings_flip_to_library_title">Snu for å vise bibliotekets QR</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Vis rom i timeplanen</string>
     <string name="settings_sign_out_imported_tables">Importerte timeplaner slettes også.</string>
     <string name="settings_sign_out_unsynced_data">Data som ikke er synkronisert med TigerSync, slettes.</string>
+    <string name="settings_storage_browser_data">Nettstedsdata</string>
+    <string name="settings_storage_browser_data_delete_message">Nettsteder du har besøkt i TigerDuck-nettleseren, kan be deg logge på igjen.</string>
+    <string name="settings_storage_browser_data_delete_title">Vil du slette nettstedsdata?</string>
+    <string name="settings_storage_delete_kind">Slett %@</string>
+    <string name="settings_storage_title">Lagring</string>
+    <string name="settings_storage_total">Totalt</string>
     <string name="settings_sync_brief_description">TigerSync lar deg synkronisere valgt informasjon på alle enheter. Informasjon uten synkronisering forblir kun på denne enheten.</string>
     <string name="settings_sync_disabled_note">Når synkronisering er av, mottar TigerDuck-serveren fortsatt student-ID-en din, Moodle-tokenet og push-legitimasjonen til denne enheten for å sende oppgavepåminnelser</string>
     <string name="settings_sync_status_off">Av</string>

@@ -40,6 +40,7 @@
     <string name="action_close">மூடு</string>
     <string name="action_confirm">உறுதிப்படுத்து</string>
     <string name="action_continue">தொடர்</string>
+    <string name="action_delete">நீக்கு</string>
     <string name="action_done">முடிந்தது</string>
     <string name="action_go_to_settings">அமைப்புகளுக்கு செல்</string>
     <string name="action_got_it">புரிந்தது</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">காட்சி மற்றும் உரை அளவு</string>
     <string name="settings_display_size_ui">காட்சி அளவு</string>
     <string name="settings_display_size_widget_section">விட்ஜெட்கள்</string>
+    <string name="settings_downloaded_files_delete_all">பதிவிறக்கிய எல்லா கோப்புகளையும் நீக்கு</string>
+    <string name="settings_downloaded_files_delete_all_message">அடுத்த முறை திறக்கும்போது Moodle கோப்புகளும் மின்னஞ்சல் இணைப்புகளும் மீண்டும் பதிவிறக்கப்படும்.</string>
+    <string name="settings_downloaded_files_delete_all_title">பதிவிறக்கிய எல்லா கோப்புகளையும் நீக்கவா?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck உலாவியில் பதிவிறக்கிய கோப்புகள் உங்கள் ஃபோனின் Downloads கோப்புறையில் சேமிக்கப்படும், இங்கிருந்து நீக்கப்படாது.</string>
+    <string name="settings_downloaded_files_images">வகுப்பு அட்டவணை படங்கள்</string>
+    <string name="settings_downloaded_files_mail">மின்னஞ்சல் இணைப்புகள்</string>
+    <string name="settings_downloaded_files_moodle">Moodle கோப்புகள்</string>
+    <string name="settings_downloaded_files_title">பதிவிறக்கிய கோப்புகள்</string>
     <string name="settings_feedback_bug_report">கருத்து / சிக்கல் அறிக்கை</string>
     <string name="settings_flip_to_library_summary">நூலக QR திறக்க தொலைபேசியை திரை கீழே வைத்து திருப்பவும்.</string>
     <string name="settings_flip_to_library_title">நூலக QR காட்ட திருப்பவும்</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">நேரஅட்டவணையில் வகுப்பறையைக் காட்டு</string>
     <string name="settings_sign_out_imported_tables">இறக்குமதி செய்த வகுப்பு அட்டவணைகளும் நீக்கப்படும்.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync உடன் ஒத்திசைக்கப்படாத தரவு நீக்கப்படும்.</string>
+    <string name="settings_storage_browser_data">இணையதளத் தரவு</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck உலாவியில் நீங்கள் பார்வையிட்ட தளங்கள் மீண்டும் உள்நுழையக் கேட்கலாம்.</string>
+    <string name="settings_storage_browser_data_delete_title">இணையதளத் தரவை நீக்கவா?</string>
+    <string name="settings_storage_delete_kind">%@ நீக்கு</string>
+    <string name="settings_storage_title">சேமிப்பகம்</string>
+    <string name="settings_storage_total">மொத்தம்</string>
     <string name="settings_sync_brief_description">TigerSync உங்கள் அனைத்து சாதனங்களிலும் தகவலை ஒத்திசைக்க அனுமதிக்கிறது. ஒத்திசைவுக்கு இயக்கப்படாத தகவல் இந்த சாதனத்தில் மட்டுமே இருக்கும்.</string>
     <string name="settings_sync_disabled_note">ஒத்திசைவு முடக்கப்பட்டிருந்தாலும், பணி நினைவூட்டல்களை அனுப்ப TigerDuck சேவையகம் உங்கள் மாணவர் ID, Moodle டோக்கன் மற்றும் இந்த சாதனத்தின் புஷ் சான்றுகளைப் பெறுகிறது</string>
     <string name="settings_sync_status_off">ஆஃப்</string>

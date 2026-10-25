@@ -40,6 +40,7 @@
     <string name="action_close">Isara</string>
     <string name="action_confirm">Kumpirmahin</string>
     <string name="action_continue">Magpatuloy</string>
+    <string name="action_delete">Burahin</string>
     <string name="action_done">Tapos na</string>
     <string name="action_go_to_settings">Pumunta sa settings</string>
     <string name="action_got_it">Naintindihan ko</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">Laki ng display at text</string>
     <string name="settings_display_size_ui">Laki ng display</string>
     <string name="settings_display_size_widget_section">Mga widget</string>
+    <string name="settings_downloaded_files_delete_all">Burahin ang lahat ng na-download na file</string>
+    <string name="settings_downloaded_files_delete_all_message">Muling ida-download ang mga file sa Moodle at mga attachment ng mail sa susunod na buksan mo ang mga ito.</string>
+    <string name="settings_downloaded_files_delete_all_title">Burahin ang lahat ng na-download na file?</string>
+    <string name="settings_downloaded_files_footer">Ang mga file na na-download sa TigerDuck browser ay naka-save sa Downloads folder ng iyong phone at hindi binubura rito.</string>
+    <string name="settings_downloaded_files_images">Mga larawan ng iskedyul ng klase</string>
+    <string name="settings_downloaded_files_mail">Mga attachment ng mail</string>
+    <string name="settings_downloaded_files_moodle">Mga file sa Moodle</string>
+    <string name="settings_downloaded_files_title">Mga na-download na file</string>
     <string name="settings_feedback_bug_report">Feedback / Mag-ulat ng isyu</string>
     <string name="settings_flip_to_library_summary">I-flip ang telepono naka-mukha ang screen pababa para buksan ang library QR.</string>
     <string name="settings_flip_to_library_title">I-flip para ipakita ang library QR</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Ipakita ang mga silid-aralan sa iskedyul</string>
     <string name="settings_sign_out_imported_tables">Buburahin din ang mga na-import na iskedyul ng klase.</string>
     <string name="settings_sign_out_unsynced_data">Buburahin ang data na hindi naka-sync sa TigerSync.</string>
+    <string name="settings_storage_browser_data">Data ng website</string>
+    <string name="settings_storage_browser_data_delete_message">Maaaring hilingin ng mga site na binisita mo sa TigerDuck browser na mag-sign in ka ulit.</string>
+    <string name="settings_storage_browser_data_delete_title">Burahin ang data ng website?</string>
+    <string name="settings_storage_delete_kind">Burahin ang %@</string>
+    <string name="settings_storage_title">Storage</string>
+    <string name="settings_storage_total">Kabuuan</string>
     <string name="settings_sync_brief_description">Pinapayagan ka ng TigerSync na i-sync ang iyong napiling impormasyon sa lahat ng device. Ang impormasyong hindi naka-enable ay mananatili lamang sa device na ito.</string>
     <string name="settings_sync_disabled_note">Kapag naka-off ang sync, natatanggap pa rin ng TigerDuck server ang iyong ID ng estudyante, Moodle token at ang push credentials ng device na ito para makapagpadala ng mga paalala sa takdang-aralin</string>
     <string name="settings_sync_status_off">Naka-off</string>

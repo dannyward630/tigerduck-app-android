@@ -40,6 +40,7 @@
     <string name="action_close">關閉</string>
     <string name="action_confirm">確認</string>
     <string name="action_continue">繼續</string>
+    <string name="action_delete">刪除</string>
     <string name="action_done">完成</string>
     <string name="action_go_to_settings">去設定</string>
     <string name="action_got_it">收到！</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">顯示同文字大小</string>
     <string name="settings_display_size_ui">顯示大小</string>
     <string name="settings_display_size_widget_section">小工具</string>
+    <string name="settings_downloaded_files_delete_all">刪除所有已下載嘅檔案</string>
+    <string name="settings_downloaded_files_delete_all_message">下次打開 Moodle 檔案同郵件附件嗰陣，會再重新下載。</string>
+    <string name="settings_downloaded_files_delete_all_title">要刪除所有已下載嘅檔案嗎？</string>
+    <string name="settings_downloaded_files_footer">喺 TigerDuck 瀏覽器下載嘅檔案會儲存喺手機嘅「下載」資料夾，唔會喺呢度刪除。</string>
+    <string name="settings_downloaded_files_images">課表圖片</string>
+    <string name="settings_downloaded_files_mail">郵件附件</string>
+    <string name="settings_downloaded_files_moodle">Moodle 檔案</string>
+    <string name="settings_downloaded_files_title">已下載嘅檔案</string>
     <string name="settings_feedback_bug_report">回饋/問題回報</string>
     <string name="settings_flip_to_library_summary">將手機屏幕向下即可開啟圖書館 QR</string>
     <string name="settings_flip_to_library_title">翻轉顯示圖書館 QR</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">喺課表首頁顯示教室</string>
     <string name="settings_sign_out_imported_tables">匯入咗嘅課表都會一齊刪除。</string>
     <string name="settings_sign_out_unsynced_data">未經 TigerSync 同步嘅資料會刪除。</string>
+    <string name="settings_storage_browser_data">網站資料</string>
+    <string name="settings_storage_browser_data_delete_message">喺 TigerDuck 瀏覽器去過嘅網站，可能會要你重新登入。</string>
+    <string name="settings_storage_browser_data_delete_title">要刪除網站資料嗎？</string>
+    <string name="settings_storage_delete_kind">刪除%@</string>
+    <string name="settings_storage_title">儲存空間</string>
+    <string name="settings_storage_total">總計</string>
     <string name="settings_sync_brief_description">TigerSync 可以將你揀嘅資料同步到所有開咗 TigerSync 嘅裝置。冇開 TigerSync 嘅資料淨係會留喺呢部裝置。</string>
     <string name="settings_sync_disabled_note">關閉同步之後，為咗傳送作業提醒，TigerDuck 伺服器仍然會收到你嘅學號、Moodle token 同呢部裝置嘅推播憑證</string>
     <string name="settings_sync_status_off">關閉</string>

@@ -40,6 +40,7 @@
     <string name="action_close">Chiudi</string>
     <string name="action_confirm">Conferma</string>
     <string name="action_continue">Continua</string>
+    <string name="action_delete">Elimina</string>
     <string name="action_done">Fatto</string>
     <string name="action_go_to_settings">Vai alle impostazioni</string>
     <string name="action_got_it">Ho capito</string>
@@ -1093,6 +1094,14 @@
     <string name="settings_display_size_title">Dimensioni di visualizzazione e testo</string>
     <string name="settings_display_size_ui">Dimensioni di visualizzazione</string>
     <string name="settings_display_size_widget_section">Widget</string>
+    <string name="settings_downloaded_files_delete_all">Elimina tutti i file scaricati</string>
+    <string name="settings_downloaded_files_delete_all_message">I file di Moodle e gli allegati della posta verranno scaricati di nuovo la prossima volta che li apri.</string>
+    <string name="settings_downloaded_files_delete_all_title">Eliminare tutti i file scaricati?</string>
+    <string name="settings_downloaded_files_footer">I file scaricati nel browser di TigerDuck vengono salvati nella cartella Download del telefono e non vengono eliminati da qui.</string>
+    <string name="settings_downloaded_files_images">Immagini dell\'orario</string>
+    <string name="settings_downloaded_files_mail">Allegati della posta</string>
+    <string name="settings_downloaded_files_moodle">File di Moodle</string>
+    <string name="settings_downloaded_files_title">File scaricati</string>
     <string name="settings_feedback_bug_report">Feedback / Segnala un problema</string>
     <string name="settings_flip_to_library_summary">Capovolgi il telefono con lo schermo verso il basso per aprire il QR della biblioteca.</string>
     <string name="settings_flip_to_library_title">Capovolgi per mostrare il QR della biblioteca</string>
@@ -1151,6 +1160,12 @@
     <string name="settings_show_classroom_on_class_table">Mostra le aule nell\'orario</string>
     <string name="settings_sign_out_imported_tables">Anche gli orari importati verranno eliminati.</string>
     <string name="settings_sign_out_unsynced_data">I dati non sincronizzati con TigerSync verranno eliminati.</string>
+    <string name="settings_storage_browser_data">Dati dei siti web</string>
+    <string name="settings_storage_browser_data_delete_message">I siti che hai visitato nel browser di TigerDuck potrebbero chiederti di accedere di nuovo.</string>
+    <string name="settings_storage_browser_data_delete_title">Eliminare i dati dei siti web?</string>
+    <string name="settings_storage_delete_kind">Elimina: %@</string>
+    <string name="settings_storage_title">Spazio di archiviazione</string>
+    <string name="settings_storage_total">Totale</string>
     <string name="settings_sync_brief_description">TigerSync ti permette di sincronizzare le informazioni scelte su tutti i dispositivi. Le informazioni non abilitate restano solo su questo dispositivo.</string>
     <string name="settings_sync_disabled_note">Con la sincronizzazione disattivata, il server TigerDuck riceve comunque la tua matricola, il token Moodle e le credenziali push di questo dispositivo per inviare i promemoria dei compiti</string>
     <string name="settings_sync_status_off">Disattivo</string>
