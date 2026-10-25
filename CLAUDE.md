@@ -58,8 +58,9 @@ default is silently dropped and the field is null at runtime.
   `build/generated/appTranslation/res`, a generated resource directory. Neither
   this repo nor the submodule commits Android's `strings.xml` or
   `locales_config.xml`, so a translation change is a submodule pin bump and
-  nothing else. Edit strings in the submodule's JSON. Building needs Python 3
-  (`python3`, `python` or `py` on PATH); the task fails without it rather than
+  nothing else. Edit strings in the submodule's JSON. Building needs Python 3.9
+  or newer (`python3`, `python` or `py` on PATH; 3.9 is macOS's own `python3`,
+  and CI tests it and the newest); the task fails without it rather than
   ship an app with no strings.
 - **`name-abbr/` submodule must be present** — `verifyNameAbbrSubmodule`
   fails the build if it's missing. CI checks out submodules explicitly;

@@ -69,7 +69,7 @@ abstract class GenerateAppTranslationStrings @Inject constructor(
             process.waitFor() == 0 && output.contains("Python 3")
         }.getOrDefault(false)
     } ?: throw GradleException(
-        "The app's strings are generated from app-translation with Python 3, which isn't on PATH " +
+        "The app's strings are generated from app-translation with Python 3.9 or newer, which isn't on PATH " +
             "(tried python3, python, py). Install it from https://www.python.org/ and build again."
     )
 }

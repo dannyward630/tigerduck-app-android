@@ -25,6 +25,9 @@ APP_TRANSLATION_DIR = ROOT / "app-translation"
 CONFIG_PATH = APP_TRANSLATION_DIR / "config" / "locales.json"
 GENERATOR = APP_TRANSLATION_DIR / "tools" / "localization" / "generate_localizations.py"
 
+# The oldest Python the strings are generated with, and CI tests: macOS's own python3.
+MINIMUM_PYTHON = (3, 9)
+
 
 def load_locale_config() -> dict:
     with CONFIG_PATH.open("r", encoding="utf-8") as handle:
@@ -86,6 +89,13 @@ def write_file(path: Path, content: str) -> None:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    if sys.version_info < MINIMUM_PYTHON:
+        print(
+            "The app's strings need Python %d.%d or newer to generate; this is %s."
+            % (MINIMUM_PYTHON + (".".join(str(part) for part in sys.version_info[:3]),)),
+            file=sys.stderr,
+        )
+        return 1
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--res-dir", type=Path, required=True, help="Resource directory to write values*/strings.xml into")
     parser.add_argument("--locales-config", action="store_true", help="Also write xml/locales_config.xml")

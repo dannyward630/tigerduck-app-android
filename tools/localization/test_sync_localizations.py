@@ -1,8 +1,11 @@
+import contextlib
 import importlib.util
+import io
 import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 _SPEC = importlib.util.spec_from_file_location(
     "sync_localizations", pathlib.Path(__file__).with_name("sync_localizations.py")
@@ -59,6 +62,20 @@ class LineEndingsTest(unittest.TestCase):
                 sync.Path.open = real
             self.assertEqual(b"one\n", (pathlib.Path(tmp) / "xml" / "a.xml").read_bytes())
         self.assertEqual(["\n"], seen)
+
+
+class PythonVersionTest(unittest.TestCase):
+    """The strings need Python 3.9 or newer: an older one is told so, rather than failing somewhere inside."""
+
+    def test_an_older_python_is_refused_with_the_version_it_needs(self):
+        with mock.patch.object(sync.sys, "version_info", (3, 8, 10, "final", 0)), \
+                mock.patch.object(sync, "run_canonical_generator") as generator, \
+                contextlib.redirect_stderr(io.StringIO()) as err:
+            self.assertEqual(1, sync.main(["--res-dir", "unused"]))
+
+        generator.assert_not_called()
+        self.assertIn("Python 3.9 or newer", err.getvalue())
+        self.assertIn("3.8.10", err.getvalue())
 
 
 if __name__ == "__main__":

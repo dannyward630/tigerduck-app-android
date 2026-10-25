@@ -211,7 +211,8 @@ git submodule update --init --recursive
 ```
 
 > 💡 課程/教室簡稱（`name-abbr/`）與多語系字串（`app-translation/`）皆由子模組提供，clone 後
-**務必**先抓子模組再開 Android Studio，否則 build 會找不到資源檔。編譯時也需要 Python 3 來產生字串。
+**務必**先抓子模組再開 Android Studio，否則 build 會找不到資源檔。編譯時也需要 Python 3.9 以上來產生字串
+（macOS 內建的 `python3` 是 3.9；CI 會測 3.9 和最新版）。
 
 ### Wear OS App（`:wear` 模組）
 
@@ -249,7 +250,7 @@ F-Droid 變體**，也不會出現在 F-Droid 商店上。
 - 每次編譯都會從子模組的 `source/*.json` 產生 Android 字串：`generateAppTranslationStrings`
   （`gradle/app-translation.gradle.kts`，`:app` 與 `:wear` 都會套用）把 `values*/strings.xml` 和手機的
   `xml/locales_config.xml` 寫進 `build/generated/appTranslation/res`。這邊和子模組都不再提交 Android 的字串，
-  翻譯有更新時只要移動子模組的 pin。編譯需要 PATH 上有 Python 3。
+  翻譯有更新時只要移動子模組的 pin。編譯需要 PATH 上有 Python 3.9 以上。
 - 子模組仍會提交 Apple（`generated/apple/`）與後端（`generated/backend/`）的輸出，給 Apple App 和後端讀取。
 
 新語系或字串請對 [`app-translation/`](https://github.com/tigerduck-app/app-translation) 子模組另開 PR，*

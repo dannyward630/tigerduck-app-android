@@ -226,7 +226,8 @@ git submodule update --init --recursive
 
 > 💡 Course / classroom abbreviations (`name-abbr/`) and localization strings (`app-translation/`)
 > come from submodules. **Always** initialize submodules before opening Android Studio, otherwise the
-> build will fail to locate resource files. Building also needs Python 3, which generates the strings.
+> build will fail to locate resource files. Building also needs Python 3.9 or newer, which generates the strings
+> (macOS's own `python3` is 3.9; CI tests 3.9 and the newest).
 
 ### Wear OS App (`:wear` module)
 
@@ -267,7 +268,7 @@ submodule and are shared with the iOS client.
   `generateAppTranslationStrings` task (`gradle/app-translation.gradle.kts`, applied by `:app` and
   `:wear`) writes `values*/strings.xml`, and the phone's `xml/locales_config.xml`, into
   `build/generated/appTranslation/res`. Nothing is committed, here or in the submodule, so a
-  translation change only moves the submodule pin. It needs Python 3 on PATH.
+  translation change only moves the submodule pin. It needs Python 3.9 or newer on PATH.
 - The submodule still commits its Apple (`generated/apple/`) and backend (`generated/backend/`)
   outputs, which the Apple app and the backend read.
 
