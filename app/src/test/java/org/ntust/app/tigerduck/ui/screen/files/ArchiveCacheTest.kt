@@ -5,6 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
+import org.ntust.app.tigerduck.files.ArchiveLimits
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
@@ -73,6 +74,11 @@ class ArchiveCacheTest {
         assertNull(ArchiveCache.folderHolding("/archive_entries/../moodle_downloads/x.zip", cache))
         assertNull(ArchiveCache.folderHolding("/archive_entries/item-3.zip", cache))
         assertNull(ArchiveCache.folderHolding(null, cache))
+    }
+
+    @Test
+    fun `a stream's copy and the largest file taken out fit the folder's limit together`() {
+        assertTrue(ArchiveCache.MAX_STREAM_COPY_BYTES + ArchiveLimits().maxEntryBytes <= ArchiveCache.MAX_FOLDER_BYTES)
     }
 
     @Test

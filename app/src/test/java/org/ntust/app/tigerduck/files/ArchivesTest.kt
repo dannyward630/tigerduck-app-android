@@ -380,6 +380,98 @@ class ArchivesTest {
     }
 
     @Test
+    fun `a tar of endless extended headers says it's broken, without bringing the app down`() {
+        val file = temp.newFile("headers.tar")
+        file.outputStream().buffered().use { out ->
+            repeat(5_000) {
+                out.write(tarHeader("PaxHeader", 6, 'x'))
+                out.write("6 a=b\n".toByteArray() + ByteArray(506))
+            }
+            out.write(tarHeader("last.txt", 0, '0'))
+            out.write(ByteArray(1024))
+        }
+        var result: Any? = "not reached"
+        // A small stack, as a worker thread's may be.
+        val thread = Thread(null, { result = runCatching { problem { listing(file) } }.getOrElse { it::class.simpleName } }, "small", 256L * 1024)
+        thread.start()
+        thread.join()
+
+        assertEquals(ArchiveProblem.BROKEN, result)
+    }
+
+    @Test
+    fun `a zip whose directory holds more entries than its end record says isn't read past the limit`() {
+        val file = zip { repeat(6) { file("file $it.txt", byteArrayOf(1)) } }.declaringEntries(0)
+
+        assertEquals(ArchiveProblem.TOO_MANY, problem { listing(file, ArchiveLimits(maxZipEntries = 5)) })
+    }
+
+    @Test
+    fun `an xz file in a zip is one the app doesn't read, its decoder's memory being unbounded there`() {
+        val file = zip { file("data.bin", "fake".toByteArray()) }.packedWith("data.bin", 95)
+
+        assertEquals(ArchiveProblem.UNSUPPORTED, listing(file).items.single().problem)
+    }
+
+    @Test
+    fun `a 7z whose packed header would grow past the memory limit isn't read`() {
+        val file = temp.newFile("header.7z").apply { writeBytes(sevenZWithPackedHeader(unpackSize = Int.MAX_VALUE.toLong())) }
+
+        assertEquals(Int.MAX_VALUE.toLong(), java.nio.channels.FileChannel.open(file.toPath()).use { Archives.sevenZHeaderSize(it) })
+        assertEquals(ArchiveProblem.TOO_LARGE, problem { listing(file) })
+    }
+
+    @Test
+    fun `a gz whose name runs on and on isn't read`() {
+        val file = temp.newFile("long-name.gz")
+        file.outputStream().use { out ->
+            out.write(byteArrayOf(0x1F, 0x8B.toByte(), 0x08, 0x08, 0, 0, 0, 0, 0, 0x03))
+            out.write(ByteArray(100_000) { 'a'.code.toByte() })
+            out.write(0)
+            java.util.zip.DeflaterOutputStream(out, java.util.zip.Deflater(9, true)).apply { write("x".toByteArray()); finish() }
+            // A right trailer, so only the name is wrong with it.
+            val crc = java.util.zip.CRC32().apply { update("x".toByteArray()) }.value
+            out.write(java.nio.ByteBuffer.allocate(8).order(java.nio.ByteOrder.LITTLE_ENDIAN).putInt(crc.toInt()).putInt(1).array())
+        }
+
+        assertEquals(ArchiveProblem.BROKEN, problem { listing(file) })
+    }
+
+    @Test
+    fun `files passed over on the way to one count against the scan limit`() {
+        val file = temp.newFile("passed.7z")
+        SevenZOutputFile(file).use { out ->
+            for ((path, bytes) in listOf("zeros.bin" to ByteArray(4 shl 20), "last.txt" to "end".toByteArray())) {
+                out.putArchiveEntry(out.createArchiveEntry(File(path), path))
+                out.write(bytes)
+                out.closeArchiveEntry()
+            }
+        }
+        val last = listing(file).items.last()
+
+        assertEquals(ArchiveProblem.TOO_LARGE, problem { extract(file, last, ArchiveLimits(maxScanBytes = 1L shl 20)) })
+        assertEquals("end", extract(file, last).readText())
+    }
+
+    @Test
+    fun `passing over a compressed member stops at the scan limit as it reads, not after`() {
+        var produced = 0L
+        val endless = object : java.io.InputStream() {
+            override fun read() = 0.also { produced++ }
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                java.util.Arrays.fill(b, off, off + len, 0)
+                produced += len
+                return len
+            }
+            override fun skip(n: Long): Long = n.also { produced += it }
+        }
+        val counted = Counted(endless, ArchiveLimits(), deadline = Long.MAX_VALUE, limit = 1L shl 20)
+
+        assertEquals(ArchiveProblem.TOO_LARGE, problem { counted.skip(100L shl 20) })
+        assertTrue("$produced", produced <= (1L shl 20) + (64 shl 10))
+    }
+
+    @Test
     fun `the same file taken out twice is the same bytes`() {
         val bytes = Random(3).nextBytes(100_000)
         val file = zip { file("data.bin", bytes) }

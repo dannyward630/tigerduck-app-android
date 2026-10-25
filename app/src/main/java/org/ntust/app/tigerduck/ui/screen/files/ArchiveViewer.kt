@@ -325,7 +325,7 @@ private fun Context.archiveSource(uri: Uri, name: String, scratch: File): Archiv
     }
     val copy = File(scratch, ArchiveCache.STREAM_COPY)
     val input = contentResolver.openInputStream(uri) ?: throw FileNotFoundException(name)
-    input.use { copy.outputStream().use { out -> copyAtMost(it, out, MAX_STREAMED_ARCHIVE) } }
+    input.use { copy.outputStream().use { out -> copyAtMost(it, out, ArchiveCache.MAX_STREAM_COPY_BYTES) } }
     return ArchiveSource.of(copy).let { ArchiveSource(name, it.size, it.open) }
 }
 
@@ -341,9 +341,6 @@ private fun copyAtMost(input: InputStream, output: OutputStream, limit: Long) {
         output.write(buffer, 0, read)
     }
 }
-
-/** The largest archive read through a stream, copied first: files are read where they are, at any size. */
-private const val MAX_STREAMED_ARCHIVE = 512L shl 20
 
 /**
  * The folders archive viewers take files out into, one each, under `cache/archive_entries`,
@@ -389,6 +386,12 @@ internal object ArchiveCache {
 
     /** The most a viewer keeps taken out at once: past it, the files taken out longest ago go. */
     const val MAX_FOLDER_BYTES = 512L shl 20
+
+    /**
+     * The largest archive read through a stream, copied first: files are read where they are, at
+     * any size. With the largest file taken out, it fits [MAX_FOLDER_BYTES], as neither is trimmed.
+     */
+    const val MAX_STREAM_COPY_BYTES = 256L shl 20
 
     fun folder(context: Context, session: String): File = File(File(context.cacheDir, DIR), session).apply { mkdirs() }
 

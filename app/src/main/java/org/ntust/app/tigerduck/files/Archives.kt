@@ -201,8 +201,15 @@ object Archives {
     private fun openZip(source: ArchiveSource, limits: ArchiveLimits): ZipFile {
         val channel = source.open()
         try {
-            val declared = declaredZipEntries(channel)
-            if (declared != null && declared > limits.maxZipEntries) throw ArchiveProblemException(ArchiveProblem.TOO_MANY)
+            // The count its end record declares, then the records themselves: the reader goes by the
+            // records, however many the record says.
+            val directory = zipDirectory(channel)
+            if (directory != null) {
+                if (directory.entries > limits.maxZipEntries) throw ArchiveProblemException(ArchiveProblem.TOO_MANY)
+                if (countDirectoryRecords(channel, directory.offset, limits.maxZipEntries + 1) > limits.maxZipEntries) {
+                    throw ArchiveProblemException(ArchiveProblem.TOO_MANY)
+                }
+            }
             channel.position(0)
             return ZipFile.builder()
                 .setSeekableByteChannel(channel)
@@ -226,33 +233,81 @@ object Archives {
         entry.isDirectory -> null
         entry.generalPurposeBit.usesEncryption() || entry.method == ZipMethod.AES_ENCRYPTED.code -> ArchiveProblem.PASSWORD
         entry.isUnixSymlink -> ArchiveProblem.LINK
-        // Zstandard needs a native library the app doesn't ship.
-        entry.method in ZSTD_METHODS || !zip.canReadEntryData(entry) -> ArchiveProblem.UNSUPPORTED
+        entry.method in UNREAD_METHODS || !zip.canReadEntryData(entry) -> ArchiveProblem.UNSUPPORTED
         else -> null
     }
 
+    /** What a zip's end of central directory says of its directory: how many entries, and where it starts. */
+    internal class ZipDirectory(val entries: Long, val offset: Long)
+
     /**
-     * The entry count a zip's end of central directory declares, read before its directory is,
-     * so a zip of a million entries is turned away before they're all in memory. Null when
-     * there's no such record, which the zip reader then reports.
+     * What a zip's end of central directory declares, read before its directory is, so a zip of a
+     * million entries is turned away before they're all in memory. Null when there's no such
+     * record, which the zip reader then reports.
      */
-    internal fun declaredZipEntries(channel: SeekableByteChannel): Long? {
+    internal fun zipDirectory(channel: SeekableByteChannel): ZipDirectory? {
         val size = channel.size()
         val tailSize = minOf(size, END_RECORD_SIZE + 0xFFFFL).toInt()
         val tail = read(channel, size - tailSize, tailSize) ?: return null
         for (at in tailSize - END_RECORD_SIZE.toInt() downTo 0) {
             if (tail.getInt(at) != END_SIGNATURE) continue
             val entries = (tail.getShort(at + 10).toInt() and 0xFFFF).toLong()
-            if (entries != 0xFFFFL) return entries
-            // A Zip64 count: its locator sits just before, and points at the record that holds it.
-            val locator = read(channel, size - tailSize + at - 20, 20) ?: return entries
-            if (locator.getInt(0) != ZIP64_LOCATOR_SIGNATURE) return entries
+            val offset = tail.getInt(at + 16).toLong() and 0xFFFFFFFFL
+            if (entries != 0xFFFFL && offset != 0xFFFFFFFFL) return ZipDirectory(entries, offset)
+            // Zip64: its locator sits just before, and points at the record that holds both.
+            val plain = ZipDirectory(entries, offset)
+            val locator = read(channel, size - tailSize + at - 20, 20) ?: return plain
+            if (locator.getInt(0) != ZIP64_LOCATOR_SIGNATURE) return plain
             val recordAt = locator.getLong(8)
-            if (recordAt !in 0..(size - 56)) return entries
-            val record = read(channel, recordAt, 56) ?: return entries
-            return if (record.getInt(0) == ZIP64_END_SIGNATURE) record.getLong(32) else entries
+            if (recordAt !in 0..(size - 56)) return plain
+            val record = read(channel, recordAt, 56) ?: return plain
+            if (record.getInt(0) != ZIP64_END_SIGNATURE) return plain
+            return ZipDirectory(record.getLong(32), record.getLong(48))
         }
         return null
+    }
+
+    /** How many directory records follow one another from [offset], counting no further than [atMost]. */
+    internal fun countDirectoryRecords(channel: SeekableByteChannel, offset: Long, atMost: Long): Long {
+        if (offset !in 0 until channel.size()) return 0
+        channel.position(offset)
+        val input = BufferedInputStream(Channels.newInputStream(channel), BUFFER)
+        val header = ByteArray(DIRECTORY_RECORD_SIZE)
+        var count = 0L
+        while (count < atMost) {
+            if (!readFully(input, header)) break
+            val fields = ByteBuffer.wrap(header).order(ByteOrder.LITTLE_ENDIAN)
+            if (fields.getInt(0) != DIRECTORY_SIGNATURE) break
+            count++
+            val rest = (fields.getShort(28).toLong() and 0xFFFF) + (fields.getShort(30).toLong() and 0xFFFF) +
+                (fields.getShort(32).toLong() and 0xFFFF)
+            if (!skipFully(input, rest)) break
+        }
+        return count
+    }
+
+    private fun readFully(input: InputStream, into: ByteArray): Boolean {
+        var read = 0
+        while (read < into.size) {
+            val n = input.read(into, read, into.size - read)
+            if (n < 0) return false
+            read += n
+        }
+        return true
+    }
+
+    private fun skipFully(input: InputStream, count: Long): Boolean {
+        var left = count
+        while (left > 0) {
+            val n = input.skip(left)
+            if (n <= 0) {
+                if (input.read() < 0) return false
+                left--
+            } else {
+                left -= n
+            }
+        }
+        return true
     }
 
     private fun read(channel: SeekableByteChannel, at: Long, count: Int): ByteBuffer? {
@@ -263,12 +318,18 @@ object Archives {
         return buffer.flip() as ByteBuffer
     }
 
-    private val ZSTD_METHODS = setOf(ZipMethod.ZSTD.code, ZipMethod.ZSTD_DEPRECATED.code)
+    /**
+     * Methods the zip reader takes but the app doesn't: Zstandard needs a native library it
+     * doesn't ship, and the reader decodes XZ with no limit on the memory its header asks for.
+     */
+    private val UNREAD_METHODS = setOf(ZipMethod.ZSTD.code, ZipMethod.ZSTD_DEPRECATED.code, ZipMethod.XZ.code)
 
     private const val END_RECORD_SIZE = 22L
     private const val END_SIGNATURE = 0x06054B50
     private const val ZIP64_LOCATOR_SIGNATURE = 0x07064B50
     private const val ZIP64_END_SIGNATURE = 0x06064B50
+    private const val DIRECTORY_SIGNATURE = 0x02014B50
+    private const val DIRECTORY_RECORD_SIZE = 46
 
     // 7z
 
@@ -301,19 +362,36 @@ object Archives {
 
     private fun extract7z(source: ArchiveSource, item: ArchiveItem, out: OutputStream, limits: ArchiveLimits, deadline: Long) {
         open7z(source, limits).use { sevenZ ->
-            val entry = sevenZ.entries.elementAtOrNull(item.index)
-                ?.takeIf { ArchiveNames.normalize(it.name ?: defaultName(source)) == item.path }
-                ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
-            if (entry.isDirectory || entry.isAntiItem) throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
-            if (!entry.hasStream()) return
-            // A file in a solid block is reached by reading the ones before it: those bytes count too.
-            sevenZ.getInputStream(entry).use { copyLimited(it, out, source.size, limits, deadline) }
+            val current = object : InputStream() {
+                override fun read() = sevenZ.read()
+                override fun read(b: ByteArray, off: Int, len: Int) = sevenZ.read(b, off, len)
+            }
+            // Through the files before it, read here rather than inside the reader: a file in a solid
+            // block is reached only by reading the ones before it, and those bytes count too.
+            val passing = Counted(current, limits, deadline, limits.maxScanBytes)
+            val buffer = ByteArray(BUFFER)
+            var index = 0
+            while (true) {
+                val entry = sevenZ.nextEntry ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
+                if (index++ != item.index) {
+                    if (entry.hasStream() && !entry.isDirectory && !entry.isAntiItem) while (passing.read(buffer) >= 0) Unit
+                    continue
+                }
+                if (ArchiveNames.normalize(entry.name ?: defaultName(source)) != item.path) throw ArchiveProblemException(ArchiveProblem.BROKEN)
+                if (entry.isDirectory || entry.isAntiItem) throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
+                if (entry.hasStream()) copyLimited(current, out, source.size, limits, deadline)
+                return
+            }
         }
     }
 
     private fun open7z(source: ArchiveSource, limits: ArchiveLimits): SevenZFile {
         val channel = source.open()
         try {
+            // The reader holds a 7z's header whole, however large its packed form says it grows.
+            val header = sevenZHeaderSize(channel)
+            if (header != null && header > limits.maxMemoryKiB * 1024L) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
+            channel.position(0)
             return SevenZFile.builder()
                 .setSeekableByteChannel(channel)
                 .setDefaultName(defaultName(source))
@@ -325,6 +403,115 @@ object Archives {
             throw e
         }
     }
+
+    /**
+     * How large a 7z's header is once read: its size, or for a packed header, the largest size its
+     * packed form's folder says it unpacks to. Null when the start of the file doesn't say, which
+     * the 7z reader then reports.
+     */
+    internal fun sevenZHeaderSize(channel: SeekableByteChannel): Long? {
+        val start = read(channel, 0, SEVEN_Z_START_SIZE) ?: return null
+        val offset = start.getLong(12)
+        val size = start.getLong(20)
+        if (offset < 0 || size <= 0 || SEVEN_Z_START_SIZE + offset + size > channel.size()) return null
+        if (size > SEVEN_Z_PACKED_HEADER_PEEK) return size
+        val header = read(channel, SEVEN_Z_START_SIZE + offset, size.toInt()) ?: return null
+        if (header.get(0) != ENCODED_HEADER) return size
+        return runCatching { packedHeaderUnpackSize(header) }.getOrNull()
+    }
+
+    /** The largest unpack size a packed 7z header's folders declare: what reading it would hold. */
+    private fun packedHeaderUnpackSize(header: ByteBuffer): Long {
+        header.position(1)
+        var id = header.get().toInt()
+        if (id == PACK_INFO) {
+            sevenZNumber(header)
+            val streams = sevenZNumber(header)
+            id = header.get().toInt()
+            if (id == SIZE) {
+                repeat(streams.toInt()) { sevenZNumber(header) }
+                id = header.get().toInt()
+            }
+            if (id == CRC) {
+                skipDigests(header, streams)
+                id = header.get().toInt()
+            }
+            require(id == END)
+            id = header.get().toInt()
+        }
+        require(id == UNPACK_INFO && header.get().toInt() == FOLDER)
+        val folders = sevenZNumber(header)
+        require(folders in 1..64 && header.get().toInt() == 0)
+        val outputs = LongArray(folders.toInt()) {
+            val coders = sevenZNumber(header)
+            require(coders in 1..64)
+            var inputs = 0L
+            var outputs = 0L
+            repeat(coders.toInt()) {
+                val flags = header.get().toInt() and 0xFF
+                header.position(header.position() + (flags and 0x0F))
+                if (flags and 0x10 != 0) {
+                    inputs += sevenZNumber(header)
+                    outputs += sevenZNumber(header)
+                } else {
+                    inputs++
+                    outputs++
+                }
+                if (flags and 0x20 != 0) {
+                    val properties = sevenZNumber(header)
+                    header.position(header.position() + properties.toInt())
+                }
+            }
+            require(outputs in 1..64 && inputs in 1..64)
+            repeat((outputs - 1).toInt()) {
+                sevenZNumber(header)
+                sevenZNumber(header)
+            }
+            val packed = inputs - (outputs - 1)
+            if (packed > 1) repeat(packed.toInt()) { sevenZNumber(header) }
+            outputs
+        }
+        require(header.get().toInt() == UNPACK_SIZES)
+        var largest = 0L
+        for (count in outputs) repeat(count.toInt()) { largest = maxOf(largest, sevenZNumber(header)) }
+        return largest
+    }
+
+    /** 7z's own number: a first byte whose leading ones count the bytes after it. */
+    private fun sevenZNumber(header: ByteBuffer): Long {
+        val first = header.get().toLong() and 0xFF
+        var mask = 0x80
+        var value = 0L
+        for (i in 0 until 8) {
+            if (first and mask.toLong() == 0L) return value or ((first and (mask - 1).toLong()) shl (8 * i))
+            value = value or ((header.get().toLong() and 0xFF) shl (8 * i))
+            mask = mask ushr 1
+        }
+        return value
+    }
+
+    private fun skipDigests(header: ByteBuffer, count: Long) {
+        val all = header.get().toInt() != 0
+        var defined = count
+        if (!all) {
+            val bits = ByteArray(((count + 7) / 8).toInt()).also { header.get(it) }
+            defined = (0 until count).count { bits[(it / 8).toInt()].toInt() and (0x80 ushr (it % 8).toInt()) != 0 }.toLong()
+        }
+        header.position(header.position() + (4 * defined).toInt())
+    }
+
+    private const val SEVEN_Z_START_SIZE = 32
+
+    /** A packed header is small; past this its size alone is too much to read. */
+    private const val SEVEN_Z_PACKED_HEADER_PEEK = 1L shl 20
+    private const val ENCODED_HEADER: Byte = 0x17
+    private const val END = 0x00
+    private const val PACK_INFO = 0x06
+    private const val UNPACK_INFO = 0x07
+    private const val SIZE = 0x09
+    private const val CRC = 0x0A
+    private const val FOLDER = 0x0B
+    private const val UNPACK_SIZES = 0x0C
 
     /** A 7z entry stored as a link: by its Unix mode, kept in the high half, or as a Windows reparse point. */
     private fun isWindowsOrUnixLink(has: Boolean, attributes: Int): Boolean {
@@ -421,7 +608,8 @@ object Archives {
         var packedModified: Long? = null
         val unpacked: InputStream = when (format) {
             ArchiveFormat.TAR -> raw
-            ArchiveFormat.GZIP -> GzipCompressorInputStream.builder().setInputStream(raw).setDecompressConcatenated(true).get().also { gzip ->
+            // One member: the reader holds each member's name and comment whole, and only the first's is checked.
+            ArchiveFormat.GZIP -> GzipCompressorInputStream.builder().setInputStream(raw.also(::checkGzipHeader)).setDecompressConcatenated(false).get().also { gzip ->
                 packedName = gzip.metaData.fileName
                 packedModified = gzip.metaData.modificationTime.takeIf { it > 0 }
             }
@@ -441,6 +629,37 @@ object Archives {
             block(Pass(counted, tar, name, packedModified))
         }
     }
+
+    /** A gzip header whose name or comment runs past [GZIP_FIELD_MAX] bytes is taken for a damaged one. */
+    private fun checkGzipHeader(stream: BufferedInputStream) {
+        stream.mark(GZIP_HEADER_PEEK)
+        try {
+            val fixed = ByteArray(10)
+            if (!readFully(stream, fixed)) throw ArchiveProblemException(ArchiveProblem.BROKEN)
+            val flags = fixed[3].toInt()
+            if (flags and GZIP_EXTRA != 0) {
+                val length = stream.read() or (stream.read() shl 8)
+                if (length < 0 || !skipFully(stream, length.toLong())) throw ArchiveProblemException(ArchiveProblem.BROKEN)
+            }
+            for (field in listOf(GZIP_NAME, GZIP_COMMENT)) {
+                if (flags and field == 0) continue
+                var length = 0
+                while (true) {
+                    val byte = stream.read()
+                    if (byte < 0 || ++length > GZIP_FIELD_MAX) throw ArchiveProblemException(ArchiveProblem.BROKEN)
+                    if (byte == 0) break
+                }
+            }
+        } finally {
+            stream.reset()
+        }
+    }
+
+    private const val GZIP_EXTRA = 0x04
+    private const val GZIP_NAME = 0x08
+    private const val GZIP_COMMENT = 0x10
+    private const val GZIP_FIELD_MAX = 64 shl 10
+    private const val GZIP_HEADER_PEEK = 10 + 2 + 0xFFFF + 2 * GZIP_FIELD_MAX + 16
 
     private fun startsAsTar(stream: BufferedInputStream): Boolean {
         stream.mark(TAR_HEADER)
@@ -468,32 +687,6 @@ object Archives {
 
     private const val TAR_HEADER = 512
     private const val TAR_MAGIC_AT = 257
-
-    /** Counts what's read through it, and stops a pass past [limit] bytes or the deadline. */
-    private class Counted(input: InputStream, private val limits: ArchiveLimits, private val deadline: Long, private val limit: Long?) :
-        FilterInputStream(input) {
-        private var count = 0L
-
-        override fun read(): Int {
-            limits.check(deadline)
-            return super.read().also { if (it >= 0) counted(1) }
-        }
-
-        override fun read(b: ByteArray, off: Int, len: Int): Int {
-            limits.check(deadline)
-            return super.read(b, off, len).also { if (it > 0) counted(it.toLong()) }
-        }
-
-        override fun skip(n: Long): Long {
-            limits.check(deadline)
-            return super.skip(n).also { if (it > 0) counted(it) }
-        }
-
-        private fun counted(bytes: Long) {
-            count += bytes
-            if (limit != null && count > limit) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
-        }
-    }
 
     // Shared
 
@@ -526,11 +719,6 @@ object Archives {
         }
     }
 
-    private fun ArchiveLimits.check(deadline: Long) {
-        if (Thread.currentThread().isInterrupted) throw InterruptedIOException("Stopped")
-        if (now() > deadline) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
-    }
-
     /** [block], its failures told as an [ArchiveProblem]; being stopped stays what it is. */
     private inline fun <T> guarded(block: () -> T): T = try {
         block()
@@ -551,6 +739,9 @@ object Archives {
         // Commons Compress names a 7z method it lacks, PPMd for one, only in its message.
         val problem = if (e.message?.startsWith("Unsupported compression method") == true) ArchiveProblem.UNSUPPORTED else ArchiveProblem.BROKEN
         throw ArchiveProblemException(problem, e)
+    } catch (e: StackOverflowError) {
+        // Commons Compress reads a tar's extended headers by recursing, one level for each.
+        throw ArchiveProblemException(ArchiveProblem.BROKEN, e)
     } catch (e: LinkageError) {
         // A method whose decoder lives in a library the app doesn't ship.
         throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED, e)
@@ -641,4 +832,47 @@ object ArchiveTree {
 
     /** The folder [folder] is in, `""` for the top. */
     fun parent(folder: String): String = folder.substringBeforeLast('/', missingDelimiterValue = "")
+}
+
+/** Counts what's read through it, and stops a pass past [limit] bytes or the deadline. */
+private const val SKIP_CHUNK = 64 shl 10
+
+internal class Counted(input: InputStream, private val limits: ArchiveLimits, private val deadline: Long, private val limit: Long?) :
+    FilterInputStream(input) {
+    private var count = 0L
+
+    override fun read(): Int {
+        limits.check(deadline)
+        return super.read().also { if (it >= 0) counted(1) }
+    }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int {
+        limits.check(deadline)
+        return super.read(b, off, len).also { if (it > 0) counted(it.toLong()) }
+    }
+
+    override fun skip(n: Long): Long {
+        limits.check(deadline)
+        if (limit == null) return super.skip(n).also { if (it > 0) counted(it) }
+        // Through bounded reads, so the limit stops a long skip partway, not once it's done.
+        val buffer = ByteArray(minOf(n, SKIP_CHUNK.toLong()).toInt().coerceAtLeast(1))
+        var skipped = 0L
+        while (skipped < n) {
+            val read = read(buffer, 0, minOf(buffer.size.toLong(), n - skipped).toInt())
+            if (read < 0) break
+            skipped += read
+        }
+        return skipped
+    }
+
+    private fun counted(bytes: Long) {
+        count += bytes
+        if (limit != null && count > limit) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
+    }
+}
+
+/** Stops a pass when its thread is interrupted, or past [deadline]. */
+internal fun ArchiveLimits.check(deadline: Long) {
+    if (Thread.currentThread().isInterrupted) throw InterruptedIOException("Stopped")
+    if (now() > deadline) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
 }
