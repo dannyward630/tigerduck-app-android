@@ -603,6 +603,15 @@
     <string name="feature_score_short">Notas</string>
     <string name="feature_settings">Configurações</string>
     <string name="feature_settings_short">Configurações</string>
+    <string name="file_viewer_archive_empty">Este arquivo compactado está vazio.</string>
+    <string name="file_viewer_archive_folder">Pasta</string>
+    <string name="file_viewer_archive_link">É um link para outro arquivo.</string>
+    <string name="file_viewer_archive_password">Ele está protegido por senha.</string>
+    <string name="file_viewer_archive_too_large">Ele é grande demais para abrir aqui.</string>
+    <string name="file_viewer_archive_too_many">Ele tem arquivos demais para listar aqui.</string>
+    <string name="file_viewer_archive_truncated">Mostrando os primeiros %1$s itens.</string>
+    <string name="file_viewer_archive_unsupported">Ele foi compactado de um jeito que este app não consegue ler.</string>
+    <string name="file_viewer_archive_up">Subir uma pasta</string>
     <string name="file_viewer_cannot_show">Não é possível mostrar este arquivo aqui.</string>
     <string name="file_viewer_open_elsewhere">Abrir em outro app</string>
     <string name="file_viewer_text_truncated">Mostrando os primeiros %1$s deste arquivo.</string>

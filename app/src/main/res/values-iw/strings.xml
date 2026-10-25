@@ -603,6 +603,15 @@
     <string name="feature_score_short">ציונים</string>
     <string name="feature_settings">הגדרות</string>
     <string name="feature_settings_short">הגדרות</string>
+    <string name="file_viewer_archive_empty">הארכיון הזה ריק.</string>
+    <string name="file_viewer_archive_folder">תיקייה</string>
+    <string name="file_viewer_archive_link">זה קישור לקובץ אחר.</string>
+    <string name="file_viewer_archive_password">הוא מוגן בסיסמה.</string>
+    <string name="file_viewer_archive_too_large">הוא גדול מדי לפתיחה כאן.</string>
+    <string name="file_viewer_archive_too_many">יש בו יותר מדי קבצים להצגה כאן.</string>
+    <string name="file_viewer_archive_truncated">מוצגים %1$s הפריטים הראשונים.</string>
+    <string name="file_viewer_archive_unsupported">הוא דחוס בשיטה שהאפליקציה הזו לא יכולה לקרוא.</string>
+    <string name="file_viewer_archive_up">תיקייה אחת למעלה</string>
     <string name="file_viewer_cannot_show">לא ניתן להציג את הקובץ הזה כאן.</string>
     <string name="file_viewer_open_elsewhere">פתיחה באפליקציה אחרת</string>
     <string name="file_viewer_text_truncated">מוצגים ה-%1$s הראשונים של הקובץ.</string>

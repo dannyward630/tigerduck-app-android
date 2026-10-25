@@ -603,6 +603,15 @@
     <string name="feature_score_short">নম্বর</string>
     <string name="feature_settings">সেটিংস</string>
     <string name="feature_settings_short">সেটিংস</string>
+    <string name="file_viewer_archive_empty">এই আর্কাইভটি খালি।</string>
+    <string name="file_viewer_archive_folder">ফোল্ডার</string>
+    <string name="file_viewer_archive_link">এটি অন্য একটি ফাইলের লিংক।</string>
+    <string name="file_viewer_archive_password">এটি পাসওয়ার্ড দিয়ে সুরক্ষিত।</string>
+    <string name="file_viewer_archive_too_large">এটি এখানে খোলার জন্য খুব বড়।</string>
+    <string name="file_viewer_archive_too_many">এখানে তালিকা দেখানোর জন্য এতে অনেক বেশি ফাইল আছে।</string>
+    <string name="file_viewer_archive_truncated">প্রথম %1$sটি আইটেম দেখানো হচ্ছে।</string>
+    <string name="file_viewer_archive_unsupported">এটি এমনভাবে সংকুচিত যা এই অ্যাপ পড়তে পারে না।</string>
+    <string name="file_viewer_archive_up">এক ফোল্ডার উপরে</string>
     <string name="file_viewer_cannot_show">এই ফাইলটি এখানে দেখানো যাচ্ছে না।</string>
     <string name="file_viewer_open_elsewhere">অন্য অ্যাপে খুলুন</string>
     <string name="file_viewer_text_truncated">এই ফাইলের প্রথম %1$s দেখানো হচ্ছে।</string>

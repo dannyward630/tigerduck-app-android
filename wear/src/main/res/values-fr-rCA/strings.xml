@@ -603,6 +603,15 @@
     <string name="feature_score_short">Notes</string>
     <string name="feature_settings">Paramètres</string>
     <string name="feature_settings_short">Paramètres</string>
+    <string name="file_viewer_archive_empty">Cette archive est vide.</string>
+    <string name="file_viewer_archive_folder">Dossier</string>
+    <string name="file_viewer_archive_link">C\'est un lien vers un autre fichier.</string>
+    <string name="file_viewer_archive_password">Il est protégé par un mot de passe.</string>
+    <string name="file_viewer_archive_too_large">Il est trop volumineux pour être ouvert ici.</string>
+    <string name="file_viewer_archive_too_many">Il contient trop de fichiers pour être listé ici.</string>
+    <string name="file_viewer_archive_truncated">Affichage des %1$s premiers éléments.</string>
+    <string name="file_viewer_archive_unsupported">Il est compressé d\'une façon que cette app ne sait pas lire.</string>
+    <string name="file_viewer_archive_up">Remonter d\'un dossier</string>
     <string name="file_viewer_cannot_show">Ce fichier ne peut pas être affiché ici.</string>
     <string name="file_viewer_open_elsewhere">Ouvrir dans une autre app</string>
     <string name="file_viewer_text_truncated">Affichage des premiers %1$s de ce fichier.</string>

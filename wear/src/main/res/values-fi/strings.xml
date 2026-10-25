@@ -603,6 +603,15 @@
     <string name="feature_score_short">Arvosanat</string>
     <string name="feature_settings">Asetukset</string>
     <string name="feature_settings_short">Asetukset</string>
+    <string name="file_viewer_archive_empty">Tämä arkisto on tyhjä.</string>
+    <string name="file_viewer_archive_folder">Kansio</string>
+    <string name="file_viewer_archive_link">Se on linkki toiseen tiedostoon.</string>
+    <string name="file_viewer_archive_password">Se on suojattu salasanalla.</string>
+    <string name="file_viewer_archive_too_large">Se on liian suuri avattavaksi täällä.</string>
+    <string name="file_viewer_archive_too_many">Siinä on liian monta tiedostoa listattavaksi täällä.</string>
+    <string name="file_viewer_archive_truncated">Näytetään ensimmäiset %1$s kohdetta.</string>
+    <string name="file_viewer_archive_unsupported">Se on pakattu tavalla, jota tämä sovellus ei osaa lukea.</string>
+    <string name="file_viewer_archive_up">Yksi kansio ylöspäin</string>
     <string name="file_viewer_cannot_show">Tätä tiedostoa ei voi näyttää täällä.</string>
     <string name="file_viewer_open_elsewhere">Avaa toisessa sovelluksessa</string>
     <string name="file_viewer_text_truncated">Näytetään tämän tiedoston ensimmäiset %1$s.</string>

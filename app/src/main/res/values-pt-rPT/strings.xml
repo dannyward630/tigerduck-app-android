@@ -603,6 +603,15 @@
     <string name="feature_score_short">Notas</string>
     <string name="feature_settings">Definições</string>
     <string name="feature_settings_short">Definições</string>
+    <string name="file_viewer_archive_empty">Este ficheiro comprimido está vazio.</string>
+    <string name="file_viewer_archive_folder">Pasta</string>
+    <string name="file_viewer_archive_link">É uma ligação para outro ficheiro.</string>
+    <string name="file_viewer_archive_password">Está protegido por palavra-passe.</string>
+    <string name="file_viewer_archive_too_large">É demasiado grande para abrir aqui.</string>
+    <string name="file_viewer_archive_too_many">Contém ficheiros a mais para os listar aqui.</string>
+    <string name="file_viewer_archive_truncated">A mostrar os primeiros %1$s itens.</string>
+    <string name="file_viewer_archive_unsupported">Está comprimido de uma forma que esta app não consegue ler.</string>
+    <string name="file_viewer_archive_up">Subir uma pasta</string>
     <string name="file_viewer_cannot_show">Não é possível mostrar este ficheiro aqui.</string>
     <string name="file_viewer_open_elsewhere">Abrir noutra aplicação</string>
     <string name="file_viewer_text_truncated">A mostrar os primeiros %1$s deste ficheiro.</string>

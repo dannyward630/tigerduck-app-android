@@ -603,6 +603,15 @@
     <string name="feature_score_short">نمرات</string>
     <string name="feature_settings">تنظیمات</string>
     <string name="feature_settings_short">تنظیمات</string>
+    <string name="file_viewer_archive_empty">این آرشیو خالی است.</string>
+    <string name="file_viewer_archive_folder">پوشه</string>
+    <string name="file_viewer_archive_link">پیوندی به فایل دیگری است.</string>
+    <string name="file_viewer_archive_password">با گذرواژه محافظت شده است.</string>
+    <string name="file_viewer_archive_too_large">برای باز شدن در اینجا بیش از حد بزرگ است.</string>
+    <string name="file_viewer_archive_too_many">فایل‌های آن برای فهرست شدن در اینجا بیش از حد زیاد است.</string>
+    <string name="file_viewer_archive_truncated">%1$s مورد نخست نمایش داده می‌شود.</string>
+    <string name="file_viewer_archive_unsupported">به روشی فشرده شده که این برنامه نمی‌تواند بخواند.</string>
+    <string name="file_viewer_archive_up">یک پوشه بالاتر</string>
     <string name="file_viewer_cannot_show">این فایل را نمی‌توان اینجا نمایش داد.</string>
     <string name="file_viewer_open_elsewhere">باز کردن در برنامه‌ای دیگر</string>
     <string name="file_viewer_text_truncated">%1$s نخست این فایل نمایش داده می‌شود.</string>

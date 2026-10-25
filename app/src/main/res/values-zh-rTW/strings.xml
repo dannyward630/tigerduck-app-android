@@ -603,6 +603,15 @@
     <string name="feature_score_short">歷年成績</string>
     <string name="feature_settings">設定</string>
     <string name="feature_settings_short">設定</string>
+    <string name="file_viewer_archive_empty">這個壓縮檔是空的。</string>
+    <string name="file_viewer_archive_folder">資料夾</string>
+    <string name="file_viewer_archive_link">它是連到另一個檔案的連結。</string>
+    <string name="file_viewer_archive_password">它受密碼保護。</string>
+    <string name="file_viewer_archive_too_large">它太大了，無法在這裡開啟。</string>
+    <string name="file_viewer_archive_too_many">裡面的檔案太多，無法在這裡列出。</string>
+    <string name="file_viewer_archive_truncated">只顯示前 %1$s 項。</string>
+    <string name="file_viewer_archive_unsupported">它的壓縮方式是這個 App 無法讀取的。</string>
+    <string name="file_viewer_archive_up">上一層資料夾</string>
     <string name="file_viewer_cannot_show">無法在這裡顯示這個檔案。</string>
     <string name="file_viewer_open_elsewhere">用其他 App 開啟</string>
     <string name="file_viewer_text_truncated">只顯示這個檔案的前 %1$s。</string>

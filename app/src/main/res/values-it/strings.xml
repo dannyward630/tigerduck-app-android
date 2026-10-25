@@ -603,6 +603,15 @@
     <string name="feature_score_short">Voti</string>
     <string name="feature_settings">Impostazioni</string>
     <string name="feature_settings_short">Impostazioni</string>
+    <string name="file_viewer_archive_empty">Questo archivio è vuoto.</string>
+    <string name="file_viewer_archive_folder">Cartella</string>
+    <string name="file_viewer_archive_link">È un collegamento a un altro file.</string>
+    <string name="file_viewer_archive_password">È protetto da password.</string>
+    <string name="file_viewer_archive_too_large">È troppo grande per essere aperto qui.</string>
+    <string name="file_viewer_archive_too_many">Contiene troppi file per elencarli qui.</string>
+    <string name="file_viewer_archive_truncated">Vengono mostrati i primi %1$s elementi.</string>
+    <string name="file_viewer_archive_unsupported">È compresso in un modo che questa app non sa leggere.</string>
+    <string name="file_viewer_archive_up">Su di una cartella</string>
     <string name="file_viewer_cannot_show">Impossibile mostrare questo file qui.</string>
     <string name="file_viewer_open_elsewhere">Apri in un\'altra app</string>
     <string name="file_viewer_text_truncated">Vengono mostrati i primi %1$s di questo file.</string>

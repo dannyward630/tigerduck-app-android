@@ -603,6 +603,15 @@
     <string name="feature_score_short">गुण</string>
     <string name="feature_settings">सेटिंग्ज</string>
     <string name="feature_settings_short">सेटिंग्ज</string>
+    <string name="file_viewer_archive_empty">हे आर्काइव्ह रिकामे आहे.</string>
+    <string name="file_viewer_archive_folder">फोल्डर</string>
+    <string name="file_viewer_archive_link">ही दुसऱ्या फाइलची लिंक आहे.</string>
+    <string name="file_viewer_archive_password">ते पासवर्डने संरक्षित आहे.</string>
+    <string name="file_viewer_archive_too_large">ते येथे उघडण्यासाठी खूप मोठे आहे.</string>
+    <string name="file_viewer_archive_too_many">येथे यादी दाखवण्यासाठी त्यात खूप जास्त फाइल आहेत.</string>
+    <string name="file_viewer_archive_truncated">पहिले %1$s आयटम दाखवत आहे.</string>
+    <string name="file_viewer_archive_unsupported">ते अशा पद्धतीने कॉम्प्रेस केले आहे की हे ॲप ते वाचू शकत नाही.</string>
+    <string name="file_viewer_archive_up">एक फोल्डर वर</string>
     <string name="file_viewer_cannot_show">ही फाइल येथे दाखवता येत नाही.</string>
     <string name="file_viewer_open_elsewhere">दुसऱ्या अ‍ॅपमध्ये उघडा</string>
     <string name="file_viewer_text_truncated">या फाइलचे पहिले %1$s दाखवत आहे.</string>

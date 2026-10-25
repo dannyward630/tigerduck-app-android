@@ -603,6 +603,15 @@
     <string name="feature_score_short">Điểm</string>
     <string name="feature_settings">Cài đặt</string>
     <string name="feature_settings_short">Cài đặt</string>
+    <string name="file_viewer_archive_empty">Tệp nén này trống.</string>
+    <string name="file_viewer_archive_folder">Thư mục</string>
+    <string name="file_viewer_archive_link">Đây là đường liên kết đến một tệp khác.</string>
+    <string name="file_viewer_archive_password">Tệp này được bảo vệ bằng mật khẩu.</string>
+    <string name="file_viewer_archive_too_large">Tệp này quá lớn để mở tại đây.</string>
+    <string name="file_viewer_archive_too_many">Tệp này chứa quá nhiều tệp để liệt kê tại đây.</string>
+    <string name="file_viewer_archive_truncated">Đang hiển thị %1$s mục đầu tiên.</string>
+    <string name="file_viewer_archive_unsupported">Tệp này được nén theo cách mà ứng dụng này không đọc được.</string>
+    <string name="file_viewer_archive_up">Lên một thư mục</string>
     <string name="file_viewer_cannot_show">Không thể hiển thị tệp này tại đây.</string>
     <string name="file_viewer_open_elsewhere">Mở bằng ứng dụng khác</string>
     <string name="file_viewer_text_truncated">Đang hiển thị %1$s đầu tiên của tệp này.</string>

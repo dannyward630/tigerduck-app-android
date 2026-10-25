@@ -603,6 +603,15 @@
     <string name="feature_score_short">Pažymiai</string>
     <string name="feature_settings">Nustatymai</string>
     <string name="feature_settings_short">Nustatymai</string>
+    <string name="file_viewer_archive_empty">Šis archyvas tuščias.</string>
+    <string name="file_viewer_archive_folder">Aplankas</string>
+    <string name="file_viewer_archive_link">Tai nuoroda į kitą failą.</string>
+    <string name="file_viewer_archive_password">Jis apsaugotas slaptažodžiu.</string>
+    <string name="file_viewer_archive_too_large">Jis per didelis, kad būtų atidarytas čia.</string>
+    <string name="file_viewer_archive_too_many">Jame per daug failų, kad juos būtų galima čia išvardyti.</string>
+    <string name="file_viewer_archive_truncated">Rodomi pirmieji %1$s elementai.</string>
+    <string name="file_viewer_archive_unsupported">Jis suglaudintas būdu, kurio ši programa negali perskaityti.</string>
+    <string name="file_viewer_archive_up">Vienu aplanku aukščiau</string>
     <string name="file_viewer_cannot_show">Šio failo čia parodyti negalima.</string>
     <string name="file_viewer_open_elsewhere">Atidaryti kitoje programoje</string>
     <string name="file_viewer_text_truncated">Rodomi pirmieji šio failo %1$s.</string>

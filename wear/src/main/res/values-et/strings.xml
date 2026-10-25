@@ -603,6 +603,15 @@
     <string name="feature_score_short">Hinded</string>
     <string name="feature_settings">Seaded</string>
     <string name="feature_settings_short">Seaded</string>
+    <string name="file_viewer_archive_empty">See arhiiv on tühi.</string>
+    <string name="file_viewer_archive_folder">Kaust</string>
+    <string name="file_viewer_archive_link">See on link teisele failile.</string>
+    <string name="file_viewer_archive_password">See on parooliga kaitstud.</string>
+    <string name="file_viewer_archive_too_large">See on siin avamiseks liiga suur.</string>
+    <string name="file_viewer_archive_too_many">Selles on siin loetlemiseks liiga palju faile.</string>
+    <string name="file_viewer_archive_truncated">Kuvatakse esimesed %1$s üksust.</string>
+    <string name="file_viewer_archive_unsupported">See on tihendatud viisil, mida see rakendus lugeda ei oska.</string>
+    <string name="file_viewer_archive_up">Ühe kausta võrra üles</string>
     <string name="file_viewer_cannot_show">Seda faili ei saa siin kuvada.</string>
     <string name="file_viewer_open_elsewhere">Ava teises rakenduses</string>
     <string name="file_viewer_text_truncated">Kuvatakse selle faili esimesed %1$s.</string>

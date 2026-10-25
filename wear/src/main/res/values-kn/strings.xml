@@ -603,6 +603,15 @@
     <string name="feature_score_short">ಅಂಕಗಳು</string>
     <string name="feature_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
     <string name="feature_settings_short">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="file_viewer_archive_empty">ಈ ಆರ್ಕೈವ್ ಖಾಲಿಯಾಗಿದೆ.</string>
+    <string name="file_viewer_archive_folder">ಫೋಲ್ಡರ್</string>
+    <string name="file_viewer_archive_link">ಇದು ಮತ್ತೊಂದು ಫೈಲ್‌ಗೆ ಲಿಂಕ್ ಆಗಿದೆ.</string>
+    <string name="file_viewer_archive_password">ಇದನ್ನು ಪಾಸ್‌ವರ್ಡ್‌ನಿಂದ ರಕ್ಷಿಸಲಾಗಿದೆ.</string>
+    <string name="file_viewer_archive_too_large">ಇಲ್ಲಿ ತೆರೆಯಲು ಇದು ತುಂಬಾ ದೊಡ್ಡದಾಗಿದೆ.</string>
+    <string name="file_viewer_archive_too_many">ಇಲ್ಲಿ ಪಟ್ಟಿ ಮಾಡಲು ಇದರಲ್ಲಿ ತುಂಬಾ ಹೆಚ್ಚು ಫೈಲ್‌ಗಳಿವೆ.</string>
+    <string name="file_viewer_archive_truncated">ಮೊದಲ %1$s ಐಟಂಗಳನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ.</string>
+    <string name="file_viewer_archive_unsupported">ಈ ಆ್ಯಪ್ ಓದಲಾಗದ ರೀತಿಯಲ್ಲಿ ಇದನ್ನು ಸಂಕುಚಿಸಲಾಗಿದೆ.</string>
+    <string name="file_viewer_archive_up">ಒಂದು ಫೋಲ್ಡರ್ ಮೇಲೆ</string>
     <string name="file_viewer_cannot_show">ಈ ಫೈಲ್ ಅನ್ನು ಇಲ್ಲಿ ತೋರಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
     <string name="file_viewer_open_elsewhere">ಬೇರೆ ಆ್ಯಪ್‌ನಲ್ಲಿ ತೆರೆಯಿರಿ</string>
     <string name="file_viewer_text_truncated">ಈ ಫೈಲ್‌ನ ಮೊದಲ %1$s ತೋರಿಸಲಾಗುತ್ತಿದೆ.</string>

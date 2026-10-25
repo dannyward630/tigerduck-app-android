@@ -603,6 +603,15 @@
     <string name="feature_score_short">Markah</string>
     <string name="feature_settings">Tetapan</string>
     <string name="feature_settings_short">Tetapan</string>
+    <string name="file_viewer_archive_empty">Arkib ini kosong.</string>
+    <string name="file_viewer_archive_folder">Folder</string>
+    <string name="file_viewer_archive_link">Ini pautan ke fail lain.</string>
+    <string name="file_viewer_archive_password">Fail ini dilindungi kata laluan.</string>
+    <string name="file_viewer_archive_too_large">Fail ini terlalu besar untuk dibuka di sini.</string>
+    <string name="file_viewer_archive_too_many">Terlalu banyak fail di dalamnya untuk disenaraikan di sini.</string>
+    <string name="file_viewer_archive_truncated">Memaparkan %1$s item pertama.</string>
+    <string name="file_viewer_archive_unsupported">Fail ini dimampatkan dengan cara yang tidak dapat dibaca oleh apl ini.</string>
+    <string name="file_viewer_archive_up">Naik satu folder</string>
     <string name="file_viewer_cannot_show">Fail ini tidak dapat dipaparkan di sini.</string>
     <string name="file_viewer_open_elsewhere">Buka dalam apl lain</string>
     <string name="file_viewer_text_truncated">Memaparkan %1$s pertama fail ini.</string>

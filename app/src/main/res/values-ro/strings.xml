@@ -603,6 +603,15 @@
     <string name="feature_score_short">Note</string>
     <string name="feature_settings">Setări</string>
     <string name="feature_settings_short">Setări</string>
+    <string name="file_viewer_archive_empty">Această arhivă este goală.</string>
+    <string name="file_viewer_archive_folder">Dosar</string>
+    <string name="file_viewer_archive_link">Este un link către alt fișier.</string>
+    <string name="file_viewer_archive_password">Este protejat cu parolă.</string>
+    <string name="file_viewer_archive_too_large">Este prea mare pentru a fi deschis aici.</string>
+    <string name="file_viewer_archive_too_many">Conține prea multe fișiere pentru a fi listate aici.</string>
+    <string name="file_viewer_archive_truncated">Se afișează primele %1$s elemente.</string>
+    <string name="file_viewer_archive_unsupported">Este comprimat într-un mod pe care această aplicație nu îl poate citi.</string>
+    <string name="file_viewer_archive_up">Un dosar mai sus</string>
     <string name="file_viewer_cannot_show">Acest fișier nu poate fi afișat aici.</string>
     <string name="file_viewer_open_elsewhere">Deschide în altă aplicație</string>
     <string name="file_viewer_text_truncated">Se afișează primii %1$s din acest fișier.</string>

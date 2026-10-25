@@ -603,6 +603,15 @@
     <string name="feature_score_short">Ocjene</string>
     <string name="feature_settings">Postavke</string>
     <string name="feature_settings_short">Postavke</string>
+    <string name="file_viewer_archive_empty">Ova je arhiva prazna.</string>
+    <string name="file_viewer_archive_folder">Mapa</string>
+    <string name="file_viewer_archive_link">To je poveznica na drugu datoteku.</string>
+    <string name="file_viewer_archive_password">Zaštićena je lozinkom.</string>
+    <string name="file_viewer_archive_too_large">Prevelika je da bi se ovdje otvorila.</string>
+    <string name="file_viewer_archive_too_many">Sadrži previše datoteka da bi se ovdje popisale.</string>
+    <string name="file_viewer_archive_truncated">Prikazuje se prvih %1$s stavki.</string>
+    <string name="file_viewer_archive_unsupported">Komprimirana je na način koji ova aplikacija ne može pročitati.</string>
+    <string name="file_viewer_archive_up">Jednu mapu gore</string>
     <string name="file_viewer_cannot_show">Ova se datoteka ne može prikazati ovdje.</string>
     <string name="file_viewer_open_elsewhere">Otvori u drugoj aplikaciji</string>
     <string name="file_viewer_text_truncated">Prikazuje se prvih %1$s ove datoteke.</string>

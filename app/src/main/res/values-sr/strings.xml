@@ -603,6 +603,15 @@
     <string name="feature_score_short">Оцене</string>
     <string name="feature_settings">Поставке</string>
     <string name="feature_settings_short">Поставке</string>
+    <string name="file_viewer_archive_empty">Ова архива је празна.</string>
+    <string name="file_viewer_archive_folder">Фасцикла</string>
+    <string name="file_viewer_archive_link">То је линк ка другој датотеци.</string>
+    <string name="file_viewer_archive_password">Заштићена је лозинком.</string>
+    <string name="file_viewer_archive_too_large">Превелика је да би се отворила овде.</string>
+    <string name="file_viewer_archive_too_many">Садржи превише датотека да би се овде набројале.</string>
+    <string name="file_viewer_archive_truncated">Приказује се првих %1$s ставки.</string>
+    <string name="file_viewer_archive_unsupported">Компримована је на начин који ова апликација не може да прочита.</string>
+    <string name="file_viewer_archive_up">Једну фасциклу горе</string>
     <string name="file_viewer_cannot_show">Ова датотека не може да се прикаже овде.</string>
     <string name="file_viewer_open_elsewhere">Отвори у другој апликацији</string>
     <string name="file_viewer_text_truncated">Приказује се првих %1$s ове датотеке.</string>

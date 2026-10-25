@@ -603,6 +603,15 @@
     <string name="feature_score_short">Karakterer</string>
     <string name="feature_settings">Indstillinger</string>
     <string name="feature_settings_short">Indstillinger</string>
+    <string name="file_viewer_archive_empty">Dette arkiv er tomt.</string>
+    <string name="file_viewer_archive_folder">Mappe</string>
+    <string name="file_viewer_archive_link">Det er et link til en anden fil.</string>
+    <string name="file_viewer_archive_password">Den er beskyttet med en adgangskode.</string>
+    <string name="file_viewer_archive_too_large">Den er for stor til at blive åbnet her.</string>
+    <string name="file_viewer_archive_too_many">Den indeholder for mange filer til at blive vist her.</string>
+    <string name="file_viewer_archive_truncated">Viser de første %1$s elementer.</string>
+    <string name="file_viewer_archive_unsupported">Den er komprimeret på en måde, som denne app ikke kan læse.</string>
+    <string name="file_viewer_archive_up">Én mappe op</string>
     <string name="file_viewer_cannot_show">Denne fil kan ikke vises her.</string>
     <string name="file_viewer_open_elsewhere">Åbn i en anden app</string>
     <string name="file_viewer_text_truncated">Viser de første %1$s af denne fil.</string>

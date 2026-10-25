@@ -603,6 +603,15 @@
     <string name="feature_score_short">Cijfers</string>
     <string name="feature_settings">Instellingen</string>
     <string name="feature_settings_short">Instellingen</string>
+    <string name="file_viewer_archive_empty">Dit archief is leeg.</string>
+    <string name="file_viewer_archive_folder">Map</string>
+    <string name="file_viewer_archive_link">Het is een link naar een ander bestand.</string>
+    <string name="file_viewer_archive_password">Het is beveiligd met een wachtwoord.</string>
+    <string name="file_viewer_archive_too_large">Het is te groot om hier te openen.</string>
+    <string name="file_viewer_archive_too_many">Het bevat te veel bestanden om hier te tonen.</string>
+    <string name="file_viewer_archive_truncated">De eerste %1$s items worden getoond.</string>
+    <string name="file_viewer_archive_unsupported">Het is gecomprimeerd op een manier die deze app niet kan lezen.</string>
+    <string name="file_viewer_archive_up">Eén map omhoog</string>
     <string name="file_viewer_cannot_show">Dit bestand kan hier niet worden weergegeven.</string>
     <string name="file_viewer_open_elsewhere">Openen in andere app</string>
     <string name="file_viewer_text_truncated">De eerste %1$s van dit bestand worden getoond.</string>

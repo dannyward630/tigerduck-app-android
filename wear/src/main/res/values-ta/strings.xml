@@ -603,6 +603,15 @@
     <string name="feature_score_short">மதிப்பெண்கள்</string>
     <string name="feature_settings">அமைப்புகள்</string>
     <string name="feature_settings_short">அமைப்புகள்</string>
+    <string name="file_viewer_archive_empty">இந்தக் காப்பகம் காலியாக உள்ளது.</string>
+    <string name="file_viewer_archive_folder">கோப்புறை</string>
+    <string name="file_viewer_archive_link">இது மற்றொரு கோப்பிற்கான இணைப்பு.</string>
+    <string name="file_viewer_archive_password">இது கடவுச்சொல்லால் பாதுகாக்கப்பட்டுள்ளது.</string>
+    <string name="file_viewer_archive_too_large">இங்கே திறக்க இது மிகப் பெரியது.</string>
+    <string name="file_viewer_archive_too_many">இங்கே பட்டியலிட இதில் மிக அதிகமான கோப்புகள் உள்ளன.</string>
+    <string name="file_viewer_archive_truncated">முதல் %1$s உருப்படிகள் காட்டப்படுகின்றன.</string>
+    <string name="file_viewer_archive_unsupported">இந்த ஆப்ஸால் படிக்க முடியாத முறையில் இது சுருக்கப்பட்டுள்ளது.</string>
+    <string name="file_viewer_archive_up">ஒரு கோப்புறை மேலே</string>
     <string name="file_viewer_cannot_show">இந்தக் கோப்பை இங்கே காட்ட முடியாது.</string>
     <string name="file_viewer_open_elsewhere">வேறு ஆப்ஸில் திற</string>
     <string name="file_viewer_text_truncated">இந்தக் கோப்பின் முதல் %1$s காட்டப்படுகிறது.</string>

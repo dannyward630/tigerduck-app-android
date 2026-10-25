@@ -603,6 +603,15 @@
     <string name="feature_score_short">Βαθμοί</string>
     <string name="feature_settings">Ρυθμίσεις</string>
     <string name="feature_settings_short">Ρυθμίσεις</string>
+    <string name="file_viewer_archive_empty">Αυτό το αρχείο συμπίεσης είναι κενό.</string>
+    <string name="file_viewer_archive_folder">Φάκελος</string>
+    <string name="file_viewer_archive_link">Είναι σύνδεσμος προς άλλο αρχείο.</string>
+    <string name="file_viewer_archive_password">Προστατεύεται με κωδικό πρόσβασης.</string>
+    <string name="file_viewer_archive_too_large">Είναι πολύ μεγάλο για να ανοίξει εδώ.</string>
+    <string name="file_viewer_archive_too_many">Περιέχει πάρα πολλά αρχεία για να εμφανιστούν εδώ.</string>
+    <string name="file_viewer_archive_truncated">Εμφανίζονται τα πρώτα %1$s στοιχεία.</string>
+    <string name="file_viewer_archive_unsupported">Είναι συμπιεσμένο με τρόπο που αυτή η εφαρμογή δεν μπορεί να διαβάσει.</string>
+    <string name="file_viewer_archive_up">Έναν φάκελο πάνω</string>
     <string name="file_viewer_cannot_show">Αυτό το αρχείο δεν μπορεί να εμφανιστεί εδώ.</string>
     <string name="file_viewer_open_elsewhere">Άνοιγμα σε άλλη εφαρμογή</string>
     <string name="file_viewer_text_truncated">Εμφανίζονται τα πρώτα %1$s αυτού του αρχείου.</string>

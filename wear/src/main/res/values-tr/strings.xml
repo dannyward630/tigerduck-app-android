@@ -603,6 +603,15 @@
     <string name="feature_score_short">Notlar</string>
     <string name="feature_settings">Ayarlar</string>
     <string name="feature_settings_short">Ayarlar</string>
+    <string name="file_viewer_archive_empty">Bu arşiv boş.</string>
+    <string name="file_viewer_archive_folder">Klasör</string>
+    <string name="file_viewer_archive_link">Başka bir dosyaya bağlantı.</string>
+    <string name="file_viewer_archive_password">Parolayla korunuyor.</string>
+    <string name="file_viewer_archive_too_large">Burada açılamayacak kadar büyük.</string>
+    <string name="file_viewer_archive_too_many">Burada listelenemeyecek kadar çok dosya içeriyor.</string>
+    <string name="file_viewer_archive_truncated">İlk %1$s öğe gösteriliyor.</string>
+    <string name="file_viewer_archive_unsupported">Bu uygulamanın okuyamadığı bir yöntemle sıkıştırılmış.</string>
+    <string name="file_viewer_archive_up">Bir klasör yukarı</string>
     <string name="file_viewer_cannot_show">Bu dosya burada gösterilemiyor.</string>
     <string name="file_viewer_open_elsewhere">Başka bir uygulamada aç</string>
     <string name="file_viewer_text_truncated">Bu dosyanın ilk %1$s kısmı gösteriliyor.</string>

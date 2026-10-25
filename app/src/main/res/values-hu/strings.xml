@@ -603,6 +603,15 @@
     <string name="feature_score_short">Osztályzatok</string>
     <string name="feature_settings">Beállítások</string>
     <string name="feature_settings_short">Beállítások</string>
+    <string name="file_viewer_archive_empty">Ez az archívum üres.</string>
+    <string name="file_viewer_archive_folder">Mappa</string>
+    <string name="file_viewer_archive_link">Ez egy másik fájlra mutató hivatkozás.</string>
+    <string name="file_viewer_archive_password">Jelszóval védett.</string>
+    <string name="file_viewer_archive_too_large">Túl nagy ahhoz, hogy itt megnyíljon.</string>
+    <string name="file_viewer_archive_too_many">Túl sok fájlt tartalmaz ahhoz, hogy itt fel lehessen sorolni.</string>
+    <string name="file_viewer_archive_truncated">Az első %1$s elem látható.</string>
+    <string name="file_viewer_archive_unsupported">Olyan módon van tömörítve, amelyet ez az alkalmazás nem tud olvasni.</string>
+    <string name="file_viewer_archive_up">Egy mappával feljebb</string>
     <string name="file_viewer_cannot_show">Ez a fájl itt nem jeleníthető meg.</string>
     <string name="file_viewer_open_elsewhere">Megnyitás másik alkalmazásban</string>
     <string name="file_viewer_text_truncated">A fájl első %1$s része látható.</string>

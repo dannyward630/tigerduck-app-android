@@ -603,6 +603,15 @@
     <string name="feature_score_short">성적</string>
     <string name="feature_settings">설정</string>
     <string name="feature_settings_short">설정</string>
+    <string name="file_viewer_archive_empty">이 압축 파일은 비어 있습니다.</string>
+    <string name="file_viewer_archive_folder">폴더</string>
+    <string name="file_viewer_archive_link">다른 파일로 연결되는 링크입니다.</string>
+    <string name="file_viewer_archive_password">비밀번호로 보호되어 있습니다.</string>
+    <string name="file_viewer_archive_too_large">너무 커서 여기에서 열 수 없습니다.</string>
+    <string name="file_viewer_archive_too_many">파일이 너무 많아 여기에서 목록을 표시할 수 없습니다.</string>
+    <string name="file_viewer_archive_truncated">처음 %1$s개 항목만 표시합니다.</string>
+    <string name="file_viewer_archive_unsupported">이 앱에서 읽을 수 없는 방식으로 압축되어 있습니다.</string>
+    <string name="file_viewer_archive_up">상위 폴더로</string>
     <string name="file_viewer_cannot_show">이 파일은 여기에서 표시할 수 없습니다.</string>
     <string name="file_viewer_open_elsewhere">다른 앱에서 열기</string>
     <string name="file_viewer_text_truncated">이 파일의 처음 %1$s만 표시합니다.</string>

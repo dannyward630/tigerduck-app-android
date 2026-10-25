@@ -603,6 +603,15 @@
     <string name="feature_score_short">历年成绩</string>
     <string name="feature_settings">设置</string>
     <string name="feature_settings_short">设置</string>
+    <string name="file_viewer_archive_empty">此压缩文件是空的。</string>
+    <string name="file_viewer_archive_folder">文件夹</string>
+    <string name="file_viewer_archive_link">它是指向另一个文件的链接。</string>
+    <string name="file_viewer_archive_password">它受密码保护。</string>
+    <string name="file_viewer_archive_too_large">它太大了，无法在这里打开。</string>
+    <string name="file_viewer_archive_too_many">其中的文件太多，无法在这里列出。</string>
+    <string name="file_viewer_archive_truncated">仅显示前 %1$s 项。</string>
+    <string name="file_viewer_archive_unsupported">它的压缩方式是此应用无法读取的。</string>
+    <string name="file_viewer_archive_up">上一级文件夹</string>
     <string name="file_viewer_cannot_show">无法在这里显示此文件。</string>
     <string name="file_viewer_open_elsewhere">用其他 App 打开</string>
     <string name="file_viewer_text_truncated">仅显示此文件的前 %1$s。</string>

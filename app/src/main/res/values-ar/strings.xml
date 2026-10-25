@@ -603,6 +603,15 @@
     <string name="feature_score_short">الدرجات</string>
     <string name="feature_settings">الإعدادات</string>
     <string name="feature_settings_short">الإعدادات</string>
+    <string name="file_viewer_archive_empty">هذا الأرشيف فارغ.</string>
+    <string name="file_viewer_archive_folder">مجلد</string>
+    <string name="file_viewer_archive_link">إنه رابط إلى ملف آخر.</string>
+    <string name="file_viewer_archive_password">إنه محمي بكلمة مرور.</string>
+    <string name="file_viewer_archive_too_large">إنه أكبر من أن يُفتح هنا.</string>
+    <string name="file_viewer_archive_too_many">يحتوي على ملفات أكثر من أن تُعرض هنا.</string>
+    <string name="file_viewer_archive_truncated">يُعرض أول %1$s عنصر.</string>
+    <string name="file_viewer_archive_unsupported">إنه مضغوط بطريقة لا يستطيع هذا التطبيق قراءتها.</string>
+    <string name="file_viewer_archive_up">مجلد واحد للأعلى</string>
     <string name="file_viewer_cannot_show">لا يمكن عرض هذا الملف هنا.</string>
     <string name="file_viewer_open_elsewhere">فتح في تطبيق آخر</string>
     <string name="file_viewer_text_truncated">يُعرض أول %1$s من هذا الملف.</string>

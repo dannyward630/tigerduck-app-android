@@ -603,6 +603,15 @@
     <string name="feature_score_short">ગુણ / ગ્રેડ</string>
     <string name="feature_settings">સેટિંગ્સ</string>
     <string name="feature_settings_short">સેટિંગ્સ</string>
+    <string name="file_viewer_archive_empty">આ આર્કાઇવ ખાલી છે.</string>
+    <string name="file_viewer_archive_folder">ફોલ્ડર</string>
+    <string name="file_viewer_archive_link">તે બીજી ફાઇલની લિંક છે.</string>
+    <string name="file_viewer_archive_password">તે પાસવર્ડથી સુરક્ષિત છે.</string>
+    <string name="file_viewer_archive_too_large">તે અહીં ખોલવા માટે ખૂબ મોટી છે.</string>
+    <string name="file_viewer_archive_too_many">તેમાં અહીં સૂચિ બતાવવા માટે ઘણી બધી ફાઇલો છે.</string>
+    <string name="file_viewer_archive_truncated">પહેલી %1$s આઇટમ બતાવી રહ્યાં છીએ.</string>
+    <string name="file_viewer_archive_unsupported">તે એવી રીતે સંકુચિત છે કે આ ઍપ વાંચી શકતી નથી.</string>
+    <string name="file_viewer_archive_up">એક ફોલ્ડર ઉપર</string>
     <string name="file_viewer_cannot_show">આ ફાઇલ અહીં બતાવી શકાતી નથી.</string>
     <string name="file_viewer_open_elsewhere">બીજી ઍપમાં ખોલો</string>
     <string name="file_viewer_text_truncated">આ ફાઇલના પહેલા %1$s બતાવી રહ્યાં છીએ.</string>

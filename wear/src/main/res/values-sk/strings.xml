@@ -603,6 +603,15 @@
     <string name="feature_score_short">Známky</string>
     <string name="feature_settings">Nastavenia</string>
     <string name="feature_settings_short">Nastavenia</string>
+    <string name="file_viewer_archive_empty">Tento archív je prázdny.</string>
+    <string name="file_viewer_archive_folder">Priečinok</string>
+    <string name="file_viewer_archive_link">Je to odkaz na iný súbor.</string>
+    <string name="file_viewer_archive_password">Je chránený heslom.</string>
+    <string name="file_viewer_archive_too_large">Je príliš veľký na to, aby sa tu otvoril.</string>
+    <string name="file_viewer_archive_too_many">Obsahuje príliš veľa súborov na to, aby sa tu dali vypísať.</string>
+    <string name="file_viewer_archive_truncated">Zobrazuje sa prvých %1$s položiek.</string>
+    <string name="file_viewer_archive_unsupported">Je skomprimovaný spôsobom, ktorý táto aplikácia nedokáže prečítať.</string>
+    <string name="file_viewer_archive_up">O priečinok vyššie</string>
     <string name="file_viewer_cannot_show">Tento súbor tu nemožno zobraziť.</string>
     <string name="file_viewer_open_elsewhere">Otvoriť v inej aplikácii</string>
     <string name="file_viewer_text_truncated">Zobrazuje sa prvých %1$s tohto súboru.</string>

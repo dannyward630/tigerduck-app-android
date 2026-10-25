@@ -603,6 +603,15 @@
     <string name="feature_score_short">成績</string>
     <string name="feature_settings">設定</string>
     <string name="feature_settings_short">設定</string>
+    <string name="file_viewer_archive_empty">このアーカイブは空です。</string>
+    <string name="file_viewer_archive_folder">フォルダ</string>
+    <string name="file_viewer_archive_link">別のファイルへのリンクです。</string>
+    <string name="file_viewer_archive_password">パスワードで保護されています。</string>
+    <string name="file_viewer_archive_too_large">大きすぎるため、ここでは開けません。</string>
+    <string name="file_viewer_archive_too_many">ファイルが多すぎるため、ここでは一覧表示できません。</string>
+    <string name="file_viewer_archive_truncated">最初の %1$s 件を表示しています。</string>
+    <string name="file_viewer_archive_unsupported">このアプリでは読み取れない方式で圧縮されています。</string>
+    <string name="file_viewer_archive_up">1つ上のフォルダへ</string>
     <string name="file_viewer_cannot_show">このファイルはここでは表示できません。</string>
     <string name="file_viewer_open_elsewhere">別のアプリで開く</string>
     <string name="file_viewer_text_truncated">このファイルの最初の %1$s を表示しています。</string>

@@ -603,6 +603,15 @@
     <string name="feature_score_short">گریڈ</string>
     <string name="feature_settings">ترتیبات</string>
     <string name="feature_settings_short">ترتیبات</string>
+    <string name="file_viewer_archive_empty">یہ آرکائیو خالی ہے۔</string>
+    <string name="file_viewer_archive_folder">فولڈر</string>
+    <string name="file_viewer_archive_link">یہ کسی دوسری فائل کا لنک ہے۔</string>
+    <string name="file_viewer_archive_password">یہ پاس ورڈ سے محفوظ ہے۔</string>
+    <string name="file_viewer_archive_too_large">یہ یہاں کھولنے کے لیے بہت بڑی ہے۔</string>
+    <string name="file_viewer_archive_too_many">اس میں یہاں فہرست دکھانے کے لیے بہت زیادہ فائلیں ہیں۔</string>
+    <string name="file_viewer_archive_truncated">پہلے %1$s آئٹمز دکھائے جا رہے ہیں۔</string>
+    <string name="file_viewer_archive_unsupported">اسے اس طرح کمپریس کیا گیا ہے جسے یہ ایپ نہیں پڑھ سکتی۔</string>
+    <string name="file_viewer_archive_up">ایک فولڈر اوپر</string>
     <string name="file_viewer_cannot_show">یہ فائل یہاں نہیں دکھائی جا سکتی۔</string>
     <string name="file_viewer_open_elsewhere">کسی دوسری ایپ میں کھولیں</string>
     <string name="file_viewer_text_truncated">اس فائل کے پہلے %1$s دکھائے جا رہے ہیں۔</string>

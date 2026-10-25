@@ -603,6 +603,15 @@
     <string name="feature_score_short">Бағалар</string>
     <string name="feature_settings">Параметрлер</string>
     <string name="feature_settings_short">Параметрлер</string>
+    <string name="file_viewer_archive_empty">Бұл мұрағат бос.</string>
+    <string name="file_viewer_archive_folder">Қалта</string>
+    <string name="file_viewer_archive_link">Бұл басқа файлға сілтеме.</string>
+    <string name="file_viewer_archive_password">Ол құпиясөзбен қорғалған.</string>
+    <string name="file_viewer_archive_too_large">Оны мұнда ашу үшін тым үлкен.</string>
+    <string name="file_viewer_archive_too_many">Мұнда тізімдеу үшін онда тым көп файл бар.</string>
+    <string name="file_viewer_archive_truncated">Алғашқы %1$s элемент көрсетілуде.</string>
+    <string name="file_viewer_archive_unsupported">Ол бұл қолданба оқи алмайтын тәсілмен сығылған.</string>
+    <string name="file_viewer_archive_up">Бір қалта жоғары</string>
     <string name="file_viewer_cannot_show">Бұл файлды мұнда көрсету мүмкін емес.</string>
     <string name="file_viewer_open_elsewhere">Басқа қолданбада ашу</string>
     <string name="file_viewer_text_truncated">Бұл файлдың алғашқы %1$s көрсетілуде.</string>

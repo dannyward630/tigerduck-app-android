@@ -603,6 +603,15 @@
     <string name="feature_score_short">Atzīmes</string>
     <string name="feature_settings">Iestatījumi</string>
     <string name="feature_settings_short">Iestatījumi</string>
+    <string name="file_viewer_archive_empty">Šis arhīvs ir tukšs.</string>
+    <string name="file_viewer_archive_folder">Mape</string>
+    <string name="file_viewer_archive_link">Tā ir saite uz citu failu.</string>
+    <string name="file_viewer_archive_password">Tas ir aizsargāts ar paroli.</string>
+    <string name="file_viewer_archive_too_large">Tas ir pārāk liels, lai to atvērtu šeit.</string>
+    <string name="file_viewer_archive_too_many">Tajā ir pārāk daudz failu, lai tos šeit uzskaitītu.</string>
+    <string name="file_viewer_archive_truncated">Tiek rādīti pirmie %1$s vienumi.</string>
+    <string name="file_viewer_archive_unsupported">Tas ir saspiests veidā, ko šī lietotne nevar nolasīt.</string>
+    <string name="file_viewer_archive_up">Vienu mapi augstāk</string>
     <string name="file_viewer_cannot_show">Šo failu šeit nevar parādīt.</string>
     <string name="file_viewer_open_elsewhere">Atvērt citā lietotnē</string>
     <string name="file_viewer_text_truncated">Tiek rādīti šī faila pirmie %1$s.</string>

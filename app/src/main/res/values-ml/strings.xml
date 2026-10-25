@@ -603,6 +603,15 @@
     <string name="feature_score_short">ഗ്രേഡുകൾ</string>
     <string name="feature_settings">ക്രമീകരണങ്ങൾ</string>
     <string name="feature_settings_short">ക്രമീകരണങ്ങൾ</string>
+    <string name="file_viewer_archive_empty">ഈ ആർക്കൈവ് ശൂന്യമാണ്.</string>
+    <string name="file_viewer_archive_folder">ഫോൾഡർ</string>
+    <string name="file_viewer_archive_link">ഇത് മറ്റൊരു ഫയലിലേക്കുള്ള ലിങ്കാണ്.</string>
+    <string name="file_viewer_archive_password">ഇത് പാസ്‌വേഡ് ഉപയോഗിച്ച് പരിരക്ഷിച്ചിരിക്കുന്നു.</string>
+    <string name="file_viewer_archive_too_large">ഇവിടെ തുറക്കാൻ ഇത് വളരെ വലുതാണ്.</string>
+    <string name="file_viewer_archive_too_many">ഇവിടെ ലിസ്റ്റ് ചെയ്യാൻ ഇതിൽ വളരെയധികം ഫയലുകളുണ്ട്.</string>
+    <string name="file_viewer_archive_truncated">ആദ്യ %1$s ഇനങ്ങൾ കാണിക്കുന്നു.</string>
+    <string name="file_viewer_archive_unsupported">ഈ ആപ്പിന് വായിക്കാനാകാത്ത രീതിയിലാണ് ഇത് കംപ്രസ് ചെയ്തിരിക്കുന്നത്.</string>
+    <string name="file_viewer_archive_up">ഒരു ഫോൾഡർ മുകളിലേക്ക്</string>
     <string name="file_viewer_cannot_show">ഈ ഫയൽ ഇവിടെ കാണിക്കാനാകില്ല.</string>
     <string name="file_viewer_open_elsewhere">മറ്റൊരു ആപ്പിൽ തുറക്കുക</string>
     <string name="file_viewer_text_truncated">ഈ ഫയലിന്റെ ആദ്യ %1$s കാണിക്കുന്നു.</string>

@@ -603,6 +603,15 @@
     <string name="feature_score_short">Оцінки</string>
     <string name="feature_settings">Налаштування</string>
     <string name="feature_settings_short">Налаштування</string>
+    <string name="file_viewer_archive_empty">Цей архів порожній.</string>
+    <string name="file_viewer_archive_folder">Папка</string>
+    <string name="file_viewer_archive_link">Це посилання на інший файл.</string>
+    <string name="file_viewer_archive_password">Він захищений паролем.</string>
+    <string name="file_viewer_archive_too_large">Він завеликий, щоб відкрити його тут.</string>
+    <string name="file_viewer_archive_too_many">У ньому забагато файлів, щоб показати їх тут.</string>
+    <string name="file_viewer_archive_truncated">Показано перші %1$s елементів.</string>
+    <string name="file_viewer_archive_unsupported">Його стиснуто способом, який цей застосунок не вміє читати.</string>
+    <string name="file_viewer_archive_up">На одну папку вгору</string>
     <string name="file_viewer_cannot_show">Цей файл не можна показати тут.</string>
     <string name="file_viewer_open_elsewhere">Відкрити в іншому застосунку</string>
     <string name="file_viewer_text_truncated">Показано перші %1$s цього файлу.</string>

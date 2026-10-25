@@ -603,6 +603,15 @@
     <string name="feature_score_short">Einkunnir</string>
     <string name="feature_settings">Stillingar</string>
     <string name="feature_settings_short">Stillingar</string>
+    <string name="file_viewer_archive_empty">Þessi safnskrá er tóm.</string>
+    <string name="file_viewer_archive_folder">Mappa</string>
+    <string name="file_viewer_archive_link">Þetta er tengill í aðra skrá.</string>
+    <string name="file_viewer_archive_password">Hún er varin með aðgangsorði.</string>
+    <string name="file_viewer_archive_too_large">Hún er of stór til að opna hér.</string>
+    <string name="file_viewer_archive_too_many">Hún inniheldur of margar skrár til að hægt sé að birta þær hér.</string>
+    <string name="file_viewer_archive_truncated">Sýni fyrstu %1$s atriðin.</string>
+    <string name="file_viewer_archive_unsupported">Hún er þjöppuð á hátt sem þetta forrit getur ekki lesið.</string>
+    <string name="file_viewer_archive_up">Upp um eina möppu</string>
     <string name="file_viewer_cannot_show">Ekki er hægt að sýna þessa skrá hér.</string>
     <string name="file_viewer_open_elsewhere">Opna í öðru forriti</string>
     <string name="file_viewer_text_truncated">Sýni fyrstu %1$s af þessari skrá.</string>

@@ -603,6 +603,15 @@
     <string name="feature_score_short">ผลการเรียน</string>
     <string name="feature_settings">การตั้งค่า</string>
     <string name="feature_settings_short">การตั้งค่า</string>
+    <string name="file_viewer_archive_empty">ไฟล์บีบอัดนี้ว่างเปล่า</string>
+    <string name="file_viewer_archive_folder">โฟลเดอร์</string>
+    <string name="file_viewer_archive_link">นี่เป็นลิงก์ไปยังไฟล์อื่น</string>
+    <string name="file_viewer_archive_password">ไฟล์นี้ป้องกันด้วยรหัสผ่าน</string>
+    <string name="file_viewer_archive_too_large">ไฟล์นี้ใหญ่เกินกว่าจะเปิดที่นี่</string>
+    <string name="file_viewer_archive_too_many">มีไฟล์อยู่ข้างในมากเกินกว่าจะแสดงรายการที่นี่</string>
+    <string name="file_viewer_archive_truncated">แสดง %1$s รายการแรก</string>
+    <string name="file_viewer_archive_unsupported">ไฟล์นี้บีบอัดด้วยวิธีที่แอปนี้อ่านไม่ได้</string>
+    <string name="file_viewer_archive_up">ขึ้นไปหนึ่งโฟลเดอร์</string>
     <string name="file_viewer_cannot_show">แสดงไฟล์นี้ที่นี่ไม่ได้</string>
     <string name="file_viewer_open_elsewhere">เปิดในแอปอื่น</string>
     <string name="file_viewer_text_truncated">แสดง %1$s แรกของไฟล์นี้</string>

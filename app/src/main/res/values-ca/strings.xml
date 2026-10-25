@@ -603,6 +603,15 @@
     <string name="feature_score_short">Notes</string>
     <string name="feature_settings">Configuració</string>
     <string name="feature_settings_short">Configuració</string>
+    <string name="file_viewer_archive_empty">Aquest fitxer comprimit és buit.</string>
+    <string name="file_viewer_archive_folder">Carpeta</string>
+    <string name="file_viewer_archive_link">És un enllaç a un altre fitxer.</string>
+    <string name="file_viewer_archive_password">Està protegit amb una contrasenya.</string>
+    <string name="file_viewer_archive_too_large">És massa gran per obrir-lo aquí.</string>
+    <string name="file_viewer_archive_too_many">Conté massa fitxers per llistar-los aquí.</string>
+    <string name="file_viewer_archive_truncated">Es mostren els primers %1$s elements.</string>
+    <string name="file_viewer_archive_unsupported">Està comprimit d\'una manera que aquesta app no pot llegir.</string>
+    <string name="file_viewer_archive_up">Una carpeta amunt</string>
     <string name="file_viewer_cannot_show">Aquest fitxer no es pot mostrar aquí.</string>
     <string name="file_viewer_open_elsewhere">Obre en una altra app</string>
     <string name="file_viewer_text_truncated">Es mostren els primers %1$s d\'aquest fitxer.</string>

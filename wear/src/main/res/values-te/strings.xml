@@ -603,6 +603,15 @@
     <string name="feature_score_short">మార్కులు</string>
     <string name="feature_settings">సెట్టింగ్స్</string>
     <string name="feature_settings_short">సెట్టింగ్స్</string>
+    <string name="file_viewer_archive_empty">ఈ ఆర్కైవ్ ఖాళీగా ఉంది.</string>
+    <string name="file_viewer_archive_folder">ఫోల్డర్</string>
+    <string name="file_viewer_archive_link">ఇది మరో ఫైల్‌కు లింక్.</string>
+    <string name="file_viewer_archive_password">ఇది పాస్‌వర్డ్‌తో రక్షించబడింది.</string>
+    <string name="file_viewer_archive_too_large">ఇక్కడ తెరవడానికి ఇది చాలా పెద్దది.</string>
+    <string name="file_viewer_archive_too_many">ఇక్కడ జాబితా చేయడానికి ఇందులో చాలా ఎక్కువ ఫైల్‌లు ఉన్నాయి.</string>
+    <string name="file_viewer_archive_truncated">మొదటి %1$s అంశాలను చూపిస్తోంది.</string>
+    <string name="file_viewer_archive_unsupported">ఈ యాప్ చదవలేని పద్ధతిలో ఇది కుదించబడింది.</string>
+    <string name="file_viewer_archive_up">ఒక ఫోల్డర్ పైకి</string>
     <string name="file_viewer_cannot_show">ఈ ఫైల్‌ను ఇక్కడ చూపించలేము.</string>
     <string name="file_viewer_open_elsewhere">వేరే యాప్‌లో తెరవండి</string>
     <string name="file_viewer_text_truncated">ఈ ఫైల్‌లోని మొదటి %1$s చూపిస్తోంది.</string>

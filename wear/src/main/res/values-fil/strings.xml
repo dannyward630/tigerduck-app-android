@@ -603,6 +603,15 @@
     <string name="feature_score_short">Mga marka</string>
     <string name="feature_settings">Mga setting</string>
     <string name="feature_settings_short">Mga setting</string>
+    <string name="file_viewer_archive_empty">Walang laman ang archive na ito.</string>
+    <string name="file_viewer_archive_folder">Folder</string>
+    <string name="file_viewer_archive_link">Isa itong link papunta sa ibang file.</string>
+    <string name="file_viewer_archive_password">Protektado ito ng password.</string>
+    <string name="file_viewer_archive_too_large">Masyado itong malaki para buksan dito.</string>
+    <string name="file_viewer_archive_too_many">Masyadong maraming file ang laman nito para ilista dito.</string>
+    <string name="file_viewer_archive_truncated">Ipinapakita ang unang %1$s item.</string>
+    <string name="file_viewer_archive_unsupported">Naka-compress ito sa paraang hindi kayang basahin ng app na ito.</string>
+    <string name="file_viewer_archive_up">Umakyat ng isang folder</string>
     <string name="file_viewer_cannot_show">Hindi maipakita rito ang file na ito.</string>
     <string name="file_viewer_open_elsewhere">Buksan sa ibang app</string>
     <string name="file_viewer_text_truncated">Ipinapakita ang unang %1$s ng file na ito.</string>

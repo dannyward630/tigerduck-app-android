@@ -603,6 +603,15 @@
     <string name="feature_score_short">Betyg</string>
     <string name="feature_settings">Inställningar</string>
     <string name="feature_settings_short">Inställningar</string>
+    <string name="file_viewer_archive_empty">Det här arkivet är tomt.</string>
+    <string name="file_viewer_archive_folder">Mapp</string>
+    <string name="file_viewer_archive_link">Det är en länk till en annan fil.</string>
+    <string name="file_viewer_archive_password">Den är skyddad med ett lösenord.</string>
+    <string name="file_viewer_archive_too_large">Den är för stor för att öppnas här.</string>
+    <string name="file_viewer_archive_too_many">Den innehåller för många filer för att listas här.</string>
+    <string name="file_viewer_archive_truncated">Visar de första %1$s objekten.</string>
+    <string name="file_viewer_archive_unsupported">Den är komprimerad på ett sätt som den här appen inte kan läsa.</string>
+    <string name="file_viewer_archive_up">En mapp upp</string>
     <string name="file_viewer_cannot_show">Den här filen kan inte visas här.</string>
     <string name="file_viewer_open_elsewhere">Öppna i en annan app</string>
     <string name="file_viewer_text_truncated">Visar de första %1$s av den här filen.</string>

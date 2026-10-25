@@ -603,6 +603,15 @@
     <string name="feature_score_short">Oceny</string>
     <string name="feature_settings">Ustawienia</string>
     <string name="feature_settings_short">Ustawienia</string>
+    <string name="file_viewer_archive_empty">To archiwum jest puste.</string>
+    <string name="file_viewer_archive_folder">Folder</string>
+    <string name="file_viewer_archive_link">To link do innego pliku.</string>
+    <string name="file_viewer_archive_password">Jest chroniony hasłem.</string>
+    <string name="file_viewer_archive_too_large">Jest zbyt duży, aby otworzyć go tutaj.</string>
+    <string name="file_viewer_archive_too_many">Zawiera zbyt wiele plików, aby je tu wyświetlić.</string>
+    <string name="file_viewer_archive_truncated">Wyświetlanych jest pierwszych %1$s elementów.</string>
+    <string name="file_viewer_archive_unsupported">Jest skompresowany w sposób, którego ta aplikacja nie potrafi odczytać.</string>
+    <string name="file_viewer_archive_up">Folder wyżej</string>
     <string name="file_viewer_cannot_show">Nie można tutaj wyświetlić tego pliku.</string>
     <string name="file_viewer_open_elsewhere">Otwórz w innej aplikacji</string>
     <string name="file_viewer_text_truncated">Wyświetlane jest pierwsze %1$s tego pliku.</string>
