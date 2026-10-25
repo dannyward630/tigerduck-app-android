@@ -22,7 +22,10 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performTouchInput
@@ -93,6 +96,20 @@ class SheetContentScrollTest {
         composeRule.waitForIdle()
     }
 
+    /**
+     * A swipe as a phone reports a finger: from a standstill, in steps 4 ms apart, the first few
+     * of them inside the touch slop. The test API's swipes cross the slop in their first step.
+     */
+    private fun TouchInjectionScope.fingerSwipe(from: Offset, to: Offset) {
+        val steps = 20
+        down(from)
+        for (i in 1..steps) {
+            val t = i.toFloat() / steps
+            moveTo(lerp(from, to, t * t), delayMillis = 4)
+        }
+        up()
+    }
+
     @Test
     fun `a hard fling down from the bottom scrolls the content and leaves the sheet up`() {
         showExpandedSheet()
@@ -122,6 +139,28 @@ class SheetContentScrollTest {
         composeRule.mainClock.autoAdvance = true
         composeRule.waitForIdle()
         assertEquals(SheetValue.Expanded, sheet.currentValue)
+    }
+
+    @Test
+    fun `a fling down right after a fling up hits the bottom scrolls the content and leaves the sheet up`() {
+        showExpandedSheet()
+        scrollToBottom()
+        composeRule.mainClock.autoAdvance = false
+
+        composeRule.onNodeWithTag(CONTENT, useUnmergedTree = true).performTouchInput {
+            swipeUp(startY = bottom - 40f, endY = top + 40f, durationMillis = 50)
+        }
+        // A quick hand comes straight back down.
+        composeRule.mainClock.advanceTimeBy(100)
+        composeRule.onNodeWithTag(CONTENT, useUnmergedTree = true).performTouchInput {
+            fingerSwipe(from = Offset(centerX, top + 40f), to = Offset(centerX, bottom - 40f))
+        }
+        composeRule.mainClock.autoAdvance = true
+        composeRule.waitForIdle()
+
+        assertTrue("the content did not scroll", scroll.value < scroll.maxValue)
+        assertEquals("the fling moved the sheet", SheetValue.Expanded, sheet.currentValue)
+        assertFalse("the fling closed the sheet", dismissed)
     }
 
     @Test

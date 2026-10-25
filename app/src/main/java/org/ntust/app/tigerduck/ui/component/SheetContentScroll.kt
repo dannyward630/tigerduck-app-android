@@ -36,8 +36,16 @@ internal class SheetContentScroll(private val scroll: ScrollState) {
                 Offset.Zero
             }
 
+        // Up, left over at the bottom, too: the sheet is at its top by then (an upward fling below
+        // it moves the sheet, not the content), and would only bounce there. While a sheet
+        // animates it takes the next touch outright, so a quick fling back down moved the sheet
+        // and left the content where it was.
         override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
-            if (!startedAtTop && available.y > 0f) Velocity(0f, available.y) else Velocity.Zero
+            if (available.y < 0f || !startedAtTop && available.y > 0f) {
+                Velocity(0f, available.y)
+            } else {
+                Velocity.Zero
+            }
     }
 
     val modifier: Modifier = Modifier
