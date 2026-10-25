@@ -11,6 +11,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -98,6 +99,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.graphicsLayer
@@ -189,28 +191,40 @@ private fun ZoomPeek.EndASecondAfterTheLastChange() {
 internal val LocalZoomPeek = staticCompositionLocalOf<ZoomPeek?> { null }
 
 /**
- * What of the menu steps aside while [peek] holds: faded with the sheet, out of TalkBack's way, and
- * no longer taking taps. A tap where it was brings the menu back at once.
+ * What of the menu steps aside while [peek] holds: faded with the sheet, out of TalkBack's and the
+ * keyboard's way, and taking no taps. A tap where it was brings the menu back at once; a drag from
+ * there still drags or scrolls the sheet.
  */
 private fun Modifier.stepsAside(peek: ZoomPeek?, solid: State<Float>): Modifier {
     if (peek == null) return this
     val faded = graphicsLayer { alpha = solid.value }
-    return if (!peek.active) {
-        faded
-    } else {
-        faded
-            .clearAndSetSemantics {}
-            .pointerInput(peek) {
-                awaitEachGesture {
-                    awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial).consume()
-                    do {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        event.changes.forEach { it.consume() }
-                    } while (event.changes.any { it.pressed })
-                    peek.end()
+    if (!peek.active) return faded
+    return faded
+        .clearAndSetSemantics {}
+        // Focus doesn't go in: a keyboard could otherwise still work what can't be seen.
+        .focusProperties { onEnter = { cancelFocusChange() } }
+        .focusGroup()
+        .pointerInput(peek) {
+            awaitEachGesture {
+                // Taken here, so the hidden rows don't see it; their parents still do, and drag or
+                // scroll as the finger goes.
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                down.consume()
+                var moved = false
+                while (true) {
+                    val change = awaitPointerEvent(PointerEventPass.Initial).changes
+                        .firstOrNull { it.id == down.id } ?: break
+                    if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) moved = true
+                    if (!change.pressed) {
+                        if (!moved) {
+                            change.consume()
+                            peek.end()
+                        }
+                        break
+                    }
                 }
             }
-    }
+        }
 }
 
 /**

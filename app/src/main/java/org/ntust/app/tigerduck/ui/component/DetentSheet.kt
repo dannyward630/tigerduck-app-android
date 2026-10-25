@@ -565,8 +565,9 @@ private fun Handle(state: DetentSheetState, onClose: () -> Unit, solid: State<Fl
         contentAlignment = Alignment.Center,
     ) {
         Box(
+            // Out of sight, it neither raises nor closes the sheet.
             modifier = Modifier
-                .clickable {
+                .clickable(enabled = !seeThrough) {
                     when (state.currentValue) {
                         DetentSheetValue.Half -> expand()
                         DetentSheetValue.Full -> onClose()

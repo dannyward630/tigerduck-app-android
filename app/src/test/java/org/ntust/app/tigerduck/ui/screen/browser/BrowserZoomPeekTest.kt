@@ -8,6 +8,15 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.performKeyInput
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.isFocused
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -33,10 +42,14 @@ class BrowserZoomPeekTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
+    private val calls = mutableListOf<String>()
+
     private val actions = object : BrowserActions() {
         override fun zoomIn() {}
         override fun zoomOut() {}
+        override fun setDesktopSite(desktop: Boolean) { calls += "desktop $desktop" }
     }
+
 
     private fun string(id: Int) = composeRule.activity.getString(id)
 
@@ -104,6 +117,60 @@ class BrowserZoomPeekTest {
         composeRule.mainClock.advanceTimeBy(300)
 
         desktopSite().assertDoesNotExist()
+    }
+
+    @Test
+    fun `a keyboard can't reach the parts of the menu that stepped aside`() {
+        openMenu()
+        zoomIn().performClick()
+        composeRule.mainClock.advanceTimeBy(300)
+
+        repeat(6) {
+            // Tab puts the window in keyboard mode, where the menu's rows take focus.
+            composeRule.onNodeWithTag(BROWSER_SHEET_TAG).performKeyInput { pressKey(Key.Tab) }
+            composeRule.mainClock.advanceTimeByFrame()
+            // A hidden row has no semantics while it hides, so focus on one finds no node in the
+            // sheet at all. (The activity's own window keeps a focus of its own.)
+            composeRule.onNode(isFocused() and hasAnyAncestor(hasTestTag(BROWSER_SHEET_TAG))).assertExists()
+        }
+    }
+
+    @Test
+    fun `the sheet still drags down from where the menu was`() {
+        openMenu()
+        val sheet = composeRule.onNodeWithTag(BROWSER_SHEET_TAG).getBoundsInRoot()
+        val row = desktopSite().getBoundsInRoot()
+
+        zoomIn().performClick()
+        composeRule.mainClock.advanceTimeBy(300)
+        composeRule.mainClock.autoAdvance = true
+        composeRule.onNodeWithTag(BROWSER_SHEET_TAG).performTouchInput {
+            val density = composeRule.density.density
+            val from = Offset(width / 2f, (row.top - sheet.top).value * density + 8f)
+            swipe(from, from + Offset(0f, 600f), durationMillis = 60)
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onAllNodesWithTag(BROWSER_SHEET_TAG).assertCountEquals(0)
+    }
+
+    @Test
+    fun `the hidden handle doesn't close the sheet`() {
+        openMenu()
+        val sheet = composeRule.onNodeWithTag(BROWSER_SHEET_TAG).getBoundsInRoot()
+        val handle = handle().getBoundsInRoot()
+
+        zoomIn().performClick()
+        composeRule.mainClock.advanceTimeBy(300)
+        composeRule.mainClock.autoAdvance = true
+        // The handle sits above the pages' Box, so the tap goes in from the Box at a negative offset.
+        composeRule.onNodeWithTag(BROWSER_SHEET_TAG).performTouchInput {
+            val density = composeRule.density.density
+            click(Offset(((handle.left + handle.right) / 2 - sheet.left).value * density, ((handle.top + handle.bottom) / 2 - sheet.top).value * density))
+        }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag(BROWSER_SHEET_TAG).assertExists()
     }
 
     @Test
