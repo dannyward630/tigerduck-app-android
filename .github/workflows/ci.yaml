@@ -119,12 +119,22 @@ jobs:
   localization:
     # tools/localization/sync_localizations.py generates the app's strings on
     # every Gradle build; its tests call into the app-translation submodule.
-    name: localization
+    # Both run on whatever Python 3 the build finds, so the oldest one a
+    # contributor likely has (macOS's own 3.9) is tested as well as the newest.
+    name: localization (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.9", "3.x"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           submodules: true
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
 
       - name: Test tools/localization
         run: python3 -m unittest discover -s tools/localization -v
