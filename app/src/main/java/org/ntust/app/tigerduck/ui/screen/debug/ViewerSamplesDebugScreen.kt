@@ -173,8 +173,8 @@ private fun Context.viewerSamples(): List<ViewerSample> = runCatching {
 /** [sample] copied under the cache, under its own name, and the type it opens as. */
 private fun Context.copySample(sample: ViewerSample): Pair<File, String> {
     val file = File(viewerSamplesDir("bundled"), sample.name)
-    assets.open("${ViewerSamples.ASSET_DIR}/${ViewerSamples.assetName(sample.name)}").use { input ->
-        file.outputStream().use { input.copyTo(it) }
+    ViewerSamples.copyInto(file, cleanUp = file) {
+        assets.open("${ViewerSamples.ASSET_DIR}/${ViewerSamples.assetName(sample.name)}")
     }
     return file to sample.mimeType
 }
@@ -192,10 +192,12 @@ private fun Context.copyPicked(uri: Uri): Pair<File, String> {
     val types = MimeTypeMap.getSingleton()
     val name = ViewerSamples.pickedName(displayName, providerType) { types.getExtensionFromMimeType(it) }
     val mimeType = ViewerSamples.pickedType(providerType, name) { types.getMimeTypeFromExtension(it) }
-    val input = contentResolver.openInputStream(uri) ?: throw java.io.FileNotFoundException(name)
     val picked = viewerSamplesDir("picked")
-    val file = File(File(picked, "${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}").apply { mkdirs() }, name)
-    input.use { file.outputStream().use { out -> it.copyTo(out) } }
+    val folder = File(picked, "${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}")
+    val file = File(folder, name)
+    ViewerSamples.copyInto(file, cleanUp = folder) {
+        contentResolver.openInputStream(uri) ?: throw java.io.FileNotFoundException(name)
+    }
     picked.list()?.let { ViewerSamples.picksToDrop(it.toList(), KEPT_PICKS) }?.forEach { File(picked, it).deleteRecursively() }
     return file to mimeType
 }

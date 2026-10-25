@@ -1,5 +1,8 @@
 package org.ntust.app.tigerduck.debug
 
+import java.io.File
+import java.io.InputStream
+
 /** One of the debug build's file viewer samples, as `assets/viewer-samples/index.tsv` lists it. */
 data class ViewerSample(val group: String, val name: String, val mimeType: String, val bytes: Long)
 
@@ -95,4 +98,20 @@ object ViewerSamples {
             ?: name.substringAfterLast('.', missingDelimiterValue = "").lowercase()
                 .takeIf { it.isNotEmpty() }?.let(typeOf)
             ?: GENERIC_TYPE
+
+    /**
+     * Copies what [source] opens into [file], making its folder. When the read or the write fails
+     * part way, deletes [cleanUp] (the file, or a folder made for it alone) before rethrowing, so
+     * no half copy is left to open or to pile up.
+     */
+    fun copyInto(file: File, cleanUp: File, source: () -> InputStream) {
+        try {
+            file.parentFile?.mkdirs()
+            source().use { input -> file.outputStream().use { input.copyTo(it) } }
+        } catch (e: Throwable) {
+            cleanUp.deleteRecursively()
+            throw e
+        }
+    }
 }
+

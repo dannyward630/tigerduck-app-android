@@ -3,6 +3,13 @@ package org.ntust.app.tigerduck.debug
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.Rule
+import org.junit.Assert.assertThrows
+import org.junit.Assert.assertFalse
+import java.io.InputStream
+import java.io.IOException
+import java.io.File
 
 class ViewerSamplesTest {
 
@@ -105,5 +112,35 @@ class ViewerSamplesTest {
         assertEquals("video/quicktime", type(null, "clip.MOV"))
         assertEquals("application/pdf", type(" ", "a.pdf"))
         assertEquals("application/octet-stream", type(null, "a.unknown"))
+    }
+
+    @get:Rule
+    val temp = TemporaryFolder()
+
+    /** Gives [good] bytes, then fails, as a provider whose file went away mid-read does. */
+    private fun failingAfter(good: Int) = object : InputStream() {
+        var left = good
+        override fun read(): Int = if (left-- > 0) 'x'.code else throw IOException("gone")
+    }
+
+    @Test
+    fun `a copy that fails part way leaves no part of the file, nor its folder`() {
+        val folder = File(temp.root, "picked/1-a")
+        val file = File(folder, "clip.mov")
+
+        assertThrows(IOException::class.java) { ViewerSamples.copyInto(file, folder) { failingAfter(10_000) } }
+
+        assertFalse("the partial file is gone", file.exists())
+        assertFalse("its folder is gone", folder.exists())
+    }
+
+    @Test
+    fun `a copy that goes through leaves the file whole`() {
+        val folder = File(temp.root, "bundled")
+        val file = File(folder, "notes.md")
+
+        ViewerSamples.copyInto(file, cleanUp = file) { "# Notes".byteInputStream() }
+
+        assertEquals("# Notes", file.readText())
     }
 }
