@@ -9,4 +9,6 @@
     <cache-path name="class_table_export" path="class_table_export/" />
     <!-- Photos taken for a page's upload field in the TigerDuck browser (InAppBrowserActivity.UPLOADS_DIR). -->
     <cache-path name="browser_uploads" path="browser_uploads/" />
+    <!-- Files the file viewer took out of an archive to show (ArchiveCache in ArchiveViewer.kt). -->
+    <cache-path name="archive_entries" path="archive_entries/" />
 </paths>

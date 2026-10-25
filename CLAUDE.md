@@ -102,7 +102,8 @@ default is silently dropped and the field is null at runtime.
   two are read together at run time — `res/raw` is flavor-specific, so
   `WearLicenses` names the resources per flavor and is null on fdroid. Licence texts the
   plugin cannot find itself go in `app/aboutlibraries/licenses/`, keyed by
-  the hash it reports.
+  the hash it reports; so does a text it finds only as SPDX's sample, whose
+  copyright line names someone else (0BSD's).
 
   `app/src/main/res/raw/extra_licenses.json` is the hand-maintained
   companion: third-party material that ships with no POM to describe it

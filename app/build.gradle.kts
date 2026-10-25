@@ -328,7 +328,9 @@ if (providers.gradleProperty("exportLicenses").isPresent) {
             // hash it reports for them: Angus Mail's EPL-2.0 and EDL-1.0
             // (published under names the plugin doesn't map to SPDX) and
             // GPL-2.0 with the Classpath Exception (whose SPDX text URL
-            // doesn't exist).
+            // doesn't exist). Also 0BSD's terms without the SPDX text's
+            // sample copyright line, which names its author, not XZ for
+            // Java's; extra_licenses.json carries XZ's own.
             configPath.set(file("aboutlibraries"))
             // BOMs only pin versions; nothing from them ships.
             includePlatform.set(false)
@@ -627,6 +629,12 @@ dependencies {
     implementation(libs.androidx.browser)
     // The TigerDuck browser clears everything a WebView keeps (WebStorageCompat.deleteBrowsingData).
     implementation(libs.androidx.webkit)
+    // The file viewer's video and sound.
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    // The file viewer's archives: ZIP, tar and 7z, and XZ for 7z's LZMA and .xz.
+    implementation(libs.commons.compress)
+    implementation(libs.xz)
     implementation(libs.androidx.appcompat)
 
     // Background work scheduling

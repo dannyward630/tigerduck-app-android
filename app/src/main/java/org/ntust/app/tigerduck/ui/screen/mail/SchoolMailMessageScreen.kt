@@ -64,6 +64,7 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextDecoration
+import org.ntust.app.tigerduck.files.FileViewer
 import org.ntust.app.tigerduck.mail.sanitize.PlainTextLink
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -844,10 +845,14 @@ private fun openAttachment(context: Context, request: SchoolMailMessageViewModel
     runCatching {
         val uri = FileProvider.getUriForFile(context, fileProviderAuthority(context), request.file)
         val mimeType = resolveAttachmentMimeType(request.contentType, request.file.name)
-        val view = Intent(Intent.ACTION_VIEW)
-            .setDataAndTypeAndNormalize(uri, mimeType)
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        context.startActivity(Intent.createChooser(view, request.file.name))
+        // The app's own viewer when it can show the file, another app otherwise.
+        FileViewer.open(context, uri, mimeType, request.file.name) {
+            val view = Intent(Intent.ACTION_VIEW)
+                .setDataAndTypeAndNormalize(uri, mimeType)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.startActivity(Intent.createChooser(view, request.file.name))
+            true
+        }
     }.onFailure { Toast.makeText(context, R.string.school_mail_error_generic, Toast.LENGTH_SHORT).show() }
 }
 

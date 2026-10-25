@@ -87,6 +87,7 @@ import org.ntust.app.tigerduck.browser.DownloadPlan
 import org.ntust.app.tigerduck.browser.NavigationDecision
 import org.ntust.app.tigerduck.browser.PageSchemeFollow
 import org.ntust.app.tigerduck.browser.UploadSource
+import org.ntust.app.tigerduck.files.FileViewer
 import org.ntust.app.tigerduck.ui.AppProcessing
 import org.ntust.app.tigerduck.ui.AppScale
 import org.ntust.app.tigerduck.ui.AppState
@@ -779,7 +780,11 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun openDownload(download: BrowserDownload) {
             val uri = download.uri ?: return
             val view = Intent(Intent.ACTION_VIEW).setDataAndType(uri, download.mimeType).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            if (runCatching { startActivity(view) }.isFailure) {
+            // The app's own viewer when it can show the file, another app otherwise.
+            val opened = FileViewer.open(this@InAppBrowserActivity, uri, download.mimeType, download.fileName) {
+                runCatching { startActivity(view) }.isSuccess
+            }
+            if (!opened) {
                 Toast.makeText(this@InAppBrowserActivity, R.string.browser_download_no_app, Toast.LENGTH_SHORT).show()
             }
         }

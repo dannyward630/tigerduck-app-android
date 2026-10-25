@@ -126,6 +126,13 @@
             android:theme="@style/Theme.TigerDuck"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- The viewer for downloaded files; kept through rotation, so a video plays on. -->
+        <activity
+            android:name="org.ntust.app.tigerduck.ui.screen.files.FileViewerActivity"
+            android:configChanges="locale|layoutDirection|screenSize|screenLayout|smallestScreenSize|orientation|uiMode|keyboardHidden"
+            android:exported="false"
+            android:theme="@style/Theme.TigerDuck" />
+
 
         <receiver
             android:name="org.ntust.app.tigerduck.notification.AssignmentNotificationReceiver"

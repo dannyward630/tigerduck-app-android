@@ -2226,6 +2226,174 @@
             ]
         },
         {
+            "uniqueId": "androidx.media3:media3-common",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 common module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-container",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 Container module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-database",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 database module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-datasource",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 DataSource module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-decoder",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 decoder module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-exoplayer",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 ExoPlayer module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-extractor",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 Extractor module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-ui",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 UI module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "androidx.navigation:navigation-common",
             "artifactVersion": "2.10.2",
             "name": "Navigation Common",
@@ -2436,6 +2604,28 @@
             "organization": {
                 "name": "The Android Open Source Project"
             },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.recyclerview:recyclerview",
+            "artifactVersion": "1.3.0",
+            "name": "Support RecyclerView",
+            "description": "Android Support RecyclerView",
+            "website": "https://developer.android.com/jetpack/androidx/releases/recyclerview#1.3.0",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -3721,9 +3911,9 @@
         },
         {
             "uniqueId": "com.google.guava:failureaccess",
-            "artifactVersion": "1.0.1",
+            "artifactVersion": "1.0.2",
             "name": "Guava InternalFutureFailureAccess and InternalFutures",
-            "description": "Contains\n    com.google.common.util.concurrent.internal.InternalFutureFailureAccess and\n    InternalFutures. Most users will never need to use this artifact. Its\n    classes is conceptually a part of Guava, but they're in this separate\n    artifact so that Android libraries can use them without pulling in all of\n    Guava (just as they can use ListenableFuture by depending on the\n    listenablefuture artifact).",
+            "description": "Contains\n    com.google.common.util.concurrent.internal.InternalFutureFailureAccess and\n    InternalFutures. Most users will never need to use this artifact. Its\n    classes are conceptually a part of Guava, but they're in this separate\n    artifact so that Android libraries can use them without pulling in all of\n    Guava (just as they can use ListenableFuture by depending on the\n    listenablefuture artifact).",
             "website": "https://github.com/google/guava/failureaccess",
             "developers": [
                 {
@@ -3745,7 +3935,7 @@
         },
         {
             "uniqueId": "com.google.guava:guava",
-            "artifactVersion": "31.1-android",
+            "artifactVersion": "33.3.1-android",
             "name": "Guava: Google Core Libraries for Java",
             "description": "Guava is a suite of core and expanded libraries that include\n    utility classes, Google's collections, I/O classes, and\n    much more.",
             "website": "https://github.com/google/guava",
@@ -3793,17 +3983,20 @@
         },
         {
             "uniqueId": "com.google.j2objc:j2objc-annotations",
-            "artifactVersion": "1.3",
+            "artifactVersion": "3.0.0",
             "name": "J2ObjC Annotations",
             "description": "A set of annotations that provide additional information to the J2ObjC\n    translator to modify the result of translation.",
             "website": "https://github.com/google/j2objc/",
             "developers": [
-                
+                {
+                    "name": "Tom Ball",
+                    "organisationUrl": "https://www.google.com"
+                }
             ],
             "scm": {
-                "connection": "scm:svn:http://svn.sonatype.org/spice/tags/oss-parent-7/j2objc-annotations",
-                "developerConnection": "scm:svn:https://svn.sonatype.org/spice/tags/oss-parent-7/j2objc-annotations",
-                "url": "http://svn.sonatype.org/spice/tags/oss-parent-7/j2objc-annotations"
+                "connection": "scm:git:git://github.com/google/j2objc.git",
+                "developerConnection": "scm:git:ssh://git@github.com/google/j2objc.git",
+                "url": "http://github.com/google/j2objc"
             },
             "licenses": [
                 "Apache-2.0"
@@ -3997,6 +4190,135 @@
             ]
         },
         {
+            "uniqueId": "commons-codec:commons-codec",
+            "artifactVersion": "1.19.0",
+            "name": "Apache Commons Codec",
+            "description": "The Apache Commons Codec component contains encoders and decoders for\n     formats such as Base16, Base32, Base64, digest, and Hexadecimal. In addition to these\n     widely used encoders and decoders, the codec package also maintains a\n     collection of phonetic encoding utilities.",
+            "website": "https://commons.apache.org/proper/commons-codec/",
+            "developers": [
+                {
+                    "name": "Julius Davies",
+                    "organisationUrl": "http://juliusdavies.ca/"
+                },
+                {
+                    "name": "David Graham"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Scott Sanders"
+                },
+                {
+                    "name": "Daniel Rall"
+                },
+                {
+                    "name": "Jon S. Stevens"
+                },
+                {
+                    "name": "Thomas Neidhart"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Rob Tompkins"
+                },
+                {
+                    "name": "Tim OBrien"
+                },
+                {
+                    "name": "Matt Sicker"
+                },
+                {
+                    "name": "Rodney Waldhoff"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-codec",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-codec",
+                "url": "https://github.com/apache/commons-codec"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "commons-io:commons-io",
+            "artifactVersion": "2.20.0",
+            "name": "Apache Commons IO",
+            "description": "The Apache Commons IO library contains utility classes, stream implementations, file filters,\nfile comparators, endian transformation classes, and much more.",
+            "website": "https://commons.apache.org/proper/commons-io/",
+            "developers": [
+                {
+                    "name": "Martin Cooper"
+                },
+                {
+                    "name": "dIon Gillard"
+                },
+                {
+                    "name": "Jukka Zitting"
+                },
+                {
+                    "name": "Kristian Rosenvold"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Rob Oxspring"
+                },
+                {
+                    "name": "Niall Pemberton"
+                },
+                {
+                    "name": "Scott Sanders"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Stephen Colebourne"
+                },
+                {
+                    "name": "Jochen Wiedmann"
+                },
+                {
+                    "name": "Nicola Ken Barozzi"
+                },
+                {
+                    "name": "Matthew Hawthorne"
+                },
+                {
+                    "name": "Jeremias Maerki"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-io.git",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-io.git",
+                "url": "https://gitbox.apache.org/repos/asf?p=commons-io.git"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "jakarta.activation:jakarta.activation-api",
             "artifactVersion": "2.1.4",
             "name": "Jakarta Activation API",
@@ -4108,6 +4430,137 @@
             ]
         },
         {
+            "uniqueId": "org.apache.commons:commons-compress",
+            "artifactVersion": "1.28.0",
+            "name": "Apache Commons Compress",
+            "description": "Apache Commons Compress defines an API for working with\ncompression and archive formats. These include bzip2, gzip, pack200,\nLZMA, XZ, Snappy, traditional Unix Compress, DEFLATE, DEFLATE64, LZ4,\nBrotli, Zstandard and ar, cpio, jar, tar, zip, dump, 7z, arj.",
+            "website": "https://commons.apache.org/proper/commons-compress/",
+            "developers": [
+                {
+                    "name": "Sebastian Bazley"
+                },
+                {
+                    "name": "Emmanuel Bourg"
+                },
+                {
+                    "name": "Torsten Curdt"
+                },
+                {
+                    "name": "Stefan Bodewig"
+                },
+                {
+                    "name": "Julius Davies"
+                },
+                {
+                    "name": "Damjan Jovanovic"
+                },
+                {
+                    "name": "Christian Grobmeier"
+                },
+                {
+                    "name": "Peter Alfred Lee"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Rob Tompkins"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-compress.git",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-compress.git",
+                "url": "https://gitbox.apache.org/repos/asf?p=commons-compress.git"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.apache.commons:commons-lang3",
+            "artifactVersion": "3.18.0",
+            "name": "Apache Commons Lang",
+            "description": "Apache Commons Lang, a package of Java utility classes for the\n  classes that are in java.lang's hierarchy, or are considered to be so\n  standard as to justify existence in java.lang.\n\n  The code is tested using the latest revision of the JDK for supported\n  LTS releases: 8, 11, 17 and 21 currently.\n  See https://github.com/apache/commons-lang/blob/master/.github/workflows/maven.yml\n  \n  Please ensure your build environment is up-to-date and kindly report any build issues.",
+            "website": "https://commons.apache.org/proper/commons-lang/",
+            "developers": [
+                {
+                    "name": "Duncan Jones"
+                },
+                {
+                    "name": "Oliver Heger"
+                },
+                {
+                    "name": "Joerg Schaible"
+                },
+                {
+                    "name": "Henri Yandell"
+                },
+                {
+                    "name": "Robert Burrell Donkin"
+                },
+                {
+                    "name": "Niall Pemberton"
+                },
+                {
+                    "name": "Daniel Rall"
+                },
+                {
+                    "name": "Gary Gregory",
+                    "organisationUrl": "https://www.apache.org/"
+                },
+                {
+                    "name": "Rob Tompkins"
+                },
+                {
+                    "name": "Steven Caswell"
+                },
+                {
+                    "name": "Stephen Colebourne"
+                },
+                {
+                    "name": "James Carman"
+                },
+                {
+                    "name": "Matt Benson"
+                },
+                {
+                    "name": "Paul Benedict"
+                },
+                {
+                    "name": "Fredrik Westermarck"
+                },
+                {
+                    "name": "Benedikt Ritter"
+                },
+                {
+                    "name": "Loic Guibert"
+                }
+            ],
+            "organization": {
+                "name": "The Apache Software Foundation",
+                "url": "https://www.apache.org/"
+            },
+            "scm": {
+                "connection": "scm:git:https://gitbox.apache.org/repos/asf/commons-lang.git",
+                "developerConnection": "scm:git:https://gitbox.apache.org/repos/asf/commons-lang.git",
+                "url": "https://gitbox.apache.org/repos/asf/commons-lang.git"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "org.bouncycastle:bcprov-jdk18on",
             "artifactVersion": "1.86",
             "name": "Bouncy Castle Provider",
@@ -4130,10 +4583,10 @@
         },
         {
             "uniqueId": "org.checkerframework:checker-qual",
-            "artifactVersion": "3.12.0",
+            "artifactVersion": "3.43.0",
             "name": "Checker Qual",
             "description": "checker-qual contains annotations (type qualifiers) that a programmer\nwrites to specify Java code for type-checking by the Checker Framework.",
-            "website": "https://checkerframework.org",
+            "website": "https://checkerframework.org/",
             "developers": [
                 {
                     "name": "Michael Ernst",
@@ -4145,7 +4598,7 @@
                 }
             ],
             "scm": {
-                "connection": "scm:git:git://github.com/typetools/checker-framework.git",
+                "connection": "scm:git:https://github.com/typetools/checker-framework.git",
                 "developerConnection": "scm:git:ssh://git@github.com/typetools/checker-framework.git",
                 "url": "https://github.com/typetools/checker-framework.git"
             },
@@ -4533,9 +4986,39 @@
             "funding": [
                 
             ]
+        },
+        {
+            "uniqueId": "org.tukaani:xz",
+            "artifactVersion": "1.12",
+            "name": "XZ for Java",
+            "description": "XZ data compression",
+            "website": "https://tukaani.org/xz/java.html",
+            "developers": [
+                {
+                    "name": "Lasse Collin"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/tukaani-project/xz-java",
+                "url": "https://github.com/tukaani-project/xz-java"
+            },
+            "licenses": [
+                "0BSD"
+            ],
+            "funding": [
+                
+            ]
         }
     ],
     "licenses": {
+        "0BSD": {
+            "name": "BSD Zero Clause License",
+            "url": "https://spdx.org/licenses/0BSD.html",
+            "content": "Permission to use, copy, modify, and/or distribute this\nsoftware for any purpose with or without fee is hereby granted.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL\nWARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED\nWARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL\nTHE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR\nCONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,\nNEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN\nCONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n",
+            "internalHash": "0BSD",
+            "spdxId": "0BSD",
+            "hash": "0BSD"
+        },
         "73252b46f36df25ef51a7994de439aea": {
             "name": "Bouncy Castle Licence",
             "url": "https://www.bouncycastle.org/licence.html",

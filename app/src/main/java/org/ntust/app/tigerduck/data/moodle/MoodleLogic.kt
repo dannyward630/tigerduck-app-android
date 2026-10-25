@@ -592,7 +592,7 @@ enum class MoodleFileKind {
             "png", "jpg", "jpeg", "gif", "heic", "webp", "bmp", "tif", "tiff", "svg" -> IMAGE
             "mp4", "mov", "m4v", "avi", "mkv", "webm" -> VIDEO
             "mp3", "m4a", "wav", "aac", "flac", "ogg" -> AUDIO
-            "zip", "rar", "7z", "gz", "tar", "tgz" -> ARCHIVE
+            "zip", "rar", "7z", "gz", "gzip", "tar", "tgz", "bz2", "tbz2", "xz", "txz" -> ARCHIVE
             "txt", "md" -> TEXT
             else -> null
         }
@@ -600,6 +600,8 @@ enum class MoodleFileKind {
         private val ARCHIVE_TYPES = setOf(
             "application/zip", "application/x-zip-compressed", "application/x-7z-compressed",
             "application/x-rar-compressed", "application/vnd.rar", "application/gzip", "application/x-tar",
+            // Moodle's own type for .tgz, .gz and .gzip, and Android's for .tgz.
+            "application/g-zip", "application/x-gtar-compressed",
         )
     }
 }
