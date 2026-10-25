@@ -146,6 +146,22 @@ class MailCache(
         root.deleteRecursively()
     }
 
+    /** The cached folder pages, bodies and sources: what [clearMessages] deletes. */
+    @Synchronized
+    fun messagesBytes(): Long =
+        listOf(foldersDir, bodiesDir).sumOf { dir -> dir.walkTopDown().filter { it.isFile }.sumOf { it.length() } }
+
+    /**
+     * Deletes the cached folder pages, bodies and sources, as Settings' Storage page does: each
+     * downloads again when it's next read. The attachments stay, which Storage counts on their own,
+     * and so do the files a send is staging.
+     */
+    @Synchronized
+    fun clearMessages() {
+        foldersDir.deleteRecursively()
+        bodiesDir.deleteRecursively()
+    }
+
     /** The [attachmentsDir] folders an attachment is still being written into, by name. */
     private val slotsInUse = HashSet<String>()
 

@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">刪除所有已下載的檔案</string>
     <string name="settings_downloaded_files_delete_all_message">下次開啟 Moodle 檔案和信件附件時，會重新下載。</string>
     <string name="settings_downloaded_files_delete_all_title">要刪除所有已下載的檔案嗎？</string>
-    <string name="settings_downloaded_files_delete_kind">刪除%@</string>
     <string name="settings_downloaded_files_footer">在 TigerDuck 瀏覽器下載的檔案會存到手機的「下載」資料夾，不會在這裡刪除。</string>
     <string name="settings_downloaded_files_images">課表圖片</string>
     <string name="settings_downloaded_files_mail">信件附件</string>
     <string name="settings_downloaded_files_moodle">Moodle 檔案</string>
     <string name="settings_downloaded_files_title">已下載的檔案</string>
-    <string name="settings_downloaded_files_total">總計</string>
     <string name="settings_feedback_bug_report">回饋/問題回報</string>
     <string name="settings_flip_to_library_summary">將手機螢幕朝下即可開啟圖書館 QR</string>
     <string name="settings_flip_to_library_title">翻轉顯示圖書館 QR</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">在課表首頁顯示教室</string>
     <string name="settings_sign_out_imported_tables">匯入的課表也會一併刪除。</string>
     <string name="settings_sign_out_unsynced_data">未透過 TigerSync 同步的資料將會刪除。</string>
+    <string name="settings_storage_browser_data">網站資料</string>
+    <string name="settings_storage_browser_data_delete_message">在 TigerDuck 瀏覽器造訪過的網站，可能會要求你重新登入。</string>
+    <string name="settings_storage_browser_data_delete_title">要刪除網站資料嗎？</string>
+    <string name="settings_storage_delete_kind">刪除%@</string>
+    <string name="settings_storage_title">儲存空間</string>
+    <string name="settings_storage_total">總計</string>
     <string name="settings_sync_brief_description">TigerSync 可讓你將所選資料同步至所有已開啟 TigerSync 的裝置。未啟用 TigerSync 的資料僅會保留在此裝置上。</string>
     <string name="settings_sync_disabled_note">關閉同步後，為了傳送作業提醒，TigerDuck 伺服器仍會收到你的學號、Moodle token 和此裝置的推播憑證</string>
     <string name="settings_sync_status_off">關閉</string>

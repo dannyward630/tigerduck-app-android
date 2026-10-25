@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">ഡൗൺലോഡ് ചെയ്ത എല്ലാ ഫയലുകളും ഇല്ലാതാക്കുക</string>
     <string name="settings_downloaded_files_delete_all_message">അടുത്ത തവണ തുറക്കുമ്പോൾ Moodle ഫയലുകളും മെയിൽ അറ്റാച്ച്‌മെന്റുകളും വീണ്ടും ഡൗൺലോഡ് ചെയ്യും.</string>
     <string name="settings_downloaded_files_delete_all_title">ഡൗൺലോഡ് ചെയ്ത എല്ലാ ഫയലുകളും ഇല്ലാതാക്കണോ?</string>
-    <string name="settings_downloaded_files_delete_kind">%@ ഇല്ലാതാക്കുക</string>
     <string name="settings_downloaded_files_footer">TigerDuck ബ്രൗസറിൽ ഡൗൺലോഡ് ചെയ്ത ഫയലുകൾ ഫോണിലെ Downloads ഫോൾഡറിൽ സേവ് ചെയ്യും, അവ ഇവിടെനിന്ന് ഇല്ലാതാക്കില്ല.</string>
     <string name="settings_downloaded_files_images">ക്ലാസ് ടൈംടേബിൾ ചിത്രങ്ങൾ</string>
     <string name="settings_downloaded_files_mail">മെയിൽ അറ്റാച്ച്‌മെന്റുകൾ</string>
     <string name="settings_downloaded_files_moodle">Moodle ഫയലുകൾ</string>
     <string name="settings_downloaded_files_title">ഡൗൺലോഡ് ചെയ്ത ഫയലുകൾ</string>
-    <string name="settings_downloaded_files_total">ആകെ</string>
     <string name="settings_feedback_bug_report">ഫീഡ്‌ബാക്ക് / പ്രശ്‌നം റിപ്പോർട്ട് ചെയ്യുക</string>
     <string name="settings_flip_to_library_summary">ലൈബ്രറി QR തുറക്കാൻ ഫോൺ സ്ക്രീൻ താഴ്ത്തി മറിക്കുക.</string>
     <string name="settings_flip_to_library_title">ലൈബ്രറി QR കാണിക്കാൻ മറിക്കുക</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">ടൈംടേബിളിൽ ക്ലാസ് മുറി കാണിക്കുക</string>
     <string name="settings_sign_out_imported_tables">ഇമ്പോർട്ട് ചെയ്ത ക്ലാസ് ടൈംടേബിളുകളും ഇല്ലാതാക്കും.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync-മായി സിങ്ക് ചെയ്യാത്ത ഡാറ്റ ഇല്ലാതാക്കും.</string>
+    <string name="settings_storage_browser_data">വെബ്‌സൈറ്റ് ഡാറ്റ</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck ബ്രൗസറിൽ നിങ്ങൾ സന്ദർശിച്ച സൈറ്റുകൾ വീണ്ടും സൈൻ ഇൻ ചെയ്യാൻ ആവശ്യപ്പെട്ടേക്കാം.</string>
+    <string name="settings_storage_browser_data_delete_title">വെബ്‌സൈറ്റ് ഡാറ്റ ഇല്ലാതാക്കണോ?</string>
+    <string name="settings_storage_delete_kind">%@ ഇല്ലാതാക്കുക</string>
+    <string name="settings_storage_title">സ്റ്റോറേജ്</string>
+    <string name="settings_storage_total">ആകെ</string>
     <string name="settings_sync_brief_description">TigerSync നിങ്ങളുടെ എല്ലാ ഉപകരണങ്ങളിലും വിവരങ്ങൾ സമന്വയിപ്പിക്കാൻ അനുവദിക്കുന്നു. സിങ്കിന് പ്രാപ്തമാക്കാത്ത വിവരങ്ങൾ ഈ ഉപകരണത്തിൽ മാത്രം നിലനിൽക്കും.</string>
     <string name="settings_sync_disabled_note">സിങ്ക് ഓഫായിരിക്കുമ്പോഴും, അസൈൻമെന്റ് ഓർമ്മപ്പെടുത്തലുകൾ അയയ്ക്കാൻ TigerDuck സെർവറിന് നിങ്ങളുടെ വിദ്യാർത്ഥി ID, Moodle ടോക്കൺ, ഈ ഉപകരണത്തിന്റെ പുഷ് ക്രെഡൻഷ്യലുകൾ എന്നിവ ലഭിക്കും</string>
     <string name="settings_sync_status_off">ഓഫ്</string>

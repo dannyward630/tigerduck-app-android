@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Hapus semua file yang diunduh</string>
     <string name="settings_downloaded_files_delete_all_message">File Moodle dan lampiran email akan diunduh lagi saat kamu membukanya berikutnya.</string>
     <string name="settings_downloaded_files_delete_all_title">Hapus semua file yang diunduh?</string>
-    <string name="settings_downloaded_files_delete_kind">Hapus %@</string>
     <string name="settings_downloaded_files_footer">File yang diunduh di browser TigerDuck disimpan di folder Download ponselmu dan tidak dihapus di sini.</string>
     <string name="settings_downloaded_files_images">Gambar jadwal kuliah</string>
     <string name="settings_downloaded_files_mail">Lampiran email</string>
     <string name="settings_downloaded_files_moodle">File Moodle</string>
     <string name="settings_downloaded_files_title">File yang diunduh</string>
-    <string name="settings_downloaded_files_total">Total</string>
     <string name="settings_feedback_bug_report">Umpan balik / Laporkan masalah</string>
     <string name="settings_flip_to_library_summary">Balik ponsel dengan layar menghadap bawah untuk membuka QR perpustakaan.</string>
     <string name="settings_flip_to_library_title">Balik untuk menampilkan QR perpustakaan</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Tampilkan ruang kelas di jadwal</string>
     <string name="settings_sign_out_imported_tables">Jadwal kuliah yang diimpor juga akan dihapus.</string>
     <string name="settings_sign_out_unsynced_data">Data yang tidak disinkronkan dengan TigerSync akan dihapus.</string>
+    <string name="settings_storage_browser_data">Data situs</string>
+    <string name="settings_storage_browser_data_delete_message">Situs yang kamu kunjungi di browser TigerDuck mungkin memintamu masuk lagi.</string>
+    <string name="settings_storage_browser_data_delete_title">Hapus data situs?</string>
+    <string name="settings_storage_delete_kind">Hapus %@</string>
+    <string name="settings_storage_title">Penyimpanan</string>
+    <string name="settings_storage_total">Total</string>
     <string name="settings_sync_brief_description">TigerSync memungkinkan Anda menyinkronkan informasi pilihan di semua perangkat. Informasi yang tidak diaktifkan tetap hanya di perangkat ini.</string>
     <string name="settings_sync_disabled_note">Saat sinkronisasi nonaktif, server TigerDuck tetap menerima NIM, token Moodle, dan kredensial push perangkat ini untuk mengirim pengingat tugas</string>
     <string name="settings_sync_status_off">Nonaktif</string>

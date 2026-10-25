@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">حذف كل الملفات التي تم تنزيلها</string>
     <string name="settings_downloaded_files_delete_all_message">يُعاد تنزيل ملفات Moodle ومرفقات البريد في المرة التالية التي تفتحها فيها.</string>
     <string name="settings_downloaded_files_delete_all_title">هل تريد حذف كل الملفات التي تم تنزيلها؟</string>
-    <string name="settings_downloaded_files_delete_kind">حذف %@</string>
     <string name="settings_downloaded_files_footer">تُحفظ الملفات التي تنزّلها في متصفح TigerDuck في مجلد التنزيلات على هاتفك، ولا تُحذف من هنا.</string>
     <string name="settings_downloaded_files_images">صور الجدول الدراسي</string>
     <string name="settings_downloaded_files_mail">مرفقات البريد</string>
     <string name="settings_downloaded_files_moodle">ملفات Moodle</string>
     <string name="settings_downloaded_files_title">الملفات التي تم تنزيلها</string>
-    <string name="settings_downloaded_files_total">الإجمالي</string>
     <string name="settings_feedback_bug_report">ملاحظات / الإبلاغ عن مشكلة</string>
     <string name="settings_flip_to_library_summary">اقلب هاتفك بحيث يكون الشاشة لأسفل لفتح رمز QR للمكتبة.</string>
     <string name="settings_flip_to_library_title">اقلب لعرض رمز QR للمكتبة</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">إظهار القاعات في الجدول الدراسي</string>
     <string name="settings_sign_out_imported_tables">سيتم حذف الجداول الدراسية المستوردة أيضًا.</string>
     <string name="settings_sign_out_unsynced_data">سيتم حذف البيانات غير المتزامنة مع TigerSync.</string>
+    <string name="settings_storage_browser_data">بيانات المواقع</string>
+    <string name="settings_storage_browser_data_delete_message">قد تطلب منك المواقع التي زرتها في متصفح TigerDuck تسجيل الدخول مرة أخرى.</string>
+    <string name="settings_storage_browser_data_delete_title">هل تريد حذف بيانات المواقع؟</string>
+    <string name="settings_storage_delete_kind">حذف %@</string>
+    <string name="settings_storage_title">التخزين</string>
+    <string name="settings_storage_total">الإجمالي</string>
     <string name="settings_sync_brief_description">يتيح لك TigerSync مزامنة معلوماتك المختارة عبر جميع أجهزتك التي تم تفعيل TigerSync عليها. المعلومات غير المفعّلة للمزامنة تبقى على هذا الجهاز فقط.</string>
     <string name="settings_sync_disabled_note">عند إيقاف المزامنة، يظل خادم TigerDuck يتلقى رقم الطالب ورمز Moodle وبيانات الإشعارات لهذا الجهاز لإرسال تذكيرات الواجبات</string>
     <string name="settings_sync_status_off">معطّل</string>

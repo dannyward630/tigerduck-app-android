@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Διαγραφή όλων των ληφθέντων αρχείων</string>
     <string name="settings_downloaded_files_delete_all_message">Τα αρχεία Moodle και τα συνημμένα αλληλογραφίας θα ληφθούν ξανά την επόμενη φορά που θα τα ανοίξετε.</string>
     <string name="settings_downloaded_files_delete_all_title">Διαγραφή όλων των ληφθέντων αρχείων;</string>
-    <string name="settings_downloaded_files_delete_kind">Διαγραφή: %@</string>
     <string name="settings_downloaded_files_footer">Τα αρχεία που λαμβάνετε στο πρόγραμμα περιήγησης του TigerDuck αποθηκεύονται στον φάκελο Λήψεις του τηλεφώνου σας και δεν διαγράφονται από εδώ.</string>
     <string name="settings_downloaded_files_images">Εικόνες προγράμματος μαθημάτων</string>
     <string name="settings_downloaded_files_mail">Συνημμένα αλληλογραφίας</string>
     <string name="settings_downloaded_files_moodle">Αρχεία Moodle</string>
     <string name="settings_downloaded_files_title">Ληφθέντα αρχεία</string>
-    <string name="settings_downloaded_files_total">Σύνολο</string>
     <string name="settings_feedback_bug_report">Σχόλια / Αναφορά προβλήματος</string>
     <string name="settings_flip_to_library_summary">Αναποδογύρισε το τηλέφωνο με την οθόνη προς τα κάτω για να ανοίξεις τον QR της βιβλιοθήκης.</string>
     <string name="settings_flip_to_library_title">Αναποδογύρισε για να δεις τον QR της βιβλιοθήκης</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Εμφάνιση αιθουσών στο πρόγραμμα</string>
     <string name="settings_sign_out_imported_tables">Θα διαγραφούν επίσης τα προγράμματα μαθημάτων που εισαγάγατε.</string>
     <string name="settings_sign_out_unsynced_data">Τα δεδομένα που δεν έχουν συγχρονιστεί με το TigerSync θα διαγραφούν.</string>
+    <string name="settings_storage_browser_data">Δεδομένα ιστοτόπων</string>
+    <string name="settings_storage_browser_data_delete_message">Οι ιστότοποι που επισκεφθήκατε στο πρόγραμμα περιήγησης του TigerDuck ενδέχεται να σας ζητήσουν να συνδεθείτε ξανά.</string>
+    <string name="settings_storage_browser_data_delete_title">Διαγραφή δεδομένων ιστοτόπων;</string>
+    <string name="settings_storage_delete_kind">Διαγραφή: %@</string>
+    <string name="settings_storage_title">Αποθηκευτικός χώρος</string>
+    <string name="settings_storage_total">Σύνολο</string>
     <string name="settings_sync_brief_description">Το TigerSync σας επιτρέπει να συγχρονίζετε τις επιλεγμένες πληροφορίες σε όλες τις συσκευές. Οι πληροφορίες χωρίς συγχρονισμό παραμένουν μόνο σε αυτή τη συσκευή.</string>
     <string name="settings_sync_disabled_note">Όταν ο συγχρονισμός είναι απενεργοποιημένος, ο διακομιστής TigerDuck εξακολουθεί να λαμβάνει τον αριθμό φοιτητή σας, το token Moodle και τα διαπιστευτήρια push αυτής της συσκευής για να στέλνει υπενθυμίσεις εργασιών</string>
     <string name="settings_sync_status_off">Ανενεργό</string>

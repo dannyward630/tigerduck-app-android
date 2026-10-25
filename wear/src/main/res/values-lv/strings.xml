@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Dzēst visus lejupielādētos failus</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle faili un e-pasta pielikumi tiks lejupielādēti vēlreiz, kad nākamreiz tos atvērsiet.</string>
     <string name="settings_downloaded_files_delete_all_title">Vai dzēst visus lejupielādētos failus?</string>
-    <string name="settings_downloaded_files_delete_kind">Dzēst: %@</string>
     <string name="settings_downloaded_files_footer">TigerDuck pārlūkā lejupielādētie faili tiek saglabāti tālruņa mapē Lejupielādes, un šeit tie netiek dzēsti.</string>
     <string name="settings_downloaded_files_images">Stundu plāna attēli</string>
     <string name="settings_downloaded_files_mail">E-pasta pielikumi</string>
     <string name="settings_downloaded_files_moodle">Moodle faili</string>
     <string name="settings_downloaded_files_title">Lejupielādētie faili</string>
-    <string name="settings_downloaded_files_total">Kopā</string>
     <string name="settings_feedback_bug_report">Atsauksme / Ziņot par problēmu</string>
     <string name="settings_flip_to_library_summary">Apvērs tālruni ar ekrānu uz leju, lai atvērtu bibliotēkas QR.</string>
     <string name="settings_flip_to_library_title">Apvērst, lai parādītu bibliotēkas QR</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Rādīt auditorijas stundu sarakstā</string>
     <string name="settings_sign_out_imported_tables">Tiks dzēsti arī importētie stundu plāni.</string>
     <string name="settings_sign_out_unsynced_data">Ar TigerSync nesinhronizētie dati tiks dzēsti.</string>
+    <string name="settings_storage_browser_data">Vietņu dati</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck pārlūkā apmeklētās vietnes var lūgt jums pierakstīties vēlreiz.</string>
+    <string name="settings_storage_browser_data_delete_title">Vai dzēst vietņu datus?</string>
+    <string name="settings_storage_delete_kind">Dzēst: %@</string>
+    <string name="settings_storage_title">Krātuve</string>
+    <string name="settings_storage_total">Kopā</string>
     <string name="settings_sync_brief_description">TigerSync ļauj sinhronizēt izvēlēto informāciju visās ierīcēs. Nesinhronizēta informācija paliek tikai šajā ierīcē.</string>
     <string name="settings_sync_disabled_note">Kad sinhronizācija ir izslēgta, TigerDuck serveris joprojām saņem jūsu studenta ID, Moodle žetonu un šīs ierīces push akreditācijas datus, lai sūtītu uzdevumu atgādinājumus</string>
     <string name="settings_sync_status_off">Izslēgts</string>

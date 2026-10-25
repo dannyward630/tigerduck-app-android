@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Видалити всі завантажені файли</string>
     <string name="settings_downloaded_files_delete_all_message">Файли Moodle і вкладення з пошти буде завантажено знову, коли ви відкриєте їх наступного разу.</string>
     <string name="settings_downloaded_files_delete_all_title">Видалити всі завантажені файли?</string>
-    <string name="settings_downloaded_files_delete_kind">Видалити: %@</string>
     <string name="settings_downloaded_files_footer">Файли, завантажені в браузері TigerDuck, зберігаються в папці «Завантаження» на телефоні й не видаляються тут.</string>
     <string name="settings_downloaded_files_images">Зображення розкладу</string>
     <string name="settings_downloaded_files_mail">Вкладення з пошти</string>
     <string name="settings_downloaded_files_moodle">Файли Moodle</string>
     <string name="settings_downloaded_files_title">Завантажені файли</string>
-    <string name="settings_downloaded_files_total">Усього</string>
     <string name="settings_feedback_bug_report">Відгук / Повідомити про проблему</string>
     <string name="settings_flip_to_library_summary">Переверніть телефон екраном донизу, щоб відкрити QR бібліотеки.</string>
     <string name="settings_flip_to_library_title">Перевернути для показу QR бібліотеки</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Показувати аудиторії в розкладі</string>
     <string name="settings_sign_out_imported_tables">Імпортовані розклади також буде видалено.</string>
     <string name="settings_sign_out_unsynced_data">Дані, не синхронізовані з TigerSync, буде видалено.</string>
+    <string name="settings_storage_browser_data">Дані сайтів</string>
+    <string name="settings_storage_browser_data_delete_message">Сайти, які ви відвідували в браузері TigerDuck, можуть попросити вас увійти знову.</string>
+    <string name="settings_storage_browser_data_delete_title">Видалити дані сайтів?</string>
+    <string name="settings_storage_delete_kind">Видалити: %@</string>
+    <string name="settings_storage_title">Сховище</string>
+    <string name="settings_storage_total">Усього</string>
     <string name="settings_sync_brief_description">TigerSync дозволяє синхронізувати обрану інформацію на всіх пристроях. Інформація без синхронізації залишається лише на цьому пристрої.</string>
     <string name="settings_sync_disabled_note">Навіть коли синхронізацію вимкнено, сервер TigerDuck отримує ваш студентський ID, токен Moodle і push-дані цього пристрою, щоб надсилати нагадування про завдання</string>
     <string name="settings_sync_status_off">Вимк.</string>

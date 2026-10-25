@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">מחיקת כל הקבצים שהורדו</string>
     <string name="settings_downloaded_files_delete_all_message">קבצי Moodle וקבצים מצורפים מהדואר יורדו שוב בפעם הבאה שתפתח אותם.</string>
     <string name="settings_downloaded_files_delete_all_title">למחוק את כל הקבצים שהורדו?</string>
-    <string name="settings_downloaded_files_delete_kind">מחיקת %@</string>
     <string name="settings_downloaded_files_footer">קבצים שהורדו בדפדפן של TigerDuck נשמרים בתיקיית ההורדות בטלפון ולא נמחקים מכאן.</string>
     <string name="settings_downloaded_files_images">תמונות של מערכת השעות</string>
     <string name="settings_downloaded_files_mail">קבצים מצורפים מהדואר</string>
     <string name="settings_downloaded_files_moodle">קבצי Moodle</string>
     <string name="settings_downloaded_files_title">קבצים שהורדו</string>
-    <string name="settings_downloaded_files_total">סה״כ</string>
     <string name="settings_feedback_bug_report">משוב / דיווח על בעיה</string>
     <string name="settings_flip_to_library_summary">הפוך את הטלפון עם המסך כלפי מטה כדי לפתוח את ה-QR של הספרייה.</string>
     <string name="settings_flip_to_library_title">הפוך להצגת ה-QR של הספרייה</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">הצגת כיתות בלוח השיעורים</string>
     <string name="settings_sign_out_imported_tables">גם מערכות השעות שיובאו יימחקו.</string>
     <string name="settings_sign_out_unsynced_data">נתונים שלא סונכרנו עם TigerSync יימחקו.</string>
+    <string name="settings_storage_browser_data">נתוני אתרים</string>
+    <string name="settings_storage_browser_data_delete_message">אתרים שביקרת בהם בדפדפן של TigerDuck עשויים לבקש ממך להתחבר שוב.</string>
+    <string name="settings_storage_browser_data_delete_title">למחוק את נתוני האתרים?</string>
+    <string name="settings_storage_delete_kind">מחיקת %@</string>
+    <string name="settings_storage_title">אחסון</string>
+    <string name="settings_storage_total">סה״כ</string>
     <string name="settings_sync_brief_description">TigerSync מאפשר לך לסנכרן מידע נבחר בין כל המכשירים שלך. מידע שלא הופעל לסנכרון נשאר במכשיר זה בלבד.</string>
     <string name="settings_sync_disabled_note">כשהסנכרון כבוי, שרת TigerDuck עדיין מקבל את מספר הסטודנט, טוקן Moodle ואישורי ה-push של מכשיר זה כדי לשלוח תזכורות למטלות</string>
     <string name="settings_sync_status_off">כבוי</string>

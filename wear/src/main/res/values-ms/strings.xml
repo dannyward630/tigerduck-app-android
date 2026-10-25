@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Padam semua fail yang dimuat turun</string>
     <string name="settings_downloaded_files_delete_all_message">Fail Moodle dan lampiran mel akan dimuat turun semula apabila anda membukanya lain kali.</string>
     <string name="settings_downloaded_files_delete_all_title">Padam semua fail yang dimuat turun?</string>
-    <string name="settings_downloaded_files_delete_kind">Padam %@</string>
     <string name="settings_downloaded_files_footer">Fail yang dimuat turun dalam pelayar TigerDuck disimpan dalam folder Muat Turun telefon anda dan tidak dipadam di sini.</string>
     <string name="settings_downloaded_files_images">Imej jadual kelas</string>
     <string name="settings_downloaded_files_mail">Lampiran mel</string>
     <string name="settings_downloaded_files_moodle">Fail Moodle</string>
     <string name="settings_downloaded_files_title">Fail yang dimuat turun</string>
-    <string name="settings_downloaded_files_total">Jumlah</string>
     <string name="settings_feedback_bug_report">Maklum balas / Laporkan isu</string>
     <string name="settings_flip_to_library_summary">Balik telefon dengan skrin menghadap bawah untuk membuka QR perpustakaan.</string>
     <string name="settings_flip_to_library_title">Balik untuk tunjuk QR perpustakaan</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Tunjukkan bilik darjah dalam jadual</string>
     <string name="settings_sign_out_imported_tables">Jadual kelas yang diimport juga akan dipadam.</string>
     <string name="settings_sign_out_unsynced_data">Data yang tidak disegerakkan dengan TigerSync akan dipadam.</string>
+    <string name="settings_storage_browser_data">Data laman web</string>
+    <string name="settings_storage_browser_data_delete_message">Laman yang anda lawati dalam pelayar TigerDuck mungkin meminta anda log masuk semula.</string>
+    <string name="settings_storage_browser_data_delete_title">Padam data laman web?</string>
+    <string name="settings_storage_delete_kind">Padam %@</string>
+    <string name="settings_storage_title">Storan</string>
+    <string name="settings_storage_total">Jumlah</string>
     <string name="settings_sync_brief_description">TigerSync membolehkan anda menyegerakkan maklumat pilihan anda di semua peranti. Maklumat yang tidak didayakan kekal pada peranti ini sahaja.</string>
     <string name="settings_sync_disabled_note">Apabila penyegerakan dimatikan, pelayan TigerDuck masih menerima ID Pelajar, token Moodle dan kelayakan push peranti ini untuk menghantar peringatan tugasan</string>
     <string name="settings_sync_status_off">Mati</string>

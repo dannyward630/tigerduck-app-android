@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">ダウンロードしたファイルをすべて削除</string>
     <string name="settings_downloaded_files_delete_all_message">Moodleのファイルとメールの添付ファイルは、次に開いたときに再度ダウンロードされます。</string>
     <string name="settings_downloaded_files_delete_all_title">ダウンロードしたファイルをすべて削除しますか？</string>
-    <string name="settings_downloaded_files_delete_kind">%@を削除</string>
     <string name="settings_downloaded_files_footer">TigerDuckのブラウザでダウンロードしたファイルはスマートフォンの「ダウンロード」フォルダに保存され、ここでは削除されません。</string>
     <string name="settings_downloaded_files_images">時間割の画像</string>
     <string name="settings_downloaded_files_mail">メールの添付ファイル</string>
     <string name="settings_downloaded_files_moodle">Moodleのファイル</string>
     <string name="settings_downloaded_files_title">ダウンロードしたファイル</string>
-    <string name="settings_downloaded_files_total">合計</string>
     <string name="settings_feedback_bug_report">フィードバック / 不具合報告</string>
     <string name="settings_flip_to_library_summary">スマホを画面下向きに裏返すと図書館 QR を開きます。</string>
     <string name="settings_flip_to_library_title">裏返して図書館 QR を表示</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">時間割に教室を表示</string>
     <string name="settings_sign_out_imported_tables">読み込んだ時間割も削除されます。</string>
     <string name="settings_sign_out_unsynced_data">TigerSync で同期されていないデータは削除されます。</string>
+    <string name="settings_storage_browser_data">ウェブサイトのデータ</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuckのブラウザで開いたサイトで、再度ログインが必要になることがあります。</string>
+    <string name="settings_storage_browser_data_delete_title">ウェブサイトのデータを削除しますか？</string>
+    <string name="settings_storage_delete_kind">%@を削除</string>
+    <string name="settings_storage_title">ストレージ</string>
+    <string name="settings_storage_total">合計</string>
     <string name="settings_sync_brief_description">TigerSync を使用すると、選択した情報をすべてのデバイス間で同期できます。同期が有効でない情報はこのデバイスのみに保存されます。</string>
     <string name="settings_sync_disabled_note">同期がオフでも、課題のリマインダーを送るため、TigerDuck サーバーは学籍番号、Moodle トークン、このデバイスのプッシュ資格情報を受け取ります</string>
     <string name="settings_sync_status_off">オフ</string>

@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Eyða öllum sóttum skrám</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle-skrár og viðhengi úr pósti verða sótt aftur næst þegar þú opnar þau.</string>
     <string name="settings_downloaded_files_delete_all_title">Eyða öllum sóttum skrám?</string>
-    <string name="settings_downloaded_files_delete_kind">Eyða: %@</string>
     <string name="settings_downloaded_files_footer">Skrár sem sóttar eru í vafra TigerDuck eru vistaðar í niðurhalsmöppu símans og þeim er ekki eytt hér.</string>
     <string name="settings_downloaded_files_images">Myndir af stundaskrá</string>
     <string name="settings_downloaded_files_mail">Viðhengi úr pósti</string>
     <string name="settings_downloaded_files_moodle">Moodle-skrár</string>
     <string name="settings_downloaded_files_title">Sóttar skrár</string>
-    <string name="settings_downloaded_files_total">Samtals</string>
     <string name="settings_feedback_bug_report">Endurgjöf / Tilkynna villu</string>
     <string name="settings_flip_to_library_summary">Snúðu símann með skjánum niður til að opna QR kóða bókasafnsins.</string>
     <string name="settings_flip_to_library_title">Snúa til að sýna QR kóða bókasafnsins</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Sýna stofur í stundatöflunni</string>
     <string name="settings_sign_out_imported_tables">Innfluttum stundaskrám verður líka eytt.</string>
     <string name="settings_sign_out_unsynced_data">Gögnum sem ekki eru samstillt við TigerSync verður eytt.</string>
+    <string name="settings_storage_browser_data">Gögn vefsvæða</string>
+    <string name="settings_storage_browser_data_delete_message">Vefsvæði sem þú heimsóttir í vafra TigerDuck gætu beðið þig að skrá þig inn aftur.</string>
+    <string name="settings_storage_browser_data_delete_title">Eyða gögnum vefsvæða?</string>
+    <string name="settings_storage_delete_kind">Eyða: %@</string>
+    <string name="settings_storage_title">Geymsla</string>
+    <string name="settings_storage_total">Samtals</string>
     <string name="settings_sync_brief_description">TigerSync gerir þér kleift að samstilla valdar upplýsingar á öllum tækjum. Upplýsingar sem ekki eru virkar eru aðeins á þessu tæki.</string>
     <string name="settings_sync_disabled_note">Þegar slökkt er á samstillingu fær TigerDuck netþjónninn samt nemandanúmerið þitt, Moodle táknið og push-skilríki þessa tækis til að senda áminningar um verkefni</string>
     <string name="settings_sync_status_off">Slökkt</string>

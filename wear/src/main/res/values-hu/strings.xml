@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Az összes letöltött fájl törlése</string>
     <string name="settings_downloaded_files_delete_all_message">A Moodle-fájlok és a levélmellékletek a következő megnyitáskor újra letöltődnek.</string>
     <string name="settings_downloaded_files_delete_all_title">Törli az összes letöltött fájlt?</string>
-    <string name="settings_downloaded_files_delete_kind">Törlés: %@</string>
     <string name="settings_downloaded_files_footer">A TigerDuck böngészőjében letöltött fájlok a telefon Letöltések mappájába kerülnek, és innen nem törlődnek.</string>
     <string name="settings_downloaded_files_images">Órarendképek</string>
     <string name="settings_downloaded_files_mail">Levélmellékletek</string>
     <string name="settings_downloaded_files_moodle">Moodle-fájlok</string>
     <string name="settings_downloaded_files_title">Letöltött fájlok</string>
-    <string name="settings_downloaded_files_total">Összesen</string>
     <string name="settings_feedback_bug_report">Visszajelzés / Hibabejelentés</string>
     <string name="settings_flip_to_library_summary">Fordítsd az okostelefont képernyővel lefelé a könyvtári QR-kód megnyitásához.</string>
     <string name="settings_flip_to_library_title">Fordítsd meg a könyvtári QR-kód megjelenítéséhez</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Tantermek megjelenítése az órarendben</string>
     <string name="settings_sign_out_imported_tables">Az importált órarendek is törlődnek.</string>
     <string name="settings_sign_out_unsynced_data">A TigerSync által nem szinkronizált adatok törlődnek.</string>
+    <string name="settings_storage_browser_data">Webhelyadatok</string>
+    <string name="settings_storage_browser_data_delete_message">A TigerDuck böngészőjében meglátogatott webhelyek újra bejelentkezést kérhetnek.</string>
+    <string name="settings_storage_browser_data_delete_title">Törli a webhelyadatokat?</string>
+    <string name="settings_storage_delete_kind">Törlés: %@</string>
+    <string name="settings_storage_title">Tárhely</string>
+    <string name="settings_storage_total">Összesen</string>
     <string name="settings_sync_brief_description">A TigerSync lehetővé teszi a kiválasztott adatok szinkronizálását az összes eszközön. A nem engedélyezett adatok csak ezen az eszközön maradnak.</string>
     <string name="settings_sync_disabled_note">Kikapcsolt szinkronizálás mellett is megkapja a TigerDuck szerver a hallgatói azonosítódat, a Moodle tokenedet és az eszköz push hitelesítő adatait, hogy feladatemlékeztetőket küldhessen</string>
     <string name="settings_sync_status_off">Ki</string>

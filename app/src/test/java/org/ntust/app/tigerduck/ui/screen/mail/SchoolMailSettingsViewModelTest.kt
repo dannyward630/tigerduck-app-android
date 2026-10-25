@@ -30,11 +30,9 @@ import org.ntust.app.tigerduck.mail.testApplicationScope
 import org.ntust.app.tigerduck.notification.SystemPermissions
 import java.io.File
 import java.time.DayOfWeek
-import org.ntust.app.tigerduck.mail.FakeSchoolMailRepository
 import org.ntust.app.tigerduck.mail.schoolMailSite
 
 class SchoolMailSettingsViewModelTest {
-    private val repository = FakeSchoolMailRepository()
 
     @get:Rule val main = MainDispatcherRule()
     @get:Rule val tmp = TemporaryFolder()
@@ -62,11 +60,10 @@ class SchoolMailSettingsViewModelTest {
      * account has to sign in before the view model exists.
      */
     private fun viewModel(account: MailAccount = account()): SchoolMailSettingsViewModel {
-        // The same TestDispatcher backs Dispatchers.Main and the injected @IoDispatcher, so the
-        // cache walk stays synchronous under the test. The permission check reads the stub SDK
-        // level, which predates the notification permission, so it never touches the context.
+        // The permission check reads the stub SDK level, which predates the notification
+        // permission, so it never touches the context.
         return SchoolMailSettingsViewModel(
-            state, scheduler, ExactAlarmAccess { false }, cache, repository, main.dispatcher, account, SystemPermissions(Application()),
+            state, scheduler, ExactAlarmAccess { false }, account, SystemPermissions(Application()),
         )
     }
 
@@ -140,24 +137,6 @@ class SchoolMailSettingsViewModelTest {
     }
 
     @Test
-    fun `the cache size covers the whole mail cache and clearing it empties the row`() {
-        cache.saveBody("INBOX", 1, 1, MailBody(null, "x".repeat(2_000), emptyList(), emptyMap()))
-        cache.attachmentsDir.mkdirs()
-        File(cache.attachmentsDir, "a.pdf").writeText("0123456789")
-
-        val vm = viewModel()
-        assertNull("nothing is claimed before the first walk finishes", vm.cacheBytes.value)
-        vm.refreshCacheSize()
-        val measured = vm.cacheBytes.value!!
-        assertEquals(cache.sizeBytes(), measured)
-        assertTrue("the attachments directory counts too", measured > 2_000)
-
-        vm.clearCache()
-        assertEquals(0L, vm.cacheBytes.value)
-        assertFalse(cache.attachmentsDir.exists())
-    }
-
-    @Test
     fun `quiet hours, presets and rules are saved as set`() {
         signIn("b10000001", "pw")
         val vm = viewModel()
@@ -223,18 +202,5 @@ class SchoolMailSettingsViewModelTest {
     fun `the demo mailbox counts as signed in`() {
         signIn(demo.box.studentId.orEmpty(), demo.box.password.orEmpty())
         assertTrue(viewModel().signedIn.value)
-    }
-
-    @Test
-    fun `the mail kept on the phone is measured apart from the cache, and deleting it empties the row`() {
-        repository.searchIndexBytes = 7_000_000L
-        val vm = viewModel()
-        vm.refreshCacheSize()
-        assertEquals(7_000_000L, vm.storageBytes.value)
-
-        vm.deleteStorage()
-
-        assertEquals(1, repository.searchIndexDeletes)
-        assertEquals(0L, vm.storageBytes.value)
     }
 }

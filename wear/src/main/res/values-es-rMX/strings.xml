@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Eliminar todos los archivos descargados</string>
     <string name="settings_downloaded_files_delete_all_message">Los archivos de Moodle y los adjuntos del correo se volverán a descargar la próxima vez que los abras.</string>
     <string name="settings_downloaded_files_delete_all_title">¿Eliminar todos los archivos descargados?</string>
-    <string name="settings_downloaded_files_delete_kind">Eliminar: %@</string>
     <string name="settings_downloaded_files_footer">Los archivos descargados en el navegador de TigerDuck se guardan en la carpeta Descargas del teléfono y no se eliminan aquí.</string>
     <string name="settings_downloaded_files_images">Imágenes del horario</string>
     <string name="settings_downloaded_files_mail">Adjuntos del correo</string>
     <string name="settings_downloaded_files_moodle">Archivos de Moodle</string>
     <string name="settings_downloaded_files_title">Archivos descargados</string>
-    <string name="settings_downloaded_files_total">Total</string>
     <string name="settings_feedback_bug_report">Comentarios / Reportar problema</string>
     <string name="settings_flip_to_library_summary">Voltea el teléfono boca abajo para abrir el QR de la biblioteca.</string>
     <string name="settings_flip_to_library_title">Voltear para mostrar el QR de la biblioteca</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Mostrar las aulas en el horario</string>
     <string name="settings_sign_out_imported_tables">Los horarios importados también se eliminarán.</string>
     <string name="settings_sign_out_unsynced_data">Los datos no sincronizados con TigerSync se eliminarán.</string>
+    <string name="settings_storage_browser_data">Datos de sitios web</string>
+    <string name="settings_storage_browser_data_delete_message">Es posible que los sitios que visitaste en el navegador de TigerDuck te pidan que vuelvas a iniciar sesión.</string>
+    <string name="settings_storage_browser_data_delete_title">¿Eliminar los datos de sitios web?</string>
+    <string name="settings_storage_delete_kind">Eliminar: %@</string>
+    <string name="settings_storage_title">Almacenamiento</string>
+    <string name="settings_storage_total">Total</string>
     <string name="settings_sync_brief_description">TigerSync te permite sincronizar la información seleccionada en todos tus dispositivos con TigerSync activado. La información no activada permanece solo en este dispositivo.</string>
     <string name="settings_sync_disabled_note">Con la sincronización desactivada, el servidor de TigerDuck sigue recibiendo tu ID de estudiante, el token de Moodle y las credenciales push de este dispositivo para enviar recordatorios de tareas</string>
     <string name="settings_sync_status_off">Desactivado</string>

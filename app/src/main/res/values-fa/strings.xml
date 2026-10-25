@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">حذف همه فایل‌های دانلودشده</string>
     <string name="settings_downloaded_files_delete_all_message">فایل‌های Moodle و پیوست‌های ایمیل دفعه بعد که بازشان کنید دوباره دانلود می‌شوند.</string>
     <string name="settings_downloaded_files_delete_all_title">همه فایل‌های دانلودشده حذف شوند؟</string>
-    <string name="settings_downloaded_files_delete_kind">حذف %@</string>
     <string name="settings_downloaded_files_footer">فایل‌هایی که در مرورگر TigerDuck دانلود می‌کنید در پوشه دانلودهای گوشی ذخیره می‌شوند و از اینجا حذف نمی‌شوند.</string>
     <string name="settings_downloaded_files_images">تصاویر برنامه کلاس‌ها</string>
     <string name="settings_downloaded_files_mail">پیوست‌های ایمیل</string>
     <string name="settings_downloaded_files_moodle">فایل‌های Moodle</string>
     <string name="settings_downloaded_files_title">فایل‌های دانلودشده</string>
-    <string name="settings_downloaded_files_total">مجموع</string>
     <string name="settings_feedback_bug_report">بازخورد / گزارش مشکل</string>
     <string name="settings_flip_to_library_summary">گوشی را صفحه‌رو به پایین برگردانید تا QR کتابخانه باز شود.</string>
     <string name="settings_flip_to_library_title">برگرداندن برای نمایش QR کتابخانه</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">نمایش کلاس‌ها در برنامهٔ درسی</string>
     <string name="settings_sign_out_imported_tables">برنامه کلاس‌های واردشده نیز حذف می‌شوند.</string>
     <string name="settings_sign_out_unsynced_data">داده‌هایی که با TigerSync همگام‌سازی نشده‌اند حذف می‌شوند.</string>
+    <string name="settings_storage_browser_data">داده‌های وب‌سایت</string>
+    <string name="settings_storage_browser_data_delete_message">سایت‌هایی که در مرورگر TigerDuck بازدید کرده‌اید ممکن است دوباره از شما بخواهند وارد شوید.</string>
+    <string name="settings_storage_browser_data_delete_title">داده‌های وب‌سایت حذف شود؟</string>
+    <string name="settings_storage_delete_kind">حذف %@</string>
+    <string name="settings_storage_title">فضای ذخیره‌سازی</string>
+    <string name="settings_storage_total">مجموع</string>
     <string name="settings_sync_brief_description">TigerSync به شما امکان می‌دهد اطلاعات انتخابی خود را در تمام دستگاه‌ها همگام کنید. اطلاعات غیرفعال فقط در این دستگاه باقی می‌مانند.</string>
     <string name="settings_sync_disabled_note">وقتی همگام‌سازی خاموش است، سرور TigerDuck همچنان شماره دانشجویی، توکن Moodle و اعتبارنامه‌های پوش این دستگاه را برای ارسال یادآوری تکالیف دریافت می‌کند</string>
     <string name="settings_sync_status_off">خاموش</string>

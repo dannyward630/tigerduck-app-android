@@ -30,20 +30,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.ui.component.ContentCard
 import org.ntust.app.tigerduck.ui.component.NoTopBarInsets
-import org.ntust.app.tigerduck.ui.component.SectionHeader
-import org.ntust.app.tigerduck.ui.screen.mail.CacheSizeRow
 import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 
 /**
  * 其他設定, one card per group: 顯示與文字大小 (課程字體大小 is on its page),
- * 反轉滑條方向, 螢幕翻轉, 震動, API 端點, 顏色主題 with 重新分配課表顏色, 已下載的檔案 (on its page),
- * Moodle 教材 (the downloaded Moodle files' size and clearing them), 使用分析. iOS has the same page without 震動,
+ * 反轉滑條方向, 螢幕翻轉, 震動, API 端點, 顏色主題 with 重新分配課表顏色, 儲存空間 (on its page:
+ * downloaded files and caches, Moodle's and School Mail's among them), 使用分析. iOS has the same page without 震動,
  * 螢幕翻轉, 顏色主題 and 使用分析, which it does not offer.
  * The library switches live on [LibrarySettingsScreen], the other entry in
  * Settings' 其他設定 section, and the links out on [AboutOthersScreen].
@@ -55,17 +51,10 @@ fun OtherSettingsScreen(
     onNavigateToApiEndpoint: () -> Unit,
     onNavigateToVibration: () -> Unit,
     onNavigateToDisplaySize: () -> Unit,
-    onNavigateToDownloadedFiles: () -> Unit,
+    onNavigateToStorage: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
-    moodleFiles: MoodleFilesCacheViewModel = hiltViewModel(),
 ) {
     var analyticsEnabled by remember { mutableStateOf(viewModel.prefs.analyticsEnabled) }
-    val moodleFilesBytes by moodleFiles.bytes.collectAsStateWithLifecycle()
-    // Measured each time the page shows, as files come and go from the Moodle screens.
-    LifecycleResumeEffect(moodleFiles) {
-        moodleFiles.measure()
-        onPauseOrDispose { }
-    }
     val invertSlider = viewModel.appState.invertSliderDirection
     val themeMode = viewModel.appState.themeMode
     val rotationMode = viewModel.appState.rotationMode
@@ -202,18 +191,9 @@ fun OtherSettingsScreen(
 
             item {
                 ContentCard {
-                    SettingsLinkRow(stringResource(R.string.settings_downloaded_files_title)) {
-                        onNavigateToDownloadedFiles()
+                    SettingsLinkRow(stringResource(R.string.settings_storage_title)) {
+                        onNavigateToStorage()
                     }
-                }
-            }
-
-            item { Spacer(Modifier.height(24.dp)) }
-
-            item { SectionHeader(stringResource(R.string.settings_moodle_files_section)) }
-            item {
-                ContentCard(modifier = Modifier.padding(top = 4.dp)) {
-                    CacheSizeRow(cacheBytes = moodleFilesBytes, onClear = moodleFiles::clear)
                 }
             }
 

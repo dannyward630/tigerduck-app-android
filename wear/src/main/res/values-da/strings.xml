@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Slet alle downloadede filer</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle-filer og vedhæftninger fra mail downloades igen, næste gang du åbner dem.</string>
     <string name="settings_downloaded_files_delete_all_title">Vil du slette alle downloadede filer?</string>
-    <string name="settings_downloaded_files_delete_kind">Slet %@</string>
     <string name="settings_downloaded_files_footer">Filer, der downloades i TigerDuck-browseren, gemmes i telefonens Downloads-mappe og slettes ikke her.</string>
     <string name="settings_downloaded_files_images">Billeder af skemaet</string>
     <string name="settings_downloaded_files_mail">Vedhæftninger fra mail</string>
     <string name="settings_downloaded_files_moodle">Moodle-filer</string>
     <string name="settings_downloaded_files_title">Downloadede filer</string>
-    <string name="settings_downloaded_files_total">I alt</string>
     <string name="settings_feedback_bug_report">Feedback / Rapportér problem</string>
     <string name="settings_flip_to_library_summary">Vend telefonen med skærmen nedad for at åbne bibliotekets QR.</string>
     <string name="settings_flip_to_library_title">Vend om for at vise bibliotekets QR</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Vis lokaler i skemaet</string>
     <string name="settings_sign_out_imported_tables">Importerede skemaer slettes også.</string>
     <string name="settings_sign_out_unsynced_data">Data, der ikke er synkroniseret med TigerSync, slettes.</string>
+    <string name="settings_storage_browser_data">Webstedsdata</string>
+    <string name="settings_storage_browser_data_delete_message">Websteder, du har besøgt i TigerDuck-browseren, kan bede dig om at logge ind igen.</string>
+    <string name="settings_storage_browser_data_delete_title">Vil du slette webstedsdata?</string>
+    <string name="settings_storage_delete_kind">Slet %@</string>
+    <string name="settings_storage_title">Lagerplads</string>
+    <string name="settings_storage_total">I alt</string>
     <string name="settings_sync_brief_description">TigerSync lader dig synkronisere dine valgte oplysninger på tværs af alle enheder med TigerSync aktiveret. Oplysninger uden synkronisering forbliver kun på denne enhed.</string>
     <string name="settings_sync_disabled_note">Når synkronisering er slået fra, modtager TigerDuck-serveren stadig dit studie-ID, dit Moodle-token og denne enheds push-legitimationsoplysninger for at kunne sende opgavepåmindelser</string>
     <string name="settings_sync_status_off">Fra</string>

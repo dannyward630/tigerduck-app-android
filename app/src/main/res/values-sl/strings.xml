@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Izbriši vse prenesene datoteke</string>
     <string name="settings_downloaded_files_delete_all_message">Datoteke iz Moodla in priloge iz pošte se bodo znova prenesle, ko jih boste naslednjič odprli.</string>
     <string name="settings_downloaded_files_delete_all_title">Želite izbrisati vse prenesene datoteke?</string>
-    <string name="settings_downloaded_files_delete_kind">Izbriši: %@</string>
     <string name="settings_downloaded_files_footer">Datoteke, prenesene v brskalniku TigerDuck, se shranijo v mapo Prenosi v telefonu in se tukaj ne izbrišejo.</string>
     <string name="settings_downloaded_files_images">Slike urnika</string>
     <string name="settings_downloaded_files_mail">Priloge iz pošte</string>
     <string name="settings_downloaded_files_moodle">Datoteke iz Moodla</string>
     <string name="settings_downloaded_files_title">Prenesene datoteke</string>
-    <string name="settings_downloaded_files_total">Skupaj</string>
     <string name="settings_feedback_bug_report">Povratne informacije / Prijava napake</string>
     <string name="settings_flip_to_library_summary">Obrni telefon z zaslonom navzdol, da odpreš QR knjižnice.</string>
     <string name="settings_flip_to_library_title">Obrni za prikaz QR knjižnice</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Prikaži učilnice v urniku</string>
     <string name="settings_sign_out_imported_tables">Izbrisani bodo tudi uvoženi urniki.</string>
     <string name="settings_sign_out_unsynced_data">Podatki, ki niso sinhronizirani s TigerSync, bodo izbrisani.</string>
+    <string name="settings_storage_browser_data">Podatki spletnih mest</string>
+    <string name="settings_storage_browser_data_delete_message">Spletna mesta, ki ste jih obiskali v brskalniku TigerDuck, vas bodo morda znova prosila za prijavo.</string>
+    <string name="settings_storage_browser_data_delete_title">Želite izbrisati podatke spletnih mest?</string>
+    <string name="settings_storage_delete_kind">Izbriši: %@</string>
+    <string name="settings_storage_title">Shramba</string>
+    <string name="settings_storage_total">Skupaj</string>
     <string name="settings_sync_brief_description">TigerSync omogoča sinhronizacijo izbranih podatkov med vsemi napravami. Neaktivni podatki ostanejo samo na tej napravi.</string>
     <string name="settings_sync_disabled_note">Ko je sinhronizacija izklopljena, strežnik TigerDuck še vedno prejema vaš študentski ID, žeton Moodle in push poverilnice te naprave, da lahko pošilja opomnike za naloge</string>
     <string name="settings_sync_status_off">Izklopljeno</string>

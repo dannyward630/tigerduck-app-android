@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">सर्व डाउनलोड केलेल्या फाइल हटवा</string>
     <string name="settings_downloaded_files_delete_all_message">पुढच्या वेळी उघडल्यावर Moodle फाइल आणि मेल अटॅचमेंट पुन्हा डाउनलोड होतील.</string>
     <string name="settings_downloaded_files_delete_all_title">सर्व डाउनलोड केलेल्या फाइल हटवायच्या?</string>
-    <string name="settings_downloaded_files_delete_kind">%@ हटवा</string>
     <string name="settings_downloaded_files_footer">TigerDuck ब्राउझरमध्ये डाउनलोड केलेल्या फाइल तुमच्या फोनच्या Downloads फोल्डरमध्ये सेव्ह होतात आणि येथून हटवल्या जात नाहीत.</string>
     <string name="settings_downloaded_files_images">वर्ग वेळापत्रकाच्या इमेज</string>
     <string name="settings_downloaded_files_mail">मेल अटॅचमेंट</string>
     <string name="settings_downloaded_files_moodle">Moodle फाइल</string>
     <string name="settings_downloaded_files_title">डाउनलोड केलेल्या फाइल</string>
-    <string name="settings_downloaded_files_total">एकूण</string>
     <string name="settings_feedback_bug_report">अभिप्राय / समस्या अहवाल</string>
     <string name="settings_flip_to_library_summary">लायब्ररी QR उघडण्यासाठी फोन स्क्रीन खाली करून फ्लिप करा.</string>
     <string name="settings_flip_to_library_title">लायब्ररी QR दाखवण्यासाठी फ्लिप करा</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">वेळापत्रकात वर्गखोली दाखवा</string>
     <string name="settings_sign_out_imported_tables">आयात केलेली वर्ग वेळापत्रकेही हटवली जातील.</string>
     <string name="settings_sign_out_unsynced_data">TigerSync सोबत सिंक न झालेला डेटा हटवला जाईल.</string>
+    <string name="settings_storage_browser_data">वेबसाइट डेटा</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck ब्राउझरमध्ये भेट दिलेल्या साइट तुम्हाला पुन्हा साइन इन करायला सांगू शकतात.</string>
+    <string name="settings_storage_browser_data_delete_title">वेबसाइट डेटा हटवायचा?</string>
+    <string name="settings_storage_delete_kind">%@ हटवा</string>
+    <string name="settings_storage_title">स्टोरेज</string>
+    <string name="settings_storage_total">एकूण</string>
     <string name="settings_sync_brief_description">TigerSync तुम्हाला सर्व उपकरणांवर माहिती सिंक करण्याची परवानगी देते. सिंकसाठी सक्षम नसलेली माहिती फक्त या उपकरणावर राहते.</string>
     <string name="settings_sync_disabled_note">सिंक बंद असतानाही, असाइनमेंट स्मरणपत्रे पाठवण्यासाठी TigerDuck सर्व्हरला तुमचा विद्यार्थी ID, Moodle टोकन आणि या डिव्हाइसचे पुश क्रेडेन्शियल्स मिळतात</string>
     <string name="settings_sync_status_off">बंद</string>

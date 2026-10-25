@@ -1093,13 +1093,11 @@
     <string name="settings_downloaded_files_delete_all">Ištrinti visus atsisiųstus failus</string>
     <string name="settings_downloaded_files_delete_all_message">Moodle failai ir laiškų priedai bus atsisiųsti iš naujo, kai kitą kartą juos atidarysite.</string>
     <string name="settings_downloaded_files_delete_all_title">Ištrinti visus atsisiųstus failus?</string>
-    <string name="settings_downloaded_files_delete_kind">Ištrinti: %@</string>
     <string name="settings_downloaded_files_footer">TigerDuck naršyklėje atsisiųsti failai išsaugomi telefono aplanke „Atsisiuntimai“ ir čia netrinami.</string>
     <string name="settings_downloaded_files_images">Tvarkaraščio vaizdai</string>
     <string name="settings_downloaded_files_mail">Laiškų priedai</string>
     <string name="settings_downloaded_files_moodle">Moodle failai</string>
     <string name="settings_downloaded_files_title">Atsisiųsti failai</string>
-    <string name="settings_downloaded_files_total">Iš viso</string>
     <string name="settings_feedback_bug_report">Atsiliepimai / Pranešti apie klaidą</string>
     <string name="settings_flip_to_library_summary">Apverskite telefoną ekranu žemyn, kad atidarytumėte bibliotekos QR.</string>
     <string name="settings_flip_to_library_title">Apversti, kad rodytų bibliotekos QR</string>
@@ -1158,6 +1156,12 @@
     <string name="settings_show_classroom_on_class_table">Rodyti auditorijas tvarkaraštyje</string>
     <string name="settings_sign_out_imported_tables">Importuoti tvarkaraščiai taip pat bus ištrinti.</string>
     <string name="settings_sign_out_unsynced_data">Su TigerSync nesinchronizuoti duomenys bus ištrinti.</string>
+    <string name="settings_storage_browser_data">Svetainių duomenys</string>
+    <string name="settings_storage_browser_data_delete_message">TigerDuck naršyklėje lankytos svetainės gali paprašyti prisijungti iš naujo.</string>
+    <string name="settings_storage_browser_data_delete_title">Ištrinti svetainių duomenis?</string>
+    <string name="settings_storage_delete_kind">Ištrinti: %@</string>
+    <string name="settings_storage_title">Saugykla</string>
+    <string name="settings_storage_total">Iš viso</string>
     <string name="settings_sync_brief_description">TigerSync leidžia sinchronizuoti pasirinktą informaciją visuose įrenginiuose. Nesinchronizuota informacija lieka tik šiame įrenginyje.</string>
     <string name="settings_sync_disabled_note">Kai sinchronizavimas išjungtas, TigerDuck serveris vis tiek gauna jūsų studento ID, Moodle prieigos raktą ir šio įrenginio push kredencialus, kad galėtų siųsti užduočių priminimus</string>
     <string name="settings_sync_status_off">Išjungta</string>
