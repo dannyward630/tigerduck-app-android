@@ -31,11 +31,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,6 +68,8 @@ import org.ntust.app.tigerduck.data.sharing.ClassTableShare
 import org.ntust.app.tigerduck.data.sharing.ClassTableShare.Selection
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareQrCode
 import org.ntust.app.tigerduck.shared.clock.AppClock
+import org.ntust.app.tigerduck.ui.component.DetentSheet
+import org.ntust.app.tigerduck.ui.component.rememberDetentSheetState
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
 
 /**
@@ -95,7 +95,9 @@ internal fun ClassTableShareSheet(
     onDismiss: () -> Unit,
     onScan: () -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberDetentSheetState()
+    // The scanner opens only once this sheet is gone, as on iOS.
+    var scanOnceClosed by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var state by remember(share) { mutableStateOf(share.initialState) }
     // One share time for the sheet, so the code stays put while it is open.
@@ -107,13 +109,16 @@ internal fun ClassTableShareSheet(
         Selection.AllSemesters -> allSemesters
         is Selection.Semester -> labelFor(selection.code)
     }
-    val close: () -> Unit = {
-        scope.launch { sheetState.hide() }.invokeOnCompletion { if (!sheetState.isVisible) onDismiss() }
-    }
+    val close: () -> Unit = { scope.launch { sheetState.hide() } }
 
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
+    DetentSheet(
+        // Not for a sheet gone meanwhile, as a link closes it: it never comes to rest closed, and
+        // the scanner would open over the link's page.
+        onDismissed = {
+            onDismiss()
+            if (scanOnceClosed) onScan()
+        },
+        state = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
@@ -124,16 +129,10 @@ internal fun ClassTableShareSheet(
                 .padding(bottom = 24.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // The scanner opens only once this sheet is gone, as on iOS.
                 IconButton(
                     onClick = {
-                        // Not for a sheet gone meanwhile, as a link closes it: its scope is
-                        // cancelled, and the scanner would open over the link's page.
-                        scope.launch { sheetState.hide() }.invokeOnCompletion { cause ->
-                            if (cause != null) return@invokeOnCompletion
-                            onDismiss()
-                            onScan()
-                        }
+                        scanOnceClosed = true
+                        close()
                     },
                     modifier = Modifier.size(HEADER_BUTTON_SIZE),
                 ) {

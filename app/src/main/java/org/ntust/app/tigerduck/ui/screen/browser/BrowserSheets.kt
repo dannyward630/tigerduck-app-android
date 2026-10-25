@@ -67,8 +67,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.OutlinedTextField
@@ -79,7 +77,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -117,19 +114,17 @@ import org.ntust.app.tigerduck.browser.BrowserDownload
 import org.ntust.app.tigerduck.browser.BrowserZoom
 import org.ntust.app.tigerduck.browser.CertificateInfo
 import org.ntust.app.tigerduck.browser.UploadSource
+import org.ntust.app.tigerduck.ui.component.DetentSheet
+import org.ntust.app.tigerduck.ui.component.rememberDetentSheetState
 import org.ntust.app.tigerduck.util.replaceIosArg
 import java.text.DateFormat
 import java.text.NumberFormat
 import java.util.Date
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BrowserSheetFrame(onDismiss: () -> Unit, skipPartial: Boolean = true, content: @Composable () -> Unit) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = skipPartial),
-    ) {
+    DetentSheet(onDismissed = onDismiss, halfHeight = !skipPartial) {
         Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
             content()
         }
@@ -143,7 +138,6 @@ private fun BrowserSheetFrame(onDismiss: () -> Unit, skipPartial: Boolean = true
  * first page, a tap outside or a drag down closes the sheet. [page] draws a page, with a way back
  * when it has one.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun BrowserPagesSheet(
     pages: List<BrowserSheet>,
@@ -151,7 +145,7 @@ internal fun BrowserPagesSheet(
     onDismiss: () -> Unit,
     page: @Composable (sheet: BrowserSheet, onBack: (() -> Unit)?) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberDetentSheetState()
     val scope = rememberCoroutineScope()
     // Each page's own state, its scroll above all, kept while it is in the stack: back on a page,
     // it is as it was left. A page gone from the stack starts afresh when opened again.
@@ -162,14 +156,14 @@ internal fun BrowserPagesSheet(
         (kept - keys.toSet()).forEach(pageStates::removeState)
         kept = keys
     }
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
+    DetentSheet(
+        onDismissed = onDismiss,
+        state = sheetState,
         // Back is the pages' first: on the first page, it closes the sheet as the sheet's own would.
-        properties = ModalBottomSheetProperties(shouldDismissOnBackPress = false),
+        dismissOnBack = false,
     ) {
         BackHandler {
-            if (pages.size > 1) onBack() else scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+            if (pages.size > 1) onBack() else scope.launch { sheetState.hide() }
         }
         val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
         Box(Modifier.fillMaxWidth().testTag(BROWSER_SHEET_TAG)) {

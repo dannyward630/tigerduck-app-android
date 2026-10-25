@@ -1,19 +1,16 @@
 // Flings the real What's New sheet and follows its Continue button frame by
-// frame. Two things in Material3's ModalBottomSheet used to make the sheet
-// bounce on its own after an upward fling, lifting the page off the bottom
-// of the screen:
+// frame. Material3's ModalBottomSheet used to make the sheet bounce on its own
+// after an upward fling, lifting the page off the bottom of the screen: it
+// handed the leftover of the fling to an already fully open sheet, whose
+// spring threw it past its top, and its insets padded by however much of the
+// status bar the sheet's top was under, so a bounce changed the sheet's height
+// and restarted the bounce, forever.
 //
-// - It hands the leftover of an upward fling to an already fully open sheet,
-//   whose spring then throws it past its top. KeepOpenSheetDownTest pins the
-//   rule that swallows it; the "leaves the open sheet where it is" tests pin
-//   that every part of the sheet hands its flings to that rule: the list,
-//   short or scrolled to its end, the button row that doesn't scroll, and
-//   the drag handle the sheet draws itself.
-// - Its default insets pad by however much of the status bar the sheet's top
-//   is under, so a bounce changed the sheet's height, which restarted the
-//   bounce, forever. A sheet grabbed while it springs back is Material's to
-//   drag, and can still be thrown past its top once; "comes to rest" pins
-//   that it then settles.
+// The sheet is a DetentSheet now, which moves itself and never passes its
+// top. The "leaves the open sheet where it is" tests pin that for every part
+// of the sheet: the list, short or scrolled to its end, the button row that
+// doesn't scroll, and the drag handle. "comes to rest" pins that a sheet
+// grabbed while it springs back settles.
 //
 // Robolectric gives the window no status bar, so openSheet hands the sheet
 // one.
@@ -175,8 +172,7 @@ class WhatsNewSheetFlingTest {
         repeat(6) { composeRule.mainClock.advanceTimeByFrame() }
         assertTrue("the sheet is not springing back", continueTop() in rest + 0.5f..pulled - 0.5f)
 
-        // …and is flicked up on the way. Material's own drag takes that one,
-        // and throws the sheet past its top once.
+        // …and is flicked up on the way, which the sheet's own drag takes.
         val tops = flingUpFrom(continueButton(), frames = 180)
 
         val lastSecond = tops.takeLast(60)

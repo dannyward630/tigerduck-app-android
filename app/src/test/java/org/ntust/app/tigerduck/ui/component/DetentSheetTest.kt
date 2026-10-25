@@ -340,6 +340,21 @@ class DetentSheetTest {
     }
 
     @Test
+    fun `a hard flick up on a sheet as tall as its content leaves it where it is`() {
+        // The browser's menu and the app's other sheets: Material's threw them past their top.
+        show(contentHeight = 300.dp)
+        val top = offset
+        composeRule.mainClock.autoAdvance = false
+        composeRule.onNodeWithTag(CONTENT).performTouchInput {
+            drag(from = Offset(centerX, bottom - 20f), dy = -200f * density, millis = 40)
+        }
+        val moved = watch(800)
+        composeRule.mainClock.autoAdvance = true
+        assertTrue("went ${top - moved.start} px past its top", moved.start >= top - 0.5f)
+        assertTrue("dipped ${moved.endInclusive - top} px below its top", moved.endInclusive <= top + 0.5f)
+    }
+
+    @Test
     fun `a short sheet has no half height to stop at`() {
         show(contentHeight = 300.dp)
         assertFalse(state.draggable.anchors.hasPositionFor(DetentSheetValue.Half))
