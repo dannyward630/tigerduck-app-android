@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.data.model.TimetablePeriod
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.data.storage.AppStorage
 import org.ntust.app.tigerduck.util.fileProviderAuthority
 import java.io.File
 import java.util.UUID
@@ -59,8 +60,6 @@ private val EXPORT_WIDTH = 390.dp
  */
 private const val EXPORT_DENSITY = 3f
 
-/** Under cacheDir, and served by the app's FileProvider (`file_provider_paths.xml`). */
-private const val EXPORT_DIR = "class_table_export"
 
 /**
  * How long an export stays readable after it is shared. The share sheet
@@ -251,7 +250,8 @@ private val WHITESPACE = Regex("\\s+")
  */
 internal suspend fun writeClassTableImage(context: Context, bitmap: ImageBitmap, fileName: String): File =
     withContext(Dispatchers.IO) {
-        val root = File(context.cacheDir, EXPORT_DIR)
+        // Under cacheDir, and served by the app's FileProvider (`file_provider_paths.xml`).
+        val root = File(context.cacheDir, AppStorage.CLASS_TABLE_EXPORT_DIR)
         val dir = File(root, UUID.randomUUID().toString()).apply { mkdirs() }
         val file = File(dir, fileName)
         try {

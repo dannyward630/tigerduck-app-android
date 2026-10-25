@@ -3,7 +3,6 @@ package org.ntust.app.tigerduck.ui.screen.mail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -12,13 +11,10 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.ntust.app.tigerduck.di.IoDispatcher
 import org.ntust.app.tigerduck.mail.MailAccount
 import org.ntust.app.tigerduck.mail.notify.MailMutePreset
 import org.ntust.app.tigerduck.mail.notify.MailMuteRule
 import org.ntust.app.tigerduck.mail.notify.MailMuteSettings
-import org.ntust.app.tigerduck.mail.store.MailCache
 import org.ntust.app.tigerduck.mail.store.MailStateStore
 import org.ntust.app.tigerduck.mail.sync.ExactAlarmAccess
 import org.ntust.app.tigerduck.mail.sync.MailBackgroundScheduler
@@ -29,7 +25,6 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
-import org.ntust.app.tigerduck.mail.SchoolMailRepository
 
 object MailDiagnostics {
     private val FORMAT = DateTimeFormatter.ofPattern("MM/dd HH:mm:ss").withZone(ZoneId.of("Asia/Taipei"))
@@ -48,9 +43,6 @@ class SchoolMailSettingsViewModel @Inject constructor(
     private val state: MailStateStore,
     private val scheduler: MailBackgroundScheduler,
     private val exactAlarms: ExactAlarmAccess,
-    private val cache: MailCache,
-    private val repository: SchoolMailRepository,
-    @IoDispatcher private val io: CoroutineDispatcher,
     account: MailAccount,
     val systemPermissions: SystemPermissions,
 ) : ViewModel() {
@@ -87,56 +79,9 @@ class SchoolMailSettingsViewModel @Inject constructor(
     private val _ui = MutableStateFlow(read())
     val ui: StateFlow<UiState> = _ui.asStateFlow()
 
-    /**
-     * Bytes under the mail cache root — folder pages, bodies, sources and downloaded
-     * attachments. Null while the first walk is still running, so the row can say "…" instead
-     * of claiming a size it hasn't measured yet.
-     */
-    private val _cacheBytes = MutableStateFlow<Long?>(null)
-    val cacheBytes: StateFlow<Long?> = _cacheBytes.asStateFlow()
-
     /** Re-read on resume: the exact-alarm and notification grants and the diagnostics change behind the screen. */
     fun refresh() {
         _ui.value = read().copy(displayName = _ui.value.displayName)
-    }
-
-    /** Walking a directory tree is IO, so the measurement never runs on the main thread. */
-    fun refreshCacheSize() {
-        viewModelScope.launch { _cacheBytes.value = withContext(io) { cache.sizeBytes() } }
-        viewModelScope.launch { _storageBytes.value = repository.searchIndexBytes() }
-    }
-
-    private val _storageBytes = MutableStateFlow<Long?>(null)
-
-    /**
-     * The disk the mail downloaded for search and the list takes; null until measured. Apart from
-     * the cache, which the system may empty on its own: this one only the user or a sign-out does.
-     */
-    val storageBytes: StateFlow<Long?> = _storageBytes.asStateFlow()
-
-    /**
-     * Deletes the mail downloaded for search and the list, and measures again. The mail screen
-     * downloads it again when next opened, which for a large mailbox takes a while.
-     */
-    fun deleteStorage() {
-        viewModelScope.launch {
-            repository.deleteSearchIndex()
-            _storageBytes.value = repository.searchIndexBytes()
-        }
-    }
-
-    /**
-     * Deletes the whole cache and re-measures, so the row shows the result rather than the
-     * figure from before. No confirmation on purpose: every byte here is re-downloadable, and
-     * signing out already wipes the same directory.
-     */
-    fun clearCache() {
-        viewModelScope.launch {
-            _cacheBytes.value = withContext(io) {
-                cache.clearAll()
-                cache.sizeBytes()
-            }
-        }
     }
 
     fun setNotifications(enabled: Boolean) {

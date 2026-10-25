@@ -101,6 +101,7 @@ import org.ntust.app.tigerduck.util.fileProviderAuthority
 import java.io.ByteArrayInputStream
 import java.io.File
 import javax.inject.Inject
+import org.ntust.app.tigerduck.debug.PretendMissingApps
 
 /**
  * Opens pages in the TigerDuck browser, the app's own browser built on a
@@ -224,6 +225,11 @@ class InAppBrowserActivity : AppCompatActivity() {
         appScale = AppScale.stored(newBase)
         attachedConfiguration = Configuration(newBase.resources.configuration)
         super.attachBaseContext(appScale.wrap(newBase))
+    }
+
+    /** In debug builds, as a phone without the apps the developer settings mark missing would: see [PretendMissingApps]. */
+    override fun startActivity(intent: Intent, options: Bundle?) {
+        super.startActivity(PretendMissingApps.filter(intent, packageName, packageManager), options)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

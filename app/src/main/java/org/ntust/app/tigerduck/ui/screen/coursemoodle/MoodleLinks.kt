@@ -30,6 +30,8 @@ import org.ntust.app.tigerduck.ui.openLink
 import org.ntust.app.tigerduck.ui.screen.browser.InAppBrowser
 import org.ntust.app.tigerduck.util.fileProviderAuthority
 import org.ntust.app.tigerduck.util.logSummary
+import org.ntust.app.tigerduck.debug.OutsideApp
+import org.ntust.app.tigerduck.debug.PretendMissingApps
 import java.io.File
 import java.net.URLEncoder
 
@@ -212,6 +214,7 @@ internal fun signedInPageIntent(context: Context, url: String, browser: String, 
  * and none chosen, or none at all.
  */
 internal fun defaultBrowserPackage(packageManager: PackageManager): String? {
+    if (PretendMissingApps.isMissing(OutsideApp.BROWSER)) return null
     val probe = Intent(Intent.ACTION_VIEW, "https://example.com/".toUri()).addCategory(Intent.CATEGORY_BROWSABLE)
     val browsers = packageManager.queryIntentActivities(probe, 0).map { it.activityInfo.packageName }.toSet()
     val chosen = packageManager.resolveActivity(probe, PackageManager.MATCH_DEFAULT_ONLY)?.activityInfo?.packageName
