@@ -86,6 +86,12 @@ sealed class WhatsNewPage {
     abstract val id: String
     abstract val isApplicable: () -> Boolean
 
+    /**
+     * Whether the page opens the whole run, before every release's pages, its own release's
+     * among them: a page about the sheet itself rather than one release's features.
+     */
+    open val leadsTheRun: Boolean get() = false
+
     /** Demo + title + body. The primary button advances. */
     class Feature(
         override val id: String,
@@ -93,6 +99,7 @@ sealed class WhatsNewPage {
         val title: WhatsNewText,
         val body: WhatsNewText,
         override val isApplicable: () -> Boolean = { true },
+        override val leadsTheRun: Boolean = false,
     ) : WhatsNewPage()
 
     /**
