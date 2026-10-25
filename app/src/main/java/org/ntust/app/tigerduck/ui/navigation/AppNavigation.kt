@@ -100,6 +100,7 @@ import org.ntust.app.tigerduck.ui.screen.settings.AssignmentReminderSettingsScre
 import org.ntust.app.tigerduck.ui.screen.settings.ClassReminderSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.CourseNameSizeSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.DisplaySizeSettingsScreen
+import org.ntust.app.tigerduck.ui.screen.settings.StorageScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LibrarySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LiveActivitySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.NotificationPermissionSettingsScreen
@@ -167,6 +168,7 @@ sealed class Screen(val route: String) {
     }
     object CourseNameSizeSettings : Screen("courseNameSizeSettings")
     object DisplaySizeSettings : Screen("displaySizeSettings")
+    object Storage : Screen("storage")
     object CloudSync : Screen("cloudSync")
     object SyncContent : Screen("syncContent")
     object VibrationSettings : Screen("vibrationSettings")
@@ -768,7 +770,11 @@ fun MainNavigation(
                     },
                     onNavigateToVibration = { navController.navigate(Screen.VibrationSettings.route) },
                     onNavigateToDisplaySize = { navController.navigate(Screen.DisplaySizeSettings.route) },
+                    onNavigateToStorage = { navController.navigate(Screen.Storage.route) },
                 )
+            }
+            page(Screen.Storage.route) {
+                StorageScreen(onBack = { navController.popBackStack() })
             }
             page(Screen.AboutOthers.route) {
                 AboutOthersScreen(
@@ -799,6 +805,7 @@ fun MainNavigation(
                 org.ntust.app.tigerduck.ui.screen.mail.SchoolMailSettingsScreen(
                     onBack = { navController.popBackStack() },
                     onOpenGuide = { navController.navigate(Screen.SchoolMailGuide.route) },
+                    onOpenStorage = { navController.navigate(Screen.Storage.route) },
                 )
             }
             page(Screen.SchoolMailGuide.route) {

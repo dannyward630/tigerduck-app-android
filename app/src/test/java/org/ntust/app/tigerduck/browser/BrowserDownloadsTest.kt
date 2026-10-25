@@ -178,11 +178,16 @@ class BrowserDownloadsTest {
     private class Hop(val code: Int, val location: String? = null, val body: String = "", val setCookies: List<String> = emptyList())
 
     /** A client answering each URL from [hops], recording each request's cookie. */
-    private fun client(hops: Map<String, Hop>, sent: MutableList<Pair<String, String?>>) = OkHttpClient.Builder()
+    private fun client(
+        hops: Map<String, Hop>,
+        sent: MutableList<Pair<String, String?>>,
+        onRequest: (String) -> Unit = {},
+    ) = OkHttpClient.Builder()
         .followRedirects(false)
         .addInterceptor(Interceptor { chain ->
             val request = chain.request()
             sent += request.url.toString() to request.header("Cookie")
+            onRequest(request.url.toString())
             val hop = hops[request.url.toString()] ?: Hop(404)
             Response.Builder()
                 .request(request)
@@ -203,13 +208,14 @@ class BrowserDownloadsTest {
         sent: MutableList<Pair<String, String?>>,
         saved: MutableList<String>,
         cookies: FakeCookieStore? = null,
+        onRequest: (String) -> Unit = {},
     ) = MediaStoreDownloadTransfer(
         context = RuntimeEnvironment.getApplication(),
         allowlist = { BrowserAllowlist.DEFAULT },
         cookieFor = { url -> cookies?.cookieFor(url) ?: if (url.contains("moodle2")) "MoodleSession=abc" else "Other=1" },
         keepCookie = { url, value -> cookies?.keep(url, value) },
         userAgent = { "UA" },
-        client = client(hops, sent),
+        client = client(hops, sent, onRequest),
         save = { _, _, input, _ ->
             saved += input.readBytes().decodeToString()
             Uri.parse("content://downloads/9")
@@ -269,6 +275,23 @@ class BrowserDownloadsTest {
             store.kept,
         )
         assertEquals("https://moodle2.ntust.edu.tw/b.pdf" to "MoodleSession=new; dl=1", sent.last())
+    }
+
+    @Test
+    fun `a redirect that answers after the sites' data was cleared keeps none of its cookies`() = runTest(StandardTestDispatcher()) {
+        val sent = mutableListOf<Pair<String, String?>>()
+        val store = FakeCookieStore(sent)
+        val hops = mapOf(
+            "https://moodle2.ntust.edu.tw/a.pdf" to Hop(302, "https://moodle2.ntust.edu.tw/b.pdf", setCookies = listOf("MoodleSession=old; Path=/")),
+            "https://moodle2.ntust.edu.tw/b.pdf" to Hop(200, body = "PDF"),
+        )
+        // Settings' Storage clears the sites' data, which leaves downloads running, while the
+        // first request is out: its answer must not put back a cookie just deleted.
+        val clearedMeanwhile = { url: String -> if (url.endsWith("a.pdf")) BrowserSession.end() }
+
+        transfer(hops, sent, mutableListOf(), store, clearedMeanwhile).download(save) { _, _ -> }
+
+        assertEquals(emptyList<String>(), store.kept)
     }
 
     @Test
