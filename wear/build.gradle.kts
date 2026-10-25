@@ -151,6 +151,12 @@ dependencies {
     testImplementation(libs.robolectric)
     // Hand-made pin documents for WatchTlsPinsTest.
     testImplementation(libs.bouncycastle.bcprov)
+    // Compose UI tests under Robolectric (the padding bars); the manifest's
+    // test activity goes into debug builds only, never a release, so these
+    // run as debug unit tests, the variant CI runs, as in the phone app.
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
+    debugImplementation(libs.androidx.ui.test.manifest)
 }
 
 // The watch's own dependencies, exported into the phone app's play
