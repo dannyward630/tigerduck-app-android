@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.ui.screen.whatsnew
 
+import org.ntust.app.tigerduck.data.model.AppFeature
 import org.ntust.app.tigerduck.ui.AppState
 
 /**
@@ -21,19 +22,28 @@ object WhatsNewCatalog {
             schoolMailPage(appState),
             mailBottomBarPage(appState),
         ),
-        30 to listOf(
-            moodleCoursePage(),
-            moodleAssignmentPage(),
-            classTableSharePage(),
-            libraryPage(isSignedIn = { appState.isLibraryLoggedIn }),
-            libraryBottomBarPage(
-                isSignedIn = { appState.isLibraryLoggedIn },
-                tabs = { appState.configuredTabs },
-                setTabs = { appState.configuredTabs = it },
-            ),
-            mailNotificationsPage(),
-            emptyClassroomPage(),
-            displaySizePage(),
+        30 to release240Pages(
+            isLibrarySignedIn = { appState.isLibraryLoggedIn },
+            tabs = { appState.configuredTabs },
+            setTabs = { appState.configuredTabs = it },
         ),
     )
 }
+
+/** 2.4.0's pages: where to see them again, then the features. */
+internal fun release240Pages(
+    isLibrarySignedIn: () -> Boolean,
+    tabs: () -> List<AppFeature>,
+    setTabs: (List<AppFeature>) -> Unit,
+): List<WhatsNewPage> = listOf(
+    replayPage(),
+    moodleCoursePage(),
+    moodleAssignmentPage(),
+    classTableSharePage(),
+    libraryPage(isSignedIn = isLibrarySignedIn),
+    libraryBottomBarPage(isSignedIn = isLibrarySignedIn, tabs = tabs, setTabs = setTabs),
+    bottomBarEditorPage(),
+    mailNotificationsPage(),
+    emptyClassroomPage(),
+    displaySizePage(),
+)
