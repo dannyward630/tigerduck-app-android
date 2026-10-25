@@ -237,14 +237,9 @@ private fun PageStep(page: WhatsNewPage, isLast: Boolean, animate: Boolean, adva
                     PrimaryButton(primaryLabel, advance)
                 } else {
                     PageBody(page.visual, page.title, page.body, animate)
+                    // The suggestion goes last, where Next is on every other page, so tapping
+                    // through as fast as Next comes takes it.
                     ButtonArea {
-                        Button(
-                            onClick = {
-                                page.apply()
-                                advance()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text(page.confirmLabel.resolve()) }
                         TextButton(
                             onClick = {
                                 page.onDecline()
@@ -254,6 +249,13 @@ private fun PageStep(page: WhatsNewPage, isLast: Boolean, animate: Boolean, adva
                         ) {
                             Text(page.declineLabel.resolve())
                         }
+                        Button(
+                            onClick = {
+                                page.apply()
+                                advance()
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) { Text(page.confirmLabel.resolve()) }
                     }
                 }
             }
@@ -575,7 +577,11 @@ private fun PermissionButtons(page: WhatsNewPage.Permission, advance: () -> Unit
         page.onResult(results.isNotEmpty() && results.values.all { it })
         advance()
     }
+    // Allow goes last, where Next is on every other page, as the suggestion does on a question.
     ButtonArea {
+        TextButton(onClick = advance, modifier = Modifier.fillMaxWidth()) {
+            Text(page.declineLabel.resolve())
+        }
         Button(
             onClick = {
                 val needed = page.permissions.filter {
@@ -591,9 +597,6 @@ private fun PermissionButtons(page: WhatsNewPage.Permission, advance: () -> Unit
             },
             modifier = Modifier.fillMaxWidth(),
         ) { Text(page.confirmLabel.resolve()) }
-        TextButton(onClick = advance, modifier = Modifier.fillMaxWidth()) {
-            Text(page.declineLabel.resolve())
-        }
     }
 }
 
