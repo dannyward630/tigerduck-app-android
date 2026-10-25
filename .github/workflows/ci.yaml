@@ -115,3 +115,16 @@ jobs:
 
       - name: Test tools/github
         run: python3 -m unittest discover -s tools/github -v
+
+  localization:
+    # tools/localization/sync_localizations.py generates the app's strings on
+    # every Gradle build; its tests call into the app-translation submodule.
+    name: localization
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          submodules: true
+
+      - name: Test tools/localization
+        run: python3 -m unittest discover -s tools/localization -v

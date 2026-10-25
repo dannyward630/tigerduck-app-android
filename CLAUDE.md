@@ -3,9 +3,7 @@
 Multi-module Gradle project: `:app` (phone), `:wear` (watch OS), `:shared`
 (domain models reused on both). Phone has `play` and `fdroid` flavors;
 `:wear` is play-only. Localization strings come from the `app-translation/`
-submodule and are generated via `tools/localization/sync_localizations.py`
-(the `syncLocalizations` Gradle task), then copied into `app/src/main/res` by
-`copyGeneratedAndroidLocalizations`, which depends on it.
+submodule and are generated on every build (see below); none are committed.
 
 For human-facing contributor guidance see `CONTRIBUTING.md`. This file
 exists to surface project-specific invariants AI agents have to know
@@ -53,16 +51,16 @@ default is silently dropped and the field is null at runtime.
 - **Flavor split is load-bearing.** `play` uses Firebase + Google Play
   Services; `fdroid` cannot. Anything FCM / GMS-flavored lives under
   `app/src/play/`. Don't sprinkle Play-Services imports into `main/`.
-- **Localization strings are generated** from the `app-translation/` submodule.
-  Edit the JSON in the submodule, not `app/src/main/res/values*/strings.xml`
-  (those are regenerated and would be clobbered). Run
-  `:app:copyGeneratedAndroidLocalizations` to refresh — that is the task that
-  writes `app/src/main/res`. `:app:syncLocalizations` on its own only runs the
-  submodule's generator into `app-translation/generated/android`, so calling it
-  alone finishes green while leaving `app/src/main/res` stale. `:wear` has its
-  own, separate `:wear:copyGeneratedAndroidLocalizations` task that writes
-  `wear/src/main/res` — run both whenever the `app-translation` pin moves, or
-  the watch keeps shipping whatever text it last had.
+- **Localization strings are generated at build time** from the `app-translation/`
+  submodule's `source/*.json`, by `generateAppTranslationStrings`
+  (`gradle/app-translation.gradle.kts`, applied by `:app` and `:wear`), which runs
+  `tools/localization/sync_localizations.py` and the submodule's generator into
+  `build/generated/appTranslation/res`, a generated resource directory. Neither
+  this repo nor the submodule commits Android's `strings.xml` or
+  `locales_config.xml`, so a translation change is a submodule pin bump and
+  nothing else. Edit strings in the submodule's JSON. Building needs Python 3
+  (`python3`, `python` or `py` on PATH); the task fails without it rather than
+  ship an app with no strings.
 - **`name-abbr/` submodule must be present** — `verifyNameAbbrSubmodule`
   fails the build if it's missing. CI checks out submodules explicitly;
   don't drop `submodules: true` from new workflows.

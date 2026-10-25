@@ -8,7 +8,6 @@
 | `./debug/install-play.sh`         | Build + install `:app:playDebug` to a chosen phone; asks if you want `:wear:debug` on a paired watch too.                                                                                                                       |
 | `./debug/install-play-release.sh` | Build + install `:app:playRelease` (and optionally `:wear:release`) APK(s) via `adb install`. Use when you need to test release-mode behavior (R8/ProGuard, signing) without going through Internal Testing.                    |
 | `./debug/set-clock.sh`           | Set or clear the debug clock override over adb, non-interactively. Applies to the running app immediately — no restart, no tapping through Settings. See "Driving the clock from a shell" below.                          |
-| `./debug/sync-localizations.sh`   | Regenerate `app/` and `wear/` `values-*/strings.xml` from the app-translation submodule. Run after `git submodule update --remote app-translation` so committed resources match the new submodule pointer before you build or commit. |
 
 The `install-*` scripts:
 

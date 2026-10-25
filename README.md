@@ -210,8 +210,8 @@ git submodule update --init --recursive
 ./gradlew :app:installPlayDebug      # 或 :app:installFdroidDebug
 ```
 
-> 💡 課程/教室簡稱（`name-abbr/`）與多語系字串（`app-translation/generated/android/`）皆由子模組提供，clone 後
-**務必**先抓子模組再開 Android Studio，否則 build 會找不到資源檔。
+> 💡 課程/教室簡稱（`name-abbr/`）與多語系字串（`app-translation/`）皆由子模組提供，clone 後
+**務必**先抓子模組再開 Android Studio，否則 build 會找不到資源檔。編譯時也需要 Python 3 來產生字串。
 
 ### Wear OS App（`:wear` 模組）
 
@@ -246,27 +246,11 @@ F-Droid 變體**，也不會出現在 F-Droid 商店上。
 
 - 翻譯原始檔在 `app-translation/source/`，共 55 份（`en.json`、`zh-Hant.json`、`ja.json`、`ko.json`、
   `ar.json` …）
-- 共用翻譯輸出在 `app-translation/generated/`：
-    - Android：`android/values/strings.xml`（英文預設）、`android/values-<lang>/strings.xml`
-    - Apple（iOS / macOS）：`apple/<lang>.lproj/Localizable.strings`
-- 手機的 `app/src/main/res/values*/strings.xml` 與手錶的 `wear/src/main/res/values*/strings.xml`
-  都是從 Android 輸出複製過來、一併提交的副本，每次同步都會被覆寫，請不要手動改動生成檔。
-
-手動同步一次翻譯（重新產生輸出，再複製進 `app/` 與 `wear/`）：
-
-```bash
-./debug/sync-localizations.sh
-```
-
-單獨跑 `python3 tools/localization/sync_localizations.py` 只會重新產生 `app-translation/generated/`
-與 `locales_config.xml`，不會更新兩個模組的 `strings.xml`。
-
-Gradle 也能在編譯前自動同步，但**預設不啟用**——要加上 `-PsyncLocalizations`，
-同步與複製的 task 才會掛到 `preBuild` 上（見 `app/build.gradle.kts`、`wear/build.gradle.kts`）：
-
-```bash
-./gradlew :app:assemblePlayDebug -PsyncLocalizations
-```
+- 每次編譯都會從子模組的 `source/*.json` 產生 Android 字串：`generateAppTranslationStrings`
+  （`gradle/app-translation.gradle.kts`，`:app` 與 `:wear` 都會套用）把 `values*/strings.xml` 和手機的
+  `xml/locales_config.xml` 寫進 `build/generated/appTranslation/res`。這邊和子模組都不再提交 Android 的字串，
+  翻譯有更新時只要移動子模組的 pin。編譯需要 PATH 上有 Python 3。
+- 子模組仍會提交 Apple（`generated/apple/`）與後端（`generated/backend/`）的輸出，給 Apple App 和後端讀取。
 
 新語系或字串請對 [`app-translation/`](https://github.com/tigerduck-app/app-translation) 子模組另開 PR，*
 *不要**直接改生成檔。
@@ -351,7 +335,7 @@ tigerduck-app-android/                  # Android App + Wear OS（Kotlin 2.4 / C
 │   └── libs.versions.toml              # Version Catalog
 ├── app-translation/                    # ⤴ git submodule：65 語系翻譯（含 `watch_*` 鍵）
 ├── name-abbr/                          # ⤴ git submodule：課程 / 教室簡稱字典
-├── tools/localization/                 # 翻譯同步腳本（需 -PsyncLocalizations 才綁進 preBuild）
+├── tools/localization/                 # 每次編譯時從 app-translation 產生字串
 ├── build.gradle.kts
 └── settings.gradle.kts
 ```
