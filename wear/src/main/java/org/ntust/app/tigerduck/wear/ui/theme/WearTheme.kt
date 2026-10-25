@@ -79,7 +79,7 @@ fun textOn(background: Color): Color =
     if (contrast(Color.Black, background) >= contrast(Color.White, background)) Color.Black else Color.White
 
 /** WCAG's contrast ratio between [a] and [b], from 1 to 21. */
-private fun contrast(a: Color, b: Color): Float {
+internal fun contrast(a: Color, b: Color): Float {
     val la = a.luminance()
     val lb = b.luminance()
     return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)

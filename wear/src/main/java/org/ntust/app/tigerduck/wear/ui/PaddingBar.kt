@@ -2,13 +2,16 @@ package org.ntust.app.tigerduck.wear.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.wear.compose.material3.LinearProgressIndicator
 import androidx.wear.compose.material3.ProgressIndicatorColors
 import androidx.wear.compose.material3.ProgressIndicatorDefaults
 import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
-import org.ntust.app.tigerduck.wear.ui.theme.readableOnBlack
+import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentGradient
+import org.ntust.app.tigerduck.wear.ui.theme.accentFill
 
 /**
  * Wear's linear progress indicator at [value], following it as it changes.
@@ -28,13 +31,24 @@ internal fun FollowingProgressIndicator(
     LinearProgressIndicator(progress = { latest }, modifier = modifier, colors = colors)
 }
 
-/** A padding setting's bar, in the phone's accent: [valueDp] of [minDp]..[maxDp]. */
+/**
+ * A padding setting's bar, in the phone's accent, across its gradient when one
+ * is picked ([accentFill]): [valueDp] of [minDp]..[maxDp].
+ */
 @Composable
 internal fun PaddingBar(valueDp: Int, minDp: Int, maxDp: Int, modifier: Modifier = Modifier) {
+    val accent = LocalAccentColor.current
+    val gradient = LocalAccentGradient.current
+    val fill = remember(accent, gradient) { accentFill(accent, gradient) }
+    val brush = fill.brush
     FollowingProgressIndicator(
         value = paddingFraction(valueDp, minDp, maxDp),
         modifier = modifier,
-        colors = ProgressIndicatorDefaults.colors(indicatorColor = readableOnBlack(LocalAccentColor.current)),
+        colors = if (brush is SolidColor) {
+            ProgressIndicatorDefaults.colors(indicatorColor = brush.value)
+        } else {
+            ProgressIndicatorDefaults.colors(indicatorBrush = brush)
+        },
     )
 }
 

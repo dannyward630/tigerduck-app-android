@@ -2,6 +2,7 @@ package org.ntust.app.tigerduck.wear.ui
 
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -21,6 +22,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
+import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentColor
+import org.ntust.app.tigerduck.wear.ui.theme.LocalAccentGradient
+import org.ntust.app.tigerduck.wear.ui.theme.WearAccentGradient
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.GraphicsMode
 import kotlin.math.abs
@@ -59,6 +64,24 @@ class PaddingBarTest {
         dp = 0
         rule.waitForIdle()
         assertFalse("not filled at 40% when empty", bar().at(0.4f).near(fill))
+    }
+
+    @Test
+    fun `with a gradient picked on the phone the bar runs across it`() {
+        rule.setContent {
+            CompositionLocalProvider(
+                LocalAccentColor provides Color(0xFFFF3B30),
+                LocalAccentGradient provides WearAccentGradient(Color(0xFF34C8FF), AccentGradientDirection.LeftToRight),
+            ) {
+                MaterialTheme { PaddingBar(24, minDp = 0, maxDp = 24, modifier = Modifier.size(200.dp, 8.dp).testTag("bar")) }
+            }
+        }
+        rule.waitForIdle()
+        val full = bar()
+        val start = full.at(0.05f)
+        val end = full.at(0.9f)
+        assertTrue("starts red: $start", start.red > start.blue)
+        assertTrue("ends blue: $end", end.blue > end.red)
     }
 
     @Test
