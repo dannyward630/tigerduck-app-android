@@ -164,7 +164,7 @@
       ],
       "prPriority": 10,
       "prBodyNotes": [
-        "**Strings:** if `app-translation` moved, run `./gradlew :app:copyGeneratedAndroidLocalizations :wear:copyGeneratedAndroidLocalizations` and commit any `res` change."
+        "**Strings:** nothing else to do if `app-translation` moved: every build generates the strings from it."
       ]
     }
   ]
