@@ -127,9 +127,24 @@ object TextPreviews {
         return TextPreview(text, truncated)
     }
 
-    /** [text]'s lines, any longer than [maxLine] in pieces, so each lays out quickly. */
+    /**
+     * [text]'s lines, any longer than [maxLine] in pieces, so each lays out quickly. A piece ends
+     * before a character's second half, never between its two.
+     */
     fun lines(text: String, maxLine: Int = MAX_LINE): List<String> =
-        text.lines().flatMap { line -> if (line.length <= maxLine) listOf(line) else line.chunked(maxLine) }
+        text.lines().flatMap { line -> if (line.length <= maxLine) listOf(line) else pieces(line, maxLine) }
+
+    private fun pieces(line: String, maxLine: Int): List<String> {
+        val pieces = ArrayList<String>(line.length / maxLine + 1)
+        var start = 0
+        while (start < line.length) {
+            var end = minOf(start + maxLine, line.length)
+            if (end < line.length && end - 1 > start && line[end - 1].isHighSurrogate()) end--
+            pieces += line.substring(start, end)
+            start = end
+        }
+        return pieces
+    }
 
     /** The longest line laid out as one: longer ones are shown in pieces. */
     const val MAX_LINE = 2_000

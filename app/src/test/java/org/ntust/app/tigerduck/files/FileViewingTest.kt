@@ -159,6 +159,12 @@ class FileViewingTest {
     }
 
     @Test
+    fun `a piece never ends between a character's two halves`() {
+        val line = "x".repeat(1_999) + "🦆" + "y"
+        assertEquals(listOf("x".repeat(1_999), "🦆y"), TextPreviews.lines(line, maxLine = 2_000))
+    }
+
+    @Test
     fun `the page shown is the one at the top, counted from one`() {
         assertEquals(1 to 12, PdfPages.position(firstVisible = 0, count = 12))
         assertEquals(12 to 12, PdfPages.position(firstVisible = 11, count = 12))
