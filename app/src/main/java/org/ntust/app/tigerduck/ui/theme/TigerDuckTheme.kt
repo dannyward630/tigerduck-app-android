@@ -390,7 +390,7 @@ internal val DarkColorScheme = darkColorScheme(
 // Larger + bolder take on the Material 3 default type scale. Font sizes are
 // bumped ~2sp across the board and every slot is at least SemiBold so text
 // reads as emphatic throughout the app.
-private val TigerDuckTypography: Typography = Typography().let { default ->
+internal val TigerDuckTypography: Typography = Typography().let { default ->
     Typography(
         displayLarge = default.displayLarge.copy(fontSize = 60.sp, fontWeight = FontWeight.Bold),
         displayMedium = default.displayMedium.copy(fontSize = 48.sp, fontWeight = FontWeight.Bold),
@@ -476,7 +476,8 @@ fun TigerDuckAppTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = TigerDuckTypography,
+        // Raised so Chinese sits in the middle of its line, as Latin does.
+        typography = rememberCjkCenteredTypography(TigerDuckTypography),
     ) {
         CompositionLocalProvider(
             LocalVisualStylePolicy provides VisualStylePolicy(visualPreset),
