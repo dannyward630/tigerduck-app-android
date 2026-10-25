@@ -61,16 +61,21 @@ abstract class GenerateAppTranslationStrings @Inject constructor(
         exec.exec { commandLine(args) }
     }
 
-    /** The first of the usual Python 3 launchers on Linux, macOS and Windows that is one. */
+    /**
+     * The first of the usual Python launchers on Linux, macOS and Windows that runs Python 3.9 or
+     * newer. Each interpreter is asked itself, so one too old is passed over for the next.
+     */
     private fun python3(): String = listOf("python3", "python", "py").firstOrNull { candidate ->
         runCatching {
-            val process = ProcessBuilder(candidate, "--version").redirectErrorStream(true).start()
-            val output = process.inputStream.readBytes().toString(Charsets.UTF_8)
-            process.waitFor() == 0 && output.contains("Python 3")
+            val process = ProcessBuilder(candidate, "-c", "import sys; sys.exit(0 if sys.version_info >= (3, 9) else 1)")
+                .redirectErrorStream(true)
+                .start()
+            process.inputStream.readBytes()
+            process.waitFor() == 0
         }.getOrDefault(false)
     } ?: throw GradleException(
-        "The app's strings are generated from app-translation with Python 3.9 or newer, which isn't on PATH " +
-            "(tried python3, python, py). Install it from https://www.python.org/ and build again."
+        "The app's strings are generated from app-translation with Python 3.9 or newer, and none of " +
+            "python3, python and py on PATH is one. Install it from https://www.python.org/ and build again."
     )
 }
 
