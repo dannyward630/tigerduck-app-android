@@ -10,9 +10,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -88,12 +93,13 @@ internal fun ImageViewer(uri: Uri, onFailed: () -> Unit) {
 private const val MAX_IMAGE_SIDE = 4096
 
 /**
- * A video or a sound, in Media3's player with its own controls. Paused when the screen goes to the
- * background, and released when it closes.
+ * A video or a sound, in Media3's player with its own controls; a sound, which has no picture,
+ * keeps them up under a note. Paused when the screen goes to the background, and released when it
+ * closes.
  */
 @OptIn(UnstableApi::class)
 @Composable
-internal fun MediaViewer(uri: Uri, onFailed: () -> Unit) {
+internal fun MediaViewer(uri: Uri, audio: Boolean, onFailed: () -> Unit) {
     val context = LocalContext.current
     val player = remember(uri) {
         ExoPlayer.Builder(context).build().apply {
@@ -118,10 +124,31 @@ internal fun MediaViewer(uri: Uri, onFailed: () -> Unit) {
         lifecycle.addObserver(pause)
         onDispose { lifecycle.removeObserver(pause) }
     }
-    AndroidView(
-        factory = { PlayerView(it).apply { this.player = player } },
-        modifier = Modifier.fillMaxSize().background(Color.Black),
-    )
+    Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
+        if (audio) {
+            Icon(
+                Icons.Filled.MusicNote,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.size(96.dp),
+            )
+        }
+        AndroidView(
+            factory = {
+                PlayerView(it).apply {
+                    this.player = player
+                    if (audio) {
+                        controllerShowTimeoutMs = 0
+                        controllerHideOnTouch = false
+                        setShutterBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        showController()
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+        )
+    }
 }
 
 /**

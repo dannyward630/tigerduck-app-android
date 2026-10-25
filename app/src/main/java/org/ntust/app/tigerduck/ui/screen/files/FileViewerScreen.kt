@@ -81,7 +81,8 @@ internal fun FileViewerScreen(
                 when (file.kind) {
                     ViewerKind.PDF -> PdfViewer(file.uri, onFailed = fail)
                     ViewerKind.IMAGE -> ImageViewer(file.uri, onFailed = fail)
-                    ViewerKind.VIDEO, ViewerKind.AUDIO -> MediaViewer(file.uri, onFailed = fail)
+                    ViewerKind.VIDEO -> MediaViewer(file.uri, audio = false, onFailed = fail)
+                    ViewerKind.AUDIO -> MediaViewer(file.uri, audio = true, onFailed = fail)
                     ViewerKind.TEXT -> TextViewer(file.uri, markdown = false, browserPreference, onFailed = fail)
                     ViewerKind.MARKDOWN -> TextViewer(file.uri, markdown = true, browserPreference, onFailed = fail)
                     ViewerKind.DOCX, ViewerKind.PPTX -> OfficeViewer(file.uri, file.kind, onFailed = fail)

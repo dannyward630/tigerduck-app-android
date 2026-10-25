@@ -13,11 +13,12 @@ async function show() {
   if (kind === "docx") {
     await docx.renderAsync(data, root, null, { inWrapper: true, useBase64URL: true, ignoreLastRenderedPageBreak: true });
   } else if (kind === "pptx") {
-    const slides = await pptxToHtml(data, { width: 960, height: 540, scaleToFit: true, letterbox: true });
+    // Each slide at the deck's own size and shape.
+    const slides = await pptxToHtml(data);
     if (slides.length === 0) throw new Error("empty");
     for (const html of slides) {
       const slide = document.createElement("section");
-      slide.className = "slide";
+      slide.className = "deck-slide";
       slide.innerHTML = html;
       root.appendChild(slide);
     }
