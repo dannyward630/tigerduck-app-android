@@ -44,9 +44,12 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.media3.common.C
+import androidx.media3.common.Format
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.Tracks
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
@@ -64,7 +67,7 @@ import org.ntust.app.tigerduck.ui.openLink
  * fits in memory; an animated GIF or WebP plays. Pinch or double-tap to zoom, one finger moves.
  */
 @Composable
-internal fun ImageViewer(uri: Uri, onFailed: () -> Unit) {
+internal fun ImageViewer(uri: Uri, onFailed: (ViewerFailure) -> Unit) {
     val context = LocalContext.current
     var drawable by remember(uri) { mutableStateOf<Drawable?>(null) }
     LaunchedEffect(uri) {
@@ -78,7 +81,7 @@ internal fun ImageViewer(uri: Uri, onFailed: () -> Unit) {
                     }
                 }
             }
-        }.getOrElse { onFailed(); null }
+        }.getOrElse { onFailed(ViewerFailure(it)); null }
     }
     val picture = drawable ?: return Reading()
     val zoom = remember(uri) { ZoomState() }
@@ -104,7 +107,7 @@ private const val MAX_IMAGE_SIDE = 4096
  */
 @OptIn(UnstableApi::class)
 @Composable
-internal fun MediaViewer(uri: Uri, audio: Boolean, onFailed: () -> Unit) {
+internal fun MediaViewer(uri: Uri, audio: Boolean, onFailed: (ViewerFailure) -> Unit) {
     val context = LocalContext.current
     // Where it was and whether it played, kept when the screen is made again (a new display size).
     var resumeAt by rememberSaveable(uri) { mutableLongStateOf(0L) }
@@ -117,8 +120,16 @@ internal fun MediaViewer(uri: Uri, audio: Boolean, onFailed: () -> Unit) {
         }
     }
     DisposableEffect(player) {
+        // The track last chosen, for an error from the source: the player lets go of its own
+        // formats before it says so.
+        var lastTrack: Format? = null
         val failure = object : Player.Listener {
-            override fun onPlayerError(error: PlaybackException) = onFailed()
+            override fun onTracksChanged(tracks: Tracks) {
+                lastTrack = chosenTrack(tracks) ?: lastTrack
+            }
+
+            override fun onPlayerError(error: PlaybackException) =
+                onFailed(ViewerFailure(error, track = player.videoFormat ?: player.audioFormat ?: lastTrack))
         }
         player.addListener(failure)
         onDispose {
@@ -166,13 +177,21 @@ internal fun MediaViewer(uri: Uri, audio: Boolean, onFailed: () -> Unit) {
     }
 }
 
+/** The video track [tracks] chose, else the sound's. */
+@OptIn(UnstableApi::class)
+private fun chosenTrack(tracks: Tracks): Format? {
+    fun chosen(type: Int) = tracks.groups.filter { it.type == type }
+        .firstNotNullOfOrNull { group -> (0 until group.length).firstOrNull(group::isTrackSelected)?.let(group::getTrackFormat) }
+    return chosen(C.TRACK_TYPE_VIDEO) ?: chosen(C.TRACK_TYPE_AUDIO)
+}
+
 /**
  * Text, line after line in a fixed-width face, or Markdown rendered; up to
  * [TextPreviews.LIMIT_BYTES], with a line saying so when the file goes on. A Markdown link opens
  * as the Browser setting says, as an announcement's does.
  */
 @Composable
-internal fun TextViewer(uri: Uri, markdown: Boolean, browserPreference: String, onFailed: () -> Unit) {
+internal fun TextViewer(uri: Uri, markdown: Boolean, browserPreference: String, onFailed: (ViewerFailure) -> Unit) {
     val context = LocalContext.current
     var preview by remember(uri) { mutableStateOf<TextPreview?>(null) }
     LaunchedEffect(uri) {
@@ -181,7 +200,7 @@ internal fun TextViewer(uri: Uri, markdown: Boolean, browserPreference: String, 
                 context.contentResolver.openInputStream(uri)?.use { TextPreviews.read(it) }
                     ?: throw java.io.FileNotFoundException("no stream")
             }
-        }.getOrElse { onFailed(); null }
+        }.getOrElse { onFailed(ViewerFailure(it)); null }
     }
     val text = preview ?: return Reading()
     val limit = android.text.format.Formatter.formatShortFileSize(context, TextPreviews.LIMIT_BYTES.toLong())

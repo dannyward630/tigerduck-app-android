@@ -90,10 +90,10 @@ import kotlin.concurrent.thread
  * downloaded file opens: in the viewer, an archive inside too, or in another app. One that can't
  * be taken out says why, offering the archive to another app. The folder goes when the viewer
  * does, not when it's only recreated; [onFailed] gets the reason an archive can't be listed, null
- * when there is none to give.
+ * when there is none to give, and what it failed on.
  */
 @Composable
-internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, onOpenElsewhere: () -> Unit) {
+internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?, failure: ViewerFailure) -> Unit, onOpenElsewhere: () -> Unit) {
     val context = LocalContext.current
     // Kept through a recreation, so the files already taken out are found again.
     val session = rememberSaveable(file.uri) { UUID.randomUUID().toString() }
@@ -121,12 +121,12 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
                 Archives.list(source.value)
             }
         } catch (e: ArchiveProblemException) {
-            onFailed(e.problem.reason())
+            onFailed(e.problem.reason(), ViewerFailure(e))
         } catch (e: CancellationException) {
             throw e
-        } catch (_: Exception) {
-            // Damaged, gone, or not ours to read: there's no more to say.
-            onFailed(null)
+        } catch (e: Exception) {
+            // Damaged, gone, or not ours to read: no reason of our own to give, only the error.
+            onFailed(null, ViewerFailure(e))
         }
     }
     val shown = listing ?: return Reading()
