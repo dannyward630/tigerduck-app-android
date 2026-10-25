@@ -167,6 +167,26 @@ class ArchivesTest {
     }
 
     @Test
+    fun `an old V7 tar, with no ustar mark, reads by its header's checksum, plain or gzipped`() {
+        val bytes = v7Tar("notes.txt" to "fake".toByteArray(), "src/Main.kt" to "fun main() {}".toByteArray())
+        val plain = temp.newFile("old.tar").apply { writeBytes(bytes) }
+        val gzipped = temp.newFile("old.tar.gz").also { file -> GzipCompressorOutputStream(file.outputStream()).use { it.write(bytes) } }
+
+        for (file in listOf(plain, gzipped)) {
+            val listing = listing(file)
+            assertEquals(file.name, listOf("notes.txt", "src/Main.kt"), listing.items.map { it.path })
+            assertEquals(file.name, "fake", extract(file, listing.items[0]).readText())
+        }
+    }
+
+    @Test
+    fun `bytes that only look like a header aren't taken for a tar`() {
+        assertNull(Archives.format(Random(5).nextBytes(512)))
+        assertNull(Archives.format(ByteArray(512)))
+        assertNull(Archives.format("plain text, not an archive".padEnd(512).toByteArray()))
+    }
+
+    @Test
     fun `a gz of one file lists that file, under the name it was packed with`() {
         val file = temp.newFile("fake.gz")
         val parameters = GzipParameters().apply { fileName = "notes.txt"; modificationTime = modified.time }

@@ -25,3 +25,30 @@ internal fun File.markedEncrypted(name: String): File = apply {
     check(marked == 2) { "$name found $marked times" }
     writeBytes(bytes)
 }
+
+/**
+ * A V7 tar, as tar wrote before POSIX: each header with no `ustar` mark, only its checksum to
+ * show it's a header. Made by hand, since tar writers today all mark theirs.
+ */
+internal fun v7Tar(vararg files: Pair<String, ByteArray>): ByteArray {
+    val out = java.io.ByteArrayOutputStream()
+    for ((name, data) in files) {
+        val header = ByteArray(512)
+        fun put(at: Int, text: String) = text.toByteArray(Charsets.US_ASCII).copyInto(header, at)
+        put(0, name)
+        put(100, "0000644\u0000")
+        put(108, "0000000\u0000")
+        put(116, "0000000\u0000")
+        put(124, "%011o\u0000".format(data.size))
+        put(136, "%011o\u0000".format(1_700_000_000L))
+        header[156] = '0'.code.toByte()
+        // The checksum counts its own field as spaces.
+        for (at in 148 until 156) header[at] = ' '.code.toByte()
+        put(148, "%06o\u0000 ".format(header.sumOf { it.toInt() and 0xFF }))
+        out.write(header)
+        out.write(data)
+        out.write(ByteArray((512 - data.size % 512) % 512))
+    }
+    out.write(ByteArray(1024))
+    return out.toByteArray()
+}

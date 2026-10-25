@@ -98,9 +98,17 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
     // Kept through a recreation, so the files already taken out are found again.
     val session = rememberSaveable(file.uri) { UUID.randomUUID().toString() }
     val folder = remember(session) { ArchiveCache.folder(context, session) }
-    DisposableEffect(folder) {
+    // The folder this archive was itself taken out into, when it was: another viewer's, held while this one is open too.
+    val holding = remember(file.uri) {
+        file.uri.takeIf { it.authority == fileProviderAuthority(context) }?.let { ArchiveCache.folderHolding(it.encodedPath, context.cacheDir) }
+    }
+    DisposableEffect(folder, holding) {
+        ArchiveCache.open(folder)
+        holding?.let(ArchiveCache::open)
         onDispose {
-            if (context.findActivity()?.isChangingConfigurations != true) thread(name = "archive-cache") { folder.deleteRecursively() }
+            holding?.let(ArchiveCache::close)
+            val unheld = ArchiveCache.close(folder)
+            if (unheld && context.findActivity()?.isChangingConfigurations != true) thread(name = "archive-cache") { folder.deleteRecursively() }
         }
     }
 
@@ -109,7 +117,7 @@ internal fun ArchiveViewer(file: ViewedFile, onFailed: (reason: Int?) -> Unit, o
     LaunchedEffect(file.uri) {
         try {
             listing = reading {
-                ArchiveCache.sweep(context, keep = folder)
+                ArchiveCache.sweep(ArchiveCache.root(context), keep = folder)
                 Archives.list(source.value)
             }
         } catch (e: ArchiveProblemException) {
@@ -339,11 +347,45 @@ private const val MAX_STREAMED_ARCHIVE = 512L shl 20
 
 /**
  * The folders archive viewers take files out into, one each, under `cache/archive_entries`,
- * which the app's FileProvider hands out (`res/xml/file_provider_paths.xml`).
+ * which the app's FileProvider hands out (`res/xml/file_provider_paths.xml`). An open viewer
+ * holds its folder, and the one its own archive was taken out into, so neither is swept.
  */
 internal object ArchiveCache {
     private const val DIR = "archive_entries"
     private const val DAY_MILLIS = 24L * 60 * 60 * 1000
+
+    /** How many open viewers hold each folder. */
+    private val held = HashMap<File, Int>()
+
+    @Synchronized
+    fun open(folder: File) {
+        held.merge(folder.absoluteFile, 1, Int::plus)
+    }
+
+    /** Lets go of [folder] once; true when no open viewer holds it any more. */
+    @Synchronized
+    fun close(folder: File): Boolean {
+        val key = folder.absoluteFile
+        val left = (held[key] ?: 0) - 1
+        if (left > 0) held[key] = left else held.remove(key)
+        return left <= 0
+    }
+
+    @Synchronized
+    private fun isHeld(folder: File) = folder.absoluteFile in held
+
+    fun root(context: Context): File = File(context.cacheDir, DIR)
+
+    /**
+     * The viewer's folder a file the FileProvider hands out at [path] was taken out into, or null
+     * for any other file: `/archive_entries/<folder>/<file>`, and nothing climbing out of it.
+     */
+    fun folderHolding(path: String?, cacheDir: File): File? {
+        val parts = path?.trim('/')?.split('/') ?: return null
+        if (parts.size < 3 || parts[0] != DIR) return null
+        val session = parts[1].takeIf { it.isNotEmpty() && it != "." && it != ".." } ?: return null
+        return File(File(cacheDir, DIR), session)
+    }
 
     /** The most a viewer keeps taken out at once: past it, the files taken out longest ago go. */
     const val MAX_FOLDER_BYTES = 512L shl 20
@@ -364,10 +406,10 @@ internal object ArchiveCache {
         }
     }
 
-    /** Folders a viewer the system closed without telling it left behind: a day on, they go. */
-    fun sweep(context: Context, keep: File, now: Long = System.currentTimeMillis()) {
-        File(context.cacheDir, DIR).listFiles()?.forEach { old ->
-            if (old != keep && now - old.lastModified() > DAY_MILLIS) old.deleteRecursively()
+    /** Folders under [root] a viewer the system closed without telling it left behind: a day on, they go, unless held. */
+    fun sweep(root: File, keep: File, now: Long = System.currentTimeMillis()) {
+        root.listFiles()?.forEach { old ->
+            if (old != keep && !isHeld(old) && now - old.lastModified() > DAY_MILLIS) old.deleteRecursively()
         }
     }
 }

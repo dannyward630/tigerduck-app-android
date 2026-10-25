@@ -5,6 +5,7 @@ import org.apache.commons.compress.PasswordRequiredException
 import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
+import org.apache.commons.compress.archivers.tar.TarUtils
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipFile
@@ -454,8 +455,16 @@ object Archives {
         return isTar(head, read)
     }
 
-    private fun isTar(head: ByteArray, length: Int): Boolean =
-        length >= TAR_MAGIC_AT + 5 && "ustar".indices.all { head[TAR_MAGIC_AT + it] == "ustar"[it].code.toByte() }
+    /**
+     * Whether [head] starts with a tar header: marked `ustar`, as POSIX and GNU tar write, or, as
+     * a V7 tar has no mark, holding the checksum of its own bytes.
+     */
+    private fun isTar(head: ByteArray, length: Int): Boolean {
+        if (length < TAR_HEADER) return false
+        val marked = "ustar".indices.all { head[TAR_MAGIC_AT + it] == "ustar"[it].code.toByte() }
+        // It throws, rather than say no, on a checksum field that isn't octal.
+        return marked || runCatching { TarUtils.verifyCheckSum(head.copyOf(TAR_HEADER)) }.getOrDefault(false)
+    }
 
     private const val TAR_HEADER = 512
     private const val TAR_MAGIC_AT = 257
