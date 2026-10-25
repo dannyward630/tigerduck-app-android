@@ -39,6 +39,7 @@
     <string name="action_close">Stäng</string>
     <string name="action_confirm">Bekräfta</string>
     <string name="action_continue">Fortsätt</string>
+    <string name="action_delete">Ta bort</string>
     <string name="action_done">Klar</string>
     <string name="action_go_to_settings">Gå till inställningar</string>
     <string name="action_got_it">Förstår</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Visnings- och textstorlek</string>
     <string name="settings_display_size_ui">Visningsstorlek</string>
     <string name="settings_display_size_widget_section">Widgetar</string>
+    <string name="settings_downloaded_files_delete_all">Ta bort alla nedladdade filer</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-filer och bilagor från mejl laddas ned igen nästa gång du öppnar dem.</string>
+    <string name="settings_downloaded_files_delete_all_title">Vill du ta bort alla nedladdade filer?</string>
+    <string name="settings_downloaded_files_footer">Filer som laddas ned i TigerDucks webbläsare sparas i mappen Nedladdningar på telefonen och tas inte bort här.</string>
+    <string name="settings_downloaded_files_images">Bilder av schemat</string>
+    <string name="settings_downloaded_files_mail">Bilagor från mejl</string>
+    <string name="settings_downloaded_files_moodle">Moodle-filer</string>
+    <string name="settings_downloaded_files_title">Nedladdade filer</string>
+    <string name="settings_downloaded_files_total">Totalt</string>
     <string name="settings_feedback_bug_report">Feedback / Rapportera problem</string>
     <string name="settings_flip_to_library_summary">Vänd telefonen med skärmen nedåt för att öppna bibliotekets QR.</string>
     <string name="settings_flip_to_library_title">Vänd för att visa bibliotekets QR</string>

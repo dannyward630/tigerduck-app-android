@@ -39,6 +39,7 @@
     <string name="action_close">അടക്കുക</string>
     <string name="action_confirm">സ്ഥിരീകരിക്കുക</string>
     <string name="action_continue">തുടരുക</string>
+    <string name="action_delete">ഇല്ലാതാക്കുക</string>
     <string name="action_done">പൂർത്തിയായി</string>
     <string name="action_go_to_settings">ക്രമീകരണങ്ങളിലേക്ക് പോകുക</string>
     <string name="action_got_it">മനസ്സിലായി</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">ഡിസ്‌പ്ലേയുടെയും ടെക്സ്റ്റിന്റെയും വലുപ്പം</string>
     <string name="settings_display_size_ui">ഡിസ്‌പ്ലേ വലുപ്പം</string>
     <string name="settings_display_size_widget_section">വിജറ്റുകൾ</string>
+    <string name="settings_downloaded_files_delete_all">ഡൗൺലോഡ് ചെയ്ത എല്ലാ ഫയലുകളും ഇല്ലാതാക്കുക</string>
+    <string name="settings_downloaded_files_delete_all_message">അടുത്ത തവണ തുറക്കുമ്പോൾ Moodle ഫയലുകളും മെയിൽ അറ്റാച്ച്‌മെന്റുകളും വീണ്ടും ഡൗൺലോഡ് ചെയ്യും.</string>
+    <string name="settings_downloaded_files_delete_all_title">ഡൗൺലോഡ് ചെയ്ത എല്ലാ ഫയലുകളും ഇല്ലാതാക്കണോ?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck ബ്രൗസറിൽ ഡൗൺലോഡ് ചെയ്ത ഫയലുകൾ ഫോണിലെ Downloads ഫോൾഡറിൽ സേവ് ചെയ്യും, അവ ഇവിടെനിന്ന് ഇല്ലാതാക്കില്ല.</string>
+    <string name="settings_downloaded_files_images">ക്ലാസ് ടൈംടേബിൾ ചിത്രങ്ങൾ</string>
+    <string name="settings_downloaded_files_mail">മെയിൽ അറ്റാച്ച്‌മെന്റുകൾ</string>
+    <string name="settings_downloaded_files_moodle">Moodle ഫയലുകൾ</string>
+    <string name="settings_downloaded_files_title">ഡൗൺലോഡ് ചെയ്ത ഫയലുകൾ</string>
+    <string name="settings_downloaded_files_total">ആകെ</string>
     <string name="settings_feedback_bug_report">ഫീഡ്‌ബാക്ക് / പ്രശ്‌നം റിപ്പോർട്ട് ചെയ്യുക</string>
     <string name="settings_flip_to_library_summary">ലൈബ്രറി QR തുറക്കാൻ ഫോൺ സ്ക്രീൻ താഴ്ത്തി മറിക്കുക.</string>
     <string name="settings_flip_to_library_title">ലൈബ്രറി QR കാണിക്കാൻ മറിക്കുക</string>

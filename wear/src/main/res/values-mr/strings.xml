@@ -39,6 +39,7 @@
     <string name="action_close">बंद करा</string>
     <string name="action_confirm">पुष्टी करा</string>
     <string name="action_continue">पुढे जा</string>
+    <string name="action_delete">हटवा</string>
     <string name="action_done">झाले</string>
     <string name="action_go_to_settings">सेटिंग्जवर जा</string>
     <string name="action_got_it">समजले</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">डिस्प्ले आणि मजकुराचा आकार</string>
     <string name="settings_display_size_ui">डिस्प्लेचा आकार</string>
     <string name="settings_display_size_widget_section">विजेट्स</string>
+    <string name="settings_downloaded_files_delete_all">सर्व डाउनलोड केलेल्या फाइल हटवा</string>
+    <string name="settings_downloaded_files_delete_all_message">पुढच्या वेळी उघडल्यावर Moodle फाइल आणि मेल अटॅचमेंट पुन्हा डाउनलोड होतील.</string>
+    <string name="settings_downloaded_files_delete_all_title">सर्व डाउनलोड केलेल्या फाइल हटवायच्या?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck ब्राउझरमध्ये डाउनलोड केलेल्या फाइल तुमच्या फोनच्या Downloads फोल्डरमध्ये सेव्ह होतात आणि येथून हटवल्या जात नाहीत.</string>
+    <string name="settings_downloaded_files_images">वर्ग वेळापत्रकाच्या इमेज</string>
+    <string name="settings_downloaded_files_mail">मेल अटॅचमेंट</string>
+    <string name="settings_downloaded_files_moodle">Moodle फाइल</string>
+    <string name="settings_downloaded_files_title">डाउनलोड केलेल्या फाइल</string>
+    <string name="settings_downloaded_files_total">एकूण</string>
     <string name="settings_feedback_bug_report">अभिप्राय / समस्या अहवाल</string>
     <string name="settings_flip_to_library_summary">लायब्ररी QR उघडण्यासाठी फोन स्क्रीन खाली करून फ्लिप करा.</string>
     <string name="settings_flip_to_library_title">लायब्ररी QR दाखवण्यासाठी फ्लिप करा</string>

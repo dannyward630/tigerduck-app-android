@@ -39,6 +39,7 @@
     <string name="action_close">Aizvērt</string>
     <string name="action_confirm">Apstiprināt</string>
     <string name="action_continue">Turpināt</string>
+    <string name="action_delete">Dzēst</string>
     <string name="action_done">Gatavs</string>
     <string name="action_go_to_settings">Doties uz iestatījumiem</string>
     <string name="action_got_it">Sapratu</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Displeja un teksta lielums</string>
     <string name="settings_display_size_ui">Displeja lielums</string>
     <string name="settings_display_size_widget_section">Logrīki</string>
+    <string name="settings_downloaded_files_delete_all">Dzēst visus lejupielādētos failus</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle faili un e-pasta pielikumi tiks lejupielādēti vēlreiz, kad nākamreiz tos atvērsiet.</string>
+    <string name="settings_downloaded_files_delete_all_title">Vai dzēst visus lejupielādētos failus?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck pārlūkā lejupielādētie faili tiek saglabāti tālruņa mapē Lejupielādes, un šeit tie netiek dzēsti.</string>
+    <string name="settings_downloaded_files_images">Stundu plāna attēli</string>
+    <string name="settings_downloaded_files_mail">E-pasta pielikumi</string>
+    <string name="settings_downloaded_files_moodle">Moodle faili</string>
+    <string name="settings_downloaded_files_title">Lejupielādētie faili</string>
+    <string name="settings_downloaded_files_total">Kopā</string>
     <string name="settings_feedback_bug_report">Atsauksme / Ziņot par problēmu</string>
     <string name="settings_flip_to_library_summary">Apvērs tālruni ar ekrānu uz leju, lai atvērtu bibliotēkas QR.</string>
     <string name="settings_flip_to_library_title">Apvērst, lai parādītu bibliotēkas QR</string>

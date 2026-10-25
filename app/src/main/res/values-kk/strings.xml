@@ -39,6 +39,7 @@
     <string name="action_close">Жабу</string>
     <string name="action_confirm">Растау</string>
     <string name="action_continue">Жалғастыру</string>
+    <string name="action_delete">Жою</string>
     <string name="action_done">Дайын</string>
     <string name="action_go_to_settings">Параметрлерге өту</string>
     <string name="action_got_it">Түсінікті</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Интерфейс пен мәтін өлшемі</string>
     <string name="settings_display_size_ui">Интерфейс өлшемі</string>
     <string name="settings_display_size_widget_section">Виджеттер</string>
+    <string name="settings_downloaded_files_delete_all">Барлық жүктелген файлдарды жою</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle файлдары мен пошта тіркемелері келесі ашқанда қайта жүктеледі.</string>
+    <string name="settings_downloaded_files_delete_all_title">Барлық жүктелген файлдарды жою керек пе?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck браузерінде жүктелген файлдар телефонның «Жүктеулер» қалтасында сақталады және мұнда жойылмайды.</string>
+    <string name="settings_downloaded_files_images">Сабақ кестесінің суреттері</string>
+    <string name="settings_downloaded_files_mail">Пошта тіркемелері</string>
+    <string name="settings_downloaded_files_moodle">Moodle файлдары</string>
+    <string name="settings_downloaded_files_title">Жүктелген файлдар</string>
+    <string name="settings_downloaded_files_total">Барлығы</string>
     <string name="settings_feedback_bug_report">Пікір / Мәселені хабарлау</string>
     <string name="settings_flip_to_library_summary">Кітапхана QR-ын ашу үшін телефонды экраны төмен қаратып аудар.</string>
     <string name="settings_flip_to_library_title">Кітапхана QR-ын көрсету үшін аудар</string>

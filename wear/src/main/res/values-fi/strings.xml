@@ -39,6 +39,7 @@
     <string name="action_close">Sulje</string>
     <string name="action_confirm">Vahvista</string>
     <string name="action_continue">Jatka</string>
+    <string name="action_delete">Poista</string>
     <string name="action_done">Valmis</string>
     <string name="action_go_to_settings">Siirry asetuksiin</string>
     <string name="action_got_it">Selvä</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Näytön ja tekstin koko</string>
     <string name="settings_display_size_ui">Näytön koko</string>
     <string name="settings_display_size_widget_section">Widgetit</string>
+    <string name="settings_downloaded_files_delete_all">Poista kaikki ladatut tiedostot</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-tiedostot ja sähköpostin liitteet ladataan uudelleen, kun avaat ne seuraavan kerran.</string>
+    <string name="settings_downloaded_files_delete_all_title">Poistetaanko kaikki ladatut tiedostot?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck-selaimessa ladatut tiedostot tallennetaan puhelimen Lataukset-kansioon, eikä niitä poisteta täältä.</string>
+    <string name="settings_downloaded_files_images">Lukujärjestyksen kuvat</string>
+    <string name="settings_downloaded_files_mail">Sähköpostin liitteet</string>
+    <string name="settings_downloaded_files_moodle">Moodle-tiedostot</string>
+    <string name="settings_downloaded_files_title">Ladatut tiedostot</string>
+    <string name="settings_downloaded_files_total">Yhteensä</string>
     <string name="settings_feedback_bug_report">Palaute / Ilmoita ongelma</string>
     <string name="settings_flip_to_library_summary">Käännä puhelin näyttö alaspäin avataksesi kirjaston QR-koodin.</string>
     <string name="settings_flip_to_library_title">Käännä kirjaston QR-koodin näyttämiseksi</string>

@@ -39,6 +39,7 @@
     <string name="action_close">Đóng</string>
     <string name="action_confirm">Xác nhận</string>
     <string name="action_continue">Tiếp tục</string>
+    <string name="action_delete">Xóa</string>
     <string name="action_done">Xong</string>
     <string name="action_go_to_settings">Đến cài đặt</string>
     <string name="action_got_it">Đã hiểu</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Kích thước hiển thị và văn bản</string>
     <string name="settings_display_size_ui">Kích thước hiển thị</string>
     <string name="settings_display_size_widget_section">Widget</string>
+    <string name="settings_downloaded_files_delete_all">Xóa tất cả tệp đã tải xuống</string>
+    <string name="settings_downloaded_files_delete_all_message">Tệp Moodle và tệp đính kèm trong thư sẽ được tải xuống lại vào lần tới bạn mở chúng.</string>
+    <string name="settings_downloaded_files_delete_all_title">Xóa tất cả tệp đã tải xuống?</string>
+    <string name="settings_downloaded_files_footer">Tệp tải xuống trong trình duyệt TigerDuck được lưu vào thư mục Tải xuống của điện thoại và không bị xóa ở đây.</string>
+    <string name="settings_downloaded_files_images">Ảnh thời khóa biểu</string>
+    <string name="settings_downloaded_files_mail">Tệp đính kèm trong thư</string>
+    <string name="settings_downloaded_files_moodle">Tệp Moodle</string>
+    <string name="settings_downloaded_files_title">Tệp đã tải xuống</string>
+    <string name="settings_downloaded_files_total">Tổng cộng</string>
     <string name="settings_feedback_bug_report">Phản hồi / Báo lỗi</string>
     <string name="settings_flip_to_library_summary">Lật điện thoại úp màn hình xuống để mở QR thư viện.</string>
     <string name="settings_flip_to_library_title">Lật để hiển thị QR thư viện</string>

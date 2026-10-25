@@ -39,6 +39,7 @@
     <string name="action_close">Close</string>
     <string name="action_confirm">Confirm</string>
     <string name="action_continue">Continue</string>
+    <string name="action_delete">Delete</string>
     <string name="action_done">Done</string>
     <string name="action_go_to_settings">Go to settings</string>
     <string name="action_got_it">Got it</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Display and text size</string>
     <string name="settings_display_size_ui">Display size</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Delete all downloaded files</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle files and mail attachments download again the next time you open them.</string>
+    <string name="settings_downloaded_files_delete_all_title">Delete all downloaded files?</string>
+    <string name="settings_downloaded_files_footer">Files downloaded in the TigerDuck browser are saved to your phone\'s Downloads folder and aren\'t deleted here.</string>
+    <string name="settings_downloaded_files_images">Class table images</string>
+    <string name="settings_downloaded_files_mail">Mail attachments</string>
+    <string name="settings_downloaded_files_moodle">Moodle files</string>
+    <string name="settings_downloaded_files_title">Downloaded files</string>
+    <string name="settings_downloaded_files_total">Total</string>
     <string name="settings_feedback_bug_report">Feedback / Report issue</string>
     <string name="settings_flip_to_library_summary">Flip your phone face-down to open the library QR.</string>
     <string name="settings_flip_to_library_title">Flip to show library QR</string>

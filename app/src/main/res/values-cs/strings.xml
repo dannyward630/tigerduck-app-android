@@ -39,6 +39,7 @@
     <string name="action_close">Zavřít</string>
     <string name="action_confirm">Potvrdit</string>
     <string name="action_continue">Pokračovat</string>
+    <string name="action_delete">Smazat</string>
     <string name="action_done">Hotovo</string>
     <string name="action_go_to_settings">Přejít do nastavení</string>
     <string name="action_got_it">Rozumím</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Velikost zobrazení a textu</string>
     <string name="settings_display_size_ui">Velikost zobrazení</string>
     <string name="settings_display_size_widget_section">Widgety</string>
+    <string name="settings_downloaded_files_delete_all">Smazat všechny stažené soubory</string>
+    <string name="settings_downloaded_files_delete_all_message">Soubory z Moodlu a přílohy e-mailů se při dalším otevření stáhnou znovu.</string>
+    <string name="settings_downloaded_files_delete_all_title">Smazat všechny stažené soubory?</string>
+    <string name="settings_downloaded_files_footer">Soubory stažené v prohlížeči TigerDuck se ukládají do složky Stažené soubory v telefonu a tady se nemažou.</string>
+    <string name="settings_downloaded_files_images">Obrázky rozvrhu</string>
+    <string name="settings_downloaded_files_mail">Přílohy e-mailů</string>
+    <string name="settings_downloaded_files_moodle">Soubory z Moodlu</string>
+    <string name="settings_downloaded_files_title">Stažené soubory</string>
+    <string name="settings_downloaded_files_total">Celkem</string>
     <string name="settings_feedback_bug_report">Zpětná vazba / Nahlásit problém</string>
     <string name="settings_flip_to_library_summary">Otočte telefon obrazovkou dolů pro zobrazení QR kódu knihovny.</string>
     <string name="settings_flip_to_library_title">Otočit pro zobrazení QR kódu knihovny</string>

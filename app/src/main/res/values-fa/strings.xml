@@ -39,6 +39,7 @@
     <string name="action_close">بستن</string>
     <string name="action_confirm">تأیید</string>
     <string name="action_continue">ادامه</string>
+    <string name="action_delete">حذف</string>
     <string name="action_done">انجام شد</string>
     <string name="action_go_to_settings">رفتن به تنظیمات</string>
     <string name="action_got_it">متوجه شدم</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">اندازه نمایش و متن</string>
     <string name="settings_display_size_ui">اندازه نمایش</string>
     <string name="settings_display_size_widget_section">ویجت‌ها</string>
+    <string name="settings_downloaded_files_delete_all">حذف همه فایل‌های دانلودشده</string>
+    <string name="settings_downloaded_files_delete_all_message">فایل‌های Moodle و پیوست‌های ایمیل دفعه بعد که بازشان کنید دوباره دانلود می‌شوند.</string>
+    <string name="settings_downloaded_files_delete_all_title">همه فایل‌های دانلودشده حذف شوند؟</string>
+    <string name="settings_downloaded_files_footer">فایل‌هایی که در مرورگر TigerDuck دانلود می‌کنید در پوشه دانلودهای گوشی ذخیره می‌شوند و از اینجا حذف نمی‌شوند.</string>
+    <string name="settings_downloaded_files_images">تصاویر برنامه کلاس‌ها</string>
+    <string name="settings_downloaded_files_mail">پیوست‌های ایمیل</string>
+    <string name="settings_downloaded_files_moodle">فایل‌های Moodle</string>
+    <string name="settings_downloaded_files_title">فایل‌های دانلودشده</string>
+    <string name="settings_downloaded_files_total">مجموع</string>
     <string name="settings_feedback_bug_report">بازخورد / گزارش مشکل</string>
     <string name="settings_flip_to_library_summary">گوشی را صفحه‌رو به پایین برگردانید تا QR کتابخانه باز شود.</string>
     <string name="settings_flip_to_library_title">برگرداندن برای نمایش QR کتابخانه</string>

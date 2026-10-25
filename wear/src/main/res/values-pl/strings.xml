@@ -39,6 +39,7 @@
     <string name="action_close">Zamknij</string>
     <string name="action_confirm">Potwierdź</string>
     <string name="action_continue">Kontynuuj</string>
+    <string name="action_delete">Usuń</string>
     <string name="action_done">Gotowe</string>
     <string name="action_go_to_settings">Przejdź do ustawień</string>
     <string name="action_got_it">Rozumiem</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Rozmiar wyświetlania i tekstu</string>
     <string name="settings_display_size_ui">Rozmiar wyświetlania</string>
     <string name="settings_display_size_widget_section">Widżety</string>
+    <string name="settings_downloaded_files_delete_all">Usuń wszystkie pobrane pliki</string>
+    <string name="settings_downloaded_files_delete_all_message">Pliki z Moodle i załączniki z poczty zostaną pobrane ponownie przy następnym otwarciu.</string>
+    <string name="settings_downloaded_files_delete_all_title">Usunąć wszystkie pobrane pliki?</string>
+    <string name="settings_downloaded_files_footer">Pliki pobrane w przeglądarce TigerDuck są zapisywane w folderze Pobrane w telefonie i nie są tutaj usuwane.</string>
+    <string name="settings_downloaded_files_images">Obrazy planu zajęć</string>
+    <string name="settings_downloaded_files_mail">Załączniki z poczty</string>
+    <string name="settings_downloaded_files_moodle">Pliki z Moodle</string>
+    <string name="settings_downloaded_files_title">Pobrane pliki</string>
+    <string name="settings_downloaded_files_total">Łącznie</string>
     <string name="settings_feedback_bug_report">Opinie / Zgłoś problem</string>
     <string name="settings_flip_to_library_summary">Odwróć telefon ekranem w dół, aby otworzyć QR biblioteki.</string>
     <string name="settings_flip_to_library_title">Odwróć, aby pokazać QR biblioteki</string>

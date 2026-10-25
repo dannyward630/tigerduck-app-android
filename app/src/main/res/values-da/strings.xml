@@ -39,6 +39,7 @@
     <string name="action_close">Luk</string>
     <string name="action_confirm">Bekræft</string>
     <string name="action_continue">Fortsæt</string>
+    <string name="action_delete">Slet</string>
     <string name="action_done">Færdig</string>
     <string name="action_go_to_settings">Gå til indstillinger</string>
     <string name="action_got_it">Forstået</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Skærm- og tekststørrelse</string>
     <string name="settings_display_size_ui">Skærmstørrelse</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Slet alle downloadede filer</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-filer og vedhæftninger fra mail downloades igen, næste gang du åbner dem.</string>
+    <string name="settings_downloaded_files_delete_all_title">Vil du slette alle downloadede filer?</string>
+    <string name="settings_downloaded_files_footer">Filer, der downloades i TigerDuck-browseren, gemmes i telefonens Downloads-mappe og slettes ikke her.</string>
+    <string name="settings_downloaded_files_images">Billeder af skemaet</string>
+    <string name="settings_downloaded_files_mail">Vedhæftninger fra mail</string>
+    <string name="settings_downloaded_files_moodle">Moodle-filer</string>
+    <string name="settings_downloaded_files_title">Downloadede filer</string>
+    <string name="settings_downloaded_files_total">I alt</string>
     <string name="settings_feedback_bug_report">Feedback / Rapportér problem</string>
     <string name="settings_flip_to_library_summary">Vend telefonen med skærmen nedad for at åbne bibliotekets QR.</string>
     <string name="settings_flip_to_library_title">Vend om for at vise bibliotekets QR</string>

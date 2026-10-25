@@ -39,6 +39,7 @@
     <string name="action_close">Затвори</string>
     <string name="action_confirm">Потвърди</string>
     <string name="action_continue">Продължи</string>
+    <string name="action_delete">Изтриване</string>
     <string name="action_done">Готово</string>
     <string name="action_go_to_settings">Към настройките</string>
     <string name="action_got_it">Разбрах</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Размер на показване и текст</string>
     <string name="settings_display_size_ui">Размер на показване</string>
     <string name="settings_display_size_widget_section">Уиджети</string>
+    <string name="settings_downloaded_files_delete_all">Изтриване на всички изтеглени файлове</string>
+    <string name="settings_downloaded_files_delete_all_message">Файловете от Moodle и прикачените файлове от пощата ще се изтеглят отново, когато ги отворите следващия път.</string>
+    <string name="settings_downloaded_files_delete_all_title">Изтриване на всички изтеглени файлове?</string>
+    <string name="settings_downloaded_files_footer">Файловете, изтеглени в браузъра на TigerDuck, се записват в папката „Изтегляния“ на телефона и не се изтриват оттук.</string>
+    <string name="settings_downloaded_files_images">Изображения на разписанието</string>
+    <string name="settings_downloaded_files_mail">Прикачени файлове от пощата</string>
+    <string name="settings_downloaded_files_moodle">Файлове от Moodle</string>
+    <string name="settings_downloaded_files_title">Изтеглени файлове</string>
+    <string name="settings_downloaded_files_total">Общо</string>
     <string name="settings_feedback_bug_report">Обратна връзка / Докладване на проблем</string>
     <string name="settings_flip_to_library_summary">Обърни телефона с екрана надолу, за да отвориш QR на библиотеката.</string>
     <string name="settings_flip_to_library_title">Обърни за показване на QR на библиотеката</string>

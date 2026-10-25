@@ -39,6 +39,7 @@
     <string name="action_close">Sulge</string>
     <string name="action_confirm">Kinnita</string>
     <string name="action_continue">Jätka</string>
+    <string name="action_delete">Kustuta</string>
     <string name="action_done">Valmis</string>
     <string name="action_go_to_settings">Mine seadetesse</string>
     <string name="action_got_it">Selge</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Kuva- ja tekstisuurus</string>
     <string name="settings_display_size_ui">Kuvasuurus</string>
     <string name="settings_display_size_widget_section">Vidinad</string>
+    <string name="settings_downloaded_files_delete_all">Kustuta kõik allalaaditud failid</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle\'i failid ja e-kirjade manused laaditakse järgmisel avamisel uuesti alla.</string>
+    <string name="settings_downloaded_files_delete_all_title">Kas kustutada kõik allalaaditud failid?</string>
+    <string name="settings_downloaded_files_footer">TigerDucki brauseris allalaaditud failid salvestatakse telefoni kausta Allalaadimised ja neid siin ei kustutata.</string>
+    <string name="settings_downloaded_files_images">Tunniplaani pildid</string>
+    <string name="settings_downloaded_files_mail">E-kirjade manused</string>
+    <string name="settings_downloaded_files_moodle">Moodle\'i failid</string>
+    <string name="settings_downloaded_files_title">Allalaaditud failid</string>
+    <string name="settings_downloaded_files_total">Kokku</string>
     <string name="settings_feedback_bug_report">Tagasiside / Vea aruanne</string>
     <string name="settings_flip_to_library_summary">Pööra telefon ekraaniga allapoole, et avada raamatukogu QR.</string>
     <string name="settings_flip_to_library_title">Pööra raamatukogu QR-i näitamiseks</string>

@@ -39,6 +39,7 @@
     <string name="action_close">Kapat</string>
     <string name="action_confirm">Onayla</string>
     <string name="action_continue">Devam</string>
+    <string name="action_delete">Sil</string>
     <string name="action_done">Tamam</string>
     <string name="action_go_to_settings">Ayarlara git</string>
     <string name="action_got_it">Anladım</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Ekran ve metin boyutu</string>
     <string name="settings_display_size_ui">Ekran boyutu</string>
     <string name="settings_display_size_widget_section">Widget\'lar</string>
+    <string name="settings_downloaded_files_delete_all">İndirilen tüm dosyaları sil</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle dosyaları ve e-posta ekleri bir sonraki açışınızda yeniden indirilir.</string>
+    <string name="settings_downloaded_files_delete_all_title">İndirilen tüm dosyalar silinsin mi?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck tarayıcısında indirilen dosyalar telefonunuzun İndirilenler klasörüne kaydedilir ve buradan silinmez.</string>
+    <string name="settings_downloaded_files_images">Ders programı görselleri</string>
+    <string name="settings_downloaded_files_mail">E-posta ekleri</string>
+    <string name="settings_downloaded_files_moodle">Moodle dosyaları</string>
+    <string name="settings_downloaded_files_title">İndirilen dosyalar</string>
+    <string name="settings_downloaded_files_total">Toplam</string>
     <string name="settings_feedback_bug_report">Geri bildirim / Sorun bildir</string>
     <string name="settings_flip_to_library_summary">Kütüphane QR\'ını açmak için telefonu ekran aşağı gelecek şekilde çevir.</string>
     <string name="settings_flip_to_library_title">Kütüphane QR\'ını göstermek için çevir</string>

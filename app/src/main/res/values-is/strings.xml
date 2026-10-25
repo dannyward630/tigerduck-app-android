@@ -39,6 +39,7 @@
     <string name="action_close">Loka</string>
     <string name="action_confirm">Staðfesta</string>
     <string name="action_continue">Halda áfram</string>
+    <string name="action_delete">Eyða</string>
     <string name="action_done">Lokið</string>
     <string name="action_go_to_settings">Fara í stillingar</string>
     <string name="action_got_it">Skil</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Skjá- og textastærð</string>
     <string name="settings_display_size_ui">Skjástærð</string>
     <string name="settings_display_size_widget_section">Græjur</string>
+    <string name="settings_downloaded_files_delete_all">Eyða öllum sóttum skrám</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-skrár og viðhengi úr pósti verða sótt aftur næst þegar þú opnar þau.</string>
+    <string name="settings_downloaded_files_delete_all_title">Eyða öllum sóttum skrám?</string>
+    <string name="settings_downloaded_files_footer">Skrár sem sóttar eru í vafra TigerDuck eru vistaðar í niðurhalsmöppu símans og þeim er ekki eytt hér.</string>
+    <string name="settings_downloaded_files_images">Myndir af stundaskrá</string>
+    <string name="settings_downloaded_files_mail">Viðhengi úr pósti</string>
+    <string name="settings_downloaded_files_moodle">Moodle-skrár</string>
+    <string name="settings_downloaded_files_title">Sóttar skrár</string>
+    <string name="settings_downloaded_files_total">Samtals</string>
     <string name="settings_feedback_bug_report">Endurgjöf / Tilkynna villu</string>
     <string name="settings_flip_to_library_summary">Snúðu símann með skjánum niður til að opna QR kóða bókasafnsins.</string>
     <string name="settings_flip_to_library_title">Snúa til að sýna QR kóða bókasafnsins</string>

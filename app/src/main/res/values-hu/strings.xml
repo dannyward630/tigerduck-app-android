@@ -39,6 +39,7 @@
     <string name="action_close">Bezárás</string>
     <string name="action_confirm">Megerősítés</string>
     <string name="action_continue">Folytatás</string>
+    <string name="action_delete">Törlés</string>
     <string name="action_done">Kész</string>
     <string name="action_go_to_settings">Beállítások megnyitása</string>
     <string name="action_got_it">Értem</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Megjelenítési és szövegméret</string>
     <string name="settings_display_size_ui">Megjelenítési méret</string>
     <string name="settings_display_size_widget_section">Widgetek</string>
+    <string name="settings_downloaded_files_delete_all">Az összes letöltött fájl törlése</string>
+    <string name="settings_downloaded_files_delete_all_message">A Moodle-fájlok és a levélmellékletek a következő megnyitáskor újra letöltődnek.</string>
+    <string name="settings_downloaded_files_delete_all_title">Törli az összes letöltött fájlt?</string>
+    <string name="settings_downloaded_files_footer">A TigerDuck böngészőjében letöltött fájlok a telefon Letöltések mappájába kerülnek, és innen nem törlődnek.</string>
+    <string name="settings_downloaded_files_images">Órarendképek</string>
+    <string name="settings_downloaded_files_mail">Levélmellékletek</string>
+    <string name="settings_downloaded_files_moodle">Moodle-fájlok</string>
+    <string name="settings_downloaded_files_title">Letöltött fájlok</string>
+    <string name="settings_downloaded_files_total">Összesen</string>
     <string name="settings_feedback_bug_report">Visszajelzés / Hibabejelentés</string>
     <string name="settings_flip_to_library_summary">Fordítsd az okostelefont képernyővel lefelé a könyvtári QR-kód megnyitásához.</string>
     <string name="settings_flip_to_library_title">Fordítsd meg a könyvtári QR-kód megjelenítéséhez</string>

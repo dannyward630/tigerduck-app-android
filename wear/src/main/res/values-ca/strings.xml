@@ -39,6 +39,7 @@
     <string name="action_close">Tanca</string>
     <string name="action_confirm">Confirma</string>
     <string name="action_continue">Continua</string>
+    <string name="action_delete">Elimina</string>
     <string name="action_done">Fet</string>
     <string name="action_go_to_settings">Ves a la configuració</string>
     <string name="action_got_it">Entès</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Mida de visualització i del text</string>
     <string name="settings_display_size_ui">Mida de visualització</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Elimina tots els fitxers baixats</string>
+    <string name="settings_downloaded_files_delete_all_message">Els fitxers de Moodle i els adjunts del correu es tornaran a baixar la propera vegada que els obriu.</string>
+    <string name="settings_downloaded_files_delete_all_title">Voleu eliminar tots els fitxers baixats?</string>
+    <string name="settings_downloaded_files_footer">Els fitxers baixats al navegador de TigerDuck es desen a la carpeta Baixades del vostre telèfon i no s\'eliminen aquí.</string>
+    <string name="settings_downloaded_files_images">Imatges de l\'horari</string>
+    <string name="settings_downloaded_files_mail">Fitxers adjunts del correu</string>
+    <string name="settings_downloaded_files_moodle">Fitxers de Moodle</string>
+    <string name="settings_downloaded_files_title">Fitxers baixats</string>
+    <string name="settings_downloaded_files_total">Total</string>
     <string name="settings_feedback_bug_report">Comentaris / Informeu d\'un problema</string>
     <string name="settings_flip_to_library_summary">Gira el telèfon amb la pantalla cap avall per obrir el QR de la biblioteca.</string>
     <string name="settings_flip_to_library_title">Gira per mostrar el QR de la biblioteca</string>

@@ -39,6 +39,7 @@
     <string name="action_close">Sluiten</string>
     <string name="action_confirm">Bevestigen</string>
     <string name="action_continue">Doorgaan</string>
+    <string name="action_delete">Verwijderen</string>
     <string name="action_done">Klaar</string>
     <string name="action_go_to_settings">Ga naar instellingen</string>
     <string name="action_got_it">Begrepen</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Weergave- en tekstgrootte</string>
     <string name="settings_display_size_ui">Weergavegrootte</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Alle gedownloade bestanden verwijderen</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle-bestanden en bijlagen van e-mail worden opnieuw gedownload als je ze de volgende keer opent.</string>
+    <string name="settings_downloaded_files_delete_all_title">Alle gedownloade bestanden verwijderen?</string>
+    <string name="settings_downloaded_files_footer">Bestanden die je in de TigerDuck-browser downloadt, worden opgeslagen in de map Downloads van je telefoon en worden hier niet verwijderd.</string>
+    <string name="settings_downloaded_files_images">Afbeeldingen van het rooster</string>
+    <string name="settings_downloaded_files_mail">Bijlagen van e-mail</string>
+    <string name="settings_downloaded_files_moodle">Moodle-bestanden</string>
+    <string name="settings_downloaded_files_title">Gedownloade bestanden</string>
+    <string name="settings_downloaded_files_total">Totaal</string>
     <string name="settings_feedback_bug_report">Feedback / Probleem melden</string>
     <string name="settings_flip_to_library_summary">Leg je telefoon met het scherm naar beneden om de bibliotheek-QR te openen.</string>
     <string name="settings_flip_to_library_title">Omdraaien om bibliotheek-QR te tonen</string>

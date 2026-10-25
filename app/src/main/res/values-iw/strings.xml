@@ -39,6 +39,7 @@
     <string name="action_close">סגור</string>
     <string name="action_confirm">אישור</string>
     <string name="action_continue">המשך</string>
+    <string name="action_delete">מחק</string>
     <string name="action_done">סיום</string>
     <string name="action_go_to_settings">עבור להגדרות</string>
     <string name="action_got_it">הבנתי</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">גודל התצוגה והטקסט</string>
     <string name="settings_display_size_ui">גודל התצוגה</string>
     <string name="settings_display_size_widget_section">ווידג׳טים</string>
+    <string name="settings_downloaded_files_delete_all">מחיקת כל הקבצים שהורדו</string>
+    <string name="settings_downloaded_files_delete_all_message">קבצי Moodle וקבצים מצורפים מהדואר יורדו שוב בפעם הבאה שתפתח אותם.</string>
+    <string name="settings_downloaded_files_delete_all_title">למחוק את כל הקבצים שהורדו?</string>
+    <string name="settings_downloaded_files_footer">קבצים שהורדו בדפדפן של TigerDuck נשמרים בתיקיית ההורדות בטלפון ולא נמחקים מכאן.</string>
+    <string name="settings_downloaded_files_images">תמונות של מערכת השעות</string>
+    <string name="settings_downloaded_files_mail">קבצים מצורפים מהדואר</string>
+    <string name="settings_downloaded_files_moodle">קבצי Moodle</string>
+    <string name="settings_downloaded_files_title">קבצים שהורדו</string>
+    <string name="settings_downloaded_files_total">סה״כ</string>
     <string name="settings_feedback_bug_report">משוב / דיווח על בעיה</string>
     <string name="settings_flip_to_library_summary">הפוך את הטלפון עם המסך כלפי מטה כדי לפתוח את ה-QR של הספרייה.</string>
     <string name="settings_flip_to_library_title">הפוך להצגת ה-QR של הספרייה</string>

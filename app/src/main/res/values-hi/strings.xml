@@ -39,6 +39,7 @@
     <string name="action_close">बंद करें</string>
     <string name="action_confirm">पुष्टि करें</string>
     <string name="action_continue">आगे बढ़ें</string>
+    <string name="action_delete">हटाएँ</string>
     <string name="action_done">हो गया</string>
     <string name="action_go_to_settings">सेटिंग पर जाएँ</string>
     <string name="action_got_it">समझ गया</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">डिस्प्ले और टेक्स्ट का आकार</string>
     <string name="settings_display_size_ui">डिस्प्ले का आकार</string>
     <string name="settings_display_size_widget_section">विजेट</string>
+    <string name="settings_downloaded_files_delete_all">सभी डाउनलोड की गई फ़ाइलें हटाएँ</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle फ़ाइलें और मेल अटैचमेंट अगली बार खोलने पर फिर से डाउनलोड होंगे।</string>
+    <string name="settings_downloaded_files_delete_all_title">सभी डाउनलोड की गई फ़ाइलें हटाएँ?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck ब्राउज़र में डाउनलोड की गई फ़ाइलें आपके फ़ोन के Downloads फ़ोल्डर में सेव होती हैं और यहाँ से नहीं हटाई जातीं।</string>
+    <string name="settings_downloaded_files_images">कक्षा सारणी की इमेज</string>
+    <string name="settings_downloaded_files_mail">मेल अटैचमेंट</string>
+    <string name="settings_downloaded_files_moodle">Moodle फ़ाइलें</string>
+    <string name="settings_downloaded_files_title">डाउनलोड की गई फ़ाइलें</string>
+    <string name="settings_downloaded_files_total">कुल</string>
     <string name="settings_feedback_bug_report">फीडबैक / समस्या रिपोर्ट करें</string>
     <string name="settings_flip_to_library_summary">लाइब्रेरी QR खोलने के लिए फ़ोन को स्क्रीन नीचे करके पलटें।</string>
     <string name="settings_flip_to_library_title">लाइब्रेरी QR दिखाने के लिए पलटें</string>

@@ -39,6 +39,7 @@
     <string name="action_close">Isara</string>
     <string name="action_confirm">Kumpirmahin</string>
     <string name="action_continue">Magpatuloy</string>
+    <string name="action_delete">Burahin</string>
     <string name="action_done">Tapos na</string>
     <string name="action_go_to_settings">Pumunta sa settings</string>
     <string name="action_got_it">Naintindihan ko</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Laki ng display at text</string>
     <string name="settings_display_size_ui">Laki ng display</string>
     <string name="settings_display_size_widget_section">Mga widget</string>
+    <string name="settings_downloaded_files_delete_all">Burahin ang lahat ng na-download na file</string>
+    <string name="settings_downloaded_files_delete_all_message">Muling ida-download ang mga file sa Moodle at mga attachment ng mail sa susunod na buksan mo ang mga ito.</string>
+    <string name="settings_downloaded_files_delete_all_title">Burahin ang lahat ng na-download na file?</string>
+    <string name="settings_downloaded_files_footer">Ang mga file na na-download sa TigerDuck browser ay naka-save sa Downloads folder ng iyong phone at hindi binubura rito.</string>
+    <string name="settings_downloaded_files_images">Mga larawan ng iskedyul ng klase</string>
+    <string name="settings_downloaded_files_mail">Mga attachment ng mail</string>
+    <string name="settings_downloaded_files_moodle">Mga file sa Moodle</string>
+    <string name="settings_downloaded_files_title">Mga na-download na file</string>
+    <string name="settings_downloaded_files_total">Kabuuan</string>
     <string name="settings_feedback_bug_report">Feedback / Mag-ulat ng isyu</string>
     <string name="settings_flip_to_library_summary">I-flip ang telepono naka-mukha ang screen pababa para buksan ang library QR.</string>
     <string name="settings_flip_to_library_title">I-flip para ipakita ang library QR</string>

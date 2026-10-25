@@ -39,6 +39,7 @@
     <string name="action_close">ਬੰਦ ਕਰੋ</string>
     <string name="action_confirm">ਪੁਸ਼ਟੀ ਕਰੋ</string>
     <string name="action_continue">ਅੱਗੇ ਵਧੋ</string>
+    <string name="action_delete">ਮਿਟਾਓ</string>
     <string name="action_done">ਹੋ ਗਿਆ</string>
     <string name="action_go_to_settings">ਸੈਟਿੰਗਾਂ \'ਤੇ ਜਾਓ</string>
     <string name="action_got_it">ਸਮਝ ਗਿਆ</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">ਡਿਸਪਲੇ ਅਤੇ ਲਿਖਤ ਦਾ ਆਕਾਰ</string>
     <string name="settings_display_size_ui">ਡਿਸਪਲੇ ਦਾ ਆਕਾਰ</string>
     <string name="settings_display_size_widget_section">ਵਿਜੇਟ</string>
+    <string name="settings_downloaded_files_delete_all">ਸਾਰੀਆਂ ਡਾਊਨਲੋਡ ਕੀਤੀਆਂ ਫ਼ਾਈਲਾਂ ਮਿਟਾਓ</string>
+    <string name="settings_downloaded_files_delete_all_message">ਅਗਲੀ ਵਾਰ ਖੋਲ੍ਹਣ \'ਤੇ Moodle ਫ਼ਾਈਲਾਂ ਅਤੇ ਮੇਲ ਅਟੈਚਮੈਂਟ ਦੁਬਾਰਾ ਡਾਊਨਲੋਡ ਹੋਣਗੇ।</string>
+    <string name="settings_downloaded_files_delete_all_title">ਕੀ ਸਾਰੀਆਂ ਡਾਊਨਲੋਡ ਕੀਤੀਆਂ ਫ਼ਾਈਲਾਂ ਮਿਟਾਉਣੀਆਂ ਹਨ?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck ਬ੍ਰਾਊਜ਼ਰ ਵਿੱਚ ਡਾਊਨਲੋਡ ਕੀਤੀਆਂ ਫ਼ਾਈਲਾਂ ਤੁਹਾਡੇ ਫ਼ੋਨ ਦੇ Downloads ਫੋਲਡਰ ਵਿੱਚ ਸੇਵ ਹੁੰਦੀਆਂ ਹਨ ਅਤੇ ਇੱਥੋਂ ਮਿਟਾਈਆਂ ਨਹੀਂ ਜਾਂਦੀਆਂ।</string>
+    <string name="settings_downloaded_files_images">ਕਲਾਸ ਸਾਰਣੀ ਦੀਆਂ ਤਸਵੀਰਾਂ</string>
+    <string name="settings_downloaded_files_mail">ਮੇਲ ਅਟੈਚਮੈਂਟ</string>
+    <string name="settings_downloaded_files_moodle">Moodle ਫ਼ਾਈਲਾਂ</string>
+    <string name="settings_downloaded_files_title">ਡਾਊਨਲੋਡ ਕੀਤੀਆਂ ਫ਼ਾਈਲਾਂ</string>
+    <string name="settings_downloaded_files_total">ਕੁੱਲ</string>
     <string name="settings_feedback_bug_report">ਫੀਡਬੈਕ / ਸਮੱਸਿਆ ਰਿਪੋਰਟ ਕਰੋ</string>
     <string name="settings_flip_to_library_summary">ਲਾਇਬ੍ਰੇਰੀ QR ਖੋਲ੍ਹਣ ਲਈ ਫ਼ੋਨ ਨੂੰ ਸਕਰੀਨ ਹੇਠਾਂ ਕਰਕੇ ਫਲਿੱਪ ਕਰੋ।</string>
     <string name="settings_flip_to_library_title">ਲਾਇਬ੍ਰੇਰੀ QR ਦਿਖਾਉਣ ਲਈ ਫਲਿੱਪ ਕਰੋ</string>

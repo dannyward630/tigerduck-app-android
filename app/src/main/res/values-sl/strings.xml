@@ -39,6 +39,7 @@
     <string name="action_close">Zapri</string>
     <string name="action_confirm">Potrdi</string>
     <string name="action_continue">Nadaljuj</string>
+    <string name="action_delete">Izbriši</string>
     <string name="action_done">Končano</string>
     <string name="action_go_to_settings">Odpri nastavitve</string>
     <string name="action_got_it">Razumem</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Velikost prikaza in besedila</string>
     <string name="settings_display_size_ui">Velikost prikaza</string>
     <string name="settings_display_size_widget_section">Gradniki</string>
+    <string name="settings_downloaded_files_delete_all">Izbriši vse prenesene datoteke</string>
+    <string name="settings_downloaded_files_delete_all_message">Datoteke iz Moodla in priloge iz pošte se bodo znova prenesle, ko jih boste naslednjič odprli.</string>
+    <string name="settings_downloaded_files_delete_all_title">Želite izbrisati vse prenesene datoteke?</string>
+    <string name="settings_downloaded_files_footer">Datoteke, prenesene v brskalniku TigerDuck, se shranijo v mapo Prenosi v telefonu in se tukaj ne izbrišejo.</string>
+    <string name="settings_downloaded_files_images">Slike urnika</string>
+    <string name="settings_downloaded_files_mail">Priloge iz pošte</string>
+    <string name="settings_downloaded_files_moodle">Datoteke iz Moodla</string>
+    <string name="settings_downloaded_files_title">Prenesene datoteke</string>
+    <string name="settings_downloaded_files_total">Skupaj</string>
     <string name="settings_feedback_bug_report">Povratne informacije / Prijava napake</string>
     <string name="settings_flip_to_library_summary">Obrni telefon z zaslonom navzdol, da odpreš QR knjižnice.</string>
     <string name="settings_flip_to_library_title">Obrni za prikaz QR knjižnice</string>

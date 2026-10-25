@@ -39,6 +39,7 @@
     <string name="action_close">关闭</string>
     <string name="action_confirm">确认</string>
     <string name="action_continue">继续</string>
+    <string name="action_delete">删除</string>
     <string name="action_done">完成</string>
     <string name="action_go_to_settings">前往设置</string>
     <string name="action_got_it">收到！</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">显示与文字大小</string>
     <string name="settings_display_size_ui">显示大小</string>
     <string name="settings_display_size_widget_section">小组件</string>
+    <string name="settings_downloaded_files_delete_all">删除所有已下载的文件</string>
+    <string name="settings_downloaded_files_delete_all_message">下次打开 Moodle 文件和邮件附件时，会重新下载。</string>
+    <string name="settings_downloaded_files_delete_all_title">要删除所有已下载的文件吗？</string>
+    <string name="settings_downloaded_files_footer">在 TigerDuck 浏览器下载的文件会保存到手机的“下载”文件夹，不会在这里删除。</string>
+    <string name="settings_downloaded_files_images">课表图片</string>
+    <string name="settings_downloaded_files_mail">邮件附件</string>
+    <string name="settings_downloaded_files_moodle">Moodle 文件</string>
+    <string name="settings_downloaded_files_title">已下载的文件</string>
+    <string name="settings_downloaded_files_total">总计</string>
     <string name="settings_feedback_bug_report">回馈/问题回报</string>
     <string name="settings_flip_to_library_summary">将手机屏幕朝下即可打开图书馆 QR</string>
     <string name="settings_flip_to_library_title">翻转显示图书馆 QR</string>

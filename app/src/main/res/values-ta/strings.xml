@@ -39,6 +39,7 @@
     <string name="action_close">மூடு</string>
     <string name="action_confirm">உறுதிப்படுத்து</string>
     <string name="action_continue">தொடர்</string>
+    <string name="action_delete">நீக்கு</string>
     <string name="action_done">முடிந்தது</string>
     <string name="action_go_to_settings">அமைப்புகளுக்கு செல்</string>
     <string name="action_got_it">புரிந்தது</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">காட்சி மற்றும் உரை அளவு</string>
     <string name="settings_display_size_ui">காட்சி அளவு</string>
     <string name="settings_display_size_widget_section">விட்ஜெட்கள்</string>
+    <string name="settings_downloaded_files_delete_all">பதிவிறக்கிய எல்லா கோப்புகளையும் நீக்கு</string>
+    <string name="settings_downloaded_files_delete_all_message">அடுத்த முறை திறக்கும்போது Moodle கோப்புகளும் மின்னஞ்சல் இணைப்புகளும் மீண்டும் பதிவிறக்கப்படும்.</string>
+    <string name="settings_downloaded_files_delete_all_title">பதிவிறக்கிய எல்லா கோப்புகளையும் நீக்கவா?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck உலாவியில் பதிவிறக்கிய கோப்புகள் உங்கள் ஃபோனின் Downloads கோப்புறையில் சேமிக்கப்படும், இங்கிருந்து நீக்கப்படாது.</string>
+    <string name="settings_downloaded_files_images">வகுப்பு அட்டவணை படங்கள்</string>
+    <string name="settings_downloaded_files_mail">மின்னஞ்சல் இணைப்புகள்</string>
+    <string name="settings_downloaded_files_moodle">Moodle கோப்புகள்</string>
+    <string name="settings_downloaded_files_title">பதிவிறக்கிய கோப்புகள்</string>
+    <string name="settings_downloaded_files_total">மொத்தம்</string>
     <string name="settings_feedback_bug_report">கருத்து / சிக்கல் அறிக்கை</string>
     <string name="settings_flip_to_library_summary">நூலக QR திறக்க தொலைபேசியை திரை கீழே வைத்து திருப்பவும்.</string>
     <string name="settings_flip_to_library_title">நூலக QR காட்ட திருப்பவும்</string>

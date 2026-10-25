@@ -39,6 +39,7 @@
     <string name="action_close">Tutup</string>
     <string name="action_confirm">Konfirmasi</string>
     <string name="action_continue">Lanjutkan</string>
+    <string name="action_delete">Hapus</string>
     <string name="action_done">Selesai</string>
     <string name="action_go_to_settings">Buka pengaturan</string>
     <string name="action_got_it">Mengerti</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Ukuran tampilan dan teks</string>
     <string name="settings_display_size_ui">Ukuran tampilan</string>
     <string name="settings_display_size_widget_section">Widget</string>
+    <string name="settings_downloaded_files_delete_all">Hapus semua file yang diunduh</string>
+    <string name="settings_downloaded_files_delete_all_message">File Moodle dan lampiran email akan diunduh lagi saat kamu membukanya berikutnya.</string>
+    <string name="settings_downloaded_files_delete_all_title">Hapus semua file yang diunduh?</string>
+    <string name="settings_downloaded_files_footer">File yang diunduh di browser TigerDuck disimpan di folder Download ponselmu dan tidak dihapus di sini.</string>
+    <string name="settings_downloaded_files_images">Gambar jadwal kuliah</string>
+    <string name="settings_downloaded_files_mail">Lampiran email</string>
+    <string name="settings_downloaded_files_moodle">File Moodle</string>
+    <string name="settings_downloaded_files_title">File yang diunduh</string>
+    <string name="settings_downloaded_files_total">Total</string>
     <string name="settings_feedback_bug_report">Umpan balik / Laporkan masalah</string>
     <string name="settings_flip_to_library_summary">Balik ponsel dengan layar menghadap bawah untuk membuka QR perpustakaan.</string>
     <string name="settings_flip_to_library_title">Balik untuk menampilkan QR perpustakaan</string>

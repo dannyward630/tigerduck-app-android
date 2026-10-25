@@ -39,6 +39,7 @@
     <string name="action_close">Uždaryti</string>
     <string name="action_confirm">Patvirtinti</string>
     <string name="action_continue">Tęsti</string>
+    <string name="action_delete">Ištrinti</string>
     <string name="action_done">Atlikta</string>
     <string name="action_go_to_settings">Eiti į nustatymus</string>
     <string name="action_got_it">Supratau</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Ekrano ir teksto dydis</string>
     <string name="settings_display_size_ui">Ekrano dydis</string>
     <string name="settings_display_size_widget_section">Valdikliai</string>
+    <string name="settings_downloaded_files_delete_all">Ištrinti visus atsisiųstus failus</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodle failai ir laiškų priedai bus atsisiųsti iš naujo, kai kitą kartą juos atidarysite.</string>
+    <string name="settings_downloaded_files_delete_all_title">Ištrinti visus atsisiųstus failus?</string>
+    <string name="settings_downloaded_files_footer">TigerDuck naršyklėje atsisiųsti failai išsaugomi telefono aplanke „Atsisiuntimai“ ir čia netrinami.</string>
+    <string name="settings_downloaded_files_images">Tvarkaraščio vaizdai</string>
+    <string name="settings_downloaded_files_mail">Laiškų priedai</string>
+    <string name="settings_downloaded_files_moodle">Moodle failai</string>
+    <string name="settings_downloaded_files_title">Atsisiųsti failai</string>
+    <string name="settings_downloaded_files_total">Iš viso</string>
     <string name="settings_feedback_bug_report">Atsiliepimai / Pranešti apie klaidą</string>
     <string name="settings_flip_to_library_summary">Apverskite telefoną ekranu žemyn, kad atidarytumėte bibliotekos QR.</string>
     <string name="settings_flip_to_library_title">Apversti, kad rodytų bibliotekos QR</string>

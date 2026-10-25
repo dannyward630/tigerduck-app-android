@@ -39,6 +39,7 @@
     <string name="action_close">Închide</string>
     <string name="action_confirm">Confirmă</string>
     <string name="action_continue">Continuă</string>
+    <string name="action_delete">Șterge</string>
     <string name="action_done">Finalizat</string>
     <string name="action_go_to_settings">Mergi la setări</string>
     <string name="action_got_it">Înțeles</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Dimensiunea afișării și a textului</string>
     <string name="settings_display_size_ui">Dimensiunea afișării</string>
     <string name="settings_display_size_widget_section">Widgeturi</string>
+    <string name="settings_downloaded_files_delete_all">Șterge toate fișierele descărcate</string>
+    <string name="settings_downloaded_files_delete_all_message">Fișierele Moodle și atașamentele din e-mail se vor descărca din nou data viitoare când le deschizi.</string>
+    <string name="settings_downloaded_files_delete_all_title">Ștergi toate fișierele descărcate?</string>
+    <string name="settings_downloaded_files_footer">Fișierele descărcate în browserul TigerDuck sunt salvate în dosarul Descărcări al telefonului și nu sunt șterse de aici.</string>
+    <string name="settings_downloaded_files_images">Imagini ale orarului</string>
+    <string name="settings_downloaded_files_mail">Atașamente din e-mail</string>
+    <string name="settings_downloaded_files_moodle">Fișiere Moodle</string>
+    <string name="settings_downloaded_files_title">Fișiere descărcate</string>
+    <string name="settings_downloaded_files_total">Total</string>
     <string name="settings_feedback_bug_report">Feedback / Raportare problemă</string>
     <string name="settings_flip_to_library_summary">Întoarce telefonul cu ecranul în jos pentru a deschide QR-ul bibliotecii.</string>
     <string name="settings_flip_to_library_title">Întoarce pentru a afișa QR-ul bibliotecii</string>

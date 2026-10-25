@@ -39,6 +39,7 @@
     <string name="action_close">閉じる</string>
     <string name="action_confirm">確認</string>
     <string name="action_continue">続行</string>
+    <string name="action_delete">削除</string>
     <string name="action_done">完了</string>
     <string name="action_go_to_settings">設定を開く</string>
     <string name="action_got_it">了解！</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">表示サイズと文字サイズ</string>
     <string name="settings_display_size_ui">表示サイズ</string>
     <string name="settings_display_size_widget_section">ウィジェット</string>
+    <string name="settings_downloaded_files_delete_all">ダウンロードしたファイルをすべて削除</string>
+    <string name="settings_downloaded_files_delete_all_message">Moodleのファイルとメールの添付ファイルは、次に開いたときに再度ダウンロードされます。</string>
+    <string name="settings_downloaded_files_delete_all_title">ダウンロードしたファイルをすべて削除しますか？</string>
+    <string name="settings_downloaded_files_footer">TigerDuckのブラウザでダウンロードしたファイルはスマートフォンの「ダウンロード」フォルダに保存され、ここでは削除されません。</string>
+    <string name="settings_downloaded_files_images">時間割の画像</string>
+    <string name="settings_downloaded_files_mail">メールの添付ファイル</string>
+    <string name="settings_downloaded_files_moodle">Moodleのファイル</string>
+    <string name="settings_downloaded_files_title">ダウンロードしたファイル</string>
+    <string name="settings_downloaded_files_total">合計</string>
     <string name="settings_feedback_bug_report">フィードバック / 不具合報告</string>
     <string name="settings_flip_to_library_summary">スマホを画面下向きに裏返すと図書館 QR を開きます。</string>
     <string name="settings_flip_to_library_title">裏返して図書館 QR を表示</string>

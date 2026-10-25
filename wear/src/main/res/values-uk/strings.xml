@@ -39,6 +39,7 @@
     <string name="action_close">Закрити</string>
     <string name="action_confirm">Підтвердити</string>
     <string name="action_continue">Продовжити</string>
+    <string name="action_delete">Видалити</string>
     <string name="action_done">Готово</string>
     <string name="action_go_to_settings">Перейти до налаштувань</string>
     <string name="action_got_it">Зрозуміло</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Розмір інтерфейсу й тексту</string>
     <string name="settings_display_size_ui">Розмір інтерфейсу</string>
     <string name="settings_display_size_widget_section">Віджети</string>
+    <string name="settings_downloaded_files_delete_all">Видалити всі завантажені файли</string>
+    <string name="settings_downloaded_files_delete_all_message">Файли Moodle і вкладення з пошти буде завантажено знову, коли ви відкриєте їх наступного разу.</string>
+    <string name="settings_downloaded_files_delete_all_title">Видалити всі завантажені файли?</string>
+    <string name="settings_downloaded_files_footer">Файли, завантажені в браузері TigerDuck, зберігаються в папці «Завантаження» на телефоні й не видаляються тут.</string>
+    <string name="settings_downloaded_files_images">Зображення розкладу</string>
+    <string name="settings_downloaded_files_mail">Вкладення з пошти</string>
+    <string name="settings_downloaded_files_moodle">Файли Moodle</string>
+    <string name="settings_downloaded_files_title">Завантажені файли</string>
+    <string name="settings_downloaded_files_total">Усього</string>
     <string name="settings_feedback_bug_report">Відгук / Повідомити про проблему</string>
     <string name="settings_flip_to_library_summary">Переверніть телефон екраном донизу, щоб відкрити QR бібліотеки.</string>
     <string name="settings_flip_to_library_title">Перевернути для показу QR бібліотеки</string>

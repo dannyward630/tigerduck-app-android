@@ -39,6 +39,7 @@
     <string name="action_close">Κλείσιμο</string>
     <string name="action_confirm">Επιβεβαίωση</string>
     <string name="action_continue">Συνέχεια</string>
+    <string name="action_delete">Διαγραφή</string>
     <string name="action_done">Τέλος</string>
     <string name="action_go_to_settings">Μετάβαση στις ρυθμίσεις</string>
     <string name="action_got_it">Κατάλαβα</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Μέγεθος οθόνης και κειμένου</string>
     <string name="settings_display_size_ui">Μέγεθος οθόνης</string>
     <string name="settings_display_size_widget_section">Widgets</string>
+    <string name="settings_downloaded_files_delete_all">Διαγραφή όλων των ληφθέντων αρχείων</string>
+    <string name="settings_downloaded_files_delete_all_message">Τα αρχεία Moodle και τα συνημμένα αλληλογραφίας θα ληφθούν ξανά την επόμενη φορά που θα τα ανοίξετε.</string>
+    <string name="settings_downloaded_files_delete_all_title">Διαγραφή όλων των ληφθέντων αρχείων;</string>
+    <string name="settings_downloaded_files_footer">Τα αρχεία που λαμβάνετε στο πρόγραμμα περιήγησης του TigerDuck αποθηκεύονται στον φάκελο Λήψεις του τηλεφώνου σας και δεν διαγράφονται από εδώ.</string>
+    <string name="settings_downloaded_files_images">Εικόνες προγράμματος μαθημάτων</string>
+    <string name="settings_downloaded_files_mail">Συνημμένα αλληλογραφίας</string>
+    <string name="settings_downloaded_files_moodle">Αρχεία Moodle</string>
+    <string name="settings_downloaded_files_title">Ληφθέντα αρχεία</string>
+    <string name="settings_downloaded_files_total">Σύνολο</string>
     <string name="settings_feedback_bug_report">Σχόλια / Αναφορά προβλήματος</string>
     <string name="settings_flip_to_library_summary">Αναποδογύρισε το τηλέφωνο με την οθόνη προς τα κάτω για να ανοίξεις τον QR της βιβλιοθήκης.</string>
     <string name="settings_flip_to_library_title">Αναποδογύρισε για να δεις τον QR της βιβλιοθήκης</string>

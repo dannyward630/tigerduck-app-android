@@ -39,6 +39,7 @@
     <string name="action_close">Zatvori</string>
     <string name="action_confirm">Potvrdi</string>
     <string name="action_continue">Nastavi</string>
+    <string name="action_delete">Obriši</string>
     <string name="action_done">Gotovo</string>
     <string name="action_go_to_settings">Idi na postavke</string>
     <string name="action_got_it">Razumijem</string>
@@ -1089,6 +1090,15 @@
     <string name="settings_display_size_title">Veličina prikaza i teksta</string>
     <string name="settings_display_size_ui">Veličina prikaza</string>
     <string name="settings_display_size_widget_section">Widgeti</string>
+    <string name="settings_downloaded_files_delete_all">Obriši sve preuzete datoteke</string>
+    <string name="settings_downloaded_files_delete_all_message">Datoteke s Moodlea i privici e-pošte ponovno će se preuzeti kad ih sljedeći put otvorite.</string>
+    <string name="settings_downloaded_files_delete_all_title">Obrisati sve preuzete datoteke?</string>
+    <string name="settings_downloaded_files_footer">Datoteke preuzete u pregledniku TigerDuck spremaju se u mapu Preuzimanja na telefonu i ovdje se ne brišu.</string>
+    <string name="settings_downloaded_files_images">Slike rasporeda</string>
+    <string name="settings_downloaded_files_mail">Privici e-pošte</string>
+    <string name="settings_downloaded_files_moodle">Datoteke s Moodlea</string>
+    <string name="settings_downloaded_files_title">Preuzete datoteke</string>
+    <string name="settings_downloaded_files_total">Ukupno</string>
     <string name="settings_feedback_bug_report">Povratne informacije / Prijava problema</string>
     <string name="settings_flip_to_library_summary">Preokrenite telefon zaslonom prema dolje da otvorite QR knjižnice.</string>
     <string name="settings_flip_to_library_title">Preokreni za prikaz QR-a knjižnice</string>
