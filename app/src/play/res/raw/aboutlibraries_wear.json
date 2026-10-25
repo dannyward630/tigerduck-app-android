@@ -265,10 +265,10 @@
         },
         {
             "uniqueId": "androidx.collection:collection",
-            "artifactVersion": "1.5.0",
+            "artifactVersion": "1.6.0",
             "name": "collections",
             "description": "Standalone efficient collections.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/collection#1.5.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/collection#1.6.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -290,10 +290,10 @@
         },
         {
             "uniqueId": "androidx.collection:collection-ktx",
-            "artifactVersion": "1.5.0",
+            "artifactVersion": "1.6.0",
             "name": "Collections Kotlin Extensions",
             "description": "Kotlin extensions for 'collection' artifact",
-            "website": "https://developer.android.com/jetpack/androidx/releases/collection#1.5.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/collection#1.6.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1003,10 +1003,10 @@
         },
         {
             "uniqueId": "androidx.datastore:datastore",
-            "artifactVersion": "1.2.1",
+            "artifactVersion": "1.3.0",
             "name": "DataStore",
             "description": "Android DataStore - contains the underlying store used by each serialization method along with components that require an Android dependency",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1028,10 +1028,10 @@
         },
         {
             "uniqueId": "androidx.datastore:datastore-core",
-            "artifactVersion": "1.2.1",
+            "artifactVersion": "1.3.0",
             "name": "DataStore Core",
             "description": "Android DataStore Core - contains the underlying store used by each serialization method",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1053,10 +1053,10 @@
         },
         {
             "uniqueId": "androidx.datastore:datastore-core-okio",
-            "artifactVersion": "1.2.1",
+            "artifactVersion": "1.3.0",
             "name": "DataStore Core Okio",
             "description": "Android DataStore Core Okio- contains APIs to use datastore-core in multiplatform via okio",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1078,10 +1078,10 @@
         },
         {
             "uniqueId": "androidx.datastore:datastore-preferences",
-            "artifactVersion": "1.2.1",
+            "artifactVersion": "1.3.0",
             "name": "Preferences DataStore",
             "description": "Android Preferences DataStore",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1103,10 +1103,10 @@
         },
         {
             "uniqueId": "androidx.datastore:datastore-preferences-core",
-            "artifactVersion": "1.2.1",
+            "artifactVersion": "1.3.0",
             "name": "Preferences DataStore Core",
             "description": "Android Preferences DataStore without the Android Dependencies",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1128,10 +1128,10 @@
         },
         {
             "uniqueId": "androidx.datastore:datastore-preferences-external-protobuf",
-            "artifactVersion": "1.2.1",
+            "artifactVersion": "1.3.0",
             "name": "Preferences External Protobuf",
             "description": "Repackaged proto-lite dependency for use by datastore preferences",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -1153,10 +1153,10 @@
         },
         {
             "uniqueId": "androidx.datastore:datastore-preferences-proto",
-            "artifactVersion": "1.2.1",
+            "artifactVersion": "1.3.0",
             "name": "Preferences DataStore Proto",
             "description": "Jarjar the generated proto for use by datastore-preferences.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.2.1",
+            "website": "https://developer.android.com/jetpack/androidx/releases/datastore#1.3.0",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -2315,15 +2315,18 @@
         },
         {
             "uniqueId": "androidx.tracing:tracing",
-            "artifactVersion": "1.2.0",
-            "name": "Android Tracing",
+            "artifactVersion": "2.0.1",
+            "name": "Tracing",
             "description": "Android Tracing",
-            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.2.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#2.0.1",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
                 }
             ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -2337,15 +2340,18 @@
         },
         {
             "uniqueId": "androidx.tracing:tracing-ktx",
-            "artifactVersion": "1.2.0",
-            "name": "Android Tracing Runtime Kotlin Extensions",
+            "artifactVersion": "2.0.1",
+            "name": "Tracing Kotlin Extensions",
             "description": "Android Tracing",
-            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#1.2.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/tracing#2.0.1",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
                 }
             ],
+            "organization": {
+                "name": "The Android Open Source Project"
+            },
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -2447,10 +2453,10 @@
         },
         {
             "uniqueId": "androidx.wear.compose:compose-foundation",
-            "artifactVersion": "1.7.0",
+            "artifactVersion": "1.7.1",
             "name": "Android Wear Compose Foundation",
             "description": "WearOS Compose Foundation Library. This library makes it easier for developersto write Jetpack Compose applications for Wearable devices by providing functionality to support wearable specific devices sizes, shapes and navigation gestures. It builds upon the Jetpack Compose libraries.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.1",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -2472,10 +2478,10 @@
         },
         {
             "uniqueId": "androidx.wear.compose:compose-material",
-            "artifactVersion": "1.7.0",
+            "artifactVersion": "1.7.1",
             "name": "Android Wear Compose Material",
             "description": "WearOS Compose Material Library. This library makes it easier for developers to write Jetpack Compose applications for Wearable devices that implement Wear Material Design UX guidelines and specifications. It builds upon the Jetpack Compose libraries.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.1",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -2497,10 +2503,10 @@
         },
         {
             "uniqueId": "androidx.wear.compose:compose-material-core",
-            "artifactVersion": "1.7.0",
+            "artifactVersion": "1.7.1",
             "name": "Android Wear Compose Material Core",
             "description": "WearOS Compose Material Core Library. This library contains themeless components that are shared between different WearOS Compose Material libraries. It builds upon the Jetpack Compose libraries.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.1",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -2522,10 +2528,10 @@
         },
         {
             "uniqueId": "androidx.wear.compose:compose-material3",
-            "artifactVersion": "1.7.0",
+            "artifactVersion": "1.7.1",
             "name": "Android Wear Compose Material 3",
             "description": "WearOS Compose Material 3 Library. This library makes it easier for developers to write Jetpack Compose applications for Wearable devices that implement Wear Material 3 Design UX guidelines and specifications. It builds upon the Jetpack Compose libraries.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.1",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -2547,10 +2553,10 @@
         },
         {
             "uniqueId": "androidx.wear.compose:compose-navigation",
-            "artifactVersion": "1.7.0",
+            "artifactVersion": "1.7.1",
             "name": "Android Wear Compose Navigation",
             "description": "WearOS Compose Navigation Library. This library makes it easier for developersto write Jetpack Compose applications for Wearable devices by providing functionality to support navigation. It builds upon the Jetpack Compose libraries.",
-            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.0",
+            "website": "https://developer.android.com/jetpack/androidx/releases/wear-compose#1.7.1",
             "developers": [
                 {
                     "name": "The Android Open Source Project"
@@ -3132,7 +3138,7 @@
         },
         {
             "uniqueId": "com.google.code.gson:gson",
-            "artifactVersion": "2.14.0",
+            "artifactVersion": "2.15.0",
             "name": "Gson",
             "description": "Gson JSON library",
             "website": "https://github.com/google/gson",
@@ -3178,7 +3184,7 @@
         },
         {
             "uniqueId": "com.google.errorprone:error_prone_annotations",
-            "artifactVersion": "2.48.0",
+            "artifactVersion": "2.50.0",
             "name": "error-prone annotations",
             "description": "Error Prone is a static analysis tool for Java that catches common programming mistakes at compile-time.",
             "website": "https://errorprone.info/error_prone_annotations",
@@ -3252,7 +3258,7 @@
         },
         {
             "uniqueId": "com.squareup.okhttp3:logging-interceptor",
-            "artifactVersion": "5.5.0",
+            "artifactVersion": "5.5.1",
             "name": "logging-interceptor",
             "description": "Square\u2019s meticulous HTTP client for Java and Kotlin.",
             "website": "https://lysine.dev/okhttp/",
@@ -3275,7 +3281,7 @@
         },
         {
             "uniqueId": "com.squareup.okhttp3:okhttp",
-            "artifactVersion": "5.5.0",
+            "artifactVersion": "5.5.1",
             "name": "okhttp",
             "description": "Square\u2019s meticulous HTTP client for Java and Kotlin.",
             "website": "https://lysine.dev/okhttp/",
@@ -3342,7 +3348,7 @@
         },
         {
             "uniqueId": "org.jetbrains.kotlin:kotlin-stdlib",
-            "artifactVersion": "2.4.20",
+            "artifactVersion": "2.4.21",
             "name": "Kotlin Stdlib",
             "description": "Kotlin Standard Library",
             "website": "https://kotlinlang.org/",
@@ -3366,7 +3372,7 @@
         },
         {
             "uniqueId": "org.jetbrains.kotlin:kotlin-stdlib-common",
-            "artifactVersion": "2.4.20",
+            "artifactVersion": "2.4.21",
             "name": "Kotlin Stdlib Common",
             "description": "Kotlin Common Standard Library (legacy, use kotlin-stdlib instead)",
             "website": "https://kotlinlang.org/",
@@ -3380,6 +3386,28 @@
                 "connection": "scm:git:https://github.com/JetBrains/kotlin.git",
                 "developerConnection": "scm:git:https://github.com/JetBrains/kotlin.git",
                 "url": "https://github.com/JetBrains/kotlin"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "org.jetbrains.kotlinx:atomicfu",
+            "artifactVersion": "0.28.0",
+            "name": "atomicfu",
+            "description": "AtomicFU utilities",
+            "website": "https://github.com/Kotlin/kotlinx.atomicfu",
+            "developers": [
+                {
+                    "name": "JetBrains Team",
+                    "organisationUrl": "https://www.jetbrains.com"
+                }
+            ],
+            "scm": {
+                "url": "https://github.com/Kotlin/kotlinx.atomicfu"
             },
             "licenses": [
                 "Apache-2.0"
@@ -3458,28 +3486,6 @@
             "uniqueId": "org.jetbrains.kotlinx:kotlinx-serialization-core",
             "artifactVersion": "1.7.3",
             "name": "kotlinx-serialization-core",
-            "description": "Kotlin multiplatform serialization runtime library",
-            "website": "https://github.com/Kotlin/kotlinx.serialization",
-            "developers": [
-                {
-                    "name": "JetBrains Team",
-                    "organisationUrl": "https://www.jetbrains.com"
-                }
-            ],
-            "scm": {
-                "url": "https://github.com/Kotlin/kotlinx.serialization"
-            },
-            "licenses": [
-                "Apache-2.0"
-            ],
-            "funding": [
-                
-            ]
-        },
-        {
-            "uniqueId": "org.jetbrains.kotlinx:kotlinx-serialization-json",
-            "artifactVersion": "1.7.3",
-            "name": "kotlinx-serialization-json",
             "description": "Kotlin multiplatform serialization runtime library",
             "website": "https://github.com/Kotlin/kotlinx.serialization",
             "developers": [

@@ -70,6 +70,8 @@ fun interface ChainValidator {
  * Every TigerDuck HTTPS client's trust (A9). The platform's network-security-config trust
  * manager decides system trust, as it always has; this applies the pins on top (A4):
  *
+ * - any chain holding one of [CompromisedCertificates]: refused first, whatever the platform's
+ *   store and the pins say;
  * - a host no pin set covers, or a call naming no host: the platform's check alone;
  * - a pinned host: the platform validates the chain and builds it up to its anchor, so a root
  *   pin matches even when the server leaves the root out. A chain it refuses fails as the
@@ -95,8 +97,10 @@ class PinnedTrustManager(
             platform.checkServerTrusted(chain, authType, engine)
         }
 
-    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) =
+    override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {
+        CompromisedCertificates.check(chain.asList())
         platform.checkServerTrusted(chain, authType)
+    }
 
     override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String, socket: Socket?) =
         platform.checkClientTrusted(chain, authType, socket)
@@ -147,14 +151,21 @@ class PinnedTrustManager(
     }
 
     private fun check(chain: Array<X509Certificate>, authType: String, host: String?, unpinned: () -> Unit) {
+        CompromisedCertificates.check(chain.asList())
         val rules = policy()
         val at = now()
         val set = host?.let { rules.setFor(it, at) }
         if (host == null || set == null) {
             unpinned()
+            // The platform may have completed the chain with an intermediate the server left out:
+            // built here as it would be, so that one is checked too. A call with no host has no
+            // chain to build, and only the one served is checked.
+            if (host != null) CompromisedCertificates.check(validator.validate(chain, authType, host))
             return
         }
         val validated = validator.validate(chain, authType, host)
+        // The chain the platform built may hold an intermediate the server left out.
+        CompromisedCertificates.check(validated)
         mismatchOf(rules, set, validated, validated.map { it.spki }.toSet(), host, at)?.let { throw PinMismatchException(it) }
     }
 

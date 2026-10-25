@@ -5,6 +5,11 @@ import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.runTest
+import org.ntust.app.tigerduck.shared.WearProtocol
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.ui.theme.VisualPreset
 import org.robolectric.RobolectricTestRunner
@@ -15,6 +20,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
 @Config(application = Application::class)
+@OptIn(ExperimentalCoroutinesApi::class)
 class AppPreferencesVisualPresetTest {
 
     private lateinit var context: Context
@@ -47,6 +53,36 @@ class AppPreferencesVisualPresetTest {
         context.getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE).edit()
             .putString("visualPreset", "someLaterStyle").commit()
         assertEquals(VisualPreset.TigerDuck, AppPreferences(context).visualPreset)
+    }
+
+    @Test
+    fun `the watch hears of a new style, and only of a new one`() = runTest {
+        val prefs = AppPreferences(context)
+        var heard = 0
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { prefs.visualPresetChanged.collect { heard++ } }
+
+        prefs.visualPreset = VisualPreset.Tat
+        prefs.visualPreset = VisualPreset.Tat
+        prefs.visualPreset = VisualPreset.TigerDuck
+
+        assertEquals(2, heard)
+    }
+
+    @Test
+    fun `a full reset that puts the style back tells the watch too`() = runTest {
+        val prefs = AppPreferences(context)
+        prefs.visualPreset = VisualPreset.Tat
+        var heard = 0
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { prefs.visualPresetChanged.collect { heard++ } }
+
+        prefs.clearAllPrefs()
+
+        assertEquals(1, heard)
+    }
+
+    @Test
+    fun `the watch reads TAT by the raw value the phone stores`() {
+        assertEquals(VisualPreset.Tat.rawValue, WearProtocol.Schedule.VISUAL_PRESET_TAT)
     }
 
     @Test

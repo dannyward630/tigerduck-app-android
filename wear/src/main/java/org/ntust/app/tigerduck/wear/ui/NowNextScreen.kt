@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.foundation.lazy.ScalingLazyColumn
 import androidx.wear.compose.foundation.lazy.rememberScalingLazyListState
+import androidx.wear.compose.material3.ProgressIndicatorDefaults
 import androidx.wear.compose.material3.ListHeader
 import androidx.wear.compose.material3.ScreenScaffold
 import androidx.wear.compose.material3.Text
@@ -27,6 +28,8 @@ import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.wear.R
 import org.ntust.app.tigerduck.wear.data.WatchSnapshot
 import org.ntust.app.tigerduck.wear.ui.theme.LocalScreenPadding
+import org.ntust.app.tigerduck.wear.ui.theme.WatchCardStyle
+import org.ntust.app.tigerduck.wear.ui.theme.courseCardColors
 import org.ntust.app.tigerduck.wear.ui.theme.wearCourseColor
 import java.util.concurrent.TimeUnit
 
@@ -52,6 +55,7 @@ fun NowNextScreen(snapshot: WatchSnapshot) {
 
         val (today, minuteOfDay) = currentTaipeiTick()
         val result = snapshot.nextClass(today, minuteOfDay)
+        val cardStyle = WatchCardStyle.fromVisualPreset(snapshot.visualPreset)
 
         ScalingLazyColumn(
             modifier = Modifier
@@ -64,7 +68,7 @@ fun NowNextScreen(snapshot: WatchSnapshot) {
             item { ListHeader { Text(stringResource(R.string.watch_now_next_title)) } }
             when (result) {
                 is NextClassResult.Ongoing -> {
-                    item { OngoingCard(result, minuteOfDay) }
+                    item { OngoingCard(result, minuteOfDay, cardStyle) }
                     result.nextToday?.let { next ->
                         item {
                             NextCard(
@@ -72,6 +76,7 @@ fun NowNextScreen(snapshot: WatchSnapshot) {
                                 classroom = next.classroom,
                                 statusText = nextStatusText(next.startMinute, minuteOfDay),
                                 titleResId = R.string.watch_next,
+                                style = cardStyle,
                             )
                         }
                     }
@@ -83,6 +88,7 @@ fun NowNextScreen(snapshot: WatchSnapshot) {
                         classroom = result.classroom,
                         statusText = nextStatusText(result.startMinute, minuteOfDay),
                         titleResId = null,
+                        style = cardStyle,
                     )
                 }
 
@@ -92,6 +98,7 @@ fun NowNextScreen(snapshot: WatchSnapshot) {
                         classroom = result.classroom,
                         statusText = futureStatusText(result.daysAhead, result.startMinute, result.weekday),
                         titleResId = null,
+                        style = cardStyle,
                     )
                 }
 
@@ -105,29 +112,31 @@ fun NowNextScreen(snapshot: WatchSnapshot) {
 }
 
 @Composable
-private fun OngoingCard(result: NextClassResult.Ongoing, minuteOfDay: Int) {
-    val courseColor = wearCourseColor(result.course)
+private fun OngoingCard(result: NextClassResult.Ongoing, minuteOfDay: Int, style: WatchCardStyle) {
+    val colors = courseCardColors(style, wearCourseColor(result.course), tintAlpha = 0.22f, muted = false)
     val span = (result.endMinute - result.startMinute).coerceAtLeast(1)
     val progress = ((minuteOfDay - result.startMinute).toFloat() / span).coerceIn(0f, 1f)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(courseColor.copy(alpha = 0.22f))
+            .background(colors.fill)
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = stringResource(R.string.watch_now_ends_at, formatHm(result.endMinute)),
-            color = courseColor,
+            color = colors.emphasis,
         )
         Text(
             text = result.course.displayName,
+            color = colors.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = "${result.classroom} · ${result.course.instructor}",
+            color = colors.secondaryText,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -137,6 +146,7 @@ private fun OngoingCard(result: NextClassResult.Ongoing, minuteOfDay: Int) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(4.dp),
+            colors = ProgressIndicatorDefaults.colors(indicatorColor = colors.progress, trackColor = colors.progressTrack),
         )
     }
 }
@@ -156,32 +166,35 @@ private fun NextCard(
     classroom: String,
     statusText: String,
     titleResId: Int?,
+    style: WatchCardStyle,
 ) {
-    val courseColor = wearCourseColor(course)
+    val colors = courseCardColors(style, wearCourseColor(course), tintAlpha = 0.22f, muted = false)
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(courseColor.copy(alpha = 0.22f))
+            .background(colors.fill)
             .padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (titleResId != null) {
-            Text(text = stringResource(titleResId), color = courseColor)
+            Text(text = stringResource(titleResId), color = colors.emphasis)
         }
         Text(
             text = course.displayName,
+            color = colors.text,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = "$classroom · ${course.instructor}",
+            color = colors.secondaryText,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = statusText,
-            color = courseColor,
+            color = colors.emphasis,
         )
     }
 }
