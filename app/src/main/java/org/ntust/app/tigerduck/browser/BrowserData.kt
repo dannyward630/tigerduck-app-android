@@ -43,10 +43,23 @@ object BrowserSession {
      */
     val usable: Boolean get() = pendingDeletions.value == 0
 
-    fun end() = state.update { it + 1 }
+    /** Held while the session moves on or a clearing starts, and while [ifStill] writes. */
+    private val lock = Any()
 
-    internal fun setClearing(clearing: Boolean) {
+    fun end() = synchronized(lock) { state.update { it + 1 } }
+
+    internal fun setClearing(clearing: Boolean) = synchronized(lock) {
         clearingState.value = clearing
+    }
+
+    /**
+     * Runs [write] if the session is still [session] and nothing is clearing: what a download
+     * keeps in the browser's cookies, which must not outlive a clearing that left the download
+     * running. One lock with [end] and [setClearing], so a clearing cannot start between the check
+     * and the write; a write before it starts is cleared with the rest.
+     */
+    fun ifStill(session: Int, write: () -> Unit) = synchronized(lock) {
+        if (state.value == session && !clearingState.value) write()
     }
 
     internal fun deletionStarted() = pendingDeletions.update { it + 1 }
