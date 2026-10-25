@@ -7,6 +7,7 @@ import okhttp3.Response
 import java.io.IOException
 import java.util.Collections
 import java.util.WeakHashMap
+import javax.net.ssl.SSLSocket
 
 /**
  * The one way TigerDuck starts an OkHttp client (A9): with [tls]'s pinned trust, and a call
@@ -37,14 +38,21 @@ fun pinnedClientBuilder(tls: PinnedTls?): OkHttpClient.Builder {
  * Each request meets its host's pins in force now on the connection it goes out on, before a
  * byte of it is written: one pooled since pins a newer document dropped, or an HTTP/2 connection
  * made for another host, which OkHttp carries it over without a new handshake.
+ *
+ * The chain is the one the server sent, from the TLS session, as the handshake's check had it.
+ * OkHttp's own `handshake().peerCertificates` is that chain rebuilt by its chain cleaner, which,
+ * for a trust manager that isn't the platform's own, has only the roots to build from: a server
+ * that leaves its intermediate out, as www.academic.ntust.edu.tw does, came back with no chain at
+ * all, and every request to it failed though its handshake had passed.
  */
 class ConnectionPins(private val trust: PinnedTrustManager) : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val connection = chain.connection()
         if (connection != null) {
+            val served = (connection.socket() as? SSLSocket)?.session?.peerCertificates?.toList()
             trust.checkExchange(
                 host = chain.request().url.host,
-                peerCertificates = connection.handshake()?.peerCertificates.orEmpty(),
+                peerCertificates = served ?: connection.handshake()?.peerCertificates.orEmpty(),
                 connection = connection,
             )
         }
