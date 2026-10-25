@@ -105,7 +105,7 @@ internal fun File.packedWith(name: String, method: Int): File = apply {
  * A 7z of nothing but a packed header claiming to grow to [unpackSize] bytes: LZMA2, from ten
  * bytes of junk. Its checksums are right, so a reader gets as far as reading that header.
  */
-internal fun sevenZWithPackedHeader(unpackSize: Long): ByteArray {
+internal fun sevenZWithPackedHeader(unpackSize: Long, folders: Int = 1): ByteArray {
     fun number(value: Long): ByteArray {
         // 7z's own number: a first byte whose leading ones count the bytes after it.
         val bytes = java.io.ByteArrayOutputStream()
@@ -115,10 +115,13 @@ internal fun sevenZWithPackedHeader(unpackSize: Long): ByteArray {
     }
     val next = java.io.ByteArrayOutputStream().apply {
         write(byteArrayOf(0x17, 0x06, 0x00, 0x01, 0x09, 0x0A, 0x00)) // encoded header; pack info: at 0, one stream of 10
-        write(byteArrayOf(0x07, 0x0B, 0x01, 0x00)) // unpack info: one folder, inline
-        write(byteArrayOf(0x01, 0x21, 0x21, 0x01, 0x18)) // one coder: LZMA2, with one byte of properties
+        write(byteArrayOf(0x07, 0x0B)) // unpack info: folders, inline
+        write(number(folders.toLong()))
+        write(0x00)
+        // Each one coder: LZMA2, its one byte of properties a 4 KiB dictionary, small enough for any decoder limit.
+        repeat(folders) { write(byteArrayOf(0x01, 0x21, 0x21, 0x01, 0x00)) }
         write(0x0C) // unpack sizes
-        write(number(unpackSize))
+        repeat(folders) { write(number(unpackSize)) }
         write(byteArrayOf(0x00, 0x00))
     }.toByteArray()
     val junk = ByteArray(10) { 0x55 }

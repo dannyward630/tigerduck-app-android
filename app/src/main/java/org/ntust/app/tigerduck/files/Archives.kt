@@ -99,6 +99,11 @@ data class ArchiveLimits(
     val ratioFreeBytes: Long = 16L shl 20,
     /** The most decompressed bytes one pass over a compressed tar reads, to list it or reach a file. */
     val maxScanBytes: Long = 2L shl 30,
+    /**
+     * The most a tar's headers before one entry may take: the reader holds a long name or an
+     * extended header whole, however large it says it is.
+     */
+    val maxHeaderBytes: Long = 1L shl 20,
     /** The most memory, in KiB, a 7z or an xz may ask its decoder for: 7-Zip's Ultra, a 64 MiB dictionary, fits. */
     val maxMemoryKiB: Int = 96 shl 10,
     val timeLimitMillis: Long = 60_000,
@@ -411,7 +416,9 @@ object Archives {
         if (size > SEVEN_Z_PACKED_HEADER_PEEK) return size
         val header = read(channel, SEVEN_Z_START_SIZE + offset, size.toInt()) ?: return null
         if (header.get(0) != ENCODED_HEADER) return size
-        return runCatching { packedHeaderUnpackSize(header) }.getOrNull()
+        // One it can't read is a damaged archive, never one left to the reader unchecked.
+        return runCatching { packedHeaderUnpackSize(header) }
+            .getOrElse { throw ArchiveProblemException(ArchiveProblem.BROKEN, it) }
     }
 
     /** The largest unpack size a packed 7z header's folders declare: what reading it would hold. */
@@ -436,11 +443,12 @@ object Archives {
             id = header.get().toInt()
         }
         require(id == UNPACK_INFO && header.get().toInt() == FOLDER)
+        // Every count held to the bytes the header has left, each thing it counts taking one at least.
         val folders = sevenZNumber(header)
-        require(folders in 1..64 && header.get().toInt() == 0)
+        require(folders in 1..header.remaining().toLong() && header.get().toInt() == 0)
         val outputs = LongArray(folders.toInt()) {
             val coders = sevenZNumber(header)
-            require(coders in 1..64)
+            require(coders in 1..header.remaining().toLong())
             var inputs = 0L
             var outputs = 0L
             repeat(coders.toInt()) {
@@ -458,7 +466,7 @@ object Archives {
                     header.position(header.position() + properties.toInt())
                 }
             }
-            require(outputs in 1..64 && inputs in 1..64)
+            require(outputs in 1..header.remaining().toLong() + 1 && inputs in 1..header.remaining().toLong() + coders)
             repeat((outputs - 1).toInt()) {
                 sevenZNumber(header)
                 sevenZNumber(header)
@@ -541,9 +549,11 @@ object Archives {
             val items = ArrayList<ArchiveItem>()
             var truncated = false
             var index = 0
+            var unread = 0L
             while (true) {
                 limits.check(deadline)
-                val entry = tar.nextEntry ?: break
+                val entry = pass.nextEntry(tar, unread, limits) ?: break
+                unread = dataAfter(entry)
                 val path = ArchiveNames.normalize(entry.name)
                 val at = index++
                 if (path.isEmpty()) continue
@@ -579,9 +589,11 @@ object Archives {
                 return@streamed
             }
             var index = 0
+            var unread = 0L
             while (true) {
                 limits.check(deadline)
-                val entry = tar.nextEntry ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
+                val entry = pass.nextEntry(tar, unread, limits) ?: throw ArchiveProblemException(ArchiveProblem.BROKEN)
+                unread = dataAfter(entry)
                 if (index++ != item.index) continue
                 // The archive changed since it was listed: not the file that was tapped.
                 if (ArchiveNames.normalize(entry.name) != item.path) throw ArchiveProblemException(ArchiveProblem.BROKEN)
@@ -599,8 +611,30 @@ object Archives {
         else -> null
     }
 
-    /** One pass over a streamed archive: a tar's entries, or the one file a compressor holds. */
-    private class Pass(val stream: InputStream, val tar: TarArchiveInputStream?, val singleName: String, val singleModified: Long?)
+    /** One pass over a streamed archive: a tar's entries, or the one file a compressor holds; [meter] counts it. */
+    private class Pass(
+        val stream: InputStream,
+        val tar: TarArchiveInputStream?,
+        val singleName: String,
+        val singleModified: Long?,
+        val meter: Counted,
+    ) {
+        /**
+         * [tar]'s next entry, its reads held to the [unread] data of the one before and
+         * [ArchiveLimits.maxHeaderBytes] of headers: a long name past that isn't held whole.
+         */
+        fun nextEntry(tar: TarArchiveInputStream, unread: Long, limits: ArchiveLimits): TarArchiveEntry? {
+            meter.window(unread + limits.maxHeaderBytes + BUFFER)
+            try {
+                return tar.nextEntry
+            } finally {
+                meter.window(null)
+            }
+        }
+    }
+
+    /** What [entry]'s data takes in its tar: as much as it holds, padded to the 512-byte record. */
+    private fun dataAfter(entry: TarArchiveEntry): Long = (maxOf(entry.size, entry.realSize) + 511) / 512 * 512
 
     private inline fun <T> streamed(
         source: ArchiveSource,
@@ -627,11 +661,12 @@ object Archives {
             else -> throw ArchiveProblemException(ArchiveProblem.UNSUPPORTED)
         }
         // A plain tar costs nothing to pass over; a compressed one costs every byte it holds.
-        val counted = BufferedInputStream(Counted(unpacked, limits, deadline, if (format == ArchiveFormat.TAR) null else limits.maxScanBytes), BUFFER)
+        val meter = Counted(unpacked, limits, deadline, if (format == ArchiveFormat.TAR) null else limits.maxScanBytes)
+        val counted = BufferedInputStream(meter, BUFFER)
         counted.use {
             val tar = if (format == ArchiveFormat.TAR || startsAsTar(counted)) TarArchiveInputStream(counted, "UTF-8") else null
             val name = packedName?.let(ArchiveNames::normalize)?.substringAfterLast('/')?.takeIf { it.isNotEmpty() } ?: defaultName(source)
-            block(Pass(counted, tar, name, packedModified))
+            block(Pass(counted, tar, name, packedModified, meter))
         }
     }
 
@@ -885,6 +920,12 @@ private const val SKIP_CHUNK = 64 shl 10
 internal class Counted(input: InputStream, private val limits: ArchiveLimits, private val deadline: Long, private val limit: Long?) :
     FilterInputStream(input) {
     private var count = 0L
+    private var windowLeft: Long? = null
+
+    /** Holds the reads from here until it's lifted (null) to [bytes] more; past them, a pass stops. */
+    fun window(bytes: Long?) {
+        windowLeft = bytes
+    }
 
     override fun read(): Int {
         limits.check(deadline)
@@ -913,6 +954,10 @@ internal class Counted(input: InputStream, private val limits: ArchiveLimits, pr
     private fun counted(bytes: Long) {
         count += bytes
         if (limit != null && count > limit) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
+        windowLeft?.let { left ->
+            if (bytes > left) throw ArchiveProblemException(ArchiveProblem.TOO_LARGE)
+            windowLeft = left - bytes
+        }
     }
 }
 

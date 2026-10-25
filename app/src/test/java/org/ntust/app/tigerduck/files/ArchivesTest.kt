@@ -438,6 +438,55 @@ class ArchivesTest {
     }
 
     @Test
+    fun `a 7z header of more folders than real ones have is still held to the memory limit`() {
+        val file = temp.newFile("folders.7z").apply { writeBytes(sevenZWithPackedHeader(unpackSize = 2L shl 20, folders = 65)) }
+
+        // Its decoders fit this limit; the header it would hold doesn't.
+        assertEquals(ArchiveProblem.TOO_LARGE, problem { listing(file, ArchiveLimits(maxMemoryKiB = 512)) })
+    }
+
+    @Test
+    fun `a packed 7z header the check can't read is a damaged archive, not one left to the reader`() {
+        val bytes = sevenZWithPackedHeader(unpackSize = 1L shl 20)
+        // The header follows the 32-byte start and 10 bytes of packed data: its first record after
+        // "encoded header" made one the check doesn't know. The checksums no longer match, as the
+        // reader would find, but the check comes first.
+        bytes[32 + 10 + 1] = 0x7F
+        val file = temp.newFile("unknown.7z").apply { writeBytes(bytes) }
+
+        assertEquals(ArchiveProblem.BROKEN, problem { listing(file) })
+    }
+
+    @Test
+    fun `a tar entry's long name or extended header past the limit isn't held whole`() {
+        val file = temp.newFile("long.tar.gz")
+        GzipCompressorOutputStream(file.outputStream()).use { out ->
+            val name = ByteArray(4 shl 20) { 'a'.code.toByte() }
+            out.write(tarHeader("././@LongLink", name.size, 'L'))
+            out.write(name)
+            out.write(tarHeader("short.txt", 0, '0'))
+            out.write(ByteArray(1024))
+        }
+
+        assertEquals(ArchiveProblem.TOO_LARGE, problem { listing(file) })
+    }
+
+    @Test
+    fun `a tar's large files still list, their data passed over, not taken for headers`() {
+        val file = temp.newFile("large.tar.gz")
+        GzipCompressorOutputStream(file.outputStream()).use { out ->
+            tar(out) {
+                file("big.bin", ByteArray(8 shl 20))
+                file("small.txt", "end".toByteArray())
+            }
+        }
+
+        val listing = listing(file)
+        assertEquals(listOf("big.bin", "small.txt"), listing.items.map { it.path })
+        assertEquals("end", extract(file, listing.items[1]).readText())
+    }
+
+    @Test
     fun `a gz whose name runs on and on isn't read`() {
         val file = temp.newFile("long-name.gz")
         file.outputStream().use { out ->
