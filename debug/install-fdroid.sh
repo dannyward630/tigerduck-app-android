@@ -18,5 +18,7 @@ apk="$(resolve_apk "$(module_outputs_dir app)/apk/fdroid/debug/app-fdroid-debug*
 
 install_each "org.ntust.app.tigerduck.fdroid" "$apk" "${phones[@]}"
 
+installed_everywhere=1
+report_failures || installed_everywhere=0
 maybe_preset_clock ${CLOCK_PAIRS[@]+"${CLOCK_PAIRS[@]}"}
-exit_if_any_failed
+(( installed_everywhere )) || exit 1

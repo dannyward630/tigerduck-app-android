@@ -132,4 +132,4 @@ if (( ${#watches[@]} )); then
   install_each "org.ntust.app.tigerduck" "$watch_apk" "${watches[@]}"
 fi
 
-exit_if_any_failed
+report_failures || exit 1

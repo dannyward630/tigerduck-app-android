@@ -35,5 +35,7 @@ if (( ${#watches[@]} )); then
   install_each "org.ntust.app.tigerduck" "$watch_apk" "${watches[@]}"
 fi
 
+installed_everywhere=1
+report_failures || installed_everywhere=0
 maybe_preset_clock ${CLOCK_PAIRS[@]+"${CLOCK_PAIRS[@]}"}
-exit_if_any_failed
+(( installed_everywhere )) || exit 1

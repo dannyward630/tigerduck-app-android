@@ -17,6 +17,7 @@ LOCAL_BUILD_ROOT="$HOME/.tigerduck-build/checkouts/$CHECKOUT_KEY"
 
 # Filled by choose_devices and install_each.
 CHOSEN=()
+MENU_PICKS=""
 CLOCK_PAIRS=()
 FAILED_ON=()
 
@@ -181,7 +182,10 @@ choose_devices() {
 
   local picks
   if { : >/dev/tty; } 2>/dev/null; then
-    picks="$(_tick_menu "Install on which ${kind}s?" "${DEVICE_LABELS[@]}" </dev/tty 2>/dev/tty)" || return 1
+    # In this shell, not a $(...): a Ctrl-C trap in a subshell can't put
+    # echo back on bash 3.2.
+    _tick_menu "Install on which ${kind}s?" "${DEVICE_LABELS[@]}" </dev/tty 2>/dev/tty || return 1
+    picks="$MENU_PICKS"
   else
     picks="$(_number_menu "Install on which ${kind}s?" "${DEVICE_LABELS[@]}")" || return 1
   fi
@@ -193,8 +197,8 @@ choose_devices() {
 }
 
 # The menu choose_devices draws: <title>, then one row per item. Reads keys
-# from stdin and draws on stderr, both the terminal; prints the picked
-# indexes on stdout, space-separated. Returns 1 when cancelled.
+# from stdin and draws on stderr, both the terminal; leaves the picked
+# indexes in MENU_PICKS, space-separated. Returns 1 when cancelled.
 _tick_menu() {
   local title="$1"; shift
   local items=("$@")
@@ -202,25 +206,35 @@ _tick_menu() {
   local ticked=()
   for ((i = 0; i < n; i++)); do ticked[i]=0; done
 
+  # Echo is left on between keys: `read -s` turns it off for each key, and
+  # an interrupted read puts back what it found, so "off" set here would
+  # outlive a Ctrl-C. The trap restores the settings from before the menu,
+  # along with the cursor, and ends the script as a Ctrl-C would.
   local saved_stty
-  saved_stty="$(stty -g)"
-  # Restored on every way out, Ctrl-C included, so the shell is never left
-  # with no echo and no cursor.
-  trap 'stty "$saved_stty"; printf "\e[?25h" >&2; exit 130' INT TERM
-  stty -echo
+  saved_stty="$(stty -g 2>/dev/null)" || saved_stty=""
+  trap '[[ -n "$saved_stty" ]] && stty "$saved_stty" 2>/dev/null; printf "\e[?25h" >&2; exit 130' INT TERM
   printf '\e[?25l' >&2
 
-  local drawn=0
+  local hint="(space: tick · a: all · Enter: install · q: cancel)"
+  local drawn=0 cols row
+  # Each row is cut to the terminal's width: the redraw climbs one line per
+  # row, and a row that wrapped would leave its tail behind.
   _draw() {
+    cols="$(stty size 2>/dev/null | awk '{print $2}')"
+    [[ "$cols" =~ ^[0-9]+$ ]] && (( cols > 10 )) || cols=80
     (( drawn )) && printf '\e[%dA' $((n + 1)) >&2
-    printf '\r\e[2K%s  \e[2m(space: tick · a: all · Enter: install · q: cancel)\e[0m\n' "$title" >&2
+    row="$title  $hint"
+    (( ${#row} < cols )) || row="$title"
+    printf '\r\e[2K%s\n' "${row:0:cols-1}" >&2
     for ((i = 0; i < n; i++)); do
       local box="[ ]"
       (( ticked[i] )) && box="[x]"
       if (( i == cur )); then
-        printf '\r\e[2K\e[7m> %s %s\e[0m\n' "$box" "${items[i]}" >&2
+        row="> $box ${items[i]}"
+        printf '\r\e[2K\e[7m%s\e[0m\n' "${row:0:cols-1}" >&2
       else
-        printf '\r\e[2K  %s %s\n' "$box" "${items[i]}" >&2
+        row="  $box ${items[i]}"
+        printf '\r\e[2K%s\n' "${row:0:cols-1}" >&2
       fi
     done
     drawn=1
@@ -235,14 +249,14 @@ _tick_menu() {
         rest=""
         IFS= read -rsn2 -t 1 rest || true
         case "$rest" in
-          '[A'|'OA') (( cur = (cur + n - 1) % n )) ;;
-          '[B'|'OB') (( cur = (cur + 1) % n )) ;;
+          '[A'|'OA') cur=$(( (cur + n - 1) % n )) ;;
+          '[B'|'OB') cur=$(( (cur + 1) % n )) ;;
           '') cancelled=1; done=1 ;;
         esac
         ;;
-      k) (( cur = (cur + n - 1) % n )) ;;
-      j) (( cur = (cur + 1) % n )) ;;
-      ' ') (( ticked[cur] = ! ticked[cur] )) ;;
+      k) cur=$(( (cur + n - 1) % n )) ;;
+      j) cur=$(( (cur + 1) % n )) ;;
+      ' ') ticked[cur]=$(( ! ticked[cur] )) ;;
       a|A)
         local all=1
         for ((i = 0; i < n; i++)); do (( ticked[i] )) || all=0; done
@@ -253,7 +267,6 @@ _tick_menu() {
     esac
   done
 
-  stty "$saved_stty"
   printf '\e[?25h' >&2
   trap - INT TERM
 
@@ -262,9 +275,11 @@ _tick_menu() {
     return 1
   fi
   local picks=()
-  for ((i = 0; i < n; i++)); do (( ticked[i] )) && picks+=("$i"); done
+  for ((i = 0; i < n; i++)); do
+    if (( ticked[i] )); then picks+=("$i"); fi
+  done
   (( ${#picks[@]} )) || picks=("$cur")
-  echo "${picks[*]}"
+  MENU_PICKS="${picks[*]}"
 }
 
 # choose_devices' fallback with no terminal: numbers from stdin, several at
@@ -310,13 +325,14 @@ install_each() {
   done
 }
 
-# Exit 1, naming them, when any install_each install failed.
-exit_if_any_failed() {
-  if (( ${#FAILED_ON[@]} )); then
-    echo "error: install failed on:" >&2
-    printf '  %s\n' "${FAILED_ON[@]}" >&2
-    exit 1
-  fi
+# Name the devices an install_each install failed on, if any, and return 1
+# when there were some. Called before the clock question, so a failure there
+# can't hide which devices are missing the build.
+report_failures() {
+  (( ${#FAILED_ON[@]} )) || return 0
+  echo "error: install failed on:" >&2
+  printf '  %s\n' "${FAILED_ON[@]}" >&2
+  return 1
 }
 
 # Interactive: ask whether to pre-set the debug clock override and push the
