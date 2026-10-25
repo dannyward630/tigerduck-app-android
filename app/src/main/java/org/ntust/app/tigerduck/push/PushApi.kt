@@ -23,52 +23,52 @@ import retrofit2.http.Query
 internal interface PushApi {
 
     @POST("devices/anonymous")
-    fun registerAnonymous(@Body request: AnonymousDeviceRequest): Call<Unit>
+    fun anonymousDevice(@Body request: AnonymousDeviceRequest): Call<Unit>
 
     @POST("devices/register")
-    fun register(@Header("Authorization") auth: String, @Body request: DeviceRegisterRequest): Call<ResponseBody>
+    fun registeredDevice(@Header("Authorization") auth: String, @Body request: DeviceRegisterRequest): Call<ResponseBody>
 
     @HTTP(method = "DELETE", path = "devices/{deviceId}", hasBody = true)
-    fun deleteDevice(
+    fun removeDevice(
         @Header("Authorization") auth: String,
         @Path("deviceId", encoded = true) deviceId: String,
         @Body empty: RequestBody,
     ): Call<Unit>
 
     @PUT("sync/holiday-overrides/{holidayId}")
-    fun putHolidayOverride(
+    fun holidayOverride(
         @Header("Authorization") auth: String,
         @Path("holidayId", encoded = true) holidayId: Int,
         @Body request: HolidayOverrideRequest,
     ): Call<Unit>
 
     @PATCH("devices/{deviceId}/preferences")
-    fun updateDevicePreferences(
+    fun devicePreferences(
         @Header("Authorization") auth: String,
         @Path("deviceId", encoded = true) deviceId: String,
         @Body request: UpdateDevicePreferencesRequest,
     ): Call<ResponseBody>
 
     @PATCH("auth/credentials")
-    fun updateCredentials(@Header("Authorization") auth: String, @Body credentials: Map<String, String?>): Call<Unit>
+    fun credentials(@Header("Authorization") auth: String, @Body credentials: Map<String, String?>): Call<Unit>
 
     @PATCH("sync/assignments/{assignmentId}/override")
-    fun patchAssignmentOverride(
+    fun assignmentOverride(
         @Header("Authorization") auth: String,
         @Path("assignmentId", encoded = true) assignmentId: Int,
         @Body override: Map<String, String>,
     ): Call<Unit>
 
     @PATCH("sync/courses/{courseId}/override")
-    fun patchCourseOverride(
+    fun courseOverride(
         @Header("Authorization") auth: String,
         @Path("courseId", encoded = true) courseId: String,
         @Body override: Map<String, Any?>,
     ): Call<Unit>
 
-    /** The same override as [patchCourseOverride], whose answer says whether the backend kept the field. */
+    /** The same override as [courseOverride], whose answer says whether the backend kept the field. */
     @PATCH("sync/courses/{moodleId}/override")
-    fun patchCourseIgnore(
+    fun courseIgnore(
         @Header("Authorization") auth: String,
         @Path("moodleId", encoded = true) moodleId: String,
         @Body override: Map<String, Any>,
@@ -76,13 +76,13 @@ internal interface PushApi {
 
     /** [body] is the JSON already written, which the upload's fingerprint was taken of. */
     @POST("sync/assignments/upload")
-    fun uploadAssignments(@Header("Authorization") auth: String, @Body body: RequestBody): Call<Unit>
+    fun assignmentsUpload(@Header("Authorization") auth: String, @Body body: RequestBody): Call<Unit>
 
     @POST("sync/courses/upload")
-    fun uploadCourses(@Header("Authorization") auth: String, @Body body: RequestBody): Call<ResponseBody>
+    fun coursesUpload(@Header("Authorization") auth: String, @Body body: RequestBody): Call<ResponseBody>
 
     @HTTP(method = "DELETE", path = "sync/courses/{courseKey}", hasBody = true)
-    fun deleteCourse(
+    fun removeCourse(
         @Header("Authorization") auth: String,
         @Path("courseKey", encoded = true) courseKey: String,
         @Body empty: RequestBody,
@@ -90,7 +90,7 @@ internal interface PushApi {
 
     /** [semester] form-encoded already (`URLEncoder`), or null for every term. */
     @HTTP(method = "DELETE", path = "sync/courses", hasBody = true)
-    fun deleteAllCourses(
+    fun removeCourses(
         @Header("Authorization") auth: String,
         @Query("semester", encoded = true) semester: String?,
         @Body empty: RequestBody,

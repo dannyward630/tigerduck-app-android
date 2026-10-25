@@ -86,7 +86,7 @@ class PushApiClient @Inject constructor(
      */
     suspend fun registerAnonymous(req: AnonymousDeviceRequest): Unit =
         withContext(Dispatchers.IO) {
-            val response = api.at(baseUrl).registerAnonymous(req).execute()
+            val response = api.at(baseUrl).anonymousDevice(req).execute()
             if (!response.isSuccessful) {
                 throw PushApiException(
                     "anonymous register failed: HTTP ${response.code()} ${response.errorBody()?.string().orEmpty()}"
@@ -97,7 +97,7 @@ class PushApiClient @Inject constructor(
     suspend fun register(req: DeviceRegisterRequest): DeviceRegisterResponse =
         withContext(Dispatchers.IO) {
             val service = api.at(baseUrl)
-            val response = service.register(authHeader(), req).execute()
+            val response = service.registeredDevice(authHeader(), req).execute()
             val text = response.text()
             if (!response.isSuccessful) {
                 throw PushApiException("register failed: HTTP ${response.code()} $text")
@@ -123,7 +123,7 @@ class PushApiClient @Inject constructor(
     ): Int = withContext(Dispatchers.IO) {
         // v3: DELETE /devices/{client_device_id}, scoped to the authed user
         // (matches iOS + the server). `deviceId` is PushIdentity.uuid().
-        deletes.at(base).deleteDevice("Bearer $accessToken", deviceId, EmptyBody).execute().code()
+        deletes.at(base).removeDevice("Bearer $accessToken", deviceId, EmptyBody).execute().code()
     }
 
     // A sign-in of the same student waits for the sign-out's unregister, so its
@@ -150,7 +150,7 @@ class PushApiClient @Inject constructor(
         withContext(Dispatchers.IO) {
             if (!isSyncCapable) return@withContext false
             val service = api.at(baseUrl)
-            val response = service.putHolidayOverride(authHeader(signIn), holidayId, HolidayOverrideRequest(notify)).execute()
+            val response = service.holidayOverride(authHeader(signIn), holidayId, HolidayOverrideRequest(notify)).execute()
             if (!response.isSuccessful) {
                 throw PushApiException(
                     "holiday override failed: HTTP ${response.code()}"
@@ -191,7 +191,7 @@ class PushApiClient @Inject constructor(
             throw PushApiException("updateDevicePreferences refused: fdroid cannot change sync or push preferences")
         }
         val service = api.at(baseUrl)
-        val response = service.updateDevicePreferences(authHeader(), deviceId, payload).execute()
+        val response = service.devicePreferences(authHeader(), deviceId, payload).execute()
         val text = response.text()
         if (!response.isSuccessful) {
             throw PushApiException("updateDevicePreferences failed: HTTP ${response.code()} $text")
@@ -210,7 +210,7 @@ class PushApiClient @Inject constructor(
             "moodle_private_token" to moodlePrivateToken,
         )
         val service = api.at(baseUrl)
-        val response = service.updateCredentials(authHeader(), payload).execute()
+        val response = service.credentials(authHeader(), payload).execute()
         if (!response.isSuccessful) {
             throw PushApiException("updateCredentials failed: HTTP ${response.code()}")
         }
@@ -229,7 +229,7 @@ class PushApiClient @Inject constructor(
         if (!isSyncCapable || !prefs.syncAssignments) return@withContext
         val payload = mapOf("local_status" to localStatus)
         val service = api.at(baseUrl)
-        val response = service.patchAssignmentOverride(authHeader(signIn), assignmentId, payload).execute()
+        val response = service.assignmentOverride(authHeader(signIn), assignmentId, payload).execute()
         if (!response.isSuccessful) {
             throw PushApiException("patchAssignmentOverride failed: HTTP ${response.code()}", response.code())
         }
@@ -259,7 +259,7 @@ class PushApiClient @Inject constructor(
         if (customName != null) payload["custom_name"] = customName
         if (locale != null) payload["locale"] = locale
         val service = api.at(baseUrl)
-        val call = service.patchCourseOverride(authHeader(signIn), courseId.toString(), payload)
+        val call = service.courseOverride(authHeader(signIn), courseId.toString(), payload)
         // Read once the header is made, which can renew the session and so
         // suspend: a hold the course outbox put on the kind meanwhile must
         // stop the request, which the switches above alone would let through.
@@ -293,7 +293,7 @@ class PushApiClient @Inject constructor(
         if (moodleCourseId != null && moodleCourseId >= 1) payload["moodle_course_id"] = moodleCourseId
         if (payload.isEmpty()) return@withContext null
         val service = api.at(baseUrl)
-        val response = service.patchCourseIgnore(authHeader(), moodleId, payload).execute()
+        val response = service.courseIgnore(authHeader(), moodleId, payload).execute()
         if (!response.isSuccessful) {
             throw PushApiException("patchCourseIgnore failed: HTTP ${response.code()}", response.code())
         }
@@ -371,7 +371,7 @@ class PushApiClient @Inject constructor(
             signIn = signIn,
         ) {
             val service = api.at(base)
-            val response = service.uploadAssignments(authHeader(signIn), json.toRequestBody(jsonType)).execute()
+            val response = service.assignmentsUpload(authHeader(signIn), json.toRequestBody(jsonType)).execute()
             if (!response.isSuccessful) {
                 throw PushApiException("uploadAssignments failed: HTTP ${response.code()}", response.code())
             }
@@ -441,7 +441,7 @@ class PushApiClient @Inject constructor(
         ) {
             // Through uploadCall, with its deadline for the whole call.
             val service = uploads.at(base)
-            val response = service.uploadCourses(authHeader(signIn), body).execute()
+            val response = service.coursesUpload(authHeader(signIn), body).execute()
             if (!response.isSuccessful) {
                 throw PushApiException("uploadCourses failed: HTTP ${response.code()}", response.code())
             }
@@ -465,7 +465,7 @@ class PushApiClient @Inject constructor(
     suspend fun deleteCourse(courseKey: String, signIn: Int? = null) = withContext(Dispatchers.IO) {
         if (!isSyncCapable || !prefs.syncCourses) return@withContext
         val service = api.at(baseUrl)
-        val response = service.deleteCourse(authHeader(signIn), courseKey, EmptyBody).execute()
+        val response = service.removeCourse(authHeader(signIn), courseKey, EmptyBody).execute()
         if (!response.isSuccessful) {
             throw PushApiException("deleteCourse failed: HTTP ${response.code()}")
         }
@@ -484,7 +484,7 @@ class PushApiClient @Inject constructor(
     suspend fun deleteAllCourses(semester: String? = null) = withContext(Dispatchers.IO) {
         if (!isSyncCapable || !prefs.syncCourses) return@withContext
         val service = api.at(baseUrl)
-        val call = service.deleteAllCourses(
+        val call = service.removeCourses(
             authHeader(),
             semester?.let { java.net.URLEncoder.encode(it, "UTF-8") },
             EmptyBody,
