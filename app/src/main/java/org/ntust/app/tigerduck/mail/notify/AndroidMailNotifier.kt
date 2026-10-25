@@ -111,8 +111,17 @@ class AndroidMailNotifier @Inject constructor(
 
     override fun cancelAuthFailure() = NotificationGroup.MAIL.cancel(context, MailNotificationPlanner.AUTH_FAILED_ID)
 
-    override fun cancelMessage(uid: Long) =
-        NotificationGroup.MAIL.cancel(context, MailNotificationPlanner.notificationId(uid), MailNotificationPlanner.TAG)
+    override fun cancelMessage(uid: Long) {
+        val id = MailNotificationPlanner.notificationId(uid)
+        // 2.3.1 and before posted a mail's notification with no tag, and one can still be in the
+        // shade after the update. Taken down only from the mail stack: an untagged id in this
+        // range can be another notification's, as the Live Update's is.
+        val olderPost = manager.activeNotifications.any {
+            it.tag == null && it.id == id && it.notification.group == NotificationGroup.MAIL.key
+        }
+        if (olderPost) NotificationGroup.MAIL.cancel(context, id)
+        NotificationGroup.MAIL.cancel(context, id, MailNotificationPlanner.TAG)
+    }
 
     override fun cancelPosted(messages: List<MailSummary>) {
         // By id, not from activeNotifications as cancelAll goes: the system lists a notification
