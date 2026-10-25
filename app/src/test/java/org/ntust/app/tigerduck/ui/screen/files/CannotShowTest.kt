@@ -11,11 +11,17 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.text.TextLayoutResult
+import org.junit.Assert.assertTrue
 
 /** "Can't be shown here": the device line for an encoding it can't decode, above the raw error. */
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
 @Config(application = Application::class)
+// Real text measuring, so a wrapped line is a line.
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class CannotShowTest {
 
     @get:Rule
@@ -48,6 +54,20 @@ class CannotShowTest {
         show(ViewerFailure(PlaybackException("exceeds", null, PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES)))
 
         assertEquals(1, count(unsupportedLine))
+    }
+
+    @Test
+    fun `a long error shows a screenful at most, wrapped lines counted`() {
+        val long = List(ViewerErrors.MAX_LINES) { "caused by RuntimeException: " + "x".repeat(380) }.joinToString("\n")
+        composeRule.setContent { CannotShow(reason = null, shown = ShownFailure(long, unsupportedEncoding = false), onOpenElsewhere = {}) }
+        composeRule.waitForIdle()
+
+        val layouts = mutableListOf<TextLayoutResult>()
+        composeRule.onAllNodesWithText("caused by RuntimeException", substring = true).fetchSemanticsNodes().single()
+            .config[SemanticsActions.GetTextLayoutResult].action!!.invoke(layouts)
+        val layout = layouts.single()
+        assertTrue("${layout.lineCount} lines on screen", layout.lineCount <= ViewerErrors.MAX_LINES)
+        assertTrue("the cut doesn't show", layout.hasVisualOverflow)
     }
 
     @Test

@@ -164,11 +164,14 @@ internal fun CannotShow(reason: Int?, shown: ShownFailure?, onOpenElsewhere: () 
         if (shown != null) {
             Spacer(Modifier.height(16.dp))
             SelectionContainer {
+                // A screenful on screen too, wrapped lines counted, so Open in another app stays near.
                 Text(
                     shown.details,
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = FontFamily.Monospace,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = ViewerErrors.MAX_LINES,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

@@ -205,6 +205,18 @@ class ViewerErrorsTest {
     }
 
     @Test
+    fun `a file inside an Office document is hidden whole, brackets and line breaks and all`() {
+        val text = ViewerErrors.scrub("renderer: Error: unknown (inner file : word/media/(draft) Test Student.png)")
+        val split = ViewerErrors.scrub("renderer: Error: unknown (inner file : word/media/x\nTest Student.png)")
+
+        listOf(text, split).forEach {
+            assertFalse(it, "Test Student" in it)
+            assertFalse(it, "draft" in it)
+            assertTrue(it, "inner file" in it)
+        }
+    }
+
+    @Test
     fun `a short name in another script is hidden too`() {
         val text = ViewerErrors.scrub("FileNotFoundException: 王小明", ViewerErrors.privateParts("王小明", "content://x/document/1", "/document/1"))
 

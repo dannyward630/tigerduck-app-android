@@ -27,6 +27,10 @@ import org.ntust.app.tigerduck.files.OfficeRequests
 import org.ntust.app.tigerduck.files.ViewerKind
 import kotlinx.coroutines.delay
 import java.io.ByteArrayInputStream
+import java.io.FileNotFoundException
+import java.io.FilterInputStream
+import java.io.IOException
+import java.io.InputStream
 
 /**
  * A Word or PowerPoint document, rendered by the JavaScript libraries the app ships in
@@ -131,7 +135,8 @@ private class OfficeClient(
             }.getOrElse { blocked() }
             OfficeRequests.Route.Document -> runCatching {
                 val type = if (kind == ViewerKind.PPTX) FileViewing.PPTX_TYPE else FileViewing.DOCX_TYPE
-                WebResourceResponse(type, null, context.contentResolver.openInputStream(uri))
+                val input = context.contentResolver.openInputStream(uri) ?: throw FileNotFoundException("no stream")
+                WebResourceResponse(type, null, ErrorRecordingInputStream(input) { documentError = it })
             }.getOrElse { documentError = it; blocked() }
             OfficeRequests.Route.Blocked -> blocked()
         }
@@ -149,5 +154,25 @@ private class OfficeClient(
         "html" -> "text/html"
         "css" -> "text/css"
         else -> "text/javascript"
+    }
+}
+
+/**
+ * [input], keeping the error a read fails with ([onError]) before passing it on: WebView reads the
+ * document's stream after it's handed over, so a provider that opens it and then fails part way
+ * would otherwise leave only the page's own error to show.
+ */
+internal class ErrorRecordingInputStream(input: InputStream, private val onError: (Throwable) -> Unit) : FilterInputStream(input) {
+    override fun read(): Int = recording { super.read() }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int = recording { super.read(b, off, len) }
+
+    override fun skip(n: Long): Long = recording { super.skip(n) }
+
+    private inline fun <T> recording(read: () -> T): T = try {
+        read()
+    } catch (e: IOException) {
+        onError(e)
+        throw e
     }
 }

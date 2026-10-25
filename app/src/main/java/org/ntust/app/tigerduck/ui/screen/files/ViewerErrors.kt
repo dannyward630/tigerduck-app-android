@@ -94,7 +94,7 @@ internal object ViewerErrors {
         val linksGone = text.take(MAX_MESSAGE_CHARS).withoutParts().withoutLinks()
         // Again once decoded, for a link that was itself encoded ("https%3A%2F%2F…").
         return percentDecoded(linksGone).withoutParts().withoutLinks()
-            .replace(INNER_FILE) { "${it.groupValues[1]}<file>" }
+            .replace(INNER_FILE) { "${it.groupValues[1]}<file>)" }
             .replace(PATH) { "<path>${extension(it.value)}" }
             .replace(FORMAT_LABEL) { "Format(${it.groupValues[1]}, <label>," }
             .replace(TOKEN) { "${it.groupValues[1]}=<hidden>" }
@@ -157,8 +157,11 @@ internal object ViewerErrors {
     /** The same in a script whose two characters can be a whole name ("小明"). */
     private const val MIN_PRIVATE_PART_WIDE = 2
 
-    /** A file inside a zip, as the Office page's JSZip names it: "(inner file : word/media/x.png)". */
-    private val INNER_FILE = Regex("""(?i)(inner file\s*:\s*)[^)\n]*""")
+    /**
+     * A file inside a zip, as the Office page's JSZip names it: "(inner file : word/media/x.png)".
+     * The name runs to the end of the message, brackets and line breaks and all, so the whole rest goes.
+     */
+    private val INNER_FILE = Regex("""(?is)(inner file\s*:\s*).*""")
 
     private val PERCENT_RUN = Regex("""(?:%[0-9A-Fa-f]{2})+""")
 
