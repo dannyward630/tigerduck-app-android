@@ -36,6 +36,7 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.CameraAlt
@@ -58,7 +59,6 @@ import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.DesktopWindows
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.BasicAlertDialog
@@ -742,7 +742,7 @@ internal fun BrowserDownloadsPage(downloads: List<BrowserDownload>, actions: Bro
 @Composable
 private fun DownloadRow(download: BrowserDownload, actions: BrowserActions) {
     Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(Icons.Filled.InsertDriveFile, contentDescription = null)
+        Icon(Icons.AutoMirrored.Filled.InsertDriveFile, contentDescription = null)
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(download.fileName, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -922,7 +922,7 @@ internal fun DownloadCards(downloads: List<BrowserDownload>, actions: BrowserAct
         shown.forEach { download ->
             Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.inverseSurface, contentColor = MaterialTheme.colorScheme.inverseOnSurface) {
                 Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(if (download.state == BrowserDownload.State.RUNNING) Icons.Filled.Download else Icons.Filled.InsertDriveFile, contentDescription = null)
+                    Icon(if (download.state == BrowserDownload.State.RUNNING) Icons.Filled.Download else Icons.AutoMirrored.Filled.InsertDriveFile, contentDescription = null)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(download.fileName, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)

@@ -12,8 +12,13 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.shared.NextClassResolver
@@ -64,16 +69,39 @@ class SchedulePersistence(private val context: Context) {
         quietDays: List<String>?,
     ) {
         val coursesJson = decompress(coursesGzipped)
-        context.scheduleDataStore.edit { prefs ->
-            writeSnapshot(
-                prefs, coursesJson, accentHex, accentEndHex, accentDirectionCode, syncedAtMs,
-                loggedIn, languageTag, disableScreenCaptureProtection, quietDays,
-            )
-        }
-        if (languageTag != null) {
-            bootstrapPrefs.edit().putString(BOOTSTRAP_KEY_LANGUAGE, languageTag).apply()
+        // Under the lock with the start-up copy, so [syncLanguageTag] never writes between the two.
+        languageLock.withLock {
+            context.scheduleDataStore.edit { prefs ->
+                writeSnapshot(
+                    prefs, coursesJson, accentHex, accentEndHex, accentDirectionCode, syncedAtMs,
+                    loggedIn, languageTag, disableScreenCaptureProtection, quietDays,
+                )
+            }
+            if (languageTag != null) commitLanguageTag(languageTag)
         }
     }
+
+    /**
+     * Brings the start-up copy of the language up to [languageTag] before the activity
+     * recreates for it, if the snapshot still says [languageTag]: a newer sync may have
+     * changed it since, and its copy must not be overwritten. True when the copy now says
+     * [languageTag].
+     */
+    suspend fun syncLanguageTag(languageTag: String): Boolean = languageLock.withLock {
+        val current = context.scheduleDataStore.data.first()[KEY_LANGUAGE]
+        if (current != languageTag) return@withLock false
+        commitLanguageTag(languageTag)
+        true
+    }
+
+    /** Written synchronously: the next `attachBaseContext` must read it, even if the process dies right after. */
+    private suspend fun commitLanguageTag(languageTag: String) {
+        withContext(Dispatchers.IO) {
+            bootstrapPrefs.edit().putString(BOOTSTRAP_KEY_LANGUAGE, languageTag).commit()
+        }
+    }
+
+    private val languageLock = Mutex()
 
     /** Synchronous cold-start read used by Activity `attachBaseContext` to
      *  apply the cached language before the first frame is composed. Reads

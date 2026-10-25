@@ -104,9 +104,9 @@ fun MoodleMemberScreen(
     val member = members?.members?.firstOrNull { it.id == memberId }
     LaunchedEffect(member?.pictureUrl) { if (member != null) current.loadPicture(member) }
     // One's own picture can be changed where the site allows it: picked, cropped here, uploaded.
-    val ownPage = member != null && isOwnPage(member, members?.ownId)
+    val ownPage = member != null && isOwnPage(member, members.ownId)
     var canChangePicture by remember { mutableStateOf(false) }
-    LaunchedEffect(current, ownPage) { canChangePicture = ownPage && current?.canChangePicture() == true }
+    LaunchedEffect(current, ownPage) { canChangePicture = ownPage && current.canChangePicture() }
     val changingPicture = current?.changingPicture?.collectAsStateWithLifecycle()?.value == true
     var cropping by remember { mutableStateOf<Bitmap?>(null) }
     val snackbar = remember { SnackbarHostState() }

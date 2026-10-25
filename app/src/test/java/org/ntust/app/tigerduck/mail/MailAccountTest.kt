@@ -14,6 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.ntust.app.tigerduck.mail.model.MailAddress
+import org.ntust.app.tigerduck.mail.index.InMemoryMailSearchIndex
+import org.ntust.app.tigerduck.mail.index.MailSearchIndex
 import org.ntust.app.tigerduck.mail.store.HeldSendStore
 import org.ntust.app.tigerduck.mail.store.MailCache
 import java.io.File
@@ -39,8 +41,18 @@ class MailAccountTest {
     private val heldRoot by lazy { File(heldTmp.root, "held") }
     private val heldSends by lazy { HeldSendStore(heldRoot) }
 
-    private fun account() =
-        MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope, heldSends)
+    private val searchIndex = InMemoryMailSearchIndex()
+
+    private fun account(index: MailSearchIndex = searchIndex) =
+        MailAccount(credentials, state, server.factory(), cache, demo, schoolMailSite(), scheduler, notifier, appScope, heldSends, index)
+
+    /** An index that cannot be emptied, as a full disk fails SQLite's VACUUM. */
+    private class UnclearableIndex(inner: MailSearchIndex = InMemoryMailSearchIndex()) : MailSearchIndex by inner {
+        override fun clearUnless(keep: (owner: String?) -> Boolean) = throw IllegalStateException("database or disk is full")
+    }
+
+    /** Mail of [owner]'s downloaded for search, as the index worker would. */
+    private fun indexMail(owner: String) = assertTrue(searchIndex.open(owner, "INBOX", 1L) { true })
 
     private val heldFields = HeldSendStore.Fields(
         "NEW", "", -1, false, null, null, listOf("amy@x.tw"), emptyList(), emptyList(), "Hi", "Hello",
@@ -228,6 +240,62 @@ class MailAccountTest {
         }
         assertNull(HeldSendStore(heldRoot).orphan("b10000001@mail.ntust.edu.tw"))
         assertFalse(File(heldRoot, "m1").exists())
+    }
+
+    @Test
+    fun `sign-out empties the mail search index, though no repository is there to hear it`() = runTest {
+        // A sign-out from Settings, or a full reset, in a process that never opened Mail: only
+        // the account is there, and the index still holds every downloaded mail's text.
+        val account = account()
+        account.signIn("b10000001", "pw")
+        indexMail("b10000001@mail.ntust.edu.tw")
+
+        account.signOut()
+
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (notifier.cancelledAll == 0) delay(10) }
+        }
+        assertNull(searchIndex.uidValidity("b10000001@mail.ntust.edu.tw", "INBOX"))
+    }
+
+    @Test
+    fun `an index that cannot be emptied still lets the sign-out cancel the notifications and delete the cache`() = runTest {
+        val account = account(UnclearableIndex())
+        account.signIn("b10000001", "pw")
+        cache.attachmentsDir.mkdirs()
+        File(cache.attachmentsDir, "a.pdf").writeText("x")
+
+        account.signOut()
+
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (notifier.cancelledAll == 0) delay(10) }
+        }
+        assertEquals(1, notifier.cancelledAll)
+        assertFalse(File(cache.attachmentsDir, "a.pdf").exists())
+    }
+
+    @Test
+    fun `an index that cannot be emptied does not stop another student signing in`() = runTest {
+        val account = account(UnclearableIndex())
+        account.signIn("b10000001", "pw")
+        server.passwords["B10000002"] = "pw"
+
+        assertNull(account.signIn("b10000002", "pw"))
+        assertEquals("b10000002", credentials.mailStudentId)
+    }
+
+    @Test
+    fun `another student signing in empties the previous one's search index, and the same one signing in again keeps it`() = runTest {
+        val account = account()
+        account.signIn("b10000001", "pw")
+        indexMail("b10000001@mail.ntust.edu.tw")
+
+        assertNull(account.signIn("b10000001", "pw"))
+        assertEquals("their own, still to search", 1L, searchIndex.uidValidity("b10000001@mail.ntust.edu.tw", "INBOX"))
+
+        server.passwords["B10000002"] = "pw"
+        assertNull(account.signIn("b10000002", "pw"))
+        assertNull(searchIndex.uidValidity("b10000001@mail.ntust.edu.tw", "INBOX"))
     }
 
     @Test
