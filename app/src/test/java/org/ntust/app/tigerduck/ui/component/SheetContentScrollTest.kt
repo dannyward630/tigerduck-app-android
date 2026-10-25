@@ -1,5 +1,5 @@
-// Drags and flings the content of a Material3 bottom sheet, as the class table's course sheet holds
-// it, and reads back where the content and the sheet ended up.
+// Drags and flings the content of a DetentSheet, as the class table's course sheet holds it, and
+// reads back where the content and the sheet ended up.
 
 package org.ntust.app.tigerduck.ui.component
 
@@ -14,16 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.TouchInjectionScope
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -44,7 +40,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalMaterial3Api::class)
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
 @Config(application = Application::class, qualifiers = "en-w360dp-h640dp")
@@ -53,7 +48,7 @@ class SheetContentScrollTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<ComponentActivity>()
 
-    private lateinit var sheet: SheetState
+    private lateinit var sheet: DetentSheetState
     private lateinit var scroll: ScrollState
     private var dismissed = false
     private lateinit var scope: CoroutineScope
@@ -61,11 +56,16 @@ class SheetContentScrollTest {
     /** A course sheet pulled up to full, its content about one and a half screens tall. */
     private fun showExpandedSheet() {
         composeRule.setContent {
-            sheet = rememberModalBottomSheetState()
+            sheet = rememberDetentSheetState()
             scope = rememberCoroutineScope()
             scroll = rememberScrollState()
             val sheetScroll = remember(scroll) { SheetContentScroll(scroll) }
-            ModalBottomSheet(onDismissRequest = { dismissed = true }, sheetState = sheet) {
+            DetentSheetLayer(
+                state = sheet,
+                openAt = DetentSheetValue.Full,
+                onDismissed = { dismissed = true },
+                containerColor = Color.White,
+            ) {
                 Box(
                     Modifier
                         .fillMaxSize()
@@ -78,9 +78,7 @@ class SheetContentScrollTest {
             }
         }
         composeRule.waitForIdle()
-        composeRule.runOnIdle { scope.launch { sheet.expand() } }
-        composeRule.waitForIdle()
-        assertEquals("the sheet did not open in full", SheetValue.Expanded, sheet.currentValue)
+        assertEquals("the sheet did not open in full", DetentSheetValue.Full, sheet.currentValue)
         assertTrue("the content is too short to scroll", scroll.maxValue > 0)
     }
 
@@ -118,7 +116,7 @@ class SheetContentScrollTest {
         swipeContentDown(durationMillis = 50)
 
         assertTrue("the content did not scroll", scroll.value < scroll.maxValue)
-        assertEquals("the fling moved the sheet", SheetValue.Expanded, sheet.currentValue)
+        assertEquals("the fling moved the sheet", DetentSheetValue.Full, sheet.currentValue)
         assertFalse("the fling closed the sheet", dismissed)
     }
 
@@ -138,7 +136,7 @@ class SheetContentScrollTest {
         assertFalse("the fling ran on past the top", scroll.isScrollInProgress)
         composeRule.mainClock.autoAdvance = true
         composeRule.waitForIdle()
-        assertEquals(SheetValue.Expanded, sheet.currentValue)
+        assertEquals(DetentSheetValue.Full, sheet.currentValue)
     }
 
     @Test
@@ -159,7 +157,7 @@ class SheetContentScrollTest {
         composeRule.waitForIdle()
 
         assertTrue("the content did not scroll", scroll.value < scroll.maxValue)
-        assertEquals("the fling moved the sheet", SheetValue.Expanded, sheet.currentValue)
+        assertEquals("the fling moved the sheet", DetentSheetValue.Full, sheet.currentValue)
         assertFalse("the fling closed the sheet", dismissed)
     }
 
@@ -171,7 +169,7 @@ class SheetContentScrollTest {
         swipeContentDown(durationMillis = 1500)
 
         assertEquals("the content did not reach its top", 0, scroll.value)
-        assertEquals("the drag moved the sheet", SheetValue.Expanded, sheet.currentValue)
+        assertEquals("the drag moved the sheet", DetentSheetValue.Full, sheet.currentValue)
         assertFalse(dismissed)
     }
 
@@ -185,7 +183,7 @@ class SheetContentScrollTest {
 
         swipeContentDown(durationMillis = 50)
 
-        assertNotEquals("a fling at the top left the sheet up", SheetValue.Expanded, sheet.currentValue)
+        assertNotEquals("a fling at the top left the sheet up", DetentSheetValue.Full, sheet.currentValue)
     }
 
     @Test
@@ -194,7 +192,7 @@ class SheetContentScrollTest {
 
         swipeContentDown(durationMillis = 1500)
 
-        assertNotEquals("a drag at the top left the sheet up", SheetValue.Expanded, sheet.currentValue)
+        assertNotEquals("a drag at the top left the sheet up", DetentSheetValue.Full, sheet.currentValue)
     }
 
     @Test
@@ -207,7 +205,7 @@ class SheetContentScrollTest {
         composeRule.waitForIdle()
 
         assertTrue("the content did not scroll up", scroll.value > 0)
-        assertEquals(SheetValue.Expanded, sheet.currentValue)
+        assertEquals(DetentSheetValue.Full, sheet.currentValue)
     }
 
     private companion object {
