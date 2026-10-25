@@ -43,19 +43,21 @@ class SyncIntoResDirTest(unittest.TestCase):
 
 class LineEndingsTest(unittest.TestCase):
     def test_the_locale_list_is_written_with_lf_whatever_the_platform(self):
-        real = sync.Path.write_text
+        # Through open(newline=), which Python 3.9 has; Path.write_text's newline came in 3.10.
+        real = sync.Path.open
         seen = []
 
-        def recording(path, content, *args, **kwargs):
+        def recording(path, *args, **kwargs):
             seen.append(kwargs.get("newline"))
-            return real(path, content, *args, **kwargs)
+            return real(path, *args, **kwargs)
 
         with tempfile.TemporaryDirectory() as tmp:
-            sync.Path.write_text = recording
+            sync.Path.open = recording
             try:
                 sync.write_file(pathlib.Path(tmp) / "xml" / "a.xml", "one\n")
             finally:
-                sync.Path.write_text = real
+                sync.Path.open = real
+            self.assertEqual(b"one\n", (pathlib.Path(tmp) / "xml" / "a.xml").read_bytes())
         self.assertEqual(["\n"], seen)
 
 

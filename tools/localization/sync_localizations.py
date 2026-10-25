@@ -80,7 +80,9 @@ def render_locale_config(locales: Iterable[str]) -> str:
 def write_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     # LF on every platform, as the generator writes: the same source builds the same bytes.
-    path.write_text(content, encoding="utf-8", newline="\n")
+    # Through open(newline=), which Python 3.9 has too.
+    with path.open("w", encoding="utf-8", newline="\n") as handle:
+        handle.write(content)
 
 
 def main(argv: Optional[List[str]] = None) -> int:
