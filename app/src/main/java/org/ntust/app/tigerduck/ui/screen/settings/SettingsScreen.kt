@@ -94,6 +94,7 @@ fun SettingsScreen(
     onNavigateToOutsideAppsDebug: () -> Unit = {},
     onNavigateToMailDevServerDebug: () -> Unit = {},
     onNavigateToBrowserAllowlistDebug: () -> Unit = {},
+    onNavigateToViewerSamplesDebug: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val isNtustLoggingIn by viewModel.isNtustLoggingIn.collectAsStateWithLifecycle()
@@ -619,6 +620,10 @@ fun SettingsScreen(
                             // Points School Mail at a non-school mail server, so the
                             // feature can be exercised without a real school mailbox.
                             SettingsLinkRow("Email") { onNavigateToMailDevServerDebug() }
+                            HorizontalDivider()
+                            // Video, audio, images, documents and archives of every kind the
+                            // viewer takes, and a file picked on the phone, opened as Moodle's are.
+                            SettingsLinkRow("File viewer samples") { onNavigateToViewerSamplesDebug() }
                             HorizontalDivider()
                             // One-shot UI surfaces (What's new, update prompt,
                             // flip-to-library first trigger) live behind here so

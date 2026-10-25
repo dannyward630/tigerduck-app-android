@@ -11,4 +11,7 @@
     <cache-path name="browser_uploads" path="browser_uploads/" />
     <!-- Files the file viewer took out of an archive to show (ArchiveCache in ArchiveViewer.kt). -->
     <cache-path name="archive_entries" path="archive_entries/" />
+    <!-- Debug builds' file viewer samples and files picked to try in the viewer (ViewerSamples).
+         Nothing writes here in a release build. -->
+    <cache-path name="viewer_samples" path="viewer_samples/" />
 </paths>
