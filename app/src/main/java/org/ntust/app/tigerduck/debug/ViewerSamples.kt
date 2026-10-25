@@ -17,7 +17,8 @@ object ViewerSamples {
 
     const val GENERIC_TYPE = "application/octet-stream"
 
-    private const val MAX_NAME = 120
+    /** Short of the 255 bytes a file name may take, with room for the copy's own folder. */
+    private const val MAX_NAME_BYTES = 200
     private const val PICKED = "picked"
 
     /** The index's samples: group, name, MIME type and size, tab-separated, under a header. */
@@ -37,8 +38,9 @@ object ViewerSamples {
     /**
      * The name a file picked on the phone is copied and opened under: its provider's
      * [displayName], down to its last path segment and with no control characters, at most
-     * [MAX_NAME] long with its extension kept; or, with none, "picked" with the extension
-     * [extensionOf] gives its [mimeType].
+     * [MAX_NAME_BYTES] in UTF-8, as a file name is limited in bytes, cut between characters with
+     * its extension kept; or, with none, "picked" with the extension [extensionOf] gives its
+     * [mimeType].
      */
     fun pickedName(displayName: String?, mimeType: String?, extensionOf: (String) -> String?): String {
         val own = displayName.orEmpty()
@@ -50,13 +52,37 @@ object ViewerSamples {
             val extension = mimeType?.let(extensionOf)
             return if (extension.isNullOrEmpty()) PICKED else "$PICKED.$extension"
         }
-        if (own.length <= MAX_NAME) return own
+        if (own.utf8Bytes() <= MAX_NAME_BYTES) return own
         val extension = own.substringAfterLast('.', missingDelimiterValue = "")
-        return if (extension.isEmpty() || extension.length >= MAX_NAME / 2) {
-            own.take(MAX_NAME)
-        } else {
-            own.substringBeforeLast('.').take(MAX_NAME - extension.length - 1) + ".$extension"
+        val suffix = if (extension.isNotEmpty() && extension.utf8Bytes() < MAX_NAME_BYTES / 4) ".$extension" else ""
+        val stem = if (suffix.isEmpty()) own else own.substringBeforeLast('.')
+        return stem.takeUtf8Bytes(MAX_NAME_BYTES - suffix.utf8Bytes()) + suffix
+    }
+
+    /**
+     * Of the folders [picks] the picked files were copied into, each named for when it was made
+     * ("<millis>-<anything>"), the ones to delete: all but the [keep] newest. The newest stay, for
+     * an app a copy went to that may open it again; anything not named that way goes.
+     */
+    fun picksToDrop(picks: List<String>, keep: Int): List<String> {
+        val (dated, other) = picks.partition { it.substringBefore('-').toLongOrNull() != null }
+        return other + dated.sortedByDescending { it.substringBefore('-').toLong() }.drop(keep)
+    }
+
+    private fun String.utf8Bytes(): Int = toByteArray(Charsets.UTF_8).size
+
+    /** The longest start of this string, whole characters only, that takes at most [limit] bytes. */
+    private fun String.takeUtf8Bytes(limit: Int): String {
+        var bytes = 0
+        var end = 0
+        while (end < length) {
+            val next = offsetByCodePoints(end, 1)
+            val size = substring(end, next).utf8Bytes()
+            if (bytes + size > limit) break
+            bytes += size
+            end = next
         }
+        return substring(0, end)
     }
 
     /**

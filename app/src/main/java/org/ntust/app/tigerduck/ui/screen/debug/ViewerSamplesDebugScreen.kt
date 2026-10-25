@@ -180,8 +180,9 @@ private fun Context.copySample(sample: ViewerSample): Pair<File, String> {
 }
 
 /**
- * The file picked at [uri] copied under the cache, under the name its provider gives it, and the
- * type it opens as; the copy of the file picked before is dropped.
+ * The file picked at [uri] copied under the cache, in a folder of its own, under the name its
+ * provider gives it, and the type it opens as. Copies of earlier picks stay, for an app one went
+ * to that may open it again, but only the newest few ([KEPT_PICKS]).
  */
 private fun Context.copyPicked(uri: Uri): Pair<File, String> {
     val displayName = contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
@@ -191,12 +192,16 @@ private fun Context.copyPicked(uri: Uri): Pair<File, String> {
     val types = MimeTypeMap.getSingleton()
     val name = ViewerSamples.pickedName(displayName, providerType) { types.getExtensionFromMimeType(it) }
     val mimeType = ViewerSamples.pickedType(providerType, name) { types.getMimeTypeFromExtension(it) }
-    val dir = viewerSamplesDir("picked").apply { listFiles()?.forEach { it.deleteRecursively() } }
-    val file = File(dir, name)
     val input = contentResolver.openInputStream(uri) ?: throw java.io.FileNotFoundException(name)
+    val picked = viewerSamplesDir("picked")
+    val file = File(File(picked, "${System.currentTimeMillis()}-${java.util.UUID.randomUUID()}").apply { mkdirs() }, name)
     input.use { file.outputStream().use { out -> it.copyTo(out) } }
+    picked.list()?.let { ViewerSamples.picksToDrop(it.toList(), KEPT_PICKS) }?.forEach { File(picked, it).deleteRecursively() }
     return file to mimeType
 }
+
+/** How many picked files' copies stay. */
+private const val KEPT_PICKS = 5
 
 private fun Context.viewerSamplesDir(kind: String): File =
     File(File(cacheDir, ViewerSamples.CACHE_DIR), kind).apply { mkdirs() }
