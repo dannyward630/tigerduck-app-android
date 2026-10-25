@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -39,8 +40,8 @@ import org.ntust.app.tigerduck.R
 
 /**
  * "Share your class table": the share sheet's QR code, scanned on another
- * phone in TigerDuck, which imports it, or in any QR scanner, which opens it
- * on the web.
+ * phone in TigerDuck, from Import class table in the same menu, which imports
+ * it, or in any QR scanner, which opens it on the web.
  */
 internal fun classTableSharePage() = WhatsNewPage.Feature(
     id = "class-table-share",
@@ -50,8 +51,8 @@ internal fun classTableSharePage() = WhatsNewPage.Feature(
         zhHant = "分享你的課表",
     ),
     body = WhatsNewText(
-        en = "Choose Share class table under More actions, at the class table's top right, to show a QR code. Scanning it in TigerDuck imports it, and any QR scanner opens it on the web. TAT works too: turn on Compatible with TAT.",
-        zhHant = "在課表右上角的「更多操作」選「分享課表」，就會出現 QR code。對方用 TigerDuck 掃描就能匯入，用任何 QR code 掃描器掃也能打開網頁版。也支援臺科 TAT：打開「相容於 TAT」再讓對方掃描。",
+        en = "Choose Share class table under More actions, at the class table's top right, to show a QR code. To import it, choose Import class table in the same menu in TigerDuck and scan it; any QR scanner opens it on the web. TAT works too: turn on Compatible with TAT.",
+        zhHant = "在課表右上角的「更多操作」選「分享課表」，就會出現 QR code。對方在 TigerDuck 的同一個選單選「匯入課表」掃描就能匯入，用任何 QR code 掃描器掃也能打開網頁版。也支援臺科 TAT：打開「相容於 TAT」再讓對方掃描。",
     ),
 )
 
@@ -60,18 +61,30 @@ private val anyScannerCaption = WhatsNewText(en = "Any QR scanner", zhHant = "�
 private val tatCaption = WhatsNewText(en = "TAT works too", zhHant = "也支援臺科 TAT")
 private val openInTigerDuck = WhatsNewText(en = "Open in TigerDuck", zhHant = "在 TigerDuck 開啟")
 private val shareDemoDescription = WhatsNewText(
-    en = "Demo: on one phone, More actions on the class table, then Share class table, shows a QR code; another phone scans it, in TigerDuck to import it, or in any QR scanner to open it on the web. Compatible with TAT then turns it into a code TAT reads.",
-    zhHant = "示範：在一支手機的課表點「更多操作」、「分享課表」，出現課表 QR code；另一支掃描它：用 TigerDuck 掃描可直接匯入，用任何 QR code 掃描器則會打開網頁版。再打開「相容於 TAT」，就換成 TAT 讀得懂的 QR code。",
+    en = "Demo: on one phone, More actions on the class table, then Share class table, shows a QR code; on another phone, More actions, then Import class table, opens TigerDuck's scanner, which imports it, and any QR scanner opens it on the web instead. Compatible with TAT then turns it into a code TAT reads.",
+    zhHant = "示範：在一支手機的課表點「更多操作」、「分享課表」，出現課表 QR code；另一支在 TigerDuck 的課表點「更多操作」、「匯入課表」打開掃描器，掃描後就能匯入；用任何 QR code 掃描器掃則會打開網頁版。再打開「相容於 TAT」，就換成 TAT 讀得懂的 QR code。",
 )
 
-private const val SHARE_LOOP_MILLIS = 14_000
+private const val SHARE_LOOP_MILLIS = 18_000
+
+/** [millis] into the loop, as a part of it. */
+private fun at(millis: Int) = millis / SHARE_LOOP_MILLIS.toFloat()
 
 // The left phone's steps: More actions, Share class table, the sheet; later, TAT.
-private const val MENU_OPEN = 0.07f
-private const val SHARE_TAPPED = 0.14f
-private const val SHEET_UP = 0.19f
-private const val TAT_ON = 0.80f
-private const val LEFT_RESET = 0.97f
+private val MENU_OPEN = at(1_000)
+private val SHARE_TAPPED = at(2_000)
+private val SHEET_UP = at(2_700)
+private val TAT_ON = at(13_400)
+private val LEFT_RESET = at(17_460)
+
+// The right phone's, once the code shows: in TigerDuck, More actions, Import
+// class table, the scanner and the import; then any QR scanner and the web
+// page; then the TAT code.
+private val OTHER_MENU_OPEN = at(3_900)
+private val IMPORT_TAPPED = at(5_100)
+private val SCANNED = at(7_200)
+private val IMPORT_SHOWN = at(9_600)
+private val WEB_SHOWN = at(13_200)
 private val PhoneWidth = 132.dp
 
 /** The TAT-compatible code's look: another code than TigerDuck's own. */
@@ -81,16 +94,21 @@ private val PhoneHeight = 220.dp
 @Composable
 private fun ShareDemo(animate: Boolean) {
     // Still: the import, scanned in TigerDuck.
-    val clock = demoClock(animate, SHARE_LOOP_MILLIS, still = 0.5f)
+    val clock = demoClock(animate, SHARE_LOOP_MILLIS, still = 0.45f)
     val t = { clock.value }
     val leftReset = { 1f - span(t(), LEFT_RESET, 0.995f) }
     val menu = { window(t(), MENU_OPEN, SHEET_UP, fade = 0.02f) }
     val sheet = { span(t(), SHARE_TAPPED + 0.02f, SHEET_UP) * leftReset() }
     val tat = { span(t(), TAT_ON, TAT_ON + 0.03f) * leftReset() }
-    // The second phone, once the code shows: scanning, the import; scanning again, the web page; then the TAT code.
-    val scanning = { window(t(), SHEET_UP, 0.38f, fade = 0.03f) + window(t(), 0.58f, 0.68f, fade = 0.03f) + window(t(), 0.78f, 0.99f, fade = 0.03f) }
-    val imported = { window(t(), 0.36f, 0.60f, fade = 0.03f) }
-    val web = { window(t(), 0.66f, 0.80f, fade = 0.03f) }
+    val otherMenu = { window(t(), OTHER_MENU_OPEN, IMPORT_TAPPED + 0.02f, fade = 0.02f) }
+    // The second phone: TigerDuck's scanner and the import; scanning again, the web page; then the TAT code.
+    val scanning = {
+        window(t(), IMPORT_TAPPED, SCANNED + 0.01f, fade = 0.02f) +
+            window(t(), IMPORT_SHOWN - 0.01f, at(11_000), fade = 0.02f) +
+            window(t(), WEB_SHOWN, 0.99f, fade = 0.02f)
+    }
+    val imported = { window(t(), SCANNED, IMPORT_SHOWN, fade = 0.02f) }
+    val web = { window(t(), at(10_800), WEB_SHOWN + 0.01f, fade = 0.02f) }
     Column(Modifier.demoDescription(shareDemoDescription.resolve()), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             MockScreen(width = PhoneWidth, height = PhoneHeight) {
@@ -106,16 +124,22 @@ private fun ShareDemo(animate: Boolean) {
                 Fingertip("tat", shown = { window(t(), TAT_ON - 0.06f, TAT_ON + 0.04f) }, press = { span(t(), TAT_ON - 0.03f, TAT_ON) })
             }
             MockScreen(width = PhoneWidth, height = PhoneHeight) {
-                Scanner(Modifier.graphicsLayer { alpha = scanning().coerceAtMost(1f) }, sweep = { (t() * 7f) % 1f }, tat = tat)
+                // TigerDuck on the other phone: its own class table, where Import class table is.
+                MiniClassTable()
+                ActionsMenu(Modifier.graphicsLayer { alpha = otherMenu() })
+                Scanner(Modifier.graphicsLayer { alpha = scanning().coerceAtMost(1f) }, sweep = { (t() * 9f) % 1f }, tat = tat)
                 ImportConfirm(Modifier.graphicsLayer { alpha = imported() })
                 WebPage(Modifier.graphicsLayer { alpha = web() })
+                // More actions, then Import class table.
+                Fingertip(118.dp, 14.dp, shown = { window(t(), SHEET_UP + 0.01f, OTHER_MENU_OPEN + 0.01f) }, press = { span(t(), OTHER_MENU_OPEN - 0.025f, OTHER_MENU_OPEN) })
+                Fingertip("import", shown = { window(t(), OTHER_MENU_OPEN + 0.01f, IMPORT_TAPPED + 0.01f) }, press = { span(t(), IMPORT_TAPPED - 0.025f, IMPORT_TAPPED) })
             }
         }
         Spacer(Modifier.height(10.dp))
         Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
-            DemoCaption(inTigerDuckCaption.resolve(), alpha = { window(t(), 0.0f, 0.62f, fade = 0.03f) })
-            DemoCaption(anyScannerCaption.resolve(), alpha = { window(t(), 0.62f, 0.80f, fade = 0.03f) })
-            DemoCaption(tatCaption.resolve(), alpha = { window(t(), 0.80f, 0.99f, fade = 0.03f) })
+            DemoCaption(inTigerDuckCaption.resolve(), alpha = { window(t(), 0.0f, IMPORT_SHOWN, fade = 0.02f) })
+            DemoCaption(anyScannerCaption.resolve(), alpha = { window(t(), IMPORT_SHOWN, TAT_ON, fade = 0.02f) })
+            DemoCaption(tatCaption.resolve(), alpha = { window(t(), TAT_ON, 0.99f, fade = 0.02f) })
         }
     }
 }
@@ -143,7 +167,7 @@ private fun MiniClassTable() {
     }
 }
 
-/** The class table's More actions menu, Share class table among them. */
+/** The class table's More actions menu, as the app's own: Share class table and Import class table among them. */
 @Composable
 private fun ActionsMenu(modifier: Modifier) {
     val colors = MaterialTheme.colorScheme
@@ -156,9 +180,10 @@ private fun ActionsMenu(modifier: Modifier) {
             .padding(vertical = 4.dp),
     ) {
         MenuItem(Icons.Filled.Add, null)
+        MenuItem(Icons.Filled.Sync, null)
         MenuItem(Icons.Filled.QrCode, stringResource(R.string.class_table_share), Modifier.tapTarget("share"))
         MenuItem(Icons.Filled.Share, stringResource(R.string.class_table_export_screenshot))
-        MenuItem(Icons.Filled.QrCodeScanner, stringResource(R.string.class_table_import))
+        MenuItem(Icons.Filled.QrCodeScanner, stringResource(R.string.class_table_import), Modifier.tapTarget("import"))
     }
 }
 

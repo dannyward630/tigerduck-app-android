@@ -145,8 +145,8 @@ class WhatsNewDemosTest {
             animate = moving
             // With the clock held, the change reaches the screen once the main thread has run.
             composeRule.waitForIdle()
-            // Through two whole loops (the longest is about 14.3 s), past the reset, a step at a time.
-            repeat(30) { composeRule.mainClock.advanceTimeBy(1_000) }
+            // Through two whole loops (the longest, sharing, is 18 s), past the reset, a step at a time.
+            repeat(40) { composeRule.mainClock.advanceTimeBy(1_000) }
             val demo = demos[i]
             composeRule.onAllNodesWithContentDescription(demo.description.resolve(lang), substring = true)
                 .assertCountEquals(1)
