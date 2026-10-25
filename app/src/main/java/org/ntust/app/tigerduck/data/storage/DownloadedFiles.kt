@@ -34,13 +34,15 @@ import javax.inject.Singleton
 class DownloadedFiles internal constructor(
     private val moodle: MoodleFileDownloads,
     private val mailAttachments: () -> File,
+    /** The attachment folders a download is still writing into, by name ([MailCache.newAttachmentSlot]). */
+    private val attachmentsInUse: () -> Set<String>,
     private val classTableImages: () -> File,
     private val now: () -> Long = System::currentTimeMillis,
     private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
     @Inject
     constructor(moodle: MoodleFileDownloads, mail: MailCache, @ApplicationContext context: Context) :
-        this(moodle, { mail.attachmentsDir }, { File(context.cacheDir, CLASS_TABLE_EXPORT_DIR) })
+        this(moodle, { mail.attachmentsDir }, mail::attachmentSlotsInUse, { File(context.cacheDir, CLASS_TABLE_EXPORT_DIR) })
 
     enum class Kind {
         /** Moodle's materials and attachments, and members' pictures ([MoodleFileDownloads]). */
@@ -81,9 +83,14 @@ class DownloadedFiles internal constructor(
         Kind.entries.forEach { delete(it) }
     }
 
-    /** The attachments' folders, but not the ones a send is staging, which it still has to read. */
-    private fun settledAttachments(): List<File> =
-        settled(mailAttachments()).filterNot { it.name.startsWith(MailCache.OUTGOING_PREFIX) }
+    /**
+     * The attachments' folders, but not one a download is still writing into, however long it has
+     * waited, nor one a send is staging, which it still has to read.
+     */
+    private fun settledAttachments(): List<File> {
+        val inUse = attachmentsInUse()
+        return settled(mailAttachments()).filterNot { it.name in inUse || it.name.startsWith(MailCache.OUTGOING_PREFIX) }
+    }
 
     /** The entries of [dir] nothing was written to in the last [IN_USE_MILLIS]. */
     private fun settled(dir: File): List<File> {

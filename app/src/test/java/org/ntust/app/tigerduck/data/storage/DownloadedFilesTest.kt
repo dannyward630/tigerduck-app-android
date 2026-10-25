@@ -37,17 +37,27 @@ class DownloadedFilesTest {
 
     private val now = 1_800_000_000_000L
 
-    /** [bytes] at [file], last written [ago] ms before [now]: an hour, unless a test says otherwise. */
+    /**
+     * [bytes] at [file], it and its folders last written [ago] ms before [now]: an hour, unless a
+     * test says otherwise.
+     */
     private fun write(file: File, bytes: Int, ago: Long = 60 * 60 * 1000L): File {
         file.parentFile!!.mkdirs()
         file.writeBytes(ByteArray(bytes))
-        file.setLastModified(now - ago)
+        var touched: File? = file
+        while (touched != null && touched != temp.root) {
+            touched.setLastModified(now - ago)
+            touched = touched.parentFile
+        }
         return file
     }
 
+    private val mailCache by lazy { MailCache(mailRoot) }
+
     private fun downloaded(scope: kotlinx.coroutines.CoroutineScope) = DownloadedFiles(
         moodle = MoodleFileDownloads(root = { moodleRoot }, scope = scope, io = Dispatchers.Unconfined),
-        mailAttachments = { MailCache(mailRoot).attachmentsDir },
+        mailAttachments = { mailCache.attachmentsDir },
+        attachmentsInUse = mailCache::attachmentSlotsInUse,
         classTableImages = { imagesRoot },
         now = { now },
         io = Dispatchers.Unconfined,
@@ -131,6 +141,21 @@ class DownloadedFilesTest {
 
         assertTrue(opened.exists())
         assertFalse(File(mailRoot, "attachments/0b5e").exists())
+    }
+
+    @Test
+    fun `an attachment still waiting to download stays, however long it waits`() = runTest {
+        // Its file is open from the start, and the download may wait its turn for the mail session.
+        val slot = mailCache.newAttachmentSlot()
+        val waiting = write(File(slot, "Big.zip"), 10, ago = 60 * 60 * 1000L)
+        val downloaded = downloaded(backgroundScope)
+
+        downloaded.delete(Kind.MAIL_ATTACHMENTS)
+
+        assertTrue(waiting.exists())
+        mailCache.releaseAttachmentSlot(slot)
+        downloaded.delete(Kind.MAIL_ATTACHMENTS)
+        assertFalse(waiting.exists())
     }
 
     @Test

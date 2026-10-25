@@ -69,6 +69,7 @@ class DownloadedFilesScreenTest {
         val files = DownloadedFiles(
             moodle = MoodleFileDownloads(root = { File(temp.root, "files/moodle_files") }, scope = scope, io = Dispatchers.Unconfined),
             mailAttachments = { MailCache(File(temp.root, "cache/mail")).attachmentsDir },
+            attachmentsInUse = { emptySet() },
             classTableImages = { File(temp.root, "cache/class_table_export") },
             now = { System.currentTimeMillis() + 60 * 60 * 1000L },
             io = Dispatchers.Unconfined,

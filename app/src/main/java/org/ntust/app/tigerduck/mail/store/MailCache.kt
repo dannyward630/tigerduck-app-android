@@ -8,6 +8,7 @@ import org.ntust.app.tigerduck.mail.model.MailBody
 import org.ntust.app.tigerduck.mail.model.MailPage
 import java.io.File
 import java.security.MessageDigest
+import java.util.UUID
 
 /**
  * Versioned JSON files under cacheDir/mail (spec §8.1). The server is the
@@ -144,6 +145,29 @@ class MailCache(
     fun clearAll() {
         root.deleteRecursively()
     }
+
+    /** The [attachmentsDir] folders an attachment is still being written into, by name. */
+    private val slotsInUse = HashSet<String>()
+
+    /**
+     * A new folder under [attachmentsDir] for one attachment, in use until [releaseAttachmentSlot]:
+     * Settings' "Downloaded files" leaves it alone however long its download waits for the mail
+     * session, since the download holds its file open the whole time.
+     */
+    @Synchronized
+    fun newAttachmentSlot(): File =
+        File(attachmentsDir, UUID.randomUUID().toString()).also {
+            it.mkdirs()
+            slotsInUse += it.name
+        }
+
+    @Synchronized
+    fun releaseAttachmentSlot(slot: File) {
+        slotsInUse -= slot.name
+    }
+
+    @Synchronized
+    fun attachmentSlotsInUse(): Set<String> = slotsInUse.toSet()
 
     private fun <T> read(file: File, type: Class<T>): T? {
         if (!file.exists()) return null

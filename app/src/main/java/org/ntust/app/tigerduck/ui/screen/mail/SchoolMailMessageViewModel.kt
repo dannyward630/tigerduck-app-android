@@ -536,14 +536,16 @@ class SchoolMailMessageViewModel @Inject constructor(
         val dir = cache.attachmentsDir
         dir.mkdirs()
         val cutoff = System.currentTimeMillis() - DAY_MS
-        dir.listFiles()?.filter { it.lastModified() < cutoff }?.forEach { it.deleteRecursively() }
-        val slot = File(dir, UUID.randomUUID().toString()).apply { mkdirs() }
+        val inUse = cache.attachmentSlotsInUse()
+        dir.listFiles()?.filter { it.lastModified() < cutoff && it.name !in inUse }?.forEach { it.deleteRecursively() }
+        val slot = cache.newAttachmentSlot()
         val file = File(slot, safeFileName(attachment.fileName))
         var committed = false
         try {
             file.outputStream().use { out -> repository.writeAttachment(folder, uid, attachment.partId, out) }
             committed = true
         } finally {
+            cache.releaseAttachmentSlot(slot)
             if (!committed) withContext(NonCancellable) { slot.deleteRecursively() }
         }
         file

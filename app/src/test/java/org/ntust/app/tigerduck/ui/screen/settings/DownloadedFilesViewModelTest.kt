@@ -52,6 +52,7 @@ class DownloadedFilesViewModelTest {
         val files = DownloadedFiles(
             moodle = MoodleFileDownloads(root = { File(temp.root, "files/moodle_files") }, scope = appScope, io = Dispatchers.Unconfined),
             mailAttachments = { File(temp.root, "cache/mail/attachments") },
+            attachmentsInUse = { emptySet() },
             classTableImages = { File(temp.root, "cache/class_table_export") },
             io = Dispatchers.Unconfined,
         )
