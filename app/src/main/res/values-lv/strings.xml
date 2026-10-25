@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Periods %1$s</string>
     <string name="a11y_empty_classroom_same_room">Tā pati auditorija</string>
     <string name="a11y_empty_classroom_walk_minutes">Apmēram %1$d min kājām</string>
+    <string name="a11y_file_viewer_page">%1$d. lapa no %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA tendence pa semestriem</string>
     <string name="a11y_rankings_trend_no_selection">Semestris nav izvēlēts</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Atzīmes</string>
     <string name="feature_settings">Iestatījumi</string>
     <string name="feature_settings_short">Iestatījumi</string>
+    <string name="file_viewer_cannot_show">Šo failu šeit nevar parādīt.</string>
+    <string name="file_viewer_open_elsewhere">Atvērt citā lietotnē</string>
+    <string name="file_viewer_text_truncated">Tiek rādīti šī faila pirmie %1$s.</string>
     <string name="first_trigger_flip_to_library_keep">Atstāt ieslēgtu</string>
     <string name="first_trigger_flip_to_library_message">Pamanījām, ka apgāzāt tālruni. Šis žests var ātri atvērt bibliotēkas QR. Vai vēlaties paturēt šo funkciju?</string>
     <string name="first_trigger_flip_to_library_title">Apgāziet, lai atvērtu bibliotēkas QR</string>

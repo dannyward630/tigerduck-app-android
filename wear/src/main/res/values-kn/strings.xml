@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">ಅವಧಿ %1$s</string>
     <string name="a11y_empty_classroom_same_room">ಅದೇ ತರಗತಿ ಕೊಠಡಿ</string>
     <string name="a11y_empty_classroom_walk_minutes">ನಡೆದು ಸುಮಾರು %1$d ನಿಮಿಷ</string>
+    <string name="a11y_file_viewer_page">%2$d ರಲ್ಲಿ %1$d ನೇ ಪುಟ</string>
     <string name="a11y_rankings_trend_chart">ಸೆಮೆಸ್ಟರ್‌ ಪ್ರಕಾರ GPA ಪ್ರವೃತ್ತಿ</string>
     <string name="a11y_rankings_trend_no_selection">ಯಾವುದೇ ಸೆಮೆಸ್ಟರ್ ಆಯ್ಕೆ ಮಾಡಿಲ್ಲ</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">ಅಂಕಗಳು</string>
     <string name="feature_settings">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
     <string name="feature_settings_short">ಸೆಟ್ಟಿಂಗ್‌ಗಳು</string>
+    <string name="file_viewer_cannot_show">ಈ ಫೈಲ್ ಅನ್ನು ಇಲ್ಲಿ ತೋರಿಸಲು ಸಾಧ್ಯವಿಲ್ಲ.</string>
+    <string name="file_viewer_open_elsewhere">ಬೇರೆ ಆ್ಯಪ್‌ನಲ್ಲಿ ತೆರೆಯಿರಿ</string>
+    <string name="file_viewer_text_truncated">ಈ ಫೈಲ್‌ನ ಮೊದಲ %1$s ತೋರಿಸಲಾಗುತ್ತಿದೆ.</string>
     <string name="first_trigger_flip_to_library_keep">ಆನ್ ಆಗಿ ಇರಿಸಿ</string>
     <string name="first_trigger_flip_to_library_message">ನೀವು ಫೋನ್ ತಿರುಗಿಸಿದ್ದನ್ನು ನಾವು ಗಮನಿಸಿದ್ದೇವೆ. ಈ ಸನ್ನೆ ಲೈಬ್ರರಿ QR ಅನ್ನು ತ್ವರಿತವಾಗಿ ತೆರೆಯಬಲ್ಲದು. ಈ ವೈಶಿಷ್ಟ್ಯವನ್ನು ಉಳಿಸಿಕೊಳ್ಳುವಿರಾ?</string>
     <string name="first_trigger_flip_to_library_title">ಲೈಬ್ರರಿ QR ತೆರೆಯಲು ತಿರುಗಿಸಿ</string>

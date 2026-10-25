@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Període %1$s</string>
     <string name="a11y_empty_classroom_same_room">La mateixa aula</string>
     <string name="a11y_empty_classroom_walk_minutes">Uns %1$d min a peu</string>
+    <string name="a11y_file_viewer_page">Pàgina %1$d de %2$d</string>
     <string name="a11y_rankings_trend_chart">Tendència del GPA per semestre</string>
     <string name="a11y_rankings_trend_no_selection">Cap semestre seleccionat</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Notes</string>
     <string name="feature_settings">Configuració</string>
     <string name="feature_settings_short">Configuració</string>
+    <string name="file_viewer_cannot_show">Aquest fitxer no es pot mostrar aquí.</string>
+    <string name="file_viewer_open_elsewhere">Obre en una altra app</string>
+    <string name="file_viewer_text_truncated">Es mostren els primers %1$s d\'aquest fitxer.</string>
     <string name="first_trigger_flip_to_library_keep">Mantén activat</string>
     <string name="first_trigger_flip_to_library_message">Sembla que has girat el telèfon. Aquest gest pot obrir ràpidament el QR de la biblioteca. Vols conservar aquesta funció?</string>
     <string name="first_trigger_flip_to_library_title">Gira per obrir el QR de la biblioteca</string>

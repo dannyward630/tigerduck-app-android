@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">คาบที่ %1$s</string>
     <string name="a11y_empty_classroom_same_room">ห้องเดิม</string>
     <string name="a11y_empty_classroom_walk_minutes">เดินประมาณ %1$d นาที</string>
+    <string name="a11y_file_viewer_page">หน้า %1$d จาก %2$d</string>
     <string name="a11y_rankings_trend_chart">แนวโน้ม GPA ตามภาคการศึกษา</string>
     <string name="a11y_rankings_trend_no_selection">ยังไม่ได้เลือกภาคการศึกษา</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">ผลการเรียน</string>
     <string name="feature_settings">การตั้งค่า</string>
     <string name="feature_settings_short">การตั้งค่า</string>
+    <string name="file_viewer_cannot_show">แสดงไฟล์นี้ที่นี่ไม่ได้</string>
+    <string name="file_viewer_open_elsewhere">เปิดในแอปอื่น</string>
+    <string name="file_viewer_text_truncated">แสดง %1$s แรกของไฟล์นี้</string>
     <string name="first_trigger_flip_to_library_keep">เปิดไว้ต่อไป</string>
     <string name="first_trigger_flip_to_library_message">เราสังเกตว่าคุณพลิกโทรศัพท์ ท่าทางนี้สามารถเปิด QR ห้องสมุดได้อย่างรวดเร็ว ต้องการเก็บฟีเจอร์นี้ไว้ไหม?</string>
     <string name="first_trigger_flip_to_library_title">พลิกเพื่อเปิด QR ห้องสมุด</string>

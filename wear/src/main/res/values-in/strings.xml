@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Periode %1$s</string>
     <string name="a11y_empty_classroom_same_room">Ruang kelas yang sama</string>
     <string name="a11y_empty_classroom_walk_minutes">Sekitar %1$d mnt jalan kaki</string>
+    <string name="a11y_file_viewer_page">Halaman %1$d dari %2$d</string>
     <string name="a11y_rankings_trend_chart">Tren GPA per semester</string>
     <string name="a11y_rankings_trend_no_selection">Tidak ada semester yang dipilih</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Nilai</string>
     <string name="feature_settings">Pengaturan</string>
     <string name="feature_settings_short">Pengaturan</string>
+    <string name="file_viewer_cannot_show">File ini tidak dapat ditampilkan di sini.</string>
+    <string name="file_viewer_open_elsewhere">Buka di aplikasi lain</string>
+    <string name="file_viewer_text_truncated">Menampilkan %1$s pertama dari file ini.</string>
     <string name="first_trigger_flip_to_library_keep">Tetap aktif</string>
     <string name="first_trigger_flip_to_library_message">Kami melihat kamu membalik ponsel. Gerakan ini dapat membuka QR perpustakaan dengan cepat. Mau tetap menggunakan fitur ini?</string>
     <string name="first_trigger_flip_to_library_title">Balik ponsel untuk buka QR perpustakaan</string>

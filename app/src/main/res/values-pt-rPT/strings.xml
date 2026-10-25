@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Período %1$s</string>
     <string name="a11y_empty_classroom_same_room">Mesma sala</string>
     <string name="a11y_empty_classroom_walk_minutes">Cerca de %1$d min a pé</string>
+    <string name="a11y_file_viewer_page">Página %1$d de %2$d</string>
     <string name="a11y_rankings_trend_chart">Tendência de GPA por semestre</string>
     <string name="a11y_rankings_trend_no_selection">Nenhum semestre selecionado</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Notas</string>
     <string name="feature_settings">Definições</string>
     <string name="feature_settings_short">Definições</string>
+    <string name="file_viewer_cannot_show">Não é possível mostrar este ficheiro aqui.</string>
+    <string name="file_viewer_open_elsewhere">Abrir noutra aplicação</string>
+    <string name="file_viewer_text_truncated">A mostrar os primeiros %1$s deste ficheiro.</string>
     <string name="first_trigger_flip_to_library_keep">Manter ativado</string>
     <string name="first_trigger_flip_to_library_message">Parece que viraste o telemóvel. Este gesto pode abrir rapidamente o QR da biblioteca. Queres manter esta funcionalidade?</string>
     <string name="first_trigger_flip_to_library_title">Virar para abrir o QR da biblioteca</string>

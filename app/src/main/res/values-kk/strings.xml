@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">%1$s сабақ</string>
     <string name="a11y_empty_classroom_same_room">Сол аудитория</string>
     <string name="a11y_empty_classroom_walk_minutes">Жаяу шамамен %1$d мин</string>
+    <string name="a11y_file_viewer_page">%1$d/%2$d бет</string>
     <string name="a11y_rankings_trend_chart">Семестр бойынша GPA үрдісі</string>
     <string name="a11y_rankings_trend_no_selection">Семестр таңдалмаған</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Бағалар</string>
     <string name="feature_settings">Параметрлер</string>
     <string name="feature_settings_short">Параметрлер</string>
+    <string name="file_viewer_cannot_show">Бұл файлды мұнда көрсету мүмкін емес.</string>
+    <string name="file_viewer_open_elsewhere">Басқа қолданбада ашу</string>
+    <string name="file_viewer_text_truncated">Бұл файлдың алғашқы %1$s көрсетілуде.</string>
     <string name="first_trigger_flip_to_library_keep">Қосулы қалдыру</string>
     <string name="first_trigger_flip_to_library_message">Сіз телефонды аударғанын байқадық. Бұл қимыл кітапхана QR кодын жылдам ашуға мүмкіндік береді. Осы мүмкіндікті қалдырасыз ба?</string>
     <string name="first_trigger_flip_to_library_title">Кітапхана QR кодын ашу үшін аударыңыз</string>

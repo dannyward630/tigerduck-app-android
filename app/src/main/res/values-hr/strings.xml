@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Sat %1$s</string>
     <string name="a11y_empty_classroom_same_room">Ista učionica</string>
     <string name="a11y_empty_classroom_walk_minutes">Oko %1$d min hoda</string>
+    <string name="a11y_file_viewer_page">Stranica %1$d od %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend GPA-a po semestru</string>
     <string name="a11y_rankings_trend_no_selection">Nije odabran semestar</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Ocjene</string>
     <string name="feature_settings">Postavke</string>
     <string name="feature_settings_short">Postavke</string>
+    <string name="file_viewer_cannot_show">Ova se datoteka ne može prikazati ovdje.</string>
+    <string name="file_viewer_open_elsewhere">Otvori u drugoj aplikaciji</string>
+    <string name="file_viewer_text_truncated">Prikazuje se prvih %1$s ove datoteke.</string>
     <string name="first_trigger_flip_to_library_keep">Zadrži uključeno</string>
     <string name="first_trigger_flip_to_library_message">Primijetili smo da si preokrenuo telefon. Ovaj pokret može brzo otvoriti QR knjižnice. Želiš zadržati ovu značajku?</string>
     <string name="first_trigger_flip_to_library_title">Preokrenite za otvaranje QR knjižnice</string>

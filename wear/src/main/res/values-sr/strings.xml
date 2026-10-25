@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Час %1$s</string>
     <string name="a11y_empty_classroom_same_room">Иста учионица</string>
     <string name="a11y_empty_classroom_walk_minutes">Око %1$d мин хода</string>
+    <string name="a11y_file_viewer_page">Страница %1$d од %2$d</string>
     <string name="a11y_rankings_trend_chart">Тренд GPA по семестру</string>
     <string name="a11y_rankings_trend_no_selection">Није одабран семестар</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Оцене</string>
     <string name="feature_settings">Поставке</string>
     <string name="feature_settings_short">Поставке</string>
+    <string name="file_viewer_cannot_show">Ова датотека не може да се прикаже овде.</string>
+    <string name="file_viewer_open_elsewhere">Отвори у другој апликацији</string>
+    <string name="file_viewer_text_truncated">Приказује се првих %1$s ове датотеке.</string>
     <string name="first_trigger_flip_to_library_keep">Задржи укључено</string>
     <string name="first_trigger_flip_to_library_message">Приметили смо да сте окренули телефон. Овај покрет може брзо да отвори QR библиотеке. Желите да задржите ову функцију?</string>
     <string name="first_trigger_flip_to_library_title">Окрени за отварање QR библиотеке</string>

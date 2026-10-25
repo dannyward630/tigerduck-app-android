@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">שיעור %1$s</string>
     <string name="a11y_empty_classroom_same_room">אותה כיתה</string>
     <string name="a11y_empty_classroom_walk_minutes">כ-%1$d דקות הליכה</string>
+    <string name="a11y_file_viewer_page">עמוד %1$d מתוך %2$d</string>
     <string name="a11y_rankings_trend_chart">מגמת GPA לפי סמסטר</string>
     <string name="a11y_rankings_trend_no_selection">לא נבחר סמסטר</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">ציונים</string>
     <string name="feature_settings">הגדרות</string>
     <string name="feature_settings_short">הגדרות</string>
+    <string name="file_viewer_cannot_show">לא ניתן להציג את הקובץ הזה כאן.</string>
+    <string name="file_viewer_open_elsewhere">פתיחה באפליקציה אחרת</string>
+    <string name="file_viewer_text_truncated">מוצגים ה-%1$s הראשונים של הקובץ.</string>
     <string name="first_trigger_flip_to_library_keep">השאר פעיל</string>
     <string name="first_trigger_flip_to_library_message">שמנו לב שהפכת את הטלפון. תנועה זו יכולה לפתוח במהירות את ה-QR של הספרייה. רוצה לשמור על התכונה הזו?</string>
     <string name="first_trigger_flip_to_library_title">היפוך לפתיחת QR של הספרייה</string>

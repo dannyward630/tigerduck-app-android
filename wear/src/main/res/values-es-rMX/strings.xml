@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Período %1$s</string>
     <string name="a11y_empty_classroom_same_room">Misma aula</string>
     <string name="a11y_empty_classroom_walk_minutes">Unos %1$d min a pie</string>
+    <string name="a11y_file_viewer_page">Página %1$d de %2$d</string>
     <string name="a11y_rankings_trend_chart">Tendencia de GPA por semestre</string>
     <string name="a11y_rankings_trend_no_selection">Ningún semestre seleccionado</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Calificaciones</string>
     <string name="feature_settings">Configuración</string>
     <string name="feature_settings_short">Configuración</string>
+    <string name="file_viewer_cannot_show">Este archivo no se puede mostrar aquí.</string>
+    <string name="file_viewer_open_elsewhere">Abrir en otra app</string>
+    <string name="file_viewer_text_truncated">Se muestran los primeros %1$s de este archivo.</string>
     <string name="first_trigger_flip_to_library_keep">Mantener activado</string>
     <string name="first_trigger_flip_to_library_message">Parece que giraste el teléfono. Este gesto puede abrir rápidamente el QR de la biblioteca. ¿Quieres conservar esta función?</string>
     <string name="first_trigger_flip_to_library_title">Gira para abrir el QR de la biblioteca</string>

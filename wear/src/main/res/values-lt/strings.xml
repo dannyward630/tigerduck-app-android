@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">%1$s pamoka</string>
     <string name="a11y_empty_classroom_same_room">Ta pati auditorija</string>
     <string name="a11y_empty_classroom_walk_minutes">Apie %1$d min. pėsčiomis</string>
+    <string name="a11y_file_viewer_page">%1$d psl. iš %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA tendencija pagal semestrą</string>
     <string name="a11y_rankings_trend_no_selection">Semestras nepasirinktas</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -601,6 +602,9 @@
     <string name="feature_score_short">Pažymiai</string>
     <string name="feature_settings">Nustatymai</string>
     <string name="feature_settings_short">Nustatymai</string>
+    <string name="file_viewer_cannot_show">Šio failo čia parodyti negalima.</string>
+    <string name="file_viewer_open_elsewhere">Atidaryti kitoje programoje</string>
+    <string name="file_viewer_text_truncated">Rodomi pirmieji šio failo %1$s.</string>
     <string name="first_trigger_flip_to_library_keep">Palikti įjungtą</string>
     <string name="first_trigger_flip_to_library_message">Pastebėjome, kad apvertėte telefoną. Šis gestas gali greitai atidaryti bibliotekos QR. Norite palikti šią funkciją?</string>
     <string name="first_trigger_flip_to_library_title">Apverskite, kad atidarytumėte bibliotekos QR</string>
