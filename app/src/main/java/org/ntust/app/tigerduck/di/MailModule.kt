@@ -42,6 +42,7 @@ import org.ntust.app.tigerduck.mail.sync.ExactAlarmAccess
 import org.ntust.app.tigerduck.mail.sync.MailAlarmScheduler
 import org.ntust.app.tigerduck.mail.sync.MailBackgroundScheduler
 import org.ntust.app.tigerduck.mail.sync.MailClock
+import org.ntust.app.tigerduck.shared.tls.PinnedTls
 import org.ntust.app.tigerduck.ui.screen.mail.ContentResolverAttachmentReader
 import org.ntust.app.tigerduck.ui.screen.mail.NtustAccountSource
 import org.ntust.app.tigerduck.ui.screen.mail.PickedAttachmentReader
@@ -69,8 +70,8 @@ object MailModule {
      */
     @Provides
     @Singleton
-    fun connectionProbe(credentials: MailCredentialStore, site: MailSite): MailConnectionProbe =
-        if (BuildConfig.DEBUG) SocketMailConnectionProbe(credentials, site) else MailConnectionProbe.Unavailable
+    fun connectionProbe(credentials: MailCredentialStore, site: MailSite, tls: PinnedTls): MailConnectionProbe =
+        if (BuildConfig.DEBUG) SocketMailConnectionProbe(credentials, site, tls.socketFactory) else MailConnectionProbe.Unavailable
 
     /**
      * Resolved per connection rather than provided as a value: [MailSite] can answer
@@ -83,11 +84,13 @@ object MailModule {
 
     @Provides
     @Singleton
-    fun sessionFactory(configs: MailServerConfigSource): MailSessionFactory = AngusMailSessionFactory(configs)
+    fun sessionFactory(configs: MailServerConfigSource, tls: PinnedTls): MailSessionFactory =
+        AngusMailSessionFactory(configs, tls.socketFactory)
 
     @Provides
     @Singleton
-    fun transport(configs: MailServerConfigSource): MailTransport = AngusMailTransport(configs)
+    fun transport(configs: MailServerConfigSource, tls: PinnedTls): MailTransport =
+        AngusMailTransport(configs, tls.socketFactory)
 
     @Provides
     @Singleton

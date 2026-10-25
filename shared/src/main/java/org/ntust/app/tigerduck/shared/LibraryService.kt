@@ -20,11 +20,12 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Interceptor
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
+import org.ntust.app.tigerduck.shared.tls.PinnedTls
+import org.ntust.app.tigerduck.shared.tls.pinnedClientBuilder
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resumeWithException
@@ -49,6 +50,8 @@ class LibraryService(
     extraInterceptors: List<Interceptor> = emptyList(),
     /** Wall-clock ms, for the pause after a failed sign-in with the stored credentials. */
     private val clock: () -> Long = System::currentTimeMillis,
+    /** The app's pinned trust, which the library's pins are checked by; null only in tests. */
+    tls: PinnedTls? = null,
 ) {
     private val loggingInterceptor = HttpLoggingInterceptor { message ->
         Log.d("TigerDuck-HTTP", LibraryApi.redactSensitive(message))
@@ -59,7 +62,7 @@ class LibraryService(
         redactHeader("Cookie")
     }
 
-    private val client = OkHttpClient.Builder()
+    private val client = pinnedClientBuilder(tls)
         .apply { extraInterceptors.forEach(::addInterceptor) }
         .addInterceptor(loggingInterceptor)
         .build()

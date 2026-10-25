@@ -8,6 +8,8 @@ import okhttp3.OkHttpClient
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
+import org.ntust.app.tigerduck.shared.tls.PinnedTls
+import org.ntust.app.tigerduck.shared.tls.pinnedClientBuilder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
@@ -18,6 +20,8 @@ import javax.inject.Singleton
 class NtustSessionManager @Inject constructor(
     private val prefs: AppPreferences,
     private val demoMode: DemoModeInterceptor,
+    /** The app's pinned trust; null only in tests, for the platform's. */
+    tls: PinnedTls? = null,
 ) {
     private val cookieStore = ConcurrentHashMap<String, CopyOnWriteArrayList<Cookie>>()
 
@@ -64,8 +68,10 @@ class NtustSessionManager @Inject constructor(
 
     private val accountGuard = AccountSessionGuard()
 
-    val client: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(accountGuard.markCall)
+    val client: OkHttpClient = pinnedClientBuilder(tls)
+        // Ahead of the pin-mismatch retry, so a call tried again keeps the account it started
+        // under, and one the student signed out of meanwhile is refused.
+        .apply { interceptors().add(0, accountGuard.markCall) }
         // Before the UA/Accept rewriting below: a demo session has no reason
         // to dress up a request it is about to refuse.
         .addInterceptor(demoMode)

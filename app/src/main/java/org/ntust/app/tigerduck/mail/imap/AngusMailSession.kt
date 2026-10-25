@@ -51,13 +51,18 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.io.SequenceInputStream
 import java.util.Properties
+import javax.net.ssl.SSLSocketFactory
 
-class AngusMailSessionFactory(private val configs: MailServerConfigSource) : MailSessionFactory {
+class AngusMailSessionFactory(
+    private val configs: MailServerConfigSource,
+    /** The app's TLS; see [MailProperties]. */
+    private val tls: SSLSocketFactory? = null,
+) : MailSessionFactory {
     constructor(config: MailServerConfig) : this(MailServerConfigSource { config })
 
     override fun open(credentials: MailCredentials): MailSession {
         val config = configs.current()
-        val session = Session.getInstance(MailProperties.imap(config))
+        val session = Session.getInstance(MailProperties.imap(config, tls))
         val store = session.getStore(MailProperties.imapProtocol(config)) as IMAPStore
         try {
             store.connect(config.imap.host, config.imap.port, credentials.loginName, credentials.password)

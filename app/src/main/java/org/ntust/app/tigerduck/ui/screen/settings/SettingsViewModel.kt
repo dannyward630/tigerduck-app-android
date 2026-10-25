@@ -31,6 +31,7 @@ import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.library.libraryErrorMessage
 import org.ntust.app.tigerduck.data.sharing.ImportedClassTableStore
 import org.ntust.app.tigerduck.data.sharing.ImportedClassTables
+import org.ntust.app.tigerduck.network.tls.PinManager
 import org.ntust.app.tigerduck.shared.LibraryService
 import org.ntust.app.tigerduck.analytics.AnalyticsLogger
 import org.ntust.app.tigerduck.data.CourseTombstoneKeys
@@ -77,6 +78,8 @@ class SettingsViewModel @Inject constructor(
     private val importedClassTableStore: ImportedClassTableStore,
     @param:ApplicationScope private val appScope: CoroutineScope,
     @param:ApplicationContext private val context: Context,
+    /** Debug builds' Developer page simulates a pin mismatch through it. */
+    val pinManager: PinManager,
 ) : ViewModel() {
 
     /** For the NTUST sign-out, which asks first when it would delete imported class tables. */

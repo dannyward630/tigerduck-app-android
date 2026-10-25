@@ -6,6 +6,8 @@ import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
 import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.academic.AcademicCalendar
@@ -17,9 +19,11 @@ import org.ntust.app.tigerduck.data.preferences.AppLanguageManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.library.libraryCredentialsForWatch
+import org.ntust.app.tigerduck.network.tls.PinManager
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.shared.WearProtocol
 import org.ntust.app.tigerduck.shared.clock.AppClock
+import org.ntust.app.tigerduck.shared.tls.PinAcceptances
 import org.ntust.app.tigerduck.util.logSummary
 import java.io.ByteArrayOutputStream
 import java.time.LocalDate
@@ -35,6 +39,7 @@ class WearScheduleBridge @Inject constructor(
     private val appPreferences: AppPreferences,
     private val credentials: CredentialManager,
     private val academicCalendar: AcademicCalendarStore,
+    private val pins: PinManager,
 ) {
     private val gson = Gson()
 
@@ -46,6 +51,19 @@ class WearScheduleBridge @Inject constructor(
     private val bridgePrefs = context.getSharedPreferences(
         "wear_bridge_state", Context.MODE_PRIVATE
     )
+
+    /**
+     * The TLS pins push's version: the wall clock, or one past the last when the clock is behind
+     * it. A clock-based start keeps a reinstalled phone, whose counter would begin again at 1,
+     * ahead of what the watch last took, so its pushes, empty acceptances included, aren't
+     * refused.
+     */
+    @Synchronized
+    private fun nextTlsPinsEpoch(): Long {
+        val next = tlsPinsVersion(bridgePrefs.getLong(KEY_TLS_PINS_EPOCH, 0L), System.currentTimeMillis())
+        bridgePrefs.edit().putLong(KEY_TLS_PINS_EPOCH, next).apply()
+        return next
+    }
 
     @Synchronized
     private fun nextCredentialEpoch(): Long {
@@ -173,6 +191,30 @@ class WearScheduleBridge @Inject constructor(
         }
     }
 
+    /**
+     * The TLS pins for the watch (TLS pins spec, A8): the document envelope the phone verified,
+     * as received, and the student's acceptances, each with the phone's build number. The watch
+     * verifies the envelope with its own keys and applies an acceptance only while its build is
+     * the matching one.
+     */
+    suspend fun publishTlsPins() = tlsPins.publish()
+
+    private val tlsPins = TlsPinsPublisher(
+        snapshot = {
+            PutDataMapRequest.create(WearProtocol.TlsPins.PATH).apply {
+                pins.envelope?.let { dataMap.putByteArray(WearProtocol.TlsPins.KEY_ENVELOPE, it) }
+                dataMap.putString(WearProtocol.TlsPins.KEY_ACCEPTANCES, PinAcceptances.encode(pins.currentAcceptances))
+                dataMap.putLong(WearProtocol.TlsPins.KEY_VERSION, nextTlsPinsEpoch())
+            }.asPutDataRequest().setUrgent()
+        },
+    ) { request ->
+        try {
+            Wearable.getDataClient(context).putDataItem(request).await()
+        } catch (t: Throwable) {
+            Log.w(TAG, "TLS pins publish failed: ${t.logSummary()}")
+        }
+    }
+
     private fun Course.toDto(): CourseDto = toWearDto()
 
     /** On-the-wire shape; explicit so we can evolve [Course] without breaking watch JSON. */
@@ -201,8 +243,12 @@ class WearScheduleBridge @Inject constructor(
     private companion object {
         const val TAG = "WearBridge"
         const val KEY_CRED_EPOCH = "libraryCredentialEpoch"
+        const val KEY_TLS_PINS_EPOCH = "tlsPinsEpoch"
     }
 }
+
+/** The TLS pins push after [last]: the wall clock [now], or one past [last] when the clock is behind. */
+internal fun tlsPinsVersion(last: Long, now: Long): Long = maxOf(last + 1, now)
 
 /**
  * The accent the watch is sent, as `#RRGGBB`: the swatch last picked, or the
@@ -271,3 +317,13 @@ internal fun Course.toWearDto(): WearScheduleBridge.CourseDto = WearScheduleBrid
     customColorHex = customColorHex,
     isManual = isManual,
 )
+
+/**
+ * Publishes the TLS pins item one at a time (A8): a snapshot, its version included, is taken and
+ * put with no other publish in between, so the item last put is always the newest.
+ */
+internal class TlsPinsPublisher<T>(private val snapshot: () -> T, private val put: suspend (T) -> Unit) {
+    private val mutex = Mutex()
+
+    suspend fun publish() = mutex.withLock { put(snapshot()) }
+}

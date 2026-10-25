@@ -65,12 +65,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Earliest pin-set expiration across network_security_config.xml.
-        // Used by TigerDuckApp to surface a logcat warning when pins are
-        // within 30 days of expiry; without a runtime check, post-expiry the
-        // platform silently falls back to system CA trust with no UI signal.
-        // 2027-05-04T00:00:00Z = 1809388800000L epoch ms (api.lib.ntust.edu.tw);
-        // NetworkSecurityConfigTest fails when it stops matching the XML.
+        // Earliest set expiry in :shared's BuiltInPins. Used by TigerDuckApp
+        // to surface a logcat warning when the built-in pins are within 30
+        // days of expiry; past it a set falls back to system CA trust unless
+        // a TigerSync document extends it.
+        // 2027-05-04T00:00:00Z = 1809388800000L epoch ms (the library set);
+        // BuiltInPinsTest fails when it stops matching the table.
         buildConfigField("long", "PIN_EXPIRY_EPOCH", "1809388800000L")
     }
 
@@ -151,9 +151,10 @@ android {
             // ReleaseLogRulesTest reads the R8 rules, which are no input of the
             // test task otherwise: a change to them alone would leave it UP-TO-DATE.
             all { it.inputs.file("proguard-rules.pro") }
-            // NetworkSecurityConfigTest reads both pin configs. They reach the
-            // test only through these providers, which declare each file an
-            // input, so an edit to the XML alone reruns the pin checks.
+            // BuiltInPinsTest reads both network configs, to check no pin-set
+            // is left in them. They reach the test only through these
+            // providers, which declare each file an input, so an edit to the
+            // XML alone reruns the checks.
             all {
                 it.jvmArgumentProviders += InputFileProperty(
                     "tigerduck.nsc.release", file("src/main/res/xml/network_security_config.xml"),
@@ -162,12 +163,13 @@ android {
                     "tigerduck.nsc.debug", file("src/debug/res/xml/network_security_config.xml"),
                 )
             }
-            // ReleaseLogLinesTest reads the watch's sources too, and
-            // NetworkSecurityConfigTest the watch's manifest and network config,
-            // which nothing here builds.
+            // ReleaseLogLinesTest and AllHttpsClientsPinnedTest read the watch's
+            // sources too, and BuiltInPinsTest the watch's manifest, network
+            // config and build file, which nothing here builds.
             all {
                 it.inputs.files(
                     fileTree("../wear/src/main") { include("**/*.kt", "AndroidManifest.xml", "res/xml/**") },
+                    file("../wear/build.gradle.kts"),
                 ).withPathSensitivity(PathSensitivity.RELATIVE)
             }
         }
@@ -657,6 +659,11 @@ dependencies {
     // Context and SQLite it runs on.
     testImplementation(libs.androidx.work.testing)
     testImplementation(libs.robolectric)
+    // Hand-made certificates and Ed25519 keys for the TLS pin tests.
+    testImplementation(libs.okhttp.tls)
+    testImplementation(libs.bouncycastle.bcprov)
+    // DebugPinDocument signs its stand-in for TigerSync's document; :shared ships it to every build already.
+    debugImplementation(libs.bouncycastle.bcprov)
     // Compose UI tests on Robolectric, for composables whose behaviour hangs
     // on permission state the JVM can fake and a device cannot: revoking a
     // runtime permission kills the instrumented process.

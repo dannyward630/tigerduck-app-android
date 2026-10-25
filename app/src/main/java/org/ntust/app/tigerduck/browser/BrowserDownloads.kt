@@ -31,6 +31,8 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.resumeWithException
+import org.ntust.app.tigerduck.shared.tls.PinnedTls
+import org.ntust.app.tigerduck.shared.tls.pinnedClientBuilder
 
 /** What the browser does with a file a page offers. */
 sealed interface DownloadPlan {
@@ -175,7 +177,8 @@ class MediaStoreDownloadTransfer(
     /** Keeps a redirect's Set-Cookie value for the address that sent it, done before it returns. */
     private val keepCookie: (url: String, setCookie: String) -> Unit,
     private val userAgent: () -> String?,
-    private val client: OkHttpClient = DEFAULT_CLIENT,
+    /** [client]'s, pinned, in the app; a test's own. */
+    private val client: OkHttpClient,
     /** Where the body goes; MediaStore's Downloads, a stand-in in tests. */
     private val save: (suspend (DownloadPlan.Save, Long?, java.io.InputStream, (Long, Long?) -> Unit) -> Uri)? = null,
 ) : DownloadTransfer {
@@ -288,13 +291,15 @@ class MediaStoreDownloadTransfer(
     companion object {
         private const val MAX_REDIRECTS = 10
 
-        private val DEFAULT_CLIENT: OkHttpClient by lazy {
-            OkHttpClient.Builder()
-                .followRedirects(false)
-                .followSslRedirects(false)
-                .connectTimeout(20, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
-                .build()
-        }
+        /**
+         * The download client: the app's pinned trust, as every client's (TLS pins spec, A9),
+         * though the browser's own WebView isn't pinned; redirects are followed by hand.
+         */
+        fun client(tls: PinnedTls): OkHttpClient = pinnedClientBuilder(tls)
+            .followRedirects(false)
+            .followSslRedirects(false)
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .build()
     }
 }

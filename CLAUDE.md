@@ -66,15 +66,22 @@ default is silently dropped and the field is null at runtime.
 - **`name-abbr/` submodule must be present** — `verifyNameAbbrSubmodule`
   fails the build if it's missing. CI checks out submodules explicitly;
   don't drop `submodules: true` from new workflows.
-- **NTUST cert pins** have a hard-coded expiry epoch in `app/build.gradle.kts`
-  (`PIN_EXPIRY_EPOCH`). `TigerDuckApp.warnIfPinsNearExpiry` logs a warning
-  in the 30-day window. Rotate before lapse; post-expiry the platform
-  falls back to system CA trust silently. `NetworkSecurityConfigTest` fails
-  45 days before any pin-set expires, when the debug config's pin-sets drift
-  from the release one's, when `PIN_EXPIRY_EPOCH` is not the earliest
-  expiration, and when the watch's library pin-set
-  (`wear/src/main/res/xml/network_security_config.xml`) differs from the
-  phone's. The Apple repo's `tls-pin-rotation` skill rotates both apps.
+- **TLS pins live in code, not in `network_security_config.xml`**, so a
+  signed document from TigerSync can change them at runtime (TLS pins spec,
+  `docs/superpowers/specs/2026-10-25-tls-pins-and-links-spec-final.md`).
+  `:shared`'s `BuiltInPins` is the fallback table (CA pins only, with
+  `BASELINE_SERIAL`); `PinnedTrustManager` wraps the platform's trust manager,
+  which still decides system trust, and applies the pins on top. Every HTTPS
+  client starts from `pinnedClientBuilder(tls)`; the one exception is the pin
+  document's own fetch (`PinDocumentClient`), unpinned on purpose.
+  `AllHttpsClientsPinnedTest` fails on an `OkHttpClient.Builder()` anywhere
+  else, on raw TLS contexts and sockets, and on School Mail sessions built
+  without the pinned socket factory. `BuiltInPinsTest` fails 45 days before a
+  built-in set expires, when `PIN_EXPIRY_EPOCH` (`app/build.gradle.kts`) is not
+  the earliest expiry, when a pin stops matching its certificate fixture, and
+  when any network config grows a `<pin-set>` again. `PinDocumentKeys` holds
+  TigerSync's Ed25519 public keys; never put a test key there. The Apple
+  repo's `tls-pin-rotation` skill rotates both apps' tables.
 - **The Open-source licences lists are committed, not built.** Two
   generated files per flavor: `res/raw/aboutlibraries.json` (libraries and
   their licences, from the AboutLibraries plugin) and

@@ -147,8 +147,26 @@ class MailDevServerTest {
         assertEquals("mail.ntust.edu.tw", p["mail.imaps.host"])
         assertEquals("993", p["mail.imaps.port"])
         assertNull("implicit TLS never negotiates an upgrade", p["mail.imaps.starttls.enable"])
-        // The socket factory stays the platform default, which is what makes the pins apply.
+        // With no factory given, Angus takes the platform's, which has no pins: production always
+        // gives the pinned one (AllHttpsClientsPinnedTest).
         assertNull(p["mail.imaps.ssl.socketFactory"])
+    }
+
+    @Test
+    fun `the pinned factory is used for TLS and never fallen back from`() {
+        val pinned = javax.net.ssl.SSLSocketFactory.getDefault() as javax.net.ssl.SSLSocketFactory
+
+        val imaps = MailProperties.imap(MailServerConfig.NTUST, pinned)
+        val smtps = MailProperties.smtp(MailServerConfig.NTUST, pinned)
+        store.settings = gmail
+        val startTls = MailProperties.smtp(site.config(), pinned)
+
+        assertEquals(pinned, imaps["mail.imaps.ssl.socketFactory"])
+        assertEquals("false", imaps["mail.imaps.socketFactory.fallback"])
+        assertEquals(pinned, smtps["mail.smtps.ssl.socketFactory"])
+        assertEquals("false", smtps["mail.smtps.socketFactory.fallback"])
+        assertEquals(pinned, startTls["mail.smtp.ssl.socketFactory"])
+        assertEquals("false", startTls["mail.smtp.socketFactory.fallback"])
     }
 
     @Test

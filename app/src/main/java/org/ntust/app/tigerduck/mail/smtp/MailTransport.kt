@@ -11,6 +11,7 @@ import org.ntust.app.tigerduck.mail.MailServerConfig
 import org.ntust.app.tigerduck.mail.MailServerConfigSource
 import org.ntust.app.tigerduck.mail.MailTransportSecurity
 import org.ntust.app.tigerduck.mail.compose.BuiltMessage
+import javax.net.ssl.SSLSocketFactory
 
 fun interface MailTransport {
     /** Throws [org.ntust.app.tigerduck.mail.MailError]. */
@@ -18,12 +19,16 @@ fun interface MailTransport {
 }
 
 /** SMTP 465 implicit TLS, AUTH LOGIN with the bare student ID. */
-class AngusMailTransport(private val configs: MailServerConfigSource) : MailTransport {
+class AngusMailTransport(
+    private val configs: MailServerConfigSource,
+    /** The app's TLS; see [MailProperties]. */
+    private val tls: SSLSocketFactory? = null,
+) : MailTransport {
     constructor(config: MailServerConfig) : this(MailServerConfigSource { config })
 
     override fun send(credentials: MailCredentials, message: BuiltMessage) {
         val config = configs.current()
-        val session = Session.getInstance(MailProperties.smtp(config))
+        val session = Session.getInstance(MailProperties.smtp(config, tls))
         val protocol = MailProperties.smtpProtocol(config)
         val transport = EndOfMailWatchingTransport(
             session, URLName(protocol, null, -1, null, null, null), protocol,

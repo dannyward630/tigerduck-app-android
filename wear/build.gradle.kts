@@ -208,6 +208,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+    // Hand-made pin documents for WatchTlsPinsTest.
+    testImplementation(libs.bouncycastle.bcprov)
 }
 
 // The watch's own dependencies, exported into the phone app's play

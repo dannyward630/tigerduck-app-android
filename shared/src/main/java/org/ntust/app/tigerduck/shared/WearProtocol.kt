@@ -85,6 +85,37 @@ object WearProtocol {
         const val KEY_ISSUED_AT_MS = "issuedAtMs"
     }
 
+    /**
+     * TLS pins phone → watch (TLS pins spec, A8): the pin document the phone verified, as
+     * the envelope bytes it received, for the watch to verify again with its own keys, and the
+     * student's acceptances. The watch applies an acceptance only while its own build is the one
+     * the phone made it under.
+     */
+    object TlsPins {
+        const val PATH = "/tigerduck/tls_pins"
+
+        /** The verified envelope's exact bytes; absent while the phone holds no document. */
+        const val KEY_ENVELOPE = "envelope"
+
+        /**
+         * The acceptances, as [org.ntust.app.tigerduck.shared.tls.PinAcceptances] encodes them,
+         * each with the phone build number it was made under.
+         */
+        const val KEY_ACCEPTANCES = "acceptances"
+
+        /**
+         * Strictly increasing, from the wall clock, so it stays ahead across phone restarts and
+         * reinstalls; the watch drops a push not above its last.
+         */
+        const val KEY_VERSION = "version"
+
+        /**
+         * The watch's versionCode is the phone's plus this (wear/build.gradle.kts), so the watch
+         * reads the phone build an acceptance was made under against its own.
+         */
+        const val WATCH_VERSION_CODE_OFFSET = 10_000L
+    }
+
     /** Debug-clock override pushed phone → watch (debug builds only). */
     object DebugClock {
         const val PATH = "/tigerduck/debug-clock"

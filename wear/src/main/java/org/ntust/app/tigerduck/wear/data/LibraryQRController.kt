@@ -21,6 +21,7 @@ import org.ntust.app.tigerduck.shared.LibraryQRRenderer
 import org.ntust.app.tigerduck.shared.LibraryServiceError
 import org.ntust.app.tigerduck.shared.sameStudentId
 import kotlin.coroutines.CoroutineContext
+import org.ntust.app.tigerduck.shared.tls.pinMismatch
 
 /**
  * Drives the watch's library QR page: fetches a fresh code from
@@ -134,7 +135,8 @@ class LibraryQRController(
             // rather than a generic string — diagnosing a watch-only failure
             // from logcat alone is painful and the screen has room for it.
             android.util.Log.w("LibraryQRController", "QR refresh failed: ${e.javaClass.simpleName}")
-            _error.value = if (e is LibraryServiceError.CredentialsNotFound) {
+            // A pin mismatch is the phone's to settle (TLS pins spec, A8): the watch has no prompt.
+            _error.value = if (e is LibraryServiceError.CredentialsNotFound || e.pinMismatch() != null) {
                 accountChangedMessage
             } else {
                 qrErrorDetail(e)
