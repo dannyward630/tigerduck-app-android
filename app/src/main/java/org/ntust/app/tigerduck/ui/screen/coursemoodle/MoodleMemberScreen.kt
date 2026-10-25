@@ -37,8 +37,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +50,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -135,11 +139,29 @@ fun MoodleMemberScreen(
         lookup = store.ensureMember(memberId)
     }
     if (lookup == MoodleLookup.Missing) LaunchedEffect(Unit) { onBack() }
-    // Moodle's profile editor, opened from the pencil: the members are fetched again once it closes.
-    var editingOnMoodle by rememberSaveable { mutableStateOf(false) }
-    RefetchWhenBackFromEditor(editingOnMoodle, done = { editingOnMoodle = false }) {
-        current?.refreshMembers(joinRunning = false)
-    }
+    // Moodle's profile editor, opened from the pencil: the members are fetched again once it
+    // closes, and a failure says why, with Retry.
+    val resources = LocalResources.current
+    val retry = stringResource(R.string.action_retry)
+    val openedEditor = rememberRefetchAfterEditor(
+        refetch = current?.let { store ->
+            suspend {
+                fetchMembersUntilDone(
+                    fetch = {
+                        store.refreshMembers(joinRunning = false)
+                        store.members.state.value.failure
+                    },
+                    retry = { failure ->
+                        snackbar.showSnackbar(
+                            moodleErrorText(resources, failure),
+                            actionLabel = retry,
+                            duration = SnackbarDuration.Long,
+                        ) == SnackbarResult.ActionPerformed
+                    },
+                )
+            }
+        },
+    )
 
     Scaffold(
         topBar = {
@@ -178,7 +200,7 @@ fun MoodleMemberScreen(
                     // Moodle gives students no web service for the other profile fields.
                     onEditOnMoodle = if (ownPage) {
                         {
-                            editingOnMoodle = true
+                            openedEditor()
                             editOwnProfile(context)
                         }
                     } else {
@@ -223,20 +245,43 @@ internal suspend fun openPickedPicture(
 }
 
 /**
- * Fetches the members again on the first return to the page after [editing] went true, as the
- * pencil sets it when it opens Moodle's profile editor, then clears it through [done]: the edit
- * shows here, as on the iPhone (tigerduck-app#802, #806). No other return fetches. [refetch] waits
- * for a fetch already running and fetches again, as one that read the profile before the edit
- * cannot stand in for it.
+ * Fetches the members again through [refetch] on the first return to the page after the returned
+ * function marks the editor open, as the pencil does when it opens Moodle's profile editor: the
+ * edit shows here, as on the iPhone (tigerduck-app#802, #806). No other return fetches. The mark
+ * is saved, so a page the system recreated meanwhile still fetches, once [refetch] is there: null
+ * until the course's store is. The store's fetch runs in its own scope, so leaving the page does
+ * not stop it.
  */
 @Composable
-internal fun RefetchWhenBackFromEditor(editing: Boolean, done: () -> Unit, refetch: suspend () -> Unit) {
-    val scope = rememberCoroutineScope()
+internal fun rememberRefetchAfterEditor(refetch: (suspend () -> Unit)?): () -> Unit {
+    var editing by rememberSaveable { mutableStateOf(false) }
+    var back by rememberSaveable { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         if (editing) {
-            done()
-            scope.launch { refetch() }
+            editing = false
+            back = true
         }
+    }
+    val latest by rememberUpdatedState(refetch)
+    LaunchedEffect(back, refetch != null) {
+        val fetch = latest
+        if (back && fetch != null) {
+            fetch()
+            // Cleared once done: a page recreated meanwhile fetches, and reports a failure, again.
+            back = false
+        }
+    }
+    return remember { { editing = true } }
+}
+
+/**
+ * Fetches through [fetch], which answers its failure or null, and again each time [retry] takes
+ * the failure back, as the snackbar's Retry does.
+ */
+internal suspend fun fetchMembersUntilDone(fetch: suspend () -> Throwable?, retry: suspend (Throwable) -> Boolean) {
+    while (true) {
+        val failure = fetch() ?: return
+        if (!retry(failure)) return
     }
 }
 
