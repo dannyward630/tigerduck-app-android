@@ -4,6 +4,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import org.ntust.app.tigerduck.shared.Pastel
 
 /**
  * What a [VisualPreset] means for each surface that draws differently under
@@ -144,7 +145,7 @@ data class VisualStylePolicy(val preset: VisualPreset) {
             if (isDark) it.compositeOver(surface) else it
         }
         CourseColorStyle.Pastel ->
-            courseColor.pastel(if (muted) MUTED_PASTEL_WHITE_SHARE else PASTEL_WHITE_SHARE)
+            courseColor.pastel(if (muted) Pastel.MUTED_WHITE_SHARE else Pastel.WHITE_SHARE)
     }
 
     /** A course card's name on [courseCardFill], given the theme's text colour there. */
@@ -229,13 +230,13 @@ data class VisualStylePolicy(val preset: VisualPreset) {
 
     companion object {
         /** Text on a [pastel] fill, which stays light in either theme. */
-        val TextOnPastel = Color(0xFF1A1A1A)
+        val TextOnPastel = Color(Pastel.TEXT_ARGB)
 
         /**
          * Room hints, times and marks on a [pastel] fill. At 80%: at 70% it fell
          * under 4.5:1 on the pastel of a dark picked colour.
          */
-        val TextOnPastelSecondary = TextOnPastel.copy(alpha = 0.8f)
+        val TextOnPastelSecondary = TextOnPastel.copy(alpha = Pastel.SECONDARY_TEXT_ALPHA)
     }
 }
 
@@ -246,10 +247,10 @@ data class VisualStylePolicy(val preset: VisualPreset) {
  * to at least 65%, where [VisualStylePolicy.TextOnPastel] reads at better
  * than 7:1; a larger share is paler still and reads better yet.
  */
-fun Color.pastel(whiteShare: Float = PASTEL_WHITE_SHARE): Color = Color(
-    red = red + (1f - red) * whiteShare,
-    green = green + (1f - green) * whiteShare,
-    blue = blue + (1f - blue) * whiteShare,
+fun Color.pastel(whiteShare: Float = Pastel.WHITE_SHARE): Color = Color(
+    red = Pastel.channel(red, whiteShare),
+    green = Pastel.channel(green, whiteShare),
+    blue = Pastel.channel(blue, whiteShare),
     alpha = 1f,
 )
 
@@ -259,18 +260,11 @@ fun Color.pastel(whiteShare: Float = PASTEL_WHITE_SHARE): Color = Color(
  * `pastelOutline` is.
  */
 fun Color.pastelOutline(): Color = Color(
-    red = red * (1f - PASTEL_OUTLINE_BLACK_SHARE),
-    green = green * (1f - PASTEL_OUTLINE_BLACK_SHARE),
-    blue = blue * (1f - PASTEL_OUTLINE_BLACK_SHARE),
+    red = red * (1f - Pastel.OUTLINE_BLACK_SHARE),
+    green = green * (1f - Pastel.OUTLINE_BLACK_SHARE),
+    blue = blue * (1f - Pastel.OUTLINE_BLACK_SHARE),
     alpha = 1f,
 )
-
-private const val PASTEL_WHITE_SHARE = 0.65f
-
-private const val PASTEL_OUTLINE_BLACK_SHARE = 0.5f
-
-/** A muted course card's pastel: paler, as a TigerDuck card's tint is fainter. */
-private const val MUTED_PASTEL_WHITE_SHARE = 0.82f
 
 /**
  * The interface style in effect, provided once at the root of the app from

@@ -67,6 +67,7 @@ class SchedulePersistence(private val context: Context) {
         languageTag: String?,
         disableScreenCaptureProtection: Boolean,
         quietDays: List<String>?,
+        visualPreset: String?,
     ) {
         val coursesJson = decompress(coursesGzipped)
         // Under the lock with the start-up copy, so [syncLanguageTag] never writes between the two.
@@ -74,7 +75,7 @@ class SchedulePersistence(private val context: Context) {
             context.scheduleDataStore.edit { prefs ->
                 writeSnapshot(
                     prefs, coursesJson, accentHex, accentEndHex, accentDirectionCode, syncedAtMs,
-                    loggedIn, languageTag, disableScreenCaptureProtection, quietDays,
+                    loggedIn, languageTag, disableScreenCaptureProtection, quietDays, visualPreset,
                 )
             }
             if (languageTag != null) commitLanguageTag(languageTag)
@@ -200,6 +201,7 @@ class SchedulePersistence(private val context: Context) {
         private val KEY_DISABLE_SCREEN_CAPTURE_PROTECTION =
             booleanPreferencesKey("disable_screen_capture_protection")
         private val KEY_QUIET_DAYS = stringSetPreferencesKey("quiet_days")
+        private val KEY_VISUAL_PRESET = stringPreferencesKey("visual_preset")
         private const val BOOTSTRAP_KEY_LANGUAGE = "language_tag"
 
         private val gson = Gson()
@@ -216,6 +218,7 @@ class SchedulePersistence(private val context: Context) {
             languageTag: String?,
             disableScreenCaptureProtection: Boolean,
             quietDays: List<String>?,
+            visualPreset: String? = null,
         ) {
             prefs[KEY_COURSES_JSON] = coursesJson
             prefs[KEY_ACCENT_HEX] = accentHex
@@ -239,6 +242,9 @@ class SchedulePersistence(private val context: Context) {
             // that predates quiet days sends none, and the watch must then show
             // every class rather than the days an earlier phone sent.
             prefs[KEY_QUIET_DAYS] = quietDays.orEmpty().toSet()
+            // Replaced on every write too: a phone that predates the interface style
+            // sends none, and the watch then draws TigerDuck's cards.
+            if (visualPreset != null) prefs[KEY_VISUAL_PRESET] = visualPreset else prefs.remove(KEY_VISUAL_PRESET)
         }
 
         internal fun readSnapshot(prefs: Preferences): WatchSnapshot {
@@ -261,6 +267,8 @@ class SchedulePersistence(private val context: Context) {
                     prefs[KEY_ACCENT_DIRECTION]?.let(AccentGradientDirection::fromCode)
                         ?: AccentGradientDirection.DEFAULT
                 },
+                // Absent from an older phone's or watch build's: TigerDuck's cards.
+                visualPreset = prefs[KEY_VISUAL_PRESET],
             )
         }
 
@@ -302,6 +310,12 @@ data class WatchSnapshot(
     val accentEndHex: String? = null,
     /** The way the accent gradient runs, set exactly when [accentEndHex] is. */
     val accentDirection: AccentGradientDirection? = null,
+    /**
+     * The phone's interface style as it stores it ("default", "tat"), or null from an
+     * older phone or watch build; [org.ntust.app.tigerduck.wear.ui.theme.WatchCardStyle]
+     * reads it.
+     */
+    val visualPreset: String? = null,
 ) {
     /** Now and next at [minuteOfDay] on [today], leaving out the classes of quiet days. */
     fun nextClass(today: LocalDate, minuteOfDay: Int): NextClassResult =

@@ -604,7 +604,19 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
      */
     var visualPreset: VisualPreset
         get() = VisualPreset.fromRawValue(prefs.getString(VISUAL_PRESET_KEY, null))
-        set(value) = prefs.edit().putString(VISUAL_PRESET_KEY, value.rawValue).apply()
+        set(value) {
+            val previous = visualPreset
+            prefs.edit().putString(VISUAL_PRESET_KEY, value.rawValue).apply()
+            if (value != previous) _visualPresetChanged.tryEmit(Unit)
+        }
+
+    private val _visualPresetChanged = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
+
+    /** Fires when [visualPreset] changes, so the watch's course cards can follow it. */
+    val visualPresetChanged: SharedFlow<Unit> = _visualPresetChanged.asSharedFlow()
 
     var useEnglishCourseAbbreviation: Boolean
         get() = prefs.getBoolean("useEnglishCourseAbbreviation", true)
@@ -1104,10 +1116,13 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
     /** Wipe every pref key. Used by the full-reset flow only. */
     fun clearAllPrefs() {
         val accentBefore = watchAccent()
+        val presetBefore = visualPreset
         prefs.edit().clear().apply()
-        // The watch hears of the accent only through accentColorChanged, and a
-        // reset while signed out publishes nothing else.
+        // The watch hears of the accent and the interface style only through
+        // accentColorChanged and visualPresetChanged, and a reset while signed
+        // out publishes nothing else.
         if (watchAccent() != accentBefore) _accentColorChanged.tryEmit(Unit)
+        if (visualPreset != presetBefore) _visualPresetChanged.tryEmit(Unit)
         forgetLegacyLastCourseSyncAt()
         // `alwaysShowAllPeriods` and the class table's display switches are
         // read from in-memory mirrors rather than the file, so clearing the

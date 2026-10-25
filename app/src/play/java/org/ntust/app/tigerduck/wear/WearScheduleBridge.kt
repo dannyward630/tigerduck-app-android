@@ -114,6 +114,7 @@ class WearScheduleBridge @Inject constructor(
         val request = PutDataMapRequest.create(WearProtocol.Schedule.PATH).apply {
             dataMap.putByteArray(WearProtocol.Schedule.KEY_COURSES, gzipped)
             dataMap.putString(WearProtocol.Schedule.KEY_ACCENT, accentHex)
+            dataMap.putString(WearProtocol.Schedule.KEY_VISUAL_PRESET, appPreferences.visualPreset.rawValue)
             // Left out for a single color: each publish is a whole new item,
             // so the watch then reads no gradient.
             if (accentGradient != null) {

@@ -35,6 +35,39 @@ class SchedulePersistenceTest {
     }
 
     @Test
+    fun `the interface style the phone sends is stored and read back`() {
+        val prefs = write(quietDays = null)
+        SchedulePersistence.writeSnapshot(
+            prefs, coursesJson, "#112233", accentEndHex = null, accentDirectionCode = null, syncedAtMs = 2_000L,
+            loggedIn = true, languageTag = null, disableScreenCaptureProtection = false, quietDays = null,
+            visualPreset = "tat",
+        )
+        assertEquals("tat", SchedulePersistence.readSnapshot(prefs).visualPreset)
+    }
+
+    @Test
+    fun `a phone that predates the interface style clears an earlier one`() {
+        val prefs = write(quietDays = null)
+        SchedulePersistence.writeSnapshot(
+            prefs, coursesJson, "#112233", accentEndHex = null, accentDirectionCode = null, syncedAtMs = 2_000L,
+            loggedIn = true, languageTag = null, disableScreenCaptureProtection = false, quietDays = null,
+            visualPreset = "tat",
+        )
+        SchedulePersistence.writeSnapshot(
+            prefs, coursesJson, "#112233", accentEndHex = null, accentDirectionCode = null, syncedAtMs = 3_000L,
+            loggedIn = true, languageTag = null, disableScreenCaptureProtection = false, quietDays = null,
+            visualPreset = null,
+        )
+        assertNull(SchedulePersistence.readSnapshot(prefs).visualPreset)
+    }
+
+    @Test
+    fun `a snapshot an older watch build stored has no interface style`() {
+        val stored = preferencesOf(stringPreferencesKey("courses_json") to coursesJson, stringPreferencesKey("accent_hex") to "#112233")
+        assertNull(SchedulePersistence.readSnapshot(stored).visualPreset)
+    }
+
+    @Test
     fun `the quiet days the phone sends are stored and read back`() {
         val snapshot = SchedulePersistence.readSnapshot(write(listOf("2026-10-09", "2026-10-10")))
         assertEquals(setOf(LocalDate.of(2026, 10, 9), LocalDate.of(2026, 10, 10)), snapshot.quietDays)
