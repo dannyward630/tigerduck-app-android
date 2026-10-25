@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Tiết %1$s</string>
     <string name="a11y_empty_classroom_same_room">Cùng phòng học</string>
     <string name="a11y_empty_classroom_walk_minutes">Khoảng %1$d phút đi bộ</string>
+    <string name="a11y_file_viewer_page">Trang %1$d/%2$d</string>
     <string name="a11y_rankings_trend_chart">Xu hướng GPA theo học kỳ</string>
     <string name="a11y_rankings_trend_no_selection">Chưa chọn học kỳ</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Điểm</string>
     <string name="feature_settings">Cài đặt</string>
     <string name="feature_settings_short">Cài đặt</string>
+    <string name="file_viewer_cannot_show">Không thể hiển thị tệp này tại đây.</string>
+    <string name="file_viewer_open_elsewhere">Mở bằng ứng dụng khác</string>
+    <string name="file_viewer_text_truncated">Đang hiển thị %1$s đầu tiên của tệp này.</string>
     <string name="first_trigger_flip_to_library_keep">Giữ nguyên</string>
     <string name="first_trigger_flip_to_library_message">Chúng tôi nhận thấy bạn đã lật điện thoại. Cử chỉ này có thể mở nhanh QR thư viện. Bạn có muốn giữ tính năng này không?</string>
     <string name="first_trigger_flip_to_library_title">Lật để mở QR thư viện</string>

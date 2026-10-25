@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Period %1$s</string>
     <string name="a11y_empty_classroom_same_room">Samma klassrum</string>
     <string name="a11y_empty_classroom_walk_minutes">Cirka %1$d min promenad</string>
+    <string name="a11y_file_viewer_page">Sida %1$d av %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA-trend per termin</string>
     <string name="a11y_rankings_trend_no_selection">Ingen termin vald</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Betyg</string>
     <string name="feature_settings">Inställningar</string>
     <string name="feature_settings_short">Inställningar</string>
+    <string name="file_viewer_cannot_show">Den här filen kan inte visas här.</string>
+    <string name="file_viewer_open_elsewhere">Öppna i en annan app</string>
+    <string name="file_viewer_text_truncated">Visar de första %1$s av den här filen.</string>
     <string name="first_trigger_flip_to_library_keep">Håll aktiverat</string>
     <string name="first_trigger_flip_to_library_message">Vi märkte att du vände på telefonen. Det här gesten kan snabbt öppna bibliotekets QR. Vill du behålla den här funktionen?</string>
     <string name="first_trigger_flip_to_library_title">Vänd för att öppna bibliotekets QR</string>

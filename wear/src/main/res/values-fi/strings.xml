@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Tunti %1$s</string>
     <string name="a11y_empty_classroom_same_room">Sama luokkahuone</string>
     <string name="a11y_empty_classroom_walk_minutes">Noin %1$d min kävelyä</string>
+    <string name="a11y_file_viewer_page">Sivu %1$d/%2$d</string>
     <string name="a11y_rankings_trend_chart">GPA-kehitys lukukausittain</string>
     <string name="a11y_rankings_trend_no_selection">Ei valittua lukukautta</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Arvosanat</string>
     <string name="feature_settings">Asetukset</string>
     <string name="feature_settings_short">Asetukset</string>
+    <string name="file_viewer_cannot_show">Tätä tiedostoa ei voi näyttää täällä.</string>
+    <string name="file_viewer_open_elsewhere">Avaa toisessa sovelluksessa</string>
+    <string name="file_viewer_text_truncated">Näytetään tämän tiedoston ensimmäiset %1$s.</string>
     <string name="first_trigger_flip_to_library_keep">Pidä käytössä</string>
     <string name="first_trigger_flip_to_library_message">Huomasimme, että käänsit puhelimesi. Tällä eleellä voit avata kirjaston QR-koodin nopeasti. Haluatko pitää tämän ominaisuuden?</string>
     <string name="first_trigger_flip_to_library_title">Avaa kirjaston QR kääntämällä</string>

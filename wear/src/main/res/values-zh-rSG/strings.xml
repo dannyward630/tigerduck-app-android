@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">第 %1$s 节</string>
     <string name="a11y_empty_classroom_same_room">同一间教室</string>
     <string name="a11y_empty_classroom_walk_minutes">步行约 %1$d 分钟</string>
+    <string name="a11y_file_viewer_page">第 %1$d 页，共 %2$d 页</string>
     <string name="a11y_rankings_trend_chart">各学期 GPA 趋势</string>
     <string name="a11y_rankings_trend_no_selection">未选择学期</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">历年成绩</string>
     <string name="feature_settings">设置</string>
     <string name="feature_settings_short">设置</string>
+    <string name="file_viewer_cannot_show">无法在这里显示此文件。</string>
+    <string name="file_viewer_open_elsewhere">用其他 App 打开</string>
+    <string name="file_viewer_text_truncated">仅显示此文件的前 %1$s。</string>
     <string name="first_trigger_flip_to_library_keep">保持开启</string>
     <string name="first_trigger_flip_to_library_message">看起来你刚刚将手机翻面。这个手势可以快速打开图书馆 QR，要保留这个功能吗？</string>
     <string name="first_trigger_flip_to_library_title">翻面快速打开图书馆 QR</string>

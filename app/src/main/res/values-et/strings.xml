@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Tund %1$s</string>
     <string name="a11y_empty_classroom_same_room">Sama klassiruum</string>
     <string name="a11y_empty_classroom_walk_minutes">Umbes %1$d min jalgsi</string>
+    <string name="a11y_file_viewer_page">Lehekülg %1$d/%2$d</string>
     <string name="a11y_rankings_trend_chart">GPA trend semestrite kaupa</string>
     <string name="a11y_rankings_trend_no_selection">Ühtegi semestrit pole valitud</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Hinded</string>
     <string name="feature_settings">Seaded</string>
     <string name="feature_settings_short">Seaded</string>
+    <string name="file_viewer_cannot_show">Seda faili ei saa siin kuvada.</string>
+    <string name="file_viewer_open_elsewhere">Ava teises rakenduses</string>
+    <string name="file_viewer_text_truncated">Kuvatakse selle faili esimesed %1$s.</string>
     <string name="first_trigger_flip_to_library_keep">Hoia sisse lülitatuna</string>
     <string name="first_trigger_flip_to_library_message">Tundub, et pöörasid telefoni ümber. See žest saab kiiresti avada raamatukogu QR. Kas soovid selle funktsiooni alles jätta?</string>
     <string name="first_trigger_flip_to_library_title">Pööra raamatukogu QR avamiseks</string>

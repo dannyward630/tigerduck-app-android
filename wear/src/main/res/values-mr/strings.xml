@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">तास %1$s</string>
     <string name="a11y_empty_classroom_same_room">तीच वर्गखोली</string>
     <string name="a11y_empty_classroom_walk_minutes">चालत सुमारे %1$d मिनिटे</string>
+    <string name="a11y_file_viewer_page">%2$d पैकी पान %1$d</string>
     <string name="a11y_rankings_trend_chart">सेमेस्टरनुसार GPA ट्रेंड</string>
     <string name="a11y_rankings_trend_no_selection">कोणताही सेमेस्टर निवडला नाही</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">गुण</string>
     <string name="feature_settings">सेटिंग्ज</string>
     <string name="feature_settings_short">सेटिंग्ज</string>
+    <string name="file_viewer_cannot_show">ही फाइल येथे दाखवता येत नाही.</string>
+    <string name="file_viewer_open_elsewhere">दुसऱ्या अ‍ॅपमध्ये उघडा</string>
+    <string name="file_viewer_text_truncated">या फाइलचे पहिले %1$s दाखवत आहे.</string>
     <string name="first_trigger_flip_to_library_keep">सुरू ठेवा</string>
     <string name="first_trigger_flip_to_library_message">तुम्ही फोन उलटा केल्याचे आम्हाला दिसले. हा जेश्चर लायब्ररी QR लवकर उघडू शकतो. हे वैशिष्ट्य ठेवायचे आहे का?</string>
     <string name="first_trigger_flip_to_library_title">लायब्ररी QR उघडण्यासाठी उलटा करा</string>

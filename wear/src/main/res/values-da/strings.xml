@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Time %1$s</string>
     <string name="a11y_empty_classroom_same_room">Samme lokale</string>
     <string name="a11y_empty_classroom_walk_minutes">Ca. %1$d min til fods</string>
+    <string name="a11y_file_viewer_page">Side %1$d af %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA-tendens pr. semester</string>
     <string name="a11y_rankings_trend_no_selection">Intet semester valgt</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Karakterer</string>
     <string name="feature_settings">Indstillinger</string>
     <string name="feature_settings_short">Indstillinger</string>
+    <string name="file_viewer_cannot_show">Denne fil kan ikke vises her.</string>
+    <string name="file_viewer_open_elsewhere">Åbn i en anden app</string>
+    <string name="file_viewer_text_truncated">Viser de første %1$s af denne fil.</string>
     <string name="first_trigger_flip_to_library_keep">Behold aktiveret</string>
     <string name="first_trigger_flip_to_library_message">Det ser ud til, at du vendte telefonen. Denne bevægelse kan hurtigt åbne bibliotekets QR. Vil du beholde denne funktion?</string>
     <string name="first_trigger_flip_to_library_title">Vend for at åbne bibliotekets QR</string>

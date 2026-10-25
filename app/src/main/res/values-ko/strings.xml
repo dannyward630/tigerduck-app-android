@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">%1$s교시</string>
     <string name="a11y_empty_classroom_same_room">같은 강의실</string>
     <string name="a11y_empty_classroom_walk_minutes">도보 약 %1$d분</string>
+    <string name="a11y_file_viewer_page">%2$d페이지 중 %1$d페이지</string>
     <string name="a11y_rankings_trend_chart">학기별 GPA 추세</string>
     <string name="a11y_rankings_trend_no_selection">학기 선택 안 됨</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">성적</string>
     <string name="feature_settings">설정</string>
     <string name="feature_settings_short">설정</string>
+    <string name="file_viewer_cannot_show">이 파일은 여기에서 표시할 수 없습니다.</string>
+    <string name="file_viewer_open_elsewhere">다른 앱에서 열기</string>
+    <string name="file_viewer_text_truncated">이 파일의 처음 %1$s만 표시합니다.</string>
     <string name="first_trigger_flip_to_library_keep">켜둔 채로 유지</string>
     <string name="first_trigger_flip_to_library_message">방금 휴대폰을 뒤집으셨네요. 이 동작으로 도서관 QR을 빠르게 열 수 있어요. 이 기능을 계속 사용하시겠어요?</string>
     <string name="first_trigger_flip_to_library_title">뒤집어서 도서관 QR 열기</string>

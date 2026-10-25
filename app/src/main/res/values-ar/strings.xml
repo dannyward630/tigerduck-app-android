@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">الحصة %1$s</string>
     <string name="a11y_empty_classroom_same_room">القاعة نفسها</string>
     <string name="a11y_empty_classroom_walk_minutes">نحو %1$d دقيقة سيرًا</string>
+    <string name="a11y_file_viewer_page">الصفحة %1$d من %2$d</string>
     <string name="a11y_rankings_trend_chart">اتجاه المعدل التراكمي حسب الفصل</string>
     <string name="a11y_rankings_trend_no_selection">لم يتم تحديد فصل</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">الدرجات</string>
     <string name="feature_settings">الإعدادات</string>
     <string name="feature_settings_short">الإعدادات</string>
+    <string name="file_viewer_cannot_show">لا يمكن عرض هذا الملف هنا.</string>
+    <string name="file_viewer_open_elsewhere">فتح في تطبيق آخر</string>
+    <string name="file_viewer_text_truncated">يُعرض أول %1$s من هذا الملف.</string>
     <string name="first_trigger_flip_to_library_keep">الإبقاء مفعّلاً</string>
     <string name="first_trigger_flip_to_library_message">يبدو أنك قلبت هاتفك. هذه الإيماءة تتيح فتح QR المكتبة بسرعة. هل تريد الإبقاء على هذه الميزة؟</string>
     <string name="first_trigger_flip_to_library_title">اقلب الهاتف لفتح QR المكتبة</string>

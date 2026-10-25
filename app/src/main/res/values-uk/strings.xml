@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Пара %1$s</string>
     <string name="a11y_empty_classroom_same_room">Та сама аудиторія</string>
     <string name="a11y_empty_classroom_walk_minutes">Близько %1$d хв пішки</string>
+    <string name="a11y_file_viewer_page">Сторінка %1$d з %2$d</string>
     <string name="a11y_rankings_trend_chart">Тенденція GPA за семестрами</string>
     <string name="a11y_rankings_trend_no_selection">Семестр не вибрано</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Оцінки</string>
     <string name="feature_settings">Налаштування</string>
     <string name="feature_settings_short">Налаштування</string>
+    <string name="file_viewer_cannot_show">Цей файл не можна показати тут.</string>
+    <string name="file_viewer_open_elsewhere">Відкрити в іншому застосунку</string>
+    <string name="file_viewer_text_truncated">Показано перші %1$s цього файлу.</string>
     <string name="first_trigger_flip_to_library_keep">Залишити увімкненим</string>
     <string name="first_trigger_flip_to_library_message">Ми помітили, що ви перевернули телефон. Цим жестом можна швидко відкрити QR бібліотеки. Хочете залишити цю функцію?</string>
     <string name="first_trigger_flip_to_library_title">Перевернути для відкриття QR бібліотеки</string>

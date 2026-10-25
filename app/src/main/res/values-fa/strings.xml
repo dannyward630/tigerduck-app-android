@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">زنگ %1$s</string>
     <string name="a11y_empty_classroom_same_room">همان کلاس</string>
     <string name="a11y_empty_classroom_walk_minutes">حدود %1$d دقیقه پیاده‌روی</string>
+    <string name="a11y_file_viewer_page">صفحهٔ %1$d از %2$d</string>
     <string name="a11y_rankings_trend_chart">روند GPA به تفکیک ترم</string>
     <string name="a11y_rankings_trend_no_selection">هیچ ترمی انتخاب نشده</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">نمرات</string>
     <string name="feature_settings">تنظیمات</string>
     <string name="feature_settings_short">تنظیمات</string>
+    <string name="file_viewer_cannot_show">این فایل را نمی‌توان اینجا نمایش داد.</string>
+    <string name="file_viewer_open_elsewhere">باز کردن در برنامه‌ای دیگر</string>
+    <string name="file_viewer_text_truncated">%1$s نخست این فایل نمایش داده می‌شود.</string>
     <string name="first_trigger_flip_to_library_keep">فعال بماند</string>
     <string name="first_trigger_flip_to_library_message">متوجه شدیم که گوشی‌تان را برگرداندید. این حرکت می‌تواند QR کتابخانه را به‌سرعت باز کند. می‌خواهید این قابلیت را نگه دارید؟</string>
     <string name="first_trigger_flip_to_library_title">برگرداندن برای باز کردن QR کتابخانه</string>

@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">સમયગાળો %1$s</string>
     <string name="a11y_empty_classroom_same_room">એ જ ક્લાસરૂમ</string>
     <string name="a11y_empty_classroom_walk_minutes">ચાલીને લગભગ %1$d મિનિટ</string>
+    <string name="a11y_file_viewer_page">%2$d માંથી પેજ %1$d</string>
     <string name="a11y_rankings_trend_chart">સેમેસ્ટર પ્રમાણે GPA વલણ</string>
     <string name="a11y_rankings_trend_no_selection">કોઈ સેમેસ્ટર પસંદ નથી</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">ગુણ / ગ્રેડ</string>
     <string name="feature_settings">સેટિંગ્સ</string>
     <string name="feature_settings_short">સેટિંગ્સ</string>
+    <string name="file_viewer_cannot_show">આ ફાઇલ અહીં બતાવી શકાતી નથી.</string>
+    <string name="file_viewer_open_elsewhere">બીજી ઍપમાં ખોલો</string>
+    <string name="file_viewer_text_truncated">આ ફાઇલના પહેલા %1$s બતાવી રહ્યાં છીએ.</string>
     <string name="first_trigger_flip_to_library_keep">ચાલુ રાખો</string>
     <string name="first_trigger_flip_to_library_message">અમે જોયું કે તમે ફોન ઊંધો કર્યો. આ હાવભાવ લાઇબ્રેરી QR ઝડપથી ખોલી શકે છે. આ સુવિધા ચાલુ રાખવી છે?</string>
     <string name="first_trigger_flip_to_library_title">ફ્લિપ કરીને લાઇબ્રેરી QR ખોલો</string>

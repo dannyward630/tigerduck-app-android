@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">পিরিয়ড %1$s</string>
     <string name="a11y_empty_classroom_same_room">একই শ্রেণিকক্ষ</string>
     <string name="a11y_empty_classroom_walk_minutes">হেঁটে প্রায় %1$d মিনিট</string>
+    <string name="a11y_file_viewer_page">%2$d-এর মধ্যে %1$d নম্বর পৃষ্ঠা</string>
     <string name="a11y_rankings_trend_chart">সেমেস্টার অনুযায়ী GPA প্রবণতা</string>
     <string name="a11y_rankings_trend_no_selection">কোনো সেমেস্টার নির্বাচিত নেই</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">নম্বর</string>
     <string name="feature_settings">সেটিংস</string>
     <string name="feature_settings_short">সেটিংস</string>
+    <string name="file_viewer_cannot_show">এই ফাইলটি এখানে দেখানো যাচ্ছে না।</string>
+    <string name="file_viewer_open_elsewhere">অন্য অ্যাপে খুলুন</string>
+    <string name="file_viewer_text_truncated">এই ফাইলের প্রথম %1$s দেখানো হচ্ছে।</string>
     <string name="first_trigger_flip_to_library_keep">চালু রাখুন</string>
     <string name="first_trigger_flip_to_library_message">মনে হচ্ছে আপনি ফোনটি উল্টে দিয়েছেন। এই ইশারাটি দ্রুত লাইব্রেরি QR খুলতে পারে। এই ফিচারটি রাখতে চান?</string>
     <string name="first_trigger_flip_to_library_title">লাইব্রেরি QR খুলতে উল্টান</string>

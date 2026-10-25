@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Hodina %1$s</string>
     <string name="a11y_empty_classroom_same_room">Stejná učebna</string>
     <string name="a11y_empty_classroom_walk_minutes">Asi %1$d min chůze</string>
+    <string name="a11y_file_viewer_page">Strana %1$d z %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend GPA podle semestru</string>
     <string name="a11y_rankings_trend_no_selection">Není vybrán žádný semestr</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Známky</string>
     <string name="feature_settings">Nastavení</string>
     <string name="feature_settings_short">Nastavení</string>
+    <string name="file_viewer_cannot_show">Tento soubor zde nelze zobrazit.</string>
+    <string name="file_viewer_open_elsewhere">Otevřít v jiné aplikaci</string>
+    <string name="file_viewer_text_truncated">Zobrazuje se prvních %1$s tohoto souboru.</string>
     <string name="first_trigger_flip_to_library_keep">Ponechat zapnuté</string>
     <string name="first_trigger_flip_to_library_message">Vypadá to, že jsi otočil telefon. Tímto gestem lze rychle otevřít QR knihovny. Chceš tuto funkci zachovat?</string>
     <string name="first_trigger_flip_to_library_title">Otoč pro otevření QR knihovny</string>

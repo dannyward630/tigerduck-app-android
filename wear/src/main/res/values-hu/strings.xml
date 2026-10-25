@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">%1$s. óra</string>
     <string name="a11y_empty_classroom_same_room">Ugyanaz a terem</string>
     <string name="a11y_empty_classroom_walk_minutes">Kb. %1$d perc séta</string>
+    <string name="a11y_file_viewer_page">%1$d. oldal / %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA-tendencia szemeszterenként</string>
     <string name="a11y_rankings_trend_no_selection">Nincs szemeszter kiválasztva</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Osztályzatok</string>
     <string name="feature_settings">Beállítások</string>
     <string name="feature_settings_short">Beállítások</string>
+    <string name="file_viewer_cannot_show">Ez a fájl itt nem jeleníthető meg.</string>
+    <string name="file_viewer_open_elsewhere">Megnyitás másik alkalmazásban</string>
+    <string name="file_viewer_text_truncated">A fájl első %1$s része látható.</string>
     <string name="first_trigger_flip_to_library_keep">Maradjon bekapcsolva</string>
     <string name="first_trigger_flip_to_library_message">Észrevettük, hogy megfordítottad a telefonod. Ez a mozdulat gyorsan megnyithatja a könyvtár QR-kódját. Szeretnéd megtartani ezt a funkciót?</string>
     <string name="first_trigger_flip_to_library_title">Fordítsd meg a könyvtár QR megnyitásához</string>

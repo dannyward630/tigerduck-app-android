@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">پیریڈ %1$s</string>
     <string name="a11y_empty_classroom_same_room">وہی کلاس روم</string>
     <string name="a11y_empty_classroom_walk_minutes">پیدل تقریباً %1$d منٹ</string>
+    <string name="a11y_file_viewer_page">صفحہ %1$d از %2$d</string>
     <string name="a11y_rankings_trend_chart">سمسٹر کے مطابق GPA رجحان</string>
     <string name="a11y_rankings_trend_no_selection">کوئی سمسٹر منتخب نہیں</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">گریڈ</string>
     <string name="feature_settings">ترتیبات</string>
     <string name="feature_settings_short">ترتیبات</string>
+    <string name="file_viewer_cannot_show">یہ فائل یہاں نہیں دکھائی جا سکتی۔</string>
+    <string name="file_viewer_open_elsewhere">کسی دوسری ایپ میں کھولیں</string>
+    <string name="file_viewer_text_truncated">اس فائل کے پہلے %1$s دکھائے جا رہے ہیں۔</string>
     <string name="first_trigger_flip_to_library_keep">فعال رکھیں</string>
     <string name="first_trigger_flip_to_library_message">ہم نے دیکھا کہ آپ نے فون پلٹایا۔ یہ اشارہ لائبریری QR کو جلدی کھول سکتا ہے۔ کیا آپ یہ خصوصیت رکھنا چاہتے ہیں؟</string>
     <string name="first_trigger_flip_to_library_title">لائبریری QR کھولنے کے لیے پلٹائیں</string>

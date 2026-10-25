@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Panahon %1$s</string>
     <string name="a11y_empty_classroom_same_room">Parehong silid-aralan</string>
     <string name="a11y_empty_classroom_walk_minutes">Mga %1$d min na lakad</string>
+    <string name="a11y_file_viewer_page">Pahina %1$d ng %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend ng GPA bawat semester</string>
     <string name="a11y_rankings_trend_no_selection">Walang napiling semester</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Mga marka</string>
     <string name="feature_settings">Mga setting</string>
     <string name="feature_settings_short">Mga setting</string>
+    <string name="file_viewer_cannot_show">Hindi maipakita rito ang file na ito.</string>
+    <string name="file_viewer_open_elsewhere">Buksan sa ibang app</string>
+    <string name="file_viewer_text_truncated">Ipinapakita ang unang %1$s ng file na ito.</string>
     <string name="first_trigger_flip_to_library_keep">Panatilihing bukas</string>
     <string name="first_trigger_flip_to_library_message">Napansin namin na binaligtad mo ang iyong telepono. Mabilis na mabubuksan ng galaw na ito ang library QR. Gusto mo bang panatilihin ang feature na ito?</string>
     <string name="first_trigger_flip_to_library_title">I-flip para buksan ang library QR</string>

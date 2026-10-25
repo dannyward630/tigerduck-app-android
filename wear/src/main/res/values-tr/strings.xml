@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Ders saati %1$s</string>
     <string name="a11y_empty_classroom_same_room">Aynı derslik</string>
     <string name="a11y_empty_classroom_walk_minutes">Yaklaşık %1$d dk yürüme</string>
+    <string name="a11y_file_viewer_page">Sayfa %1$d / %2$d</string>
     <string name="a11y_rankings_trend_chart">Döneme göre GPA trendi</string>
     <string name="a11y_rankings_trend_no_selection">Dönem seçilmedi</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Notlar</string>
     <string name="feature_settings">Ayarlar</string>
     <string name="feature_settings_short">Ayarlar</string>
+    <string name="file_viewer_cannot_show">Bu dosya burada gösterilemiyor.</string>
+    <string name="file_viewer_open_elsewhere">Başka bir uygulamada aç</string>
+    <string name="file_viewer_text_truncated">Bu dosyanın ilk %1$s kısmı gösteriliyor.</string>
     <string name="first_trigger_flip_to_library_keep">Etkin tut</string>
     <string name="first_trigger_flip_to_library_message">Telefonunuzu çevirdiğinizi fark ettik. Bu hareket kütüphane QR\'ını hızlıca açabilir. Bu özelliği tutmak ister misiniz?</string>
     <string name="first_trigger_flip_to_library_title">Kütüphane QR\'ını açmak için çevir</string>

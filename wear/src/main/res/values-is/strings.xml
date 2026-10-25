@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Tími %1$s</string>
     <string name="a11y_empty_classroom_same_room">Sama kennslustofa</string>
     <string name="a11y_empty_classroom_walk_minutes">Um %1$d mín. gangur</string>
+    <string name="a11y_file_viewer_page">Síða %1$d af %2$d</string>
     <string name="a11y_rankings_trend_chart">GPA þróun eftir önn</string>
     <string name="a11y_rankings_trend_no_selection">Engin önn valin</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Einkunnir</string>
     <string name="feature_settings">Stillingar</string>
     <string name="feature_settings_short">Stillingar</string>
+    <string name="file_viewer_cannot_show">Ekki er hægt að sýna þessa skrá hér.</string>
+    <string name="file_viewer_open_elsewhere">Opna í öðru forriti</string>
+    <string name="file_viewer_text_truncated">Sýni fyrstu %1$s af þessari skrá.</string>
     <string name="first_trigger_flip_to_library_keep">Halda virkjað</string>
     <string name="first_trigger_flip_to_library_message">Við tókum eftir því að þú snérir símanum. Þetta bendingarmynstur getur opnað bókasafns-QR á augnabragði. Viltu halda þessum eiginleika?</string>
     <string name="first_trigger_flip_to_library_title">Snúðu til að opna bókasafns-QR</string>

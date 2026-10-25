@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Waktu %1$s</string>
     <string name="a11y_empty_classroom_same_room">Bilik darjah yang sama</string>
     <string name="a11y_empty_classroom_walk_minutes">Kira-kira %1$d min berjalan kaki</string>
+    <string name="a11y_file_viewer_page">Halaman %1$d daripada %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend GPA mengikut semester</string>
     <string name="a11y_rankings_trend_no_selection">Tiada semester dipilih</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Markah</string>
     <string name="feature_settings">Tetapan</string>
     <string name="feature_settings_short">Tetapan</string>
+    <string name="file_viewer_cannot_show">Fail ini tidak dapat dipaparkan di sini.</string>
+    <string name="file_viewer_open_elsewhere">Buka dalam apl lain</string>
+    <string name="file_viewer_text_truncated">Memaparkan %1$s pertama fail ini.</string>
     <string name="first_trigger_flip_to_library_keep">Kekalkan</string>
     <string name="first_trigger_flip_to_library_message">Nampaknya anda baru membalikkan telefon. Gerak isyarat ini boleh membuka QR perpustakaan dengan cepat. Nak kekalkan ciri ini?</string>
     <string name="first_trigger_flip_to_library_title">Balik untuk buka QR perpustakaan</string>

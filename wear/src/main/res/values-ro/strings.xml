@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Perioada %1$s</string>
     <string name="a11y_empty_classroom_same_room">Aceeași sală</string>
     <string name="a11y_empty_classroom_walk_minutes">Aproximativ %1$d min pe jos</string>
+    <string name="a11y_file_viewer_page">Pagina %1$d din %2$d</string>
     <string name="a11y_rankings_trend_chart">Tendința GPA pe semestru</string>
     <string name="a11y_rankings_trend_no_selection">Niciun semestru selectat</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Note</string>
     <string name="feature_settings">Setări</string>
     <string name="feature_settings_short">Setări</string>
+    <string name="file_viewer_cannot_show">Acest fișier nu poate fi afișat aici.</string>
+    <string name="file_viewer_open_elsewhere">Deschide în altă aplicație</string>
+    <string name="file_viewer_text_truncated">Se afișează primii %1$s din acest fișier.</string>
     <string name="first_trigger_flip_to_library_keep">Păstrează activat</string>
     <string name="first_trigger_flip_to_library_message">Se pare că ai întors telefonul. Acest gest poate deschide rapid QR-ul bibliotecii. Vrei să păstrezi această funcție?</string>
     <string name="first_trigger_flip_to_library_title">Întoarce pentru a deschide QR-ul bibliotecii</string>

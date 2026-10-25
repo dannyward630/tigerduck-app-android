@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Godzina %1$s</string>
     <string name="a11y_empty_classroom_same_room">Ta sama sala</string>
     <string name="a11y_empty_classroom_walk_minutes">Około %1$d min pieszo</string>
+    <string name="a11y_file_viewer_page">Strona %1$d z %2$d</string>
     <string name="a11y_rankings_trend_chart">Trend GPA według semestru</string>
     <string name="a11y_rankings_trend_no_selection">Nie wybrano semestru</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Oceny</string>
     <string name="feature_settings">Ustawienia</string>
     <string name="feature_settings_short">Ustawienia</string>
+    <string name="file_viewer_cannot_show">Nie można tutaj wyświetlić tego pliku.</string>
+    <string name="file_viewer_open_elsewhere">Otwórz w innej aplikacji</string>
+    <string name="file_viewer_text_truncated">Wyświetlane jest pierwsze %1$s tego pliku.</string>
     <string name="first_trigger_flip_to_library_keep">Zachowaj włączone</string>
     <string name="first_trigger_flip_to_library_message">Wygląda na to, że właśnie odwróciłeś telefon. Ten gest może szybko otworzyć QR biblioteki. Chcesz zachować tę funkcję?</string>
     <string name="first_trigger_flip_to_library_title">Odwróć, aby otworzyć QR biblioteki</string>

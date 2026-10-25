@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">Ώρα %1$s</string>
     <string name="a11y_empty_classroom_same_room">Ίδια αίθουσα</string>
     <string name="a11y_empty_classroom_walk_minutes">Περίπου %1$d λεπ με τα πόδια</string>
+    <string name="a11y_file_viewer_page">Σελίδα %1$d από %2$d</string>
     <string name="a11y_rankings_trend_chart">Τάση GPA ανά εξάμηνο</string>
     <string name="a11y_rankings_trend_no_selection">Δεν έχει επιλεγεί εξάμηνο</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">Βαθμοί</string>
     <string name="feature_settings">Ρυθμίσεις</string>
     <string name="feature_settings_short">Ρυθμίσεις</string>
+    <string name="file_viewer_cannot_show">Αυτό το αρχείο δεν μπορεί να εμφανιστεί εδώ.</string>
+    <string name="file_viewer_open_elsewhere">Άνοιγμα σε άλλη εφαρμογή</string>
+    <string name="file_viewer_text_truncated">Εμφανίζονται τα πρώτα %1$s αυτού του αρχείου.</string>
     <string name="first_trigger_flip_to_library_keep">Διατήρηση ενεργοποίησης</string>
     <string name="first_trigger_flip_to_library_message">Φαίνεται ότι αναποδογύρισες το τηλέφωνό σου. Αυτή η κίνηση μπορεί να ανοίξει γρήγορα το QR της βιβλιοθήκης. Θέλεις να κρατήσεις αυτή τη λειτουργία;</string>
     <string name="first_trigger_flip_to_library_title">Αναποδογύρισε για QR βιβλιοθήκης</string>

@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">പിരീഡ് %1$s</string>
     <string name="a11y_empty_classroom_same_room">അതേ ക്ലാസ്മുറി</string>
     <string name="a11y_empty_classroom_walk_minutes">നടന്നാൽ ഏകദേശം %1$d മിനിറ്റ്</string>
+    <string name="a11y_file_viewer_page">%2$d-ൽ %1$d-ാം പേജ്</string>
     <string name="a11y_rankings_trend_chart">സെമസ്റ്ററനുസരിച്ച് GPA ട്രെൻഡ്</string>
     <string name="a11y_rankings_trend_no_selection">സെമസ്റ്റർ തിരഞ്ഞെടുത്തിട്ടില്ല</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">ഗ്രേഡുകൾ</string>
     <string name="feature_settings">ക്രമീകരണങ്ങൾ</string>
     <string name="feature_settings_short">ക്രമീകരണങ്ങൾ</string>
+    <string name="file_viewer_cannot_show">ഈ ഫയൽ ഇവിടെ കാണിക്കാനാകില്ല.</string>
+    <string name="file_viewer_open_elsewhere">മറ്റൊരു ആപ്പിൽ തുറക്കുക</string>
+    <string name="file_viewer_text_truncated">ഈ ഫയലിന്റെ ആദ്യ %1$s കാണിക്കുന്നു.</string>
     <string name="first_trigger_flip_to_library_keep">പ്രവർത്തനക്ഷമമായി നിലനിർത്തുക</string>
     <string name="first_trigger_flip_to_library_message">നിങ്ങൾ ഫോൺ മറിച്ചിട്ടതായി ഞങ്ങൾ ശ്രദ്ധിച്ചു. ഈ ആംഗ്യം ലൈബ്രറി QR വേഗത്തിൽ തുറക്കാൻ സഹായിക്കും. ഈ ഫീച്ചർ നിലനിർത്തണോ?</string>
     <string name="first_trigger_flip_to_library_title">ലൈബ്രറി QR തുറക്കാൻ മറിക്കുക</string>

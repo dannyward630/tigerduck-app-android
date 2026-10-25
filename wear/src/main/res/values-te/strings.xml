@@ -24,6 +24,7 @@
     <string name="a11y_empty_classroom_period">పీరియడ్ %1$s</string>
     <string name="a11y_empty_classroom_same_room">అదే తరగతి గది</string>
     <string name="a11y_empty_classroom_walk_minutes">నడకకు సుమారు %1$d నిమిషాలు</string>
+    <string name="a11y_file_viewer_page">%2$dలో %1$dవ పేజీ</string>
     <string name="a11y_rankings_trend_chart">సెమిస్టర్ వారీగా GPA ధోరణి</string>
     <string name="a11y_rankings_trend_no_selection">సెమిస్టర్ ఎంచుకోబడలేదు</string>
     <string name="a11y_rankings_trend_point">%1$@ GPA %2$@</string>
@@ -602,6 +603,9 @@
     <string name="feature_score_short">మార్కులు</string>
     <string name="feature_settings">సెట్టింగ్స్</string>
     <string name="feature_settings_short">సెట్టింగ్స్</string>
+    <string name="file_viewer_cannot_show">ఈ ఫైల్‌ను ఇక్కడ చూపించలేము.</string>
+    <string name="file_viewer_open_elsewhere">వేరే యాప్‌లో తెరవండి</string>
+    <string name="file_viewer_text_truncated">ఈ ఫైల్‌లోని మొదటి %1$s చూపిస్తోంది.</string>
     <string name="first_trigger_flip_to_library_keep">ఎనేబుల్‌గా ఉంచు</string>
     <string name="first_trigger_flip_to_library_message">మీరు ఫోన్‌ను తిప్పారని గమనించాం. ఈ జెస్చర్ లైబ్రరీ QR ని వేగంగా తెరవగలదు. ఈ ఫీచర్‌ను ఉంచాలనుకుంటున్నారా?</string>
     <string name="first_trigger_flip_to_library_title">లైబ్రరీ QR తెరవడానికి తిప్పు</string>
