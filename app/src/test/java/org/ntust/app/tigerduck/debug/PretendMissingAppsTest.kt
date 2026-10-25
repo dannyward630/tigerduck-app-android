@@ -66,6 +66,26 @@ class PretendMissingAppsTest {
     }
 
     @Test
+    fun `a link an app opens itself needs no browser, TigerDuck's own share links included`() {
+        val pm = shadowOf(context.packageManager)
+        // A browser takes any https link; TigerDuck takes its share links.
+        val anyLink = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/")).addCategory(Intent.CATEGORY_BROWSABLE)
+        val browser = ResolveInfo().apply { activityInfo = ActivityInfo().apply { packageName = "com.example.browser"; name = "Main" } }
+        val tigerDuck = ResolveInfo().apply { activityInfo = ActivityInfo().apply { packageName = own; name = "$own.MainActivity" } }
+        val shareLink = view("https://share.tigerduck.app/classtable/abc")
+        pm.addResolveInfoForIntent(anyLink, browser)
+        pm.addResolveInfoForIntent(shareLink, listOf(browser, tigerDuck))
+        PretendMissingApps.setMissing(OutsideApp.BROWSER, true)
+
+        assertNull(PretendMissingApps.needs(shareLink, own, context.packageManager))
+        assertSame(shareLink, PretendMissingApps.filter(shareLink, own, context.packageManager))
+        // A link only browsers take still needs one.
+        val page = view("https://www.ntust.edu.tw/")
+        pm.addResolveInfoForIntent(page, browser)
+        assertEquals(OutsideApp.BROWSER, PretendMissingApps.needs(page, own, context.packageManager))
+    }
+
+    @Test
     fun `a missing app's intent fails as it would on a phone without it`() {
         PretendMissingApps.setMissing(OutsideApp.MOODLE, true)
 

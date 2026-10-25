@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +25,9 @@ internal enum class OutsideApp(val missing: String, val detail: String) {
  * Debug builds only: makes TigerDuck act as on a phone without some of the
  * apps it hands things to, so the fallbacks can be tried on any phone.
  *
- * The activities pass every intent they start through [filter]. An intent
+ * The activities pass every intent they start through [filter]; a launch
+ * from the application context doesn't pass through it (no caller makes one
+ * today). An intent
  * started on its own fails as Android fails it, with an
  * [ActivityNotFoundException], and the app's own fallback runs; a chooser
  * keeps its sheet but has nothing to offer, as the system shows it. Probes
@@ -53,6 +56,7 @@ internal object PretendMissingApps {
             .toSet()
     }
 
+    @Synchronized
     fun setMissing(app: OutsideApp, missing: Boolean) {
         if (!BuildConfig.DEBUG) return
         val now = if (missing) _missing.value + app else _missing.value - app
@@ -62,8 +66,12 @@ internal object PretendMissingApps {
 
     fun isMissing(app: OutsideApp): Boolean = BuildConfig.DEBUG && app in _missing.value
 
-    /** The outside app [intent] needs, or null for one to TigerDuck itself or of no kind listed. */
-    fun needs(intent: Intent, ownPackage: String): OutsideApp? {
+    /**
+     * The outside app [intent] needs, or null for one to TigerDuck itself or of no kind listed. A
+     * web link that an app other than a browser takes (an App Link, TigerDuck's own share links
+     * among them) needs no browser: with [packageManager], those are told apart.
+     */
+    fun needs(intent: Intent, ownPackage: String, packageManager: PackageManager? = null): OutsideApp? {
         if (intent.component?.packageName == ownPackage || intent.`package` == ownPackage) return null
         val scheme = intent.data?.scheme?.lowercase() ?: return null
         val action = intent.action
@@ -72,7 +80,8 @@ internal object PretendMissingApps {
             scheme == "market" -> OutsideApp.PLAY_STORE
             scheme == "mailto" && (action == Intent.ACTION_SENDTO || action == Intent.ACTION_VIEW) -> OutsideApp.MAIL
             action != Intent.ACTION_VIEW -> null
-            scheme == "http" || scheme == "https" -> OutsideApp.BROWSER
+            scheme == "http" || scheme == "https" ->
+                OutsideApp.BROWSER.takeUnless { packageManager != null && opensInAnApp(intent, packageManager) }
             scheme == "content" || scheme == "file" -> OutsideApp.FILE_VIEWER
             else -> null
         }
@@ -83,17 +92,26 @@ internal object PretendMissingApps {
      * intent for one throws, a chooser for one is left with nothing to offer,
      * and anything else goes as it is.
      */
-    fun filter(intent: Intent, ownPackage: String): Intent {
+    fun filter(intent: Intent, ownPackage: String, packageManager: PackageManager? = null): Intent {
         if (!BuildConfig.DEBUG || _missing.value.isEmpty()) return intent
         if (intent.action == Intent.ACTION_CHOOSER) {
             val inner = intent.chosen() ?: return intent
-            val app = needs(inner, ownPackage) ?: return intent
+            val app = needs(inner, ownPackage, packageManager) ?: return intent
             if (!isMissing(app)) return intent
             return Intent(intent).putExtra(Intent.EXTRA_INTENT, Intent(Intent.ACTION_VIEW, NOTHING))
         }
-        val app = needs(intent, ownPackage) ?: return intent
+        val app = needs(intent, ownPackage, packageManager) ?: return intent
         if (isMissing(app)) throw ActivityNotFoundException("No Activity found to handle $intent (pretending: ${app.missing})")
         return intent
+    }
+
+    /** Whether a package other than a browser (one that takes any https link) takes [intent]. */
+    private fun opensInAnApp(intent: Intent, packageManager: PackageManager): Boolean {
+        val handlers = packageManager.queryIntentActivities(intent, 0).map { it.activityInfo.packageName }.toSet()
+        if (handlers.isEmpty()) return false
+        val anyLink = Intent(Intent.ACTION_VIEW, "https://example.com/".toUri()).addCategory(Intent.CATEGORY_BROWSABLE)
+        val browsers = packageManager.queryIntentActivities(anyLink, 0).map { it.activityInfo.packageName }.toSet()
+        return (handlers - browsers).isNotEmpty()
     }
 
     private fun Intent.chosen(): Intent? =

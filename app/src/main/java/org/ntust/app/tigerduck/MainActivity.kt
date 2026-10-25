@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity() {
 
     /** In debug builds, as a phone without the apps the developer settings mark missing would: see [PretendMissingApps]. */
     override fun startActivity(intent: Intent, options: Bundle?) {
-        super.startActivity(PretendMissingApps.filter(intent, packageName), options)
+        super.startActivity(PretendMissingApps.filter(intent, packageName, packageManager), options)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
