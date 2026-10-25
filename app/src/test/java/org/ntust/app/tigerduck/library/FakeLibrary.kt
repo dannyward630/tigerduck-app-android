@@ -18,7 +18,8 @@ internal class MemoryLibraryStore : LibraryCredentialStore {
     override var libraryPassword: String? = null
     override var libraryToken: String? = null
     override var libraryTokenExpiry: Long = 0L
-    override var libraryPasswordRefused: Boolean = false
+    override var libraryPasswordRefusals: Int = 0
+    override var libraryPasswordRefusedAt: Long = 0L
     override val isLibraryTokenValid: Boolean
         get() = libraryToken != null && System.currentTimeMillis() < libraryTokenExpiry
     override val libraryAccountGeneration: Int get() = account.current
@@ -36,13 +37,15 @@ internal class MemoryLibraryStore : LibraryCredentialStore {
         libraryPassword = password
         libraryToken = token
         libraryTokenExpiry = tokenExpiry
-        libraryPasswordRefused = false
+        libraryPasswordRefusals = 0
+        libraryPasswordRefusedAt = 0L
     }
 
-    override fun refuseLibraryPassword(generation: Int, password: String): Boolean =
+    override fun refuseLibraryPassword(generation: Int, password: String, at: Long): Boolean =
         account.whileCurrent(generation) {
             if (libraryPassword != password) return@whileCurrent false
-            libraryPasswordRefused = true
+            libraryPasswordRefusals++
+            libraryPasswordRefusedAt = at
             true
         } ?: false
 
@@ -51,7 +54,8 @@ internal class MemoryLibraryStore : LibraryCredentialStore {
         libraryPassword = null
         libraryToken = null
         libraryTokenExpiry = 0L
-        libraryPasswordRefused = false
+        libraryPasswordRefusals = 0
+        libraryPasswordRefusedAt = 0L
     }
 
     /** An account whose day-long token has run out, so the next code signs in again. */
@@ -98,7 +102,8 @@ internal class FakeLibraryServer {
             .build()
     }
 
-    fun service(store: LibraryCredentialStore) = LibraryService(store, extraInterceptors = listOf(interceptor))
+    fun service(store: LibraryCredentialStore, clock: () -> Long = System::currentTimeMillis) =
+        LibraryService(store, extraInterceptors = listOf(interceptor), clock = clock)
 
     companion object {
         val WRONG_PASSWORD = 200 to """{"data":null,"error":{"code":1,"message":"wrong password"}}"""

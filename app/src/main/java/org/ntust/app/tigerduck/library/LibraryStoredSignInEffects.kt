@@ -5,7 +5,8 @@ import org.ntust.app.tigerduck.shared.LibraryService
 /**
  * What the app does after a sign-in with the stored library credentials, which
  * no screen asked for: read the sign-in state again for Settings, the page and
- * the flip, and after a refusal take the password off the watch.
+ * the flip, take the password off the watch after a refusal, and hand it back
+ * once the library takes it again.
  */
 internal suspend fun onStoredLibrarySignIn(
     outcome: LibraryService.StoredSignIn,
@@ -13,5 +14,5 @@ internal suspend fun onStoredLibrarySignIn(
     publishLibraryCredentialsToWatch: suspend () -> Unit,
 ) {
     session.refresh()
-    if (outcome == LibraryService.StoredSignIn.REFUSED) publishLibraryCredentialsToWatch()
+    if (outcome != LibraryService.StoredSignIn.SIGNED_IN) publishLibraryCredentialsToWatch()
 }

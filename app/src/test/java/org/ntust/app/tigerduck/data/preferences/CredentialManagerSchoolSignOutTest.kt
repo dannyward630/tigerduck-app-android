@@ -103,7 +103,7 @@ class CredentialManagerSchoolSignOutTest {
         assertTrue(runCatching { service.ensureToken() }.exceptionOrNull() is LibraryServiceError.LoginFailed)
 
         assertTrue(credentials.libraryPasswordRefused)
-        // Each refusal counts toward the account's lockout: the password is not sent again.
+        // Each refusal counts toward the account's lockout: the password waits before it goes again.
         assertTrue(runCatching { service.ensureToken() }.exceptionOrNull() is LibraryServiceError.CredentialsNotFound)
         assertFalse(service.signInIfCredentialed { true })
         assertEquals(1, server.signIns)

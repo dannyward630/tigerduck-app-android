@@ -10,8 +10,12 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -48,7 +52,7 @@ class LibraryService(
      * globally — the phone passes its demo-mode kill switch through here.
      */
     extraInterceptors: List<Interceptor> = emptyList(),
-    /** Wall-clock ms, for the pause after a failed sign-in with the stored credentials. */
+    /** Wall-clock ms, for the waits after a failed sign-in with the stored credentials. */
     private val clock: () -> Long = System::currentTimeMillis,
     /** The app's pinned trust, which the library's pins are checked by; null only in tests. */
     tls: PinnedTls? = null,
@@ -74,7 +78,16 @@ class LibraryService(
         /** A new token is stored. */
         SIGNED_IN,
 
-        /** The library refused the stored password; nothing signs in with it again by itself. */
+        /**
+         * A new token is stored with a password the library had refused, which
+         * ends the count: the phone hands the password to the watch again.
+         */
+        SIGNED_IN_AFTER_REFUSAL,
+
+        /**
+         * The library refused the stored password. It goes again by itself only
+         * once [StoredPasswordSchedule.delayMs] has passed ([storedPasswordRetryAt]).
+         */
         REFUSED,
     }
 
@@ -82,6 +95,44 @@ class LibraryService(
 
     /** Each sign-in [ensureToken] makes with the stored credentials that stores a token or is refused. */
     val storedSignIns: SharedFlow<StoredSignIn> = _storedSignIns.asSharedFlow()
+
+    private val _storedPasswordChanges = MutableStateFlow(0)
+
+    /**
+     * Moves with each refusal of the stored password counted and each sign-in
+     * that ends the count, typed or not: what the phone's retry keys its wait on.
+     */
+    val storedPasswordChanges: StateFlow<Int> = _storedPasswordChanges.asStateFlow()
+
+    /** The library's refusals in a row of the stored password; 0 with none. */
+    val storedPasswordRefusals: Int get() = credentials.libraryPasswordRefusals
+
+    /**
+     * When a sign-in the app makes on its own may send the stored password
+     * again, which is now or earlier once the wait is over; null with no
+     * refusal, or no account stored. As on the iPhone, after the first three
+     * refusals in a row it waits 10 seconds, 1 minute and 5 minutes, then 6
+     * hours each time ([StoredPasswordSchedule]).
+     */
+    fun storedPasswordRetryAt(): Long? {
+        if (credentials.libraryUsername == null || credentials.libraryPassword == null) return null
+        return StoredPasswordSchedule.retryAt(
+            credentials.libraryPasswordRefusals,
+            credentials.libraryPasswordRefusedAt,
+            clock(),
+        )
+    }
+
+    /** Whether a sign-in the app makes on its own may send the stored password now. */
+    fun storedPasswordPostIsDue(): Boolean {
+        val now = clock()
+        val retryAt = StoredPasswordSchedule.retryAt(
+            credentials.libraryPasswordRefusals,
+            credentials.libraryPasswordRefusedAt,
+            now,
+        ) ?: return true
+        return retryAt <= now
+    }
 
     /**
      * When a sign-in with the stored credentials last failed short of a
@@ -100,8 +151,9 @@ class LibraryService(
     /**
      * Whether a library account is signed in, as the Library page, Settings and
      * the flip count it: its token is live, or its stored credentials sign in
-     * again behind the code. Only a refused stored password, or no account,
-     * signs it out.
+     * again behind the code. A refused stored password signs it out until the
+     * library takes it again, by hand or once its wait is over, and so does no
+     * account.
      */
     val hasAccount: Boolean
         get() = credentials.isLibraryTokenValid || canSignInWithStoredCredentials
@@ -109,11 +161,14 @@ class LibraryService(
     /**
      * Signs in with the stored credentials when there is no live token, so the
      * Library page shows its code at once: at launch and on each return to the
-     * app. Not after a refusal, not within [SIGN_IN_PAUSE_MS] of another
-     * failure, and not offline. Returns whether it signed in.
+     * app. Not while a refusal's wait holds ([storedPasswordRetryAt]), not
+     * within [SIGN_IN_PAUSE_MS] of another failure, and not offline. Returns
+     * whether it signed in.
      */
     suspend fun signInIfCredentialed(isOnline: () -> Boolean): Boolean {
-        if (credentials.isLibraryTokenValid || !canSignInWithStoredCredentials) return false
+        if (credentials.isLibraryTokenValid) return false
+        if (credentials.libraryUsername == null || credentials.libraryPassword == null) return false
+        if (!storedPasswordPostIsDue()) return false
         if (!signInIsDue(storedSignInFailedAt, clock()) || !isOnline()) return false
         return try {
             ensureToken()
@@ -148,7 +203,31 @@ class LibraryService(
         // since, which no one waits for, would hold this one behind it.
         synchronized(pendingSignIns) { dropAbandonedSignIns() }
         return tokenMutex.withLock {
+            val refused = credentials.libraryPasswordRefused
             loginInternal(username, password, accountGeneration, byUser, stillCurrent)
+                // The account stored now is one the library took, so the count is gone.
+                .also { if (refused) _storedPasswordChanges.update { it + 1 } }
+        }
+    }
+
+    /**
+     * One try of a stored password the library refused, once its wait is
+     * over, for the phone's retry. Says whether it got the library's answer, a
+     * refusal or a token, or found nothing left to try; a post lost to the
+     * network or met with a server error is no answer, nor is a wait not yet
+     * over.
+     */
+    suspend fun retryStoredPassword(): Boolean {
+        val refusals = credentials.libraryPasswordRefusals
+        if (refusals == 0 || credentials.libraryUsername == null || credentials.libraryPassword == null) return true
+        return try {
+            ensureToken()
+            true
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // A refusal it got moved the count; so did a sign-out meanwhile.
+            credentials.libraryPasswordRefusals != refusals
         }
     }
 
@@ -188,8 +267,8 @@ class LibraryService(
     /**
      * Reads the library's answer to a sign-in. A 4xx is a refusal like a wrong
      * password: which status a wrong password gets is unchecked, and a refusal
-     * stops the automatic sign-ins. A server error or an answer that cannot be
-     * read is not.
+     * holds the automatic sign-ins back for its wait. A server error or an
+     * answer that cannot be read is not.
      */
     private fun loginAnswer(status: Int, body: String): LibraryLoginData {
         val parsed = runCatching { gson.fromJson(body, LibraryLoginResponse::class.java) }.getOrNull()
@@ -212,8 +291,8 @@ class LibraryService(
             ?: throw LibraryServiceError.CredentialsNotFound()
         if (credentials.libraryPassword == null) throw LibraryServiceError.CredentialsNotFound()
         // Each refusal counts toward the account's lockout, so a refused
-        // password is not sent again until a sign-in saves credentials that work.
-        if (credentials.libraryPasswordRefused) throw LibraryServiceError.CredentialsNotFound()
+        // password is not sent again by itself before its wait is over.
+        if (!storedPasswordPostIsDue()) throw LibraryServiceError.CredentialsNotFound()
 
         val attempt = synchronized(pendingSignIns) {
             dropAbandonedSignIns()
@@ -318,7 +397,10 @@ class LibraryService(
             ?: throw LibraryServiceError.CredentialsNotFound()
         val password = credentials.libraryPassword
             ?: throw LibraryServiceError.CredentialsNotFound()
-        if (credentials.libraryPasswordRefused) throw LibraryServiceError.CredentialsNotFound()
+        // Looked at again holding the lock, so a refusal another caller got
+        // just before keeps this one from posting.
+        if (!storedPasswordPostIsDue()) throw LibraryServiceError.CredentialsNotFound()
+        val refused = credentials.libraryPasswordRefused
 
         val outcome = try {
             Result.success(loginInternal(username, password, accountGeneration, byUser = false))
@@ -334,11 +416,17 @@ class LibraryService(
             when {
                 failure == null -> {
                     storedSignInFailedAt = null
-                    _storedSignIns.tryEmit(StoredSignIn.SIGNED_IN)
+                    if (refused) {
+                        _storedPasswordChanges.update { it + 1 }
+                        _storedSignIns.tryEmit(StoredSignIn.SIGNED_IN_AFTER_REFUSAL)
+                    } else {
+                        _storedSignIns.tryEmit(StoredSignIn.SIGNED_IN)
+                    }
                 }
                 // A failure says something only about the credentials still stored.
                 failure is LibraryServiceError.LoginFailed -> {
-                    if (credentials.refuseLibraryPassword(accountGeneration, password)) {
+                    if (credentials.refuseLibraryPassword(accountGeneration, password, clock())) {
+                        _storedPasswordChanges.update { it + 1 }
                         _storedSignIns.tryEmit(StoredSignIn.REFUSED)
                     }
                 }

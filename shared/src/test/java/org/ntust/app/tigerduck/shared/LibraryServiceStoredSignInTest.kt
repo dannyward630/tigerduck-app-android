@@ -22,9 +22,10 @@ import java.util.concurrent.TimeUnit
 
 /**
  * The sign-ins made with the stored library credentials: at a return to the
- * app and behind the Library page. A refused password is never sent again by
- * itself, since each refusal counts toward the account's lockout, and other
- * failures pause the returns for five minutes.
+ * app and behind the Library page. Each refusal counts toward the account's
+ * lockout, so after one the password waits the school's schedule before it is
+ * sent again by itself (tigerduck-app/tigerduck-app#769), and other failures
+ * pause the returns for five minutes.
  */
 class LibraryServiceStoredSignInTest {
 
@@ -34,7 +35,8 @@ class LibraryServiceStoredSignInTest {
         override var libraryPassword: String? = null
         override var libraryToken: String? = null
         override var libraryTokenExpiry: Long = 0L
-        override var libraryPasswordRefused: Boolean = false
+        override var libraryPasswordRefusals: Int = 0
+        override var libraryPasswordRefusedAt: Long = 0L
         override val isLibraryTokenValid: Boolean
             get() = libraryToken != null && System.currentTimeMillis() < libraryTokenExpiry
         override val libraryAccountGeneration: Int get() = account.current
@@ -52,13 +54,15 @@ class LibraryServiceStoredSignInTest {
             libraryPassword = password
             libraryToken = token
             libraryTokenExpiry = tokenExpiry
-            libraryPasswordRefused = false
+            libraryPasswordRefusals = 0
+            libraryPasswordRefusedAt = 0L
         }
 
-        override fun refuseLibraryPassword(generation: Int, password: String): Boolean =
+        override fun refuseLibraryPassword(generation: Int, password: String, at: Long): Boolean =
             account.whileCurrent(generation) {
                 if (libraryPassword != password) return@whileCurrent false
-                libraryPasswordRefused = true
+                libraryPasswordRefusals++
+                libraryPasswordRefusedAt = at
                 true
             } ?: false
 
@@ -67,7 +71,8 @@ class LibraryServiceStoredSignInTest {
             libraryPassword = null
             libraryToken = null
             libraryTokenExpiry = 0L
-            libraryPasswordRefused = false
+            libraryPasswordRefusals = 0
+            libraryPasswordRefusedAt = 0L
         }
 
         /** An account whose token has run out, so the next code signs in again. */
@@ -140,16 +145,81 @@ class LibraryServiceStoredSignInTest {
     }
 
     @Test
-    fun `a refused password is not sent again by itself`() = runBlocking {
+    fun `a refused password is not sent again by itself until its wait is over`() = runBlocking {
         answers += wrongPassword
 
         assertTrue(runCatching { service.ensureToken() }.exceptionOrNull() is LibraryServiceError.LoginFailed)
         assertTrue(store.libraryPasswordRefused)
         assertFalse(service.canSignInWithStoredCredentials)
+        assertEquals(now + 10_000L, service.storedPasswordRetryAt())
 
+        now += 9_999
         assertTrue(runCatching { service.ensureToken() }.exceptionOrNull() is LibraryServiceError.CredentialsNotFound)
         assertFalse(service.signInIfCredentialed { true })
         assertEquals(1, signIns)
+
+        now += 1
+        assertEquals("token-2", service.ensureToken())
+        assertEquals(2, signIns)
+    }
+
+    @Test
+    fun `each refusal in a row waits the next step of the school's schedule`() = runBlocking {
+        listOf(10_000L, 60_000L, 300_000L, 21_600_000L, 21_600_000L).forEach { wait ->
+            answers += wrongPassword
+            assertTrue(runCatching { service.ensureToken() }.exceptionOrNull() is LibraryServiceError.LoginFailed)
+            assertEquals(now + wait, service.storedPasswordRetryAt())
+            now += wait - 1
+            assertFalse(service.storedPasswordPostIsDue())
+            now += 1
+            assertTrue(service.storedPasswordPostIsDue())
+        }
+        assertEquals(5, store.libraryPasswordRefusals)
+    }
+
+    @Test
+    fun `a password the library takes again ends the count`() = runBlocking {
+        answers += wrongPassword
+        runCatching { service.ensureToken() }
+        now += 10_000
+
+        service.ensureToken()
+
+        assertEquals(0, store.libraryPasswordRefusals)
+        assertTrue(service.canSignInWithStoredCredentials)
+        assertEquals(null, service.storedPasswordRetryAt())
+    }
+
+    @Test
+    fun `a sign-in the user types never waits`() = runBlocking {
+        answers += wrongPassword
+        runCatching { service.ensureToken() }
+
+        service.login("B10000001", "pw", store.libraryAccountGeneration, byUser = true)
+
+        assertEquals(2, signIns)
+        assertEquals(0, store.libraryPasswordRefusals)
+    }
+
+    @Test
+    fun `a retry says whether it got the library's answer`() = runBlocking {
+        answers += wrongPassword
+        runCatching { service.ensureToken() }
+
+        // Not due yet: nothing goes, and it got no answer.
+        assertFalse(service.retryStoredPassword())
+        assertEquals(1, signIns)
+
+        now += 10_000
+        answers += serverError
+        assertFalse(service.retryStoredPassword())
+        answers += wrongPassword
+        assertTrue(service.retryStoredPassword())
+        assertEquals(2, store.libraryPasswordRefusals)
+
+        now += 60_000
+        assertTrue(service.retryStoredPassword())
+        assertEquals(0, store.libraryPasswordRefusals)
     }
 
     @Test
@@ -157,7 +227,7 @@ class LibraryServiceStoredSignInTest {
         answers += 401 to ""
 
         assertTrue(runCatching { service.ensureToken() }.exceptionOrNull() is LibraryServiceError.LoginFailed)
-        assertTrue(store.libraryPasswordRefused)
+        assertEquals(1, store.libraryPasswordRefusals)
     }
 
     @Test
@@ -203,6 +273,54 @@ class LibraryServiceStoredSignInTest {
 
         waitFor { seen.size == 2 }
         assertEquals(listOf(LibraryService.StoredSignIn.SIGNED_IN, LibraryService.StoredSignIn.REFUSED), seen.toList())
+    }
+
+    @Test
+    fun `a password the library takes again tells the app so, for the watch to get it back`() = runBlocking {
+        val seen = outcomes()
+        answers += wrongPassword
+        runCatching { service.ensureToken() }
+        now += 10_000
+
+        service.ensureToken()
+
+        waitFor { seen.size == 2 }
+        assertEquals(
+            listOf(LibraryService.StoredSignIn.REFUSED, LibraryService.StoredSignIn.SIGNED_IN_AFTER_REFUSAL),
+            seen.toList(),
+        )
+    }
+
+    @Test
+    fun `each refusal counted and each end of the count moves the changes`() = runBlocking {
+        val before = service.storedPasswordChanges.value
+        answers += wrongPassword
+        runCatching { service.ensureToken() }
+        assertEquals(before + 1, service.storedPasswordChanges.value)
+
+        now += 10_000
+        service.ensureToken()
+        assertEquals(before + 2, service.storedPasswordChanges.value)
+
+        // A token renewed with no refusal to end leaves them.
+        store.storeExpired()
+        service.ensureToken()
+        assertEquals(before + 2, service.storedPasswordChanges.value)
+    }
+
+    @Test
+    fun `a return sends a refused password once its wait is over, and not before`() = runBlocking {
+        answers += wrongPassword
+        assertFalse(service.signInIfCredentialed { true })
+
+        now += 9_999
+        assertFalse(service.signInIfCredentialed { true })
+        assertEquals(1, signIns)
+
+        now += 1
+        assertTrue(service.signInIfCredentialed { true })
+        assertEquals(2, signIns)
+        assertTrue(service.hasAccount)
     }
 
     @Test
