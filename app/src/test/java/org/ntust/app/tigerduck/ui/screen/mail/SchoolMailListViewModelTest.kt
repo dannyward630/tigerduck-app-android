@@ -2054,6 +2054,72 @@ class SchoolMailListViewModelTest {
         vm.stopPolling()
     }
 
+    /** Another visit to the page, over the same mailbox, cache and checker. */
+    private fun anotherVisit() = SchoolMailListViewModel(
+        repo, account, checker, schoolMailSite(),
+        { main.dispatcher.scheduler.currentTime }, notices,
+    )
+
+    /**
+     * Rows a failed load left painted from the cache are a previous visit's: their flags and
+     * deletions are that visit's too. A poll that finds nothing new in their folders must not
+     * date them "just now", as the iPhone's tigerduck-app/tigerduck-app#647 found; a page from
+     * the server that replaces them dates them again.
+     */
+    @Test
+    fun `a poll after a failed load keeps the cached rows' date, until a page from the server replaces them`() {
+        now = 5_000
+        repo.add("INBOX", mailSummary(1))
+        repo.add("寄件備份匣", mailSummary(1))
+        repo.status = FolderStatus(server.uidValidity, 2, 1, 1)
+        vm.load()
+        assertEquals(5_000L, vm.state.value.fetchedAt)
+
+        now = 9_000
+        repo.loadError = MailError.Network()
+        val visit = anotherVisit()
+        visit.load()
+        assertTrue(visit.state.value.loadState is SchoolMailListViewModel.LoadState.Failed)
+        assertTrue("the cache painted the rows", visit.state.value.messages.isNotEmpty())
+        visit.startPolling()
+        pollOnce()
+        assertEquals(5_000L, visit.state.value.fetchedAt)
+        assertEquals(5_000L, state.fetchedAt("INBOX"))
+        assertEquals(5_000L, state.fetchedAt("寄件備份匣"))
+
+        now = 12_000
+        repo.loadError = null
+        visit.refresh()
+        assertTrue(visit.state.value.loadState is SchoolMailListViewModel.LoadState.Loaded)
+        assertEquals(12_000L, visit.state.value.fetchedAt)
+
+        now = 15_000
+        pollOnce()
+        assertEquals(15_000L, visit.state.value.fetchedAt)
+        visit.stopPolling()
+    }
+
+    /** The same rows dated by a check of the inbox that ran meanwhile: it found no new mail, and verified nothing on screen. */
+    @Test
+    fun `a check that found nothing new does not date rows a failed load left painted from the cache`() {
+        now = 5_000
+        repo.add("INBOX", mailSummary(1))
+        vm.load()
+        vm.selectFolder(FolderSelection.Real("INBOX"))
+
+        repo.loadError = MailError.Network()
+        val visit = anotherVisit()
+        visit.load()
+        visit.selectFolder(FolderSelection.Real("INBOX"))
+        assertTrue(visit.state.value.messages.isNotEmpty())
+        now = 7_000
+        assertEquals(CheckOutcome.NoChange, runBlocking { checker.check(CheckSource.ALARM) })
+
+        visit.startPolling()
+        assertEquals(5_000L, visit.state.value.fetchedAt)
+        visit.stopPolling()
+    }
+
     @Test
     fun `a check that ran while the page was away shows when the page comes back`() {
         repo.add("INBOX", mailSummary(1))
