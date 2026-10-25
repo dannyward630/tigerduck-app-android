@@ -47,6 +47,17 @@ class WhatsNewFlowTest {
     }
 
     @Test
+    fun `a page two releases both ask shows once, at its first place`() {
+        // 2.3.0 and 2.4.0 both ask whether Mail takes Calendar's place; upgrading from before
+        // 2.3.0 shows both releases.
+        val both = mapOf(28 to listOf(page("intro"), page("same")), 30 to listOf(page("a"), page("same"), page("b")))
+
+        val flow = WhatsNewFlow.from(Plan.Show(listOf(28, 30), summaryVersion = null, replay = false), both, emptyMap())
+
+        assertEquals(listOf("intro", "same", "a", "b"), flow?.pageIds)
+    }
+
+    @Test
     fun `drops pages that do not apply after an upgrade`() {
         val flow = WhatsNewFlow.from(
             Plan.Show(listOf(27, 29), summaryVersion = 29, replay = false),

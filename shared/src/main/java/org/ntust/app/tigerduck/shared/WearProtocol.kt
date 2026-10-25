@@ -40,6 +40,15 @@ object WearProtocol {
         // watch reads as no quiet days, and a watch that predates it ignores it.
         const val KEY_QUIET_DAYS = "quietDays"
 
+        // The interface style picked in Settings › Interface style, as the phone stores it
+        // ("default" for TigerDuck, [VISUAL_PRESET_TAT]): the key and values the iPhone's
+        // WatchWireFormat uses. A phone that predates it sends none, which the watch reads
+        // as TigerDuck, as it does a value it doesn't know; a watch that predates it ignores it.
+        const val KEY_VISUAL_PRESET = "visualPreset"
+
+        /** The TAT look's raw value under [KEY_VISUAL_PRESET]. */
+        const val VISUAL_PRESET_TAT = "tat"
+
         /** ISO `yyyy-MM-dd` strings, the form [KEY_QUIET_DAYS] carries. */
         fun encodeQuietDays(days: Collection<LocalDate>): ArrayList<String> =
             days.sorted().mapTo(ArrayList(days.size)) { it.toString() }

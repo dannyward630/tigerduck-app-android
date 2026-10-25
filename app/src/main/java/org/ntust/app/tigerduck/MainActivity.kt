@@ -79,6 +79,7 @@ import org.ntust.app.tigerduck.ui.screen.update.UpdatePromptDialog
 import org.ntust.app.tigerduck.ui.screen.whatsnew.WhatsNewCatalog
 import org.ntust.app.tigerduck.ui.screen.whatsnew.WhatsNewFlow
 import org.ntust.app.tigerduck.ui.screen.whatsnew.WhatsNewSheet
+import org.ntust.app.tigerduck.ui.screen.whatsnew.ranRelease23x
 import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import org.ntust.app.tigerduck.update.UpdateChecker
@@ -622,6 +623,8 @@ class MainActivity : AppCompatActivity() {
     private fun resolveWhatsNew(savedInstanceState: Bundle?) {
         val current = BuildConfig.VERSION_CODE
         val lastSeen = appPreferences.lastSeenWhatsNewVersionCode
+        // Before this run's record replaces it: 2.3.x's What's New asked the Mail question.
+        if (ranRelease23x(lastSeen)) appPreferences.mailBarQuestionAsked = true
         val languageTag = resources.configuration.locales[0].toLanguageTag()
         val catalog by lazy { WhatsNewCatalog.pages(appState) }
         val summaries by lazy { whatsNewRepository.summaries(languageTag) }
