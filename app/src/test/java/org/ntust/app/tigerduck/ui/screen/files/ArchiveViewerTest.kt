@@ -10,8 +10,11 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -122,6 +125,28 @@ class ArchiveViewerTest {
         // The file the viewer is handed holds what the archive did, and nothing of its path.
         val taken = File(composeRule.activity.cacheDir, "archive_entries").walkTopDown().single { it.isFile }
         assertEquals("fake", taken.readText())
+    }
+
+    @Test
+    fun `a tar gz sent as moodle's application g-zip lists, and a file in it opens`() {
+        val file = temp.newFile("code.tar.gz")
+        GzipCompressorOutputStream(file.outputStream()).use { gzip ->
+            TarArchiveOutputStream(gzip, "UTF-8").use { tar ->
+                val bytes = "fake".toByteArray()
+                tar.putArchiveEntry(TarArchiveEntry("src/notes.txt").apply { size = bytes.size.toLong() })
+                tar.write(bytes)
+                tar.closeArchiveEntry()
+            }
+        }
+        show(file, type = "application/g-zip")
+        waitFor("src")
+
+        composeRule.onNodeWithText("src").performClick()
+        composeRule.onNodeWithText("notes.txt").performClick()
+        composeRule.waitUntil(10_000) { shadowOf(composeRule.activity).peekNextStartedActivity() != null }
+
+        val started = shadowOf(composeRule.activity).nextStartedActivity
+        assertEquals(ViewerKind.TEXT.name, started.getStringExtra(FileViewer.EXTRA_KIND))
     }
 
     @Test

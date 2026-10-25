@@ -89,13 +89,22 @@ object FileViewing {
         "docx", "pptx", "xlsx", "docm", "pptm", "xlsm", "odt", "ods", "odp", "epub", "apk", "jar",
     )
 
-    /** The other archives [Archives] reads: 7z, tar, and gzip, bzip2 or xz, around a tar or on their own. */
+    /**
+     * The other archives [Archives] reads: 7z, tar, and gzip, bzip2 or xz, around a tar or on their
+     * own. Each spelling is one a real source declares; [Archives] goes by the bytes anyway.
+     */
     private val ARCHIVE_TYPES = setOf(
         "application/x-7z-compressed", "application/x-tar", "application/x-gtar", "application/gzip", "application/x-gzip",
         "application/x-compressed-tar", "application/x-bzip2", "application/x-bzip", "application/x-bzip-compressed-tar",
         "application/x-xz", "application/x-xz-compressed-tar",
+        // Moodle's own for .tgz, .gz and .gzip (lib/classes/filetypes.php), misspelling and all.
+        "application/g-zip",
+        // Debian's mime.types, which Android's type map starts from, for .tgz.
+        "application/x-gtar-compressed",
+        // shared-mime-info's names for bzip2 and a tar in it.
+        "application/bzip2", "application/x-bzip2-compressed-tar",
     )
-    private val ARCHIVE_EXTENSIONS = setOf("zip", "7z", "tar", "gz", "tgz", "bz2", "tbz", "tbz2", "xz", "txz")
+    private val ARCHIVE_EXTENSIONS = setOf("zip", "7z", "tar", "gz", "gzip", "tgz", "bz2", "tbz", "tbz2", "xz", "txz")
 
     private val IMAGE_TYPES = setOf(
         "image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif", "image/bmp", "image/x-ms-bmp",

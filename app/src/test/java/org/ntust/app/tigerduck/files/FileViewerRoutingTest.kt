@@ -45,6 +45,16 @@ class FileViewerRoutingTest {
     }
 
     @Test
+    fun `a tar gz moodle sends as application g-zip opens in the archive viewer`() {
+        assertTrue(open("application/g-zip", "B00015999-code.tar.gz"))
+
+        val started = shadowOf(app).nextStartedActivity
+        assertEquals(FileViewerActivity::class.java.name, started.component?.className)
+        assertEquals(ViewerKind.ARCHIVE.name, started.getStringExtra(FileViewer.EXTRA_KIND))
+        assertEquals(0, elsewhere)
+    }
+
+    @Test
     fun `a file it doesn't show goes where it always went`() {
         assertTrue(open("application/msword", "B00015999-notes.doc"))
 

@@ -69,6 +69,21 @@ class FileViewingTest {
     }
 
     @Test
+    fun `gzip and tar under the names moodle, android and desktop systems give them open here`() {
+        // Moodle's own spelling for .tgz, .gz and .gzip (lib/classes/filetypes.php).
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/g-zip", "code.tar.gz"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/g-zip", "code.tgz"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/g-zip", "log.gz"))
+        // Debian's mime.types, which Android's own type map starts from, for .tgz.
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-gtar-compressed", "code.tgz"))
+        // shared-mime-info's names for bzip2 and a tar inside it.
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/bzip2", "data.bz2"))
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/x-bzip2-compressed-tar", "code.tar.bz2"))
+        // Moodle's .gzip, by name when the type says nothing.
+        assertEquals(InApp(ViewerKind.ARCHIVE), opening("application/octet-stream", "log.gzip"))
+    }
+
+    @Test
     fun `a word or powerpoint file sent as a zip opens as the document its name says`() {
         // Both are zips inside: a server that only sees that sends them as one.
         assertEquals(InApp(ViewerKind.DOCX), opening("application/zip", "report.docx"))

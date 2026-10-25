@@ -423,6 +423,10 @@ class MoodleLogicTest {
             MoodleFileKind.of("application/vnd.openxmlformats-officedocument.presentationml.presentation", "x"),
         )
         assertEquals(MoodleFileKind.SPREADSHEET, MoodleFileKind.of("document/unknown", "grades.XLSX"))
+        // Moodle's own type for .tgz and .gz, and Android's for .tgz: archives, whatever the name.
+        assertEquals(MoodleFileKind.ARCHIVE, MoodleFileKind.of("application/g-zip", "x"))
+        assertEquals(MoodleFileKind.ARCHIVE, MoodleFileKind.of("application/x-gtar-compressed", "x"))
+        assertEquals(MoodleFileKind.ARCHIVE, MoodleFileKind.of("document/unknown", "code.tar.xz"))
         assertEquals(MoodleFileKind.ARCHIVE, MoodleFileKind.of(null, "lab.zip"))
         assertEquals(MoodleFileKind.OTHER, MoodleFileKind.of("", "README"))
     }
