@@ -38,6 +38,7 @@
     <string name="action_clear_text">Tøm tekst</string>
     <string name="action_close">Lukk</string>
     <string name="action_confirm">Bekreft</string>
+    <string name="action_continue">Fortsett</string>
     <string name="action_done">Ferdig</string>
     <string name="action_go_to_settings">Gå til innstillinger</string>
     <string name="action_got_it">Forstått</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Gjeldende faner</string>
     <string name="tab_editor_title">Tilpass bunnavigasjonen</string>
     <string name="tag_server_notification">Servervarsling</string>
+    <string name="tls_certificate_fingerprint">SHA-256-fingeravtrykk</string>
+    <string name="tls_certificate_intermediate">Mellomliggende</string>
+    <string name="tls_certificate_issuer">Utsteder</string>
+    <string name="tls_certificate_list_title">Sertifikater</string>
+    <string name="tls_certificate_name">Navn</string>
+    <string name="tls_certificate_root">Rot</string>
+    <string name="tls_certificate_validity">Gyldighet</string>
+    <string name="tls_pin_mismatch_details">Sertifikatet til %1$@ er forskjellig fra det TigerDuck har registrert, men er utstedt av en pålitelig utsteder, så nettstedet kan ha fornyet det. Hvis du fortsetter, stoler TigerDuck på sertifikatet frem til neste oppdatering, for alle nettsteder under %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Utstedt av %@</string>
+    <string name="tls_pin_mismatch_message">Nettstedets sertifikat samsvarer ikke med det som er registrert, noe som påvirker sikkerheten til tilkoblingen. Vil du fortsette til nettstedet?</string>
+    <string name="tls_pin_mismatch_show_details">Detaljer</string>
+    <string name="tls_pin_mismatch_title">Sertifikatet er endret</string>
+    <string name="tls_pin_mismatch_view_certificate">Vis sertifikat</string>
     <string name="update_action_later">Senere</string>
     <string name="update_action_skip_version">Hopp over denne versjonen</string>
     <string name="update_action_update_now">Oppdater nå</string>

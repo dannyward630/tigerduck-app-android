@@ -38,6 +38,7 @@
     <string name="action_clear_text">Išvalyti tekstą</string>
     <string name="action_close">Uždaryti</string>
     <string name="action_confirm">Patvirtinti</string>
+    <string name="action_continue">Tęsti</string>
     <string name="action_done">Atlikta</string>
     <string name="action_go_to_settings">Eiti į nustatymus</string>
     <string name="action_got_it">Supratau</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Dabartiniai skirtukai</string>
     <string name="tab_editor_title">Tinkinti apatinę juostą</string>
     <string name="tag_server_notification">Serverio pranešimas</string>
+    <string name="tls_certificate_fingerprint">SHA-256 kontrolinis kodas</string>
+    <string name="tls_certificate_intermediate">Tarpinis</string>
+    <string name="tls_certificate_issuer">Išdavėjas</string>
+    <string name="tls_certificate_list_title">Sertifikatai</string>
+    <string name="tls_certificate_name">Pavadinimas</string>
+    <string name="tls_certificate_root">Šakninis</string>
+    <string name="tls_certificate_validity">Galiojimas</string>
+    <string name="tls_pin_mismatch_details">%1$@ sertifikatas skiriasi nuo TigerDuck įrašyto, bet jį išdavė patikima įstaiga, todėl svetainė galėjo jį atnaujinti. Jei tęsite, TigerDuck pasitikės šiuo sertifikatu iki kito naujinimo visose svetainėse, priklausančiose %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Išdavė: %@</string>
+    <string name="tls_pin_mismatch_message">Svetainės sertifikatas neatitinka įrašyto, todėl kyla pavojus ryšio saugai. Tęsti į šią svetainę?</string>
+    <string name="tls_pin_mismatch_show_details">Išsami informacija</string>
+    <string name="tls_pin_mismatch_title">Sertifikatas pasikeitė</string>
+    <string name="tls_pin_mismatch_view_certificate">Peržiūrėti sertifikatą</string>
     <string name="update_action_later">Vėliau</string>
     <string name="update_action_skip_version">Praleisti šią versiją</string>
     <string name="update_action_update_now">Atnaujinti dabar</string>

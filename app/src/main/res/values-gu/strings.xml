@@ -38,6 +38,7 @@
     <string name="action_clear_text">ટેક્સ્ટ સાફ કરો</string>
     <string name="action_close">બંધ કરો</string>
     <string name="action_confirm">પુષ્ટિ કરો</string>
+    <string name="action_continue">આગળ વધો</string>
     <string name="action_done">થઈ ગયું</string>
     <string name="action_go_to_settings">સેટિંગ્સ પર જાઓ</string>
     <string name="action_got_it">સમજ્યા</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">વર્તમાન ટૅબ</string>
     <string name="tab_editor_title">બૉટમ નૅવિગેશન કસ્ટમાઇઝ કરો</string>
     <string name="tag_server_notification">સર્વર સૂચના</string>
+    <string name="tls_certificate_fingerprint">SHA-256 ફિંગરપ્રિન્ટ</string>
+    <string name="tls_certificate_intermediate">મધ્યવર્તી</string>
+    <string name="tls_certificate_issuer">જારી કરનાર</string>
+    <string name="tls_certificate_list_title">પ્રમાણપત્રો</string>
+    <string name="tls_certificate_name">નામ</string>
+    <string name="tls_certificate_root">રૂટ</string>
+    <string name="tls_certificate_validity">માન્યતા</string>
+    <string name="tls_pin_mismatch_details">%1$@નું પ્રમાણપત્ર TigerDuck માં નોંધાયેલા પ્રમાણપત્રથી અલગ છે, પરંતુ તે વિશ્વસનીય સંસ્થા દ્વારા જારી કરાયું છે, તેથી વેબસાઇટે પ્રમાણપત્રનું નવીનીકરણ કર્યું હોઈ શકે. આગળ વધશો તો TigerDuck આગામી અપડેટ સુધી આ પ્રમાણપત્ર પર ભરોસો કરશે, %2$@ હેઠળની બધી સાઇટ માટે.</string>
+    <string name="tls_pin_mismatch_issuer">જારી કરનાર: %@</string>
+    <string name="tls_pin_mismatch_message">વેબસાઇટનું પ્રમાણપત્ર નોંધાયેલા પ્રમાણપત્ર સાથે મેળ ખાતું નથી, જેનાથી કનેક્શનની સુરક્ષા પર અસર પડે છે. શું આ વેબસાઇટ પર આગળ વધવું છે?</string>
+    <string name="tls_pin_mismatch_show_details">વિગતો</string>
+    <string name="tls_pin_mismatch_title">પ્રમાણપત્ર બદલાયું છે</string>
+    <string name="tls_pin_mismatch_view_certificate">પ્રમાણપત્ર જુઓ</string>
     <string name="update_action_later">પછી</string>
     <string name="update_action_skip_version">આ વર્ઝન છોડો</string>
     <string name="update_action_update_now">હમણાં અપડેટ કરો</string>

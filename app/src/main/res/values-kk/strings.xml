@@ -38,6 +38,7 @@
     <string name="action_clear_text">Мәтінді тазалау</string>
     <string name="action_close">Жабу</string>
     <string name="action_confirm">Растау</string>
+    <string name="action_continue">Жалғастыру</string>
     <string name="action_done">Дайын</string>
     <string name="action_go_to_settings">Параметрлерге өту</string>
     <string name="action_got_it">Түсінікті</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Ағымдағы қойындылар</string>
     <string name="tab_editor_title">Төменгі навигация жолағын реттеу</string>
     <string name="tag_server_notification">Сервер хабарландыруы</string>
+    <string name="tls_certificate_fingerprint">SHA-256 саусақ ізі</string>
+    <string name="tls_certificate_intermediate">Аралық</string>
+    <string name="tls_certificate_issuer">Беруші</string>
+    <string name="tls_certificate_list_title">Сертификаттар</string>
+    <string name="tls_certificate_name">Атауы</string>
+    <string name="tls_certificate_root">Түбірлік</string>
+    <string name="tls_certificate_validity">Жарамдылық мерзімі</string>
+    <string name="tls_pin_mismatch_details">%1$@ сертификаты TigerDuck жазып алғаннан өзгеше, бірақ оны сенімді орталық берген, сондықтан сайт сертификатын жаңартқан болуы мүмкін. Жалғастырсаңыз, TigerDuck келесі жаңартуға дейін бұл сертификатқа сенеді, %2$@ астындағы барлық сайттар үшін.</string>
+    <string name="tls_pin_mismatch_issuer">Берген: %@</string>
+    <string name="tls_pin_mismatch_message">Веб-сайттың сертификаты жазылғанмен сәйкес келмейді, бұл байланыстың қауіпсіздігіне әсер етеді. Осы веб-сайтқа өтуді жалғастыру керек пе?</string>
+    <string name="tls_pin_mismatch_show_details">Мәліметтер</string>
+    <string name="tls_pin_mismatch_title">Сертификат өзгерді</string>
+    <string name="tls_pin_mismatch_view_certificate">Сертификатты көру</string>
     <string name="update_action_later">Кейінірек</string>
     <string name="update_action_skip_version">Бұл нұсқаны өткізіп жіберу</string>
     <string name="update_action_update_now">Қазір жаңарту</string>

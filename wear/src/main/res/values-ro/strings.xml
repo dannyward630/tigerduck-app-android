@@ -38,6 +38,7 @@
     <string name="action_clear_text">Șterge textul</string>
     <string name="action_close">Închide</string>
     <string name="action_confirm">Confirmă</string>
+    <string name="action_continue">Continuă</string>
     <string name="action_done">Finalizat</string>
     <string name="action_go_to_settings">Mergi la setări</string>
     <string name="action_got_it">Înțeles</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">File curente</string>
     <string name="tab_editor_title">Personalizează bara inferioară</string>
     <string name="tag_server_notification">Notificare server</string>
+    <string name="tls_certificate_fingerprint">Amprentă SHA-256</string>
+    <string name="tls_certificate_intermediate">Intermediar</string>
+    <string name="tls_certificate_issuer">Emitent</string>
+    <string name="tls_certificate_list_title">Certificate</string>
+    <string name="tls_certificate_name">Nume</string>
+    <string name="tls_certificate_root">Rădăcină</string>
+    <string name="tls_certificate_validity">Valabilitate</string>
+    <string name="tls_pin_mismatch_details">Certificatul pentru %1$@ diferă de cel înregistrat de TigerDuck, dar a fost emis de o autoritate de încredere, așa că site-ul poate să-l fi reînnoit. Dacă continui, TigerDuck va avea încredere în acest certificat până la următoarea actualizare, pentru toate site-urile din %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Emis de %@</string>
+    <string name="tls_pin_mismatch_message">Certificatul site-ului nu se potrivește cu cel înregistrat, ceea ce afectează securitatea conexiunii. Continui către acest site?</string>
+    <string name="tls_pin_mismatch_show_details">Detalii</string>
+    <string name="tls_pin_mismatch_title">Certificat modificat</string>
+    <string name="tls_pin_mismatch_view_certificate">Vezi certificatul</string>
     <string name="update_action_later">Mai târziu</string>
     <string name="update_action_skip_version">Omiteți această versiune</string>
     <string name="update_action_update_now">Actualizați acum</string>

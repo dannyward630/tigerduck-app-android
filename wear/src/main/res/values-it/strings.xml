@@ -38,6 +38,7 @@
     <string name="action_clear_text">Cancella testo</string>
     <string name="action_close">Chiudi</string>
     <string name="action_confirm">Conferma</string>
+    <string name="action_continue">Continua</string>
     <string name="action_done">Fatto</string>
     <string name="action_go_to_settings">Vai alle impostazioni</string>
     <string name="action_got_it">Ho capito</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Schede attuali</string>
     <string name="tab_editor_title">Personalizza barra inferiore</string>
     <string name="tag_server_notification">Notifica del server</string>
+    <string name="tls_certificate_fingerprint">Impronta SHA-256</string>
+    <string name="tls_certificate_intermediate">Intermedio</string>
+    <string name="tls_certificate_issuer">Emittente</string>
+    <string name="tls_certificate_list_title">Certificati</string>
+    <string name="tls_certificate_name">Nome</string>
+    <string name="tls_certificate_root">Radice</string>
+    <string name="tls_certificate_validity">Validità</string>
+    <string name="tls_pin_mismatch_details">Il certificato di %1$@ è diverso da quello registrato da TigerDuck, ma è stato emesso da un\'autorità attendibile, quindi il sito web potrebbe averlo rinnovato. Se continui, TigerDuck si fiderà di questo certificato fino al prossimo aggiornamento, per tutti i siti sotto %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Emesso da %@</string>
+    <string name="tls_pin_mismatch_message">Il certificato del sito web non corrisponde a quello registrato, il che compromette la sicurezza della connessione. Continuare verso questo sito web?</string>
+    <string name="tls_pin_mismatch_show_details">Dettagli</string>
+    <string name="tls_pin_mismatch_title">Certificato modificato</string>
+    <string name="tls_pin_mismatch_view_certificate">Visualizza certificato</string>
     <string name="update_action_later">Più tardi</string>
     <string name="update_action_skip_version">Salta questa versione</string>
     <string name="update_action_update_now">Aggiorna ora</string>

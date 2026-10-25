@@ -38,6 +38,7 @@
     <string name="action_clear_text">Clear text</string>
     <string name="action_close">Close</string>
     <string name="action_confirm">Confirm</string>
+    <string name="action_continue">Continue</string>
     <string name="action_done">Done</string>
     <string name="action_go_to_settings">Go to settings</string>
     <string name="action_got_it">Got it</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Current tabs</string>
     <string name="tab_editor_title">Customise bottom bar</string>
     <string name="tag_server_notification">Server notification</string>
+    <string name="tls_certificate_fingerprint">SHA-256 fingerprint</string>
+    <string name="tls_certificate_intermediate">Intermediate</string>
+    <string name="tls_certificate_issuer">Issuer</string>
+    <string name="tls_certificate_list_title">Certificates</string>
+    <string name="tls_certificate_name">Name</string>
+    <string name="tls_certificate_root">Root</string>
+    <string name="tls_certificate_validity">Valid</string>
+    <string name="tls_pin_mismatch_details">%1$@\'s certificate differs from the one TigerDuck has on record, but a trusted authority still issued it, so the website may have renewed its certificate. If you continue, TigerDuck trusts this certificate until its next update, for every site under %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Issued by %@</string>
+    <string name="tls_pin_mismatch_message">The website\'s certificate doesn\'t match the one on record, which affects the security of the connection. Continue to this website?</string>
+    <string name="tls_pin_mismatch_show_details">Details</string>
+    <string name="tls_pin_mismatch_title">Certificate changed</string>
+    <string name="tls_pin_mismatch_view_certificate">View certificate</string>
     <string name="update_action_later">Later</string>
     <string name="update_action_skip_version">Skip this version</string>
     <string name="update_action_update_now">Update now</string>

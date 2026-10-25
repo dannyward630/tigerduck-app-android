@@ -38,6 +38,7 @@
     <string name="action_clear_text">Izbriši tekst</string>
     <string name="action_close">Zatvori</string>
     <string name="action_confirm">Potvrdi</string>
+    <string name="action_continue">Nastavi</string>
     <string name="action_done">Gotovo</string>
     <string name="action_go_to_settings">Idi na postavke</string>
     <string name="action_got_it">Razumijem</string>
@@ -1224,6 +1225,19 @@
     <string name="tab_editor_section_current_tabs">Trenutne kartice</string>
     <string name="tab_editor_title">Prilagodi donju traku</string>
     <string name="tag_server_notification">Obavijest poslužitelja</string>
+    <string name="tls_certificate_fingerprint">SHA-256 otisak</string>
+    <string name="tls_certificate_intermediate">Posredni</string>
+    <string name="tls_certificate_issuer">Izdavatelj</string>
+    <string name="tls_certificate_list_title">Certifikati</string>
+    <string name="tls_certificate_name">Naziv</string>
+    <string name="tls_certificate_root">Korijenski</string>
+    <string name="tls_certificate_validity">Valjanost</string>
+    <string name="tls_pin_mismatch_details">Certifikat za %1$@ razlikuje se od onoga koji TigerDuck ima zabilježen, ali ga je izdalo pouzdano tijelo, pa je web-mjesto možda obnovilo certifikat. Ako nastavite, TigerDuck će vjerovati ovom certifikatu do sljedećeg ažuriranja, za sva web-mjesta pod %2$@.</string>
+    <string name="tls_pin_mismatch_issuer">Izdao: %@</string>
+    <string name="tls_pin_mismatch_message">Certifikat web-mjesta ne podudara se sa zabilježenim, što utječe na sigurnost veze. Nastaviti na ovo web-mjesto?</string>
+    <string name="tls_pin_mismatch_show_details">Pojedinosti</string>
+    <string name="tls_pin_mismatch_title">Certifikat je promijenjen</string>
+    <string name="tls_pin_mismatch_view_certificate">Prikaži certifikat</string>
     <string name="update_action_later">Kasnije</string>
     <string name="update_action_skip_version">Preskoči ovu verziju</string>
     <string name="update_action_update_now">Ažuriraj sada</string>
