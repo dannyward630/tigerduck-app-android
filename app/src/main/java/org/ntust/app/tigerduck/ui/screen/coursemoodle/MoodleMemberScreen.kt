@@ -37,8 +37,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,6 +50,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,6 +59,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -66,6 +71,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.R
@@ -132,6 +139,29 @@ fun MoodleMemberScreen(
         lookup = store.ensureMember(memberId)
     }
     if (lookup == MoodleLookup.Missing) LaunchedEffect(Unit) { onBack() }
+    // Moodle's profile editor, opened from the pencil: the members are fetched again once it
+    // closes, and a failure says why, with Retry.
+    val resources = LocalResources.current
+    val retry = stringResource(R.string.action_retry)
+    val openedEditor = rememberRefetchAfterEditor(
+        refetch = current?.let { store ->
+            suspend {
+                fetchMembersUntilDone(
+                    fetch = {
+                        store.refreshMembers(joinRunning = false)
+                        store.members.state.value.failure
+                    },
+                    retry = { failure ->
+                        snackbar.showSnackbar(
+                            moodleErrorText(resources, failure),
+                            actionLabel = retry,
+                            duration = SnackbarDuration.Long,
+                        ) == SnackbarResult.ActionPerformed
+                    },
+                )
+            }
+        },
+    )
 
     Scaffold(
         topBar = {
@@ -169,7 +199,10 @@ fun MoodleMemberScreen(
                     },
                     // Moodle gives students no web service for the other profile fields.
                     onEditOnMoodle = if (ownPage) {
-                        { editOwnProfile(context) }
+                        {
+                            openedEditor()
+                            editOwnProfile(context)
+                        }
                     } else {
                         null
                     },
@@ -209,6 +242,52 @@ internal suspend fun openPickedPicture(
 ) {
     val picture = decode()
     if (picture != null) crop(picture) else unreadable()
+}
+
+/**
+ * Fetches the members again through [refetch] on the first return to the page after the returned
+ * function marks the editor open, as the pencil does when it opens Moodle's profile editor: the
+ * edit shows here, as on the iPhone (tigerduck-app#802, #806). No other return fetches. The mark
+ * is saved, so a page the system recreated meanwhile still fetches, once [refetch] is there: null
+ * until the course's store is. The store's fetch runs in its own scope, so leaving the page does
+ * not stop it.
+ */
+@Composable
+internal fun rememberRefetchAfterEditor(refetch: (suspend () -> Unit)?): () -> Unit {
+    var editing by rememberSaveable { mutableStateOf(false) }
+    // Returns from the editor, and the last one a fetch finished for.
+    var returns by rememberSaveable { mutableIntStateOf(0) }
+    var fetchedFor by rememberSaveable { mutableIntStateOf(0) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (editing) {
+            editing = false
+            returns++
+        }
+    }
+    val latest by rememberUpdatedState(refetch)
+    // A later return ends the wait for the earlier one's fetch, which may have read the profile
+    // before the later edit, and fetches behind it.
+    LaunchedEffect(returns, refetch != null) {
+        val fetch = latest
+        if (returns > fetchedFor && fetch != null) {
+            val fetching = returns
+            fetch()
+            // Marked once done: a page recreated meanwhile fetches, and reports a failure, again.
+            fetchedFor = fetching
+        }
+    }
+    return remember { { editing = true } }
+}
+
+/**
+ * Fetches through [fetch], which answers its failure or null, and again each time [retry] takes
+ * the failure back, as the snackbar's Retry does.
+ */
+internal suspend fun fetchMembersUntilDone(fetch: suspend () -> Throwable?, retry: suspend (Throwable) -> Boolean) {
+    while (true) {
+        val failure = fetch() ?: return
+        if (!retry(failure)) return
+    }
 }
 
 /** Whether [member]'s page is the signed-in student's own, by [ownId], their Moodle user; none without it. */
