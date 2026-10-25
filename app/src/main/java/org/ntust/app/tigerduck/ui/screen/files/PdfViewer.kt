@@ -1,0 +1,184 @@
+package org.ntust.app.tigerduck.ui.screen.files
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.pdf.PdfRenderer
+import android.net.Uri
+import android.os.ParcelFileDescriptor
+import android.util.LruCache
+import android.util.Size
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.files.PdfPages
+import java.io.Closeable
+
+/**
+ * A PDF, page after page down the screen, with the page at the top counted in a corner. Two
+ * fingers zoom and move it; one scrolls. Pages render on one background thread, as
+ * [PdfRenderer] allows, sharper than the screen so a pinch in stays crisp, and only so many are
+ * kept at once ([PdfDocument.cache]).
+ */
+@Composable
+internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
+    val context = LocalContext.current
+    var document by remember(uri) { mutableStateOf<PdfDocument?>(null) }
+    LaunchedEffect(uri) {
+        // A locked or broken file throws here: the screen says it can't show it.
+        document = runCatching { withContext(Dispatchers.IO) { PdfDocument.open(context, uri) } }
+            .getOrElse { onFailed(); null }
+    }
+    DisposableEffect(document) {
+        val open = document
+        onDispose { open?.close() }
+    }
+    val pdf = document ?: return Reading()
+    val zoom = remember(uri) { ZoomState() }
+    val list = rememberLazyListState()
+    val position by remember(pdf) { derivedStateOf { PdfPages.position(list.firstVisibleItemIndex, pdf.pageSizes.size) } }
+    BoxWithConstraints(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer)) {
+        val renderWidth = with(LocalDensity.current) { PdfPages.renderWidth(maxWidth.roundToPx()) }
+        Box(Modifier.fillMaxSize().zoomable(zoom, oneFingerPans = false)) {
+            LazyColumn(state = list, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(pdf.pageSizes.size) { index -> PdfPage(pdf, index, renderWidth) }
+            }
+        }
+        val pageText = stringResource(R.string.a11y_file_viewer_page, position.first, position.second)
+        Text(
+            "${position.first} / ${position.second}",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp)
+                .clip(RoundedCornerShape(50))
+                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .semantics { contentDescription = pageText },
+        )
+    }
+}
+
+@Composable
+private fun PdfPage(pdf: PdfDocument, index: Int, renderWidth: Int) {
+    val size = pdf.pageSizes[index]
+    var bitmap by remember(index, renderWidth) { mutableStateOf(pdf.cached(index, renderWidth)) }
+    LaunchedEffect(index, renderWidth) {
+        if (bitmap == null) bitmap = runCatching { pdf.render(index, renderWidth) }.getOrNull()
+    }
+    val ratio = size.width.toFloat().coerceAtLeast(1f) / size.height.toFloat().coerceAtLeast(1f)
+    Box(Modifier.fillMaxWidth().aspectRatio(ratio).background(androidx.compose.ui.graphics.Color.White)) {
+        bitmap?.let { Image(it.asImageBitmap(), contentDescription = null, contentScale = ContentScale.FillWidth, modifier = Modifier.fillMaxSize()) }
+    }
+}
+
+/** An open PDF: its pages' sizes in points, rendered on demand one at a time. */
+internal class PdfDocument private constructor(
+    private val descriptor: ParcelFileDescriptor,
+    private val renderer: PdfRenderer,
+    val pageSizes: List<Size>,
+) : Closeable {
+    private val lock = Mutex()
+    private var closed = false
+
+    /** Rendered pages, by page and width, up to an eighth of the app's memory or 96 MB. */
+    private val cache = object : LruCache<Pair<Int, Int>, Bitmap>(cacheBytes()) {
+        override fun sizeOf(key: Pair<Int, Int>, value: Bitmap) = value.byteCount
+    }
+
+    fun cached(index: Int, width: Int): Bitmap? = cache.get(index to width)
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun render(index: Int, width: Int): Bitmap? = withContext(RENDERING) {
+        lock.withLock {
+            if (closed) return@withLock null
+            cache.get(index to width)?.let { return@withLock it }
+            renderer.openPage(index).use { page ->
+                val height = PdfPages.displayHeight(page.width, page.height, width).coerceAtLeast(1)
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                bitmap.eraseColor(Color.WHITE)
+                page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                cache.put(index to width, bitmap)
+                bitmap
+            }
+        }
+    }
+
+    override fun close() {
+        // After any render in progress, on its thread, as PdfRenderer asks.
+        CoroutineScope(RENDERING).launch {
+            lock.withLock {
+                if (closed) return@withLock
+                closed = true
+                cache.evictAll()
+                runCatching { renderer.close() }
+                runCatching { descriptor.close() }
+            }
+        }
+    }
+
+    companion object {
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val RENDERING = Dispatchers.IO.limitedParallelism(1)
+
+        private fun cacheBytes(): Int =
+            minOf(Runtime.getRuntime().maxMemory() / 8, 96L * 1024 * 1024).toInt()
+
+        fun open(context: Context, uri: android.net.Uri): PdfDocument {
+            val descriptor = context.contentResolver.openFileDescriptor(uri, "r")
+                ?: throw java.io.FileNotFoundException("no descriptor")
+            try {
+                val renderer = PdfRenderer(descriptor)
+                try {
+                    val sizes = (0 until renderer.pageCount).map { i -> renderer.openPage(i).use { Size(it.width, it.height) } }
+                    return PdfDocument(descriptor, renderer, sizes)
+                } catch (e: Exception) {
+                    renderer.close()
+                    throw e
+                }
+            } catch (e: Exception) {
+                descriptor.close()
+                throw e
+            }
+        }
+    }
+}

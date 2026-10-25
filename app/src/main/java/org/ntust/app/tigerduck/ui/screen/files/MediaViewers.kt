@@ -1,0 +1,182 @@
+package org.ntust.app.tigerduck.ui.screen.files
+
+import android.graphics.ImageDecoder
+import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.widget.ImageView
+import androidx.annotation.OptIn
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import com.mikepenz.markdown.m3.Markdown
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.files.TextPreview
+import org.ntust.app.tigerduck.files.TextPreviews
+import org.ntust.app.tigerduck.ui.openLink
+
+/**
+ * A picture: decoded no larger than [MAX_IMAGE_SIDE] on its longer side, so a camera's photo
+ * fits in memory; an animated GIF or WebP plays. Pinch or double-tap to zoom, one finger moves.
+ */
+@Composable
+internal fun ImageViewer(uri: Uri, onFailed: () -> Unit) {
+    val context = LocalContext.current
+    var drawable by remember(uri) { mutableStateOf<Drawable?>(null) }
+    LaunchedEffect(uri) {
+        drawable = runCatching {
+            withContext(Dispatchers.IO) {
+                ImageDecoder.decodeDrawable(ImageDecoder.createSource(context.contentResolver, uri)) { decoder, info, _ ->
+                    val longest = maxOf(info.size.width, info.size.height)
+                    if (longest > MAX_IMAGE_SIDE) {
+                        val scale = MAX_IMAGE_SIDE.toFloat() / longest
+                        decoder.setTargetSize((info.size.width * scale).toInt().coerceAtLeast(1), (info.size.height * scale).toInt().coerceAtLeast(1))
+                    }
+                }
+            }
+        }.getOrElse { onFailed(); null }
+    }
+    val picture = drawable ?: return Reading()
+    val zoom = remember(uri) { ZoomState() }
+    DisposableEffect(picture) {
+        (picture as? AnimatedImageDrawable)?.start()
+        onDispose { (picture as? AnimatedImageDrawable)?.stop() }
+    }
+    Box(Modifier.fillMaxSize().background(Color.Black)) {
+        AndroidView(
+            factory = { ImageView(it).apply { scaleType = ImageView.ScaleType.FIT_CENTER } },
+            update = { it.setImageDrawable(picture) },
+            modifier = Modifier.fillMaxSize().zoomable(zoom, oneFingerPans = true),
+        )
+    }
+}
+
+private const val MAX_IMAGE_SIDE = 4096
+
+/**
+ * A video or a sound, in Media3's player with its own controls. Paused when the screen goes to the
+ * background, and released when it closes.
+ */
+@OptIn(UnstableApi::class)
+@Composable
+internal fun MediaViewer(uri: Uri, onFailed: () -> Unit) {
+    val context = LocalContext.current
+    val player = remember(uri) {
+        ExoPlayer.Builder(context).build().apply {
+            setMediaItem(MediaItem.fromUri(uri))
+            prepare()
+            playWhenReady = true
+        }
+    }
+    DisposableEffect(player) {
+        val failure = object : Player.Listener {
+            override fun onPlayerError(error: PlaybackException) = onFailed()
+        }
+        player.addListener(failure)
+        onDispose {
+            player.removeListener(failure)
+            player.release()
+        }
+    }
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, player) {
+        val pause = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) player.pause() }
+        lifecycle.addObserver(pause)
+        onDispose { lifecycle.removeObserver(pause) }
+    }
+    AndroidView(
+        factory = { PlayerView(it).apply { this.player = player } },
+        modifier = Modifier.fillMaxSize().background(Color.Black),
+    )
+}
+
+/**
+ * Text, line after line in a fixed-width face, or Markdown rendered; up to
+ * [TextPreviews.LIMIT_BYTES], with a line saying so when the file goes on. A Markdown link opens
+ * as the Browser setting says, as an announcement's does.
+ */
+@Composable
+internal fun TextViewer(uri: Uri, markdown: Boolean, browserPreference: String, onFailed: () -> Unit) {
+    val context = LocalContext.current
+    var preview by remember(uri) { mutableStateOf<TextPreview?>(null) }
+    LaunchedEffect(uri) {
+        preview = runCatching {
+            withContext(Dispatchers.IO) {
+                context.contentResolver.openInputStream(uri)?.use { TextPreviews.read(it) }
+                    ?: throw java.io.FileNotFoundException("no stream")
+            }
+        }.getOrElse { onFailed(); null }
+    }
+    val text = preview ?: return Reading()
+    val limit = android.text.format.Formatter.formatShortFileSize(context, TextPreviews.LIMIT_BYTES.toLong())
+    val truncated = if (text.truncated) stringResource(R.string.file_viewer_text_truncated, limit) else null
+    if (markdown) {
+        val handler = remember(context, browserPreference) {
+            object : UriHandler {
+                override fun openUri(uri: String) {
+                    openLink(context, uri, browserPreference)
+                }
+            }
+        }
+        CompositionLocalProvider(LocalUriHandler provides handler) {
+            LazyColumn(Modifier.fillMaxSize()) {
+                item { Box(Modifier.padding(16.dp)) { Markdown(content = text.text) } }
+                truncated?.let { item { TruncatedNote(it) } }
+            }
+        }
+    } else {
+        val lines = remember(text) { text.text.lines() }
+        SelectionContainer {
+            LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
+                items(lines) { line ->
+                    Text(line, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                }
+                truncated?.let { item { TruncatedNote(it) } }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TruncatedNote(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(16.dp),
+    )
+}

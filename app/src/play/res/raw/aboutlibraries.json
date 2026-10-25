@@ -2226,6 +2226,174 @@
             ]
         },
         {
+            "uniqueId": "androidx.media3:media3-common",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 common module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-container",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 Container module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-database",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 database module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-datasource",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 DataSource module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-decoder",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 decoder module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-exoplayer",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 ExoPlayer module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-extractor",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 Extractor module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.media3:media3-ui",
+            "artifactVersion": "1.11.1",
+            "name": "Media3 UI module",
+            "description": "",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
+            "scm": {
+                "connection": "scm:git:https://github.com/androidx/media.git",
+                "url": "https://github.com/androidx/media"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
             "uniqueId": "androidx.navigation:navigation-common",
             "artifactVersion": "2.10.2",
             "name": "Navigation Common",
@@ -2436,6 +2604,28 @@
             "organization": {
                 "name": "The Android Open Source Project"
             },
+            "scm": {
+                "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
+                "url": "https://cs.android.com/androidx/platform/frameworks/support"
+            },
+            "licenses": [
+                "Apache-2.0"
+            ],
+            "funding": [
+                
+            ]
+        },
+        {
+            "uniqueId": "androidx.recyclerview:recyclerview",
+            "artifactVersion": "1.3.0",
+            "name": "Support RecyclerView",
+            "description": "Android Support RecyclerView",
+            "website": "https://developer.android.com/jetpack/androidx/releases/recyclerview#1.3.0",
+            "developers": [
+                {
+                    "name": "The Android Open Source Project"
+                }
+            ],
             "scm": {
                 "connection": "scm:git:https://android.googlesource.com/platform/frameworks/support",
                 "url": "https://cs.android.com/androidx/platform/frameworks/support"
@@ -3721,9 +3911,9 @@
         },
         {
             "uniqueId": "com.google.guava:failureaccess",
-            "artifactVersion": "1.0.1",
+            "artifactVersion": "1.0.2",
             "name": "Guava InternalFutureFailureAccess and InternalFutures",
-            "description": "Contains\n    com.google.common.util.concurrent.internal.InternalFutureFailureAccess and\n    InternalFutures. Most users will never need to use this artifact. Its\n    classes is conceptually a part of Guava, but they're in this separate\n    artifact so that Android libraries can use them without pulling in all of\n    Guava (just as they can use ListenableFuture by depending on the\n    listenablefuture artifact).",
+            "description": "Contains\n    com.google.common.util.concurrent.internal.InternalFutureFailureAccess and\n    InternalFutures. Most users will never need to use this artifact. Its\n    classes are conceptually a part of Guava, but they're in this separate\n    artifact so that Android libraries can use them without pulling in all of\n    Guava (just as they can use ListenableFuture by depending on the\n    listenablefuture artifact).",
             "website": "https://github.com/google/guava/failureaccess",
             "developers": [
                 {
@@ -3745,7 +3935,7 @@
         },
         {
             "uniqueId": "com.google.guava:guava",
-            "artifactVersion": "31.1-android",
+            "artifactVersion": "33.3.1-android",
             "name": "Guava: Google Core Libraries for Java",
             "description": "Guava is a suite of core and expanded libraries that include\n    utility classes, Google's collections, I/O classes, and\n    much more.",
             "website": "https://github.com/google/guava",
@@ -3793,17 +3983,20 @@
         },
         {
             "uniqueId": "com.google.j2objc:j2objc-annotations",
-            "artifactVersion": "1.3",
+            "artifactVersion": "3.0.0",
             "name": "J2ObjC Annotations",
             "description": "A set of annotations that provide additional information to the J2ObjC\n    translator to modify the result of translation.",
             "website": "https://github.com/google/j2objc/",
             "developers": [
-                
+                {
+                    "name": "Tom Ball",
+                    "organisationUrl": "https://www.google.com"
+                }
             ],
             "scm": {
-                "connection": "scm:svn:http://svn.sonatype.org/spice/tags/oss-parent-7/j2objc-annotations",
-                "developerConnection": "scm:svn:https://svn.sonatype.org/spice/tags/oss-parent-7/j2objc-annotations",
-                "url": "http://svn.sonatype.org/spice/tags/oss-parent-7/j2objc-annotations"
+                "connection": "scm:git:git://github.com/google/j2objc.git",
+                "developerConnection": "scm:git:ssh://git@github.com/google/j2objc.git",
+                "url": "http://github.com/google/j2objc"
             },
             "licenses": [
                 "Apache-2.0"
@@ -4107,10 +4300,10 @@
         },
         {
             "uniqueId": "org.checkerframework:checker-qual",
-            "artifactVersion": "3.12.0",
+            "artifactVersion": "3.43.0",
             "name": "Checker Qual",
             "description": "checker-qual contains annotations (type qualifiers) that a programmer\nwrites to specify Java code for type-checking by the Checker Framework.",
-            "website": "https://checkerframework.org",
+            "website": "https://checkerframework.org/",
             "developers": [
                 {
                     "name": "Michael Ernst",
@@ -4122,7 +4315,7 @@
                 }
             ],
             "scm": {
-                "connection": "scm:git:git://github.com/typetools/checker-framework.git",
+                "connection": "scm:git:https://github.com/typetools/checker-framework.git",
                 "developerConnection": "scm:git:ssh://git@github.com/typetools/checker-framework.git",
                 "url": "https://github.com/typetools/checker-framework.git"
             },

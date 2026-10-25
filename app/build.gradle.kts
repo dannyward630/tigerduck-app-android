@@ -620,6 +620,9 @@ dependencies {
     implementation(libs.androidx.browser)
     // The TigerDuck browser clears everything a WebView keeps (WebStorageCompat.deleteBrowsingData).
     implementation(libs.androidx.webkit)
+    // The file viewer's video and sound.
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.appcompat)
 
     // Background work scheduling

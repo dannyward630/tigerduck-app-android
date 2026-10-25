@@ -1,0 +1,10 @@
+html, body { margin: 0; background: #e9e9ec; }
+.slide {
+  position: relative;
+  width: 960px;
+  height: 540px;
+  margin: 16px auto;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}

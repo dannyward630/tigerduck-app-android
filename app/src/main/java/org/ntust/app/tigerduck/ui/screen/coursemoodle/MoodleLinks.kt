@@ -22,6 +22,7 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.di.ApplicationScope
 import org.ntust.app.tigerduck.mail.resolveAttachmentMimeType
 import org.ntust.app.tigerduck.network.moodle.MoodleAutologin
+import org.ntust.app.tigerduck.files.FileViewer
 import org.ntust.app.tigerduck.network.moodle.SHARED_NOT_VIEWED_EXTENSIONS
 import org.ntust.app.tigerduck.network.moodle.MoodleWebservice
 import org.ntust.app.tigerduck.ui.AppProcessing
@@ -284,13 +285,22 @@ fun moodleFileIntent(
 }
 
 /**
- * Opens [file] as [moodleFileIntent] says, or with [share] in the share sheet whatever it is;
- * whether it went. A file the app cannot hand out, or a system with no chooser to take it, leaves
- * a warning in the log naming only the failure's class.
+ * Opens [file] in the app's own viewer when it can show it ([FileViewer]), otherwise as
+ * [moodleFileIntent] says; with [share] in the share sheet, whatever it is. Returns whether it
+ * went. A file the app cannot hand out, or a system with no chooser to take it, leaves a warning
+ * in the log naming only the failure's class.
  */
 fun launchMoodleFile(context: Context, file: File, mimeType: String, share: Boolean = false): Boolean = try {
-    context.startActivity(moodleFileIntent(context, file, mimeType, share = share))
-    true
+    val elsewhere = {
+        context.startActivity(moodleFileIntent(context, file, mimeType, share = share))
+        true
+    }
+    if (share) {
+        elsewhere()
+    } else {
+        val uri = FileProvider.getUriForFile(context, fileProviderAuthority(context), file)
+        FileViewer.open(context, uri, mimeType, file.name, elsewhere)
+    }
 } catch (e: RuntimeException) {
     Log.w(TAG, "attachment not opened: ${e.logSummary()}")
     false

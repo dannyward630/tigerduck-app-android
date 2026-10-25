@@ -13,6 +13,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.ui.screen.files.FileViewerActivity
 import org.ntust.app.tigerduck.util.forgetFileProviderRoots
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -113,7 +114,10 @@ class MoodleFileIntentTest {
         val viewer = object : ContextWrapper(context) {
             override fun startActivity(intent: Intent) { launched = intent }
         }
+        // A PDF shows in the app's own viewer; a file it doesn't show goes to the chooser as before.
         assertTrue(launchMoodleFile(viewer, file("moodle_files/a1/5/p90/s1/1/hw4.pdf"), "application/pdf"))
+        assertEquals(FileViewerActivity::class.java.name, launched!!.component?.className)
+        assertTrue(launchMoodleFile(viewer, file("moodle_files/a1/5/p90/s1/1/hw4.doc"), "application/msword"))
         assertEquals(Intent.ACTION_CHOOSER, launched!!.action)
 
         val cached = File(context.cacheDir, "TigerDuckCache/moodle/B1/courses/5/grades.json").apply {
