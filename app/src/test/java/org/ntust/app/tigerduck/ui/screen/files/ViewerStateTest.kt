@@ -27,6 +27,17 @@ class ViewerStateTest {
         assertTrue(zoom.offset.x.isFinite() && zoom.offset.y.isFinite())
     }
 
+    @Test
+    fun `a pinch that moves keeps what was under the fingers under them`() {
+        val zoom = ZoomState()
+        // The fingers were at 100, 100, spread to twice as far apart and moved 10 to the right.
+        zoom.change(2f, centroid = Offset(100f, 100f), pan = Offset(-10f, 0f), size = size)
+
+        // The point that was under them is drawn at 110, 100.
+        val point = Offset(100f, 100f)
+        assertEquals(Offset(110f, 100f), point * zoom.scale - zoom.offset)
+    }
+
     private class Resource : Closeable {
         var closed = 0
         override fun close() {

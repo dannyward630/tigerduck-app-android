@@ -28,7 +28,10 @@ internal class ZoomState {
     var offset by mutableStateOf(Offset.Zero)
         private set
 
-    /** Zooms by [zoom] about [centroid] and moves by [pan], kept within [size]'s edges. */
+    /**
+     * Zooms by [zoom] about [centroid], where the fingers were, and moves by [pan], the opposite
+     * of how far they went; kept within [size]'s edges.
+     */
     fun change(zoom: Float, centroid: Offset, pan: Offset, size: IntSize) {
         // A gesture's last event, with no finger left, has no centroid.
         if (!centroid.isSpecified || !centroid.x.isFinite() || !centroid.y.isFinite()) return
@@ -76,7 +79,8 @@ internal fun Modifier.zoomable(state: ZoomState, oneFingerPans: Boolean): Modifi
                 val pressed = event.changes.count { it.pressed }
                 val zooming = pressed >= 2
                 if (pressed > 0 && (zooming || (oneFingerPans && state.scale > ZoomState.MIN))) {
-                    state.change(event.calculateZoom(), event.calculateCentroid(useCurrent = true), -event.calculatePan(), size)
+                    // Where the fingers were: the move is applied on top of it.
+                    state.change(event.calculateZoom(), event.calculateCentroid(useCurrent = false), -event.calculatePan(), size)
                     event.changes.forEach { if (it.positionChanged()) it.consume() }
                 }
             } while (event.changes.any { it.pressed })

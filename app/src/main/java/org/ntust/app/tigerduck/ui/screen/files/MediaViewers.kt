@@ -208,7 +208,7 @@ internal fun TextViewer(uri: Uri, markdown: Boolean, browserPreference: String, 
             }
         }
     } else {
-        val lines = remember(text) { text.text.lines() }
+        val lines = remember(text) { TextPreviews.lines(text.text) }
         SelectionContainer {
             LazyColumn(Modifier.fillMaxSize().padding(horizontal = 12.dp)) {
                 items(lines) { line ->

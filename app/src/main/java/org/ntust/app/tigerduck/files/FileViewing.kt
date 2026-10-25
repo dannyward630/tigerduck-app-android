@@ -116,8 +116,8 @@ object TextPreviews {
         val bytes = if (truncated) buffer.copyOf(limitBytes) else buffer
         val text = when {
             bytes.startsWith(0xEF, 0xBB, 0xBF) -> utf8(bytes.copyOfRange(3, bytes.size), truncated)
-            bytes.startsWith(0xFF, 0xFE) -> String(evenLength(bytes.copyOfRange(2, bytes.size)), Charsets.UTF_16LE)
-            bytes.startsWith(0xFE, 0xFF) -> String(evenLength(bytes.copyOfRange(2, bytes.size)), Charsets.UTF_16BE)
+            bytes.startsWith(0xFF, 0xFE) -> utf16(bytes, Charsets.UTF_16LE, truncated)
+            bytes.startsWith(0xFE, 0xFF) -> utf16(bytes, Charsets.UTF_16BE, truncated)
             else -> strict(completeUtf8(bytes, truncated), Charsets.UTF_8)
                 ?: strict(bytes, BIG5)
                 // The limit may have kept only a Big5 character's first byte.
@@ -126,6 +126,13 @@ object TextPreviews {
         }
         return TextPreview(text, truncated)
     }
+
+    /** [text]'s lines, any longer than [maxLine] in pieces, so each lays out quickly. */
+    fun lines(text: String, maxLine: Int = MAX_LINE): List<String> =
+        text.lines().flatMap { line -> if (line.length <= maxLine) listOf(line) else line.chunked(maxLine) }
+
+    /** The longest line laid out as one: longer ones are shown in pieces. */
+    const val MAX_LINE = 2_000
 
     private val BIG5: Charset = Charset.forName("Big5")
 
@@ -159,7 +166,18 @@ object TextPreviews {
         return if (start + length > bytes.size) bytes.copyOf(start) else bytes
     }
 
-    private fun evenLength(bytes: ByteArray) = if (bytes.size % 2 == 0) bytes else bytes.copyOf(bytes.size - 1)
+    /** UTF-16 after its byte order mark, without a character the limit cut short. */
+    private fun utf16(bytes: ByteArray, charset: Charset, truncated: Boolean): String {
+        var units = bytes.copyOfRange(2, bytes.size).let { if (it.size % 2 == 0) it else it.copyOf(it.size - 1) }
+        if (truncated && units.size >= 2) {
+            // The last unit, read in the file's byte order: a character's first half on its own.
+            val (high, low) = if (charset == Charsets.UTF_16BE) units[units.size - 2] to units[units.size - 1]
+            else units[units.size - 1] to units[units.size - 2]
+            val unit = ((high.toInt() and 0xFF) shl 8) or (low.toInt() and 0xFF)
+            if (unit in 0xD800..0xDBFF) units = units.copyOf(units.size - 2)
+        }
+        return String(units, charset)
+    }
 
     private fun ByteArray.startsWith(vararg prefix: Int) =
         size >= prefix.size && prefix.indices.all { this[it].toInt() and 0xFF == prefix[it] }

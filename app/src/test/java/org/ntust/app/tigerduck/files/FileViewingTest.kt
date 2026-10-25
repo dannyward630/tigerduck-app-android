@@ -143,6 +143,22 @@ class FileViewingTest {
     }
 
     @Test
+    fun `utf-16 cut by the limit between a character's two halves leaves the half out`() {
+        // "a" then 🦆, two UTF-16 units: 6 bytes after the mark end between them.
+        for ((mark, charset) in listOf(byteArrayOf(0xFF.toByte(), 0xFE.toByte()) to Charsets.UTF_16LE, byteArrayOf(0xFE.toByte(), 0xFF.toByte()) to Charsets.UTF_16BE)) {
+            val bytes = mark + "ab🦆".toByteArray(charset)
+            assertEquals(TextPreview("ab", truncated = true), TextPreviews.read(ByteArrayInputStream(bytes), limitBytes = 8))
+        }
+    }
+
+    @Test
+    fun `a line too long to lay out at once is shown in pieces`() {
+        val minified = "x".repeat(5_000)
+        val lines = TextPreviews.lines("first\n$minified\nlast", maxLine = 2_000)
+        assertEquals(listOf("first", "x".repeat(2_000), "x".repeat(2_000), "x".repeat(1_000), "last"), lines)
+    }
+
+    @Test
     fun `the page shown is the one at the top, counted from one`() {
         assertEquals(1 to 12, PdfPages.position(firstVisible = 0, count = 12))
         assertEquals(12 to 12, PdfPages.position(firstVisible = 11, count = 12))

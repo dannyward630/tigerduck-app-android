@@ -85,7 +85,7 @@ internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
         val viewWidth = with(LocalDensity.current) { maxWidth.roundToPx() }
         Box(Modifier.fillMaxSize().zoomable(zoom, oneFingerPans = false)) {
             LazyColumn(state = list, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(pdf.pageSizes.size) { index -> PdfPage(pdf, index, viewWidth) }
+                items(pdf.pageSizes.size) { index -> PdfPage(pdf, index, viewWidth, onFailed) }
             }
         }
         val pageText = stringResource(R.string.a11y_file_viewer_page, position.first, position.second)
@@ -105,11 +105,19 @@ internal fun PdfViewer(uri: Uri, onFailed: () -> Unit) {
 }
 
 @Composable
-private fun PdfPage(pdf: PdfDocument, index: Int, viewWidth: Int) {
+private fun PdfPage(pdf: PdfDocument, index: Int, viewWidth: Int, onFailed: () -> Unit) {
     val size = pdf.pageSizes[index]
     var bitmap by remember(index, viewWidth) { mutableStateOf(pdf.cached(index, viewWidth)) }
     LaunchedEffect(index, viewWidth) {
-        if (bitmap == null) bitmap = runCatching { pdf.render(index, viewWidth) }.getOrNull()
+        if (bitmap != null) return@LaunchedEffect
+        try {
+            bitmap = pdf.render(index, viewWidth)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Throwable) {
+            // A page that can't be drawn would look blank: the screen says it can't show the file.
+            onFailed()
+        }
     }
     val ratio = size.width.toFloat().coerceAtLeast(1f) / size.height.toFloat().coerceAtLeast(1f)
     Box(Modifier.fillMaxWidth().aspectRatio(ratio).background(androidx.compose.ui.graphics.Color.White)) {
