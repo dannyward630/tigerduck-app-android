@@ -20,11 +20,12 @@ class WhatsNewFlow(
     companion object {
         /**
          * Materializes a [WhatsNewGate.Plan.Show] into the pages and summary
-         * it names.
+         * it names: its releases' pages oldest first, after any page that
+         * [leads the run][WhatsNewPage.leadsTheRun].
          *
          * [restoredPageIds] is the [pageIds] of a flow that was on screen
          * before a config-change recreation. When given, exactly those pages
-         * come back (in catalog order) and the "only if this applies" checks
+         * come back, in the same order as a fresh run, and the "only if this applies" checks
          * are skipped: an answer the user already gave can flip a check, and
          * re-filtering would shift every page after it under their thumb.
          *
@@ -44,7 +45,7 @@ class WhatsNewFlow(
                     restoredPageIds != null -> page.id in restoredPageIds
                     else -> page.isApplicable()
                 }
-            }
+            }.sortedByDescending { it.leadsTheRun }
             val summary = plan.summaryVersion?.let(summaries::get)
             if (pages.isEmpty() && summary == null) return null
             return WhatsNewFlow(pages, summary)

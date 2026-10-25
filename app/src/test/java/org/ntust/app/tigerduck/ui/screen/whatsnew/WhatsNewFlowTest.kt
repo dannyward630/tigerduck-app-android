@@ -3,6 +3,7 @@ package org.ntust.app.tigerduck.ui.screen.whatsnew
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
+import androidx.compose.material.icons.filled.Info
 import org.ntust.app.tigerduck.data.model.WhatsNewSummary
 import org.ntust.app.tigerduck.data.model.WhatsNewSummaryItem
 import org.ntust.app.tigerduck.update.WhatsNewGate.Plan
@@ -22,6 +23,28 @@ class WhatsNewFlowTest {
         title = "What's new",
         items = listOf(WhatsNewSummaryItem(title = "Row", body = null, icon = null)),
     )
+
+    @Test
+    fun `the page that leads a run comes first, though its release is not the oldest`() {
+        // Upgrading from before 2.3.0 shows 2.3.0's pages and 2.4.0's: where to see
+        // them again opens the whole run, not 2.4.0's part of it.
+        val leading = WhatsNewPage.Feature(
+            id = "where-again",
+            visual = WhatsNewVisual.Icon(androidx.compose.material.icons.Icons.Filled.Info),
+            title = WhatsNewText(en = "Again?", zhHant = "Again?"),
+            body = WhatsNewText(en = "In Settings.", zhHant = "In Settings."),
+            leadsTheRun = true,
+        )
+        val spanning = mapOf(28 to listOf(page("a"), page("b")), 30 to listOf(leading, page("c")))
+        val plan = Plan.Show(listOf(28, 30), summaryVersion = 30, replay = false)
+
+        assertEquals(listOf("where-again", "a", "b", "c"), WhatsNewFlow.from(plan, spanning, emptyMap())?.pageIds)
+        // And so after a recreation, which brings back the same pages.
+        assertEquals(
+            listOf("where-again", "a", "b", "c"),
+            WhatsNewFlow.from(plan, spanning, emptyMap(), restoredPageIds = listOf("a", "b", "where-again", "c"))?.pageIds,
+        )
+    }
 
     @Test
     fun `drops pages that do not apply after an upgrade`() {
