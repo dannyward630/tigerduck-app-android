@@ -34,7 +34,8 @@ import android.content.IntentFilter
 class PretendMissingAppsTest {
 
     private val context: Context get() = RuntimeEnvironment.getApplication()
-    private val own = "org.ntust.app.tigerduck"
+    // The running flavor's package: fdroid's has its own suffix, and its manifest takes the share links too.
+    private val own: String get() = context.packageName
 
     @Before
     fun start() {
