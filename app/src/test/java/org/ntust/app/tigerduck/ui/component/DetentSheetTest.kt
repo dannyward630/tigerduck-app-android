@@ -447,7 +447,8 @@ class DetentSheetTest {
         // Up and still to the eye. A sheet still easing in by fractions of a pixel would take the
         // tap for a grab of its own.
         composeRule.mainClock.advanceTimeBy(DetentSheetMotion.DURATION_MILLIS + 50L)
-        composeRule.onNodeWithTag(BUTTON).performClick()
+        // A finger's tap, spelled out: down and up through the sheet's own touch handling.
+        composeRule.onNodeWithTag(BUTTON).performTouchInput { click() }
         composeRule.mainClock.autoAdvance = true
         composeRule.waitForIdle()
         assertEquals(1, clicks)
