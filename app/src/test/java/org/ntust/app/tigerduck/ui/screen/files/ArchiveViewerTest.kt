@@ -14,6 +14,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -22,6 +23,7 @@ import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.files.FileViewer
 import org.ntust.app.tigerduck.files.ViewerKind
 import org.ntust.app.tigerduck.files.markedEncrypted
+import org.ntust.app.tigerduck.util.forgetFileProviderRoots
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
@@ -38,6 +40,10 @@ class ArchiveViewerTest {
 
     @get:Rule
     val temp = TemporaryFolder()
+
+    // The FileProvider keeps the roots it read first, under another test's data folder.
+    @Before
+    fun freshFileProvider() = forgetFileProviderRoots()
 
     private fun string(id: Int) = composeRule.activity.getString(id)
 
