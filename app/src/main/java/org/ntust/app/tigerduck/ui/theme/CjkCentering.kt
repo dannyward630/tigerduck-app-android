@@ -72,6 +72,9 @@ internal object CjkCentering {
 
         /** The middle of [text]'s ink, from the baseline: negative is above it. */
         fun inkMiddle(text: String, style: TextStyle): Float
+
+        /** Whether a font on the device draws [text]. */
+        fun draws(text: String, style: TextStyle): Boolean
     }
 
     /** A style's [BaselineShift]. */
@@ -86,6 +89,8 @@ internal object CjkCentering {
      * null to leave the style as it is.
      */
     fun correction(style: TextStyle, layout: LineLayout, glyphs: Glyphs): Correction? {
+        // No font draws it (or, under Robolectric's default graphics, nothing is measured for real).
+        if (!glyphs.draws(CJK_SAMPLE, style)) return null
         val low = cjkOffset(style, 0f, layout, glyphs)
         val most = low.roundToInt()
         if (most <= 0) return null
@@ -210,6 +215,12 @@ private class PaintGlyphs(
         paint(style).getTextBounds(text, 0, text.length, bounds)
         return (bounds.top + bounds.bottom) / 2f
     }
+
+    // Per character: for a longer string, hasGlyph asks for a single ligature glyph.
+    override fun draws(text: String, style: TextStyle): Boolean {
+        val paint = paint(style)
+        return text.codePoints().allMatch { paint.hasGlyph(String(Character.toChars(it))) }
+    }
 }
 
 /**
@@ -281,5 +292,6 @@ internal fun rememberCjkCenteredTypography(base: Typography, measuring: CjkMeasu
             .also { KeptCorrections.write(context, key, it) }
     }
     val current = corrections.value
-    return remember(base, current) { current?.let { CjkCentering.applied(base, it) } ?: base }
+    // Nothing to raise: the base itself, so nothing downstream sees a new typography.
+    return remember(base, current) { current?.takeIf { it.any { c -> c != null } }?.let { CjkCentering.applied(base, it) } ?: base }
 }

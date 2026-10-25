@@ -39,7 +39,10 @@ class CjkCenteringTest {
         val cjkAscent: Float = 55f,
         val cjkDescent: Float = 14f,
         val cjkInkBelowMiddle: Float = 2.5f,
+        val hasCjkFont: Boolean = true,
     ) : CjkCentering.LineLayout, CjkCentering.Glyphs {
+        override fun draws(text: String, style: TextStyle) = text != CjkCentering.CJK_SAMPLE || hasCjkFont
+
         /** The fonts' metrics above are at 18sp; another size scales them. */
         fun scale(style: TextStyle) = if (style.fontSize.isSpecified) style.fontSize.value / 18f else 1f
 
@@ -119,6 +122,13 @@ class CjkCenteringTest {
         val c = device.correction(style)
 
         assertTrue(abs(device.cjkLow(c)) <= abs(device.cjkLow(null)))
+    }
+
+    @Test
+    fun `with no font that draws cjk, the style is left as it is`() {
+        val device = Device(cjkKeepsItsHeight = true, hasCjkFont = false)
+
+        assertNull(device.correction(style))
     }
 
     @Test
