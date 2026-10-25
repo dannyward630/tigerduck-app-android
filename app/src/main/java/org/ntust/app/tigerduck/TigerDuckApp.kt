@@ -35,6 +35,7 @@ import org.ntust.app.tigerduck.push.FcmBootstrap
 import org.ntust.app.tigerduck.wear.WearScheduleBridge
 import org.ntust.app.tigerduck.widget.WidgetUpdater
 import javax.inject.Inject
+import org.ntust.app.tigerduck.debug.PretendMissingApps
 
 @HiltAndroidApp
 class TigerDuckApp : Application(), Configuration.Provider {
@@ -117,6 +118,8 @@ class TigerDuckApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        // Debug builds: the developer settings' "pretend an app is missing" switches.
+        PretendMissingApps.init(this)
         // First, before anything can read or write DataCache. BootReceiver and
         // BackgroundSyncWorker both run without an Activity, so leaving this
         // to AppState let WorkManager's persisted periodic sync fire on the
