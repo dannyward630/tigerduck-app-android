@@ -20,7 +20,8 @@ class WhatsNewFlow(
     companion object {
         /**
          * Materializes a [WhatsNewGate.Plan.Show] into the pages and summary
-         * it names.
+         * it names: its releases' pages oldest first, after any page that
+         * [leads the run][WhatsNewPage.leadsTheRun].
          *
          * [restoredPageIds] is the [pageIds] of a flow that was on screen
          * before a config-change recreation. When given, exactly those pages
@@ -44,7 +45,7 @@ class WhatsNewFlow(
                     restoredPageIds != null -> page.id in restoredPageIds
                     else -> page.isApplicable()
                 }
-            }
+            }.sortedByDescending { it.leadsTheRun }
             val summary = plan.summaryVersion?.let(summaries::get)
             if (pages.isEmpty() && summary == null) return null
             return WhatsNewFlow(pages, summary)

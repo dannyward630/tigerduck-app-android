@@ -45,6 +45,8 @@ import org.ntust.app.tigerduck.R
  */
 internal fun replayPage() = WhatsNewPage.Feature(
     id = "whats-new-replay",
+    // About the sheet, so it opens a run that also replays an older release's pages.
+    leadsTheRun = true,
     visual = WhatsNewVisual.Custom { animate -> ReplayDemo(animate) },
     title = WhatsNewText(
         en = "Want to see the new features page again?",
