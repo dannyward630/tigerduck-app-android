@@ -72,6 +72,7 @@ import kotlinx.coroutines.delay
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.shared.Course
+import org.ntust.app.tigerduck.ui.component.SheetContentScroll
 import org.ntust.app.tigerduck.ui.component.WholeWordsText
 import org.ntust.app.tigerduck.ui.haptics.HapticScenario
 import org.ntust.app.tigerduck.ui.haptics.Haptics
@@ -143,10 +144,12 @@ internal fun CourseDetailSheetPage(
     val store by moodleViewModel.store.collectAsStateWithLifecycle()
     var renaming by rememberSaveable { mutableStateOf(false) }
 
+    val sheetScroll = remember(scrollState) { SheetContentScroll(scrollState) }
     // Centred and held to a readable width on a tablet or in landscape.
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .then(sheetScroll.modifier)
             .verticalScroll(scrollState),
         contentAlignment = Alignment.TopCenter,
     ) {
