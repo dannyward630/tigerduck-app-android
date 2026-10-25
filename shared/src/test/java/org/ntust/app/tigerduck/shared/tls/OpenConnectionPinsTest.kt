@@ -30,7 +30,7 @@ class OpenConnectionPinsTest {
 
     /** A document that pins localhost to a key no certificate here has. */
     private val dropsThePin = PinDocument(
-        serial = 1,
+        serial = BuiltInPins.BASELINE_SERIAL + 1,
         issuedAt = now,
         expiresAt = now.plusSeconds(3600),
         sets = listOf(pinned.copy(pins = setOf(BOGUS))),

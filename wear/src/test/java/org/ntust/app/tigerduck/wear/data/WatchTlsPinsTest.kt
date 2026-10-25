@@ -12,6 +12,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.shared.tls.BuiltInPins
 import org.ntust.app.tigerduck.shared.tls.PinAcceptance
 import org.ntust.app.tigerduck.shared.tls.PinAcceptances
 import org.ntust.app.tigerduck.shared.tls.PinDocumentVerifier
@@ -77,7 +78,7 @@ class WatchTlsPinsTest {
 
     @Test
     fun `a forwarded envelope that verifies is taken, and kept`() {
-        pins().applyPush(envelope(2, pin(9)), acceptances = null, version = 1)
+        pins().applyPush(envelope(BuiltInPins.BASELINE_SERIAL + 2, pin(9)), acceptances = null, version = 1)
 
         assertEquals(setOf(pin(9)), libraryPins(pins()))
     }
@@ -86,7 +87,7 @@ class WatchTlsPinsTest {
     fun `an envelope that doesn't verify on the watch is ignored`() {
         val stranger = Ed25519KeyPairGenerator().run { init(Ed25519KeyGenerationParameters(SecureRandom())); generateKeyPair() }
 
-        pins().applyPush(envelope(2, pin(9), stranger.private as Ed25519PrivateKeyParameters), acceptances = null, version = 1)
+        pins().applyPush(envelope(BuiltInPins.BASELINE_SERIAL + 2, pin(9), stranger.private as Ed25519PrivateKeyParameters), acceptances = null, version = 1)
 
         assertNull(pins().state.policy.document)
     }
@@ -94,11 +95,11 @@ class WatchTlsPinsTest {
     @Test
     fun `an older envelope or an older push is dropped`() {
         val watch = pins()
-        watch.applyPush(envelope(5, pin(5)), null, version = 2)
-        watch.applyPush(envelope(4, pin(4)), null, version = 3)
+        watch.applyPush(envelope(BuiltInPins.BASELINE_SERIAL + 5, pin(5)), null, version = 2)
+        watch.applyPush(envelope(BuiltInPins.BASELINE_SERIAL + 4, pin(4)), null, version = 3)
         assertEquals(setOf(pin(5)), libraryPins(watch))
 
-        watch.applyPush(envelope(6, pin(6)), null, version = 2)
+        watch.applyPush(envelope(BuiltInPins.BASELINE_SERIAL + 6, pin(6)), null, version = 2)
         assertEquals(setOf(pin(5)), libraryPins(watch))
     }
 

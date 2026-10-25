@@ -42,8 +42,9 @@ class BuiltInPinsTest {
     }
 
     @Test
-    fun `until the first production document, any document wins over the table`() {
-        assertEquals(0L, BuiltInPins.BASELINE_SERIAL)
+    fun `the table's baseline is the first production document's serial, which it was copied from`() {
+        // :shared's ProductionPinDocumentTest checks that document against this table.
+        assertEquals(1_792_888_799L, BuiltInPins.BASELINE_SERIAL)
     }
 
     private fun certificates(resource: String): List<X509Certificate> =

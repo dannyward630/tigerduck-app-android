@@ -73,12 +73,15 @@ class PinManagerTest {
     /** A well-formed pin no certificate here has. */
     private fun fake(n: Int): String = java.util.Base64.getEncoder().encodeToString(ByteArray(32) { n.toByte() })
 
+    /** Serials above the built-in table's, so a document's sets are in force. */
+    private val base = BuiltInPins.BASELINE_SERIAL
+
     private fun document(serial: Long, vararg sets: PinSet, promptRoots: Set<String> = setOf(chain.root.certificate.spki)) =
         signer.envelope(serial, expiry, sets.toList(), promptRoots)
 
     @Test
     fun `a new document is taken, kept on disk and verified again on load`() {
-        val envelope = document(2, school(fake(1)))
+        val envelope = document(base + 2, school(fake(1)))
         served += envelope
         val pins = manager()
 
@@ -86,12 +89,12 @@ class PinManagerTest {
 
         assertArrayEquals(envelope, pins.envelope)
         assertArrayEquals(envelope, file.readBytes())
-        assertEquals(2L, manager().document?.serial)
+        assertEquals(base + 2, manager().document?.serial)
     }
 
     @Test
     fun `a document changed on disk counts as none`() {
-        served += document(2, school(fake(1)))
+        served += document(base + 2, school(fake(1)))
         manager().refresh()
         file.writeBytes(file.readBytes().also { it[it.size / 2] = (it[it.size / 2] + 1).toByte() })
 
@@ -100,36 +103,36 @@ class PinManagerTest {
 
     @Test
     fun `an older document, the same serial with other bytes, or an expired one is refused`() {
-        served += document(5, school(fake(1)))
+        served += document(base + 5, school(fake(1)))
         val pins = manager()
         pins.refresh()
 
-        served += document(4, school(fake(2)))
+        served += document(base + 4, school(fake(2)))
         assertFalse(pins.refresh())
-        served += signer.envelope(5, expiry.plusSeconds(60), listOf(school(fake(2))))
+        served += signer.envelope(base + 5, expiry.plusSeconds(60), listOf(school(fake(2))))
         assertFalse(pins.refresh())
-        served += signer.envelope(6, Instant.ofEpochMilli(now), listOf(school(fake(2))))
+        served += signer.envelope(base + 6, Instant.ofEpochMilli(now), listOf(school(fake(2))))
         assertFalse(pins.refresh())
-        assertEquals(5L, pins.document?.serial)
+        assertEquals(base + 5, pins.document?.serial)
     }
 
     @Test
     fun `a stored document past its expiry no longer applies, but still keeps an older serial out`() {
-        served += document(5, school(fake(1)))
+        served += document(base + 5, school(fake(1)))
         manager().refresh()
         now = expiry.plusSeconds(1).toEpochMilli()
         val later = manager()
 
-        assertEquals(5L, later.document?.serial)
+        assertEquals(base + 5, later.document?.serial)
         assertEquals(BuiltInPins.sets.single { it.id == "ntust" }.pins, later.state.policy.setFor("i.ntust.edu.tw", Instant.ofEpochMilli(now))?.pins)
-        served += signer.envelope(4, Instant.ofEpochMilli(now).plusSeconds(86_400), listOf(school(fake(2))))
+        served += signer.envelope(base + 4, Instant.ofEpochMilli(now).plusSeconds(86_400), listOf(school(fake(2))))
         assertFalse(later.refresh())
     }
 
     @Test
     fun `a newer document that allows the chain fixes a mismatch silently`() {
         val pins = manager()
-        served += document(2, school(chain.intermediate.certificate.spki))
+        served += document(base + 2, school(chain.intermediate.certificate.spki))
 
         assertTrue(pins.mayRetry(chain.mismatch()) { false })
         assertNull(pins.prompts.pending.value)
@@ -149,7 +152,7 @@ class PinManagerTest {
 
     @Test
     fun `a mismatch anchored in a listed public root queues a prompt`() {
-        served += document(2, school(fake(1)))
+        served += document(base + 2, school(fake(1)))
         val pins = manager()
         pins.refresh()
         served += null
@@ -161,7 +164,7 @@ class PinManagerTest {
 
     @Test
     fun `a root the document doesn't list gets no prompt`() {
-        served += document(2, school(fake(1)), promptRoots = setOf(PinTestChain(rootName = "Other Root").root.certificate.spki))
+        served += document(base + 2, school(fake(1)), promptRoots = setOf(PinTestChain(rootName = "Other Root").root.certificate.spki))
         val pins = manager()
         pins.refresh()
 
@@ -180,7 +183,7 @@ class PinManagerTest {
 
     @Test
     fun `Continue trusts the leaf and the intermediate, not the root, and the waiting request goes on`() {
-        served += document(2, school(fake(1)))
+        served += document(base + 2, school(fake(1)))
         val pins = manager()
         pins.refresh()
         served += null
@@ -198,7 +201,7 @@ class PinManagerTest {
 
     @Test
     fun `a call already given up doesn't wait for the student`() {
-        served += document(2, school(fake(1)))
+        served += document(base + 2, school(fake(1)))
         val pins = manager()
         pins.refresh()
         served += null
@@ -212,7 +215,7 @@ class PinManagerTest {
 
     @Test
     fun `Cancel stores nothing and the request stays failed`() {
-        served += document(2, school(fake(1)))
+        served += document(base + 2, school(fake(1)))
         val pins = manager()
         pins.refresh()
         served += null
@@ -227,7 +230,7 @@ class PinManagerTest {
 
     @Test
     fun `an acceptance from another build is gone after the update`() {
-        served += document(2, school(fake(1)))
+        served += document(base + 2, school(fake(1)))
         val pins = manager()
         pins.refresh()
         pins.prompts.queue(chain.mismatch())

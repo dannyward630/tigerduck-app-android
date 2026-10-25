@@ -71,10 +71,12 @@ class PinPolicyTest {
     }
 
     @Test
-    fun `with the shipped baseline, a first document of serial 1 wins over the built-in pins`() {
-        val rules = PinPolicy(builtIn, document = document(1, school.copy(pins = setOf(pin(9)))), appVersion = 30)
+    fun `with the shipped baseline, only a document newer than the one the table was copied from wins`() {
+        val newer = school.copy(pins = setOf(pin(9)))
+        fun shipped(serial: Long) = PinPolicy(builtIn, document = document(serial, newer), appVersion = 30)
 
-        assertEquals(setOf(pin(9)), rules.setFor("i.ntust.edu.tw", now)?.pins)
+        assertEquals(setOf(pin(1)), shipped(BuiltInPins.BASELINE_SERIAL).setFor("i.ntust.edu.tw", now)?.pins)
+        assertEquals(setOf(pin(9)), shipped(BuiltInPins.BASELINE_SERIAL + 1).setFor("i.ntust.edu.tw", now)?.pins)
     }
 
     @Test
