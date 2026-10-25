@@ -7,12 +7,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.LinearGradientShader
-import androidx.compose.ui.graphics.Shader
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
@@ -63,31 +59,6 @@ fun accentBrush(start: Color, gradient: WearAccentGradient?, bounds: Rect): Brus
         end = Offset(bounds.left + direction.endX * bounds.width, bounds.top + direction.endY * bounds.height),
     )
 }
-
-/**
- * What a title in the accent paints with: [start] alone, or the gradient from it
- * laid across the title's own box, whatever size it turns out to be, in
- * [gradient]'s direction. [adjust] is applied to the color and to every stop along
- * the gradient, not only its ends: two colors that each read on black can mix to
- * one that doesn't.
- */
-fun accentTitleBrush(start: Color, gradient: WearAccentGradient?, adjust: (Color) -> Color = { it }): Brush {
-    gradient ?: return SolidColor(adjust(start))
-    val stops = List(TITLE_GRADIENT_STOPS) { adjust(lerp(start, gradient.end, it / (TITLE_GRADIENT_STOPS - 1f))) }
-    return object : ShaderBrush() {
-        override fun createShader(size: Size): Shader {
-            val direction = gradient.direction
-            return LinearGradientShader(
-                from = Offset(direction.startX * size.width, direction.startY * size.height),
-                to = Offset(direction.endX * size.width, direction.endY * size.height),
-                colors = stops,
-            )
-        }
-    }
-}
-
-/** Enough stops that a gradient made readable at each stays readable between them. */
-private const val TITLE_GRADIENT_STOPS = 9
 
 /**
  * Wear's Material colors with the phone's [accent] as primary, as the iPhone
