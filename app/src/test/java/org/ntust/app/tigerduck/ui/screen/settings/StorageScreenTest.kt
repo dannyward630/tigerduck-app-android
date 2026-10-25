@@ -90,8 +90,9 @@ class StorageScreenTest {
             now = { System.currentTimeMillis() + 60 * 60 * 1000L },
             io = Dispatchers.Unconfined,
         )
+        val viewModel = StorageViewModel(storage, scope)
         composeRule.setContent {
-            MaterialTheme { StorageScreen(onBack = {}, viewModel = StorageViewModel(storage, scope)) }
+            MaterialTheme { StorageScreen(onBack = {}, viewModel = viewModel) }
         }
         composeRule.waitUntil { shows(size(8_770_000)) }
     }
