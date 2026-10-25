@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +67,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.R
@@ -132,6 +135,11 @@ fun MoodleMemberScreen(
         lookup = store.ensureMember(memberId)
     }
     if (lookup == MoodleLookup.Missing) LaunchedEffect(Unit) { onBack() }
+    // Moodle's profile editor, opened from the pencil: the members are fetched again once it closes.
+    var editingOnMoodle by rememberSaveable { mutableStateOf(false) }
+    RefetchWhenBackFromEditor(editingOnMoodle, done = { editingOnMoodle = false }) {
+        current?.refreshMembers(joinRunning = false)
+    }
 
     Scaffold(
         topBar = {
@@ -169,7 +177,10 @@ fun MoodleMemberScreen(
                     },
                     // Moodle gives students no web service for the other profile fields.
                     onEditOnMoodle = if (ownPage) {
-                        { editOwnProfile(context) }
+                        {
+                            editingOnMoodle = true
+                            editOwnProfile(context)
+                        }
                     } else {
                         null
                     },
@@ -209,6 +220,24 @@ internal suspend fun openPickedPicture(
 ) {
     val picture = decode()
     if (picture != null) crop(picture) else unreadable()
+}
+
+/**
+ * Fetches the members again on the first return to the page after [editing] went true, as the
+ * pencil sets it when it opens Moodle's profile editor, then clears it through [done]: the edit
+ * shows here, as on the iPhone (tigerduck-app#802, #806). No other return fetches. [refetch] waits
+ * for a fetch already running and fetches again, as one that read the profile before the edit
+ * cannot stand in for it.
+ */
+@Composable
+internal fun RefetchWhenBackFromEditor(editing: Boolean, done: () -> Unit, refetch: suspend () -> Unit) {
+    val scope = rememberCoroutineScope()
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        if (editing) {
+            done()
+            scope.launch { refetch() }
+        }
+    }
 }
 
 /** Whether [member]'s page is the signed-in student's own, by [ownId], their Moodle user; none without it. */
