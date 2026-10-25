@@ -30,7 +30,7 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CourseNameScale
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.data.preferences.DisplayScale
-import org.ntust.app.tigerduck.data.preferences.LibraryTabAddMigration
+import org.ntust.app.tigerduck.data.preferences.LibraryTabKeepMigration
 import org.ntust.app.tigerduck.data.preferences.effectiveCloudSyncEnabled
 import org.ntust.app.tigerduck.library.FlipToLibraryDefaultOffMigration
 import org.ntust.app.tigerduck.library.FlipToLibrarySetting
@@ -159,9 +159,9 @@ class AppState @Inject constructor(
         if (cleaned != saved) {
             prefs.configuredTabs = cleaned.ifEmpty { AppFeature.defaultTabs }
         }
-        // After the pin and the clean-up above, so a pre-2.3.0 bar the pin
-        // stores gets Library too, and a slot the clean-up frees counts.
-        LibraryTabAddMigration.runIfNeeded(prefs)
+        // After the pin above, so a pre-2.3.0 bar it stores stays as it is:
+        // What's New asks about Mail, then about Library.
+        LibraryTabKeepMigration.runIfNeeded(prefs)
         // Before flipToLibraryEnabled is read below, so the switch it may
         // store is the one this process starts with.
         FlipToLibraryDefaultOffMigration.runIfNeeded(prefs)

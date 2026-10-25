@@ -21,12 +21,12 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * [LibraryTabAddMigration] against the preferences an older build left behind:
+ * [LibraryTabKeepMigration] against the preferences an older build left behind:
  * the library opt-in switch, and a stored bottom bar or none.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class)
-class LibraryTabAddMigrationTest {
+class LibraryTabKeepMigrationTest {
 
     private lateinit var context: Context
     private lateinit var prefs: AppPreferences
@@ -45,72 +45,67 @@ class LibraryTabAddMigrationTest {
     }
 
     @Test
-    fun `a stored bar with room gets library left of more`() {
+    fun `an existing user's untouched bar keeps the bar it had, without library`() {
+        prefs.hasCompletedOnboarding = true
+
+        assertTrue(LibraryTabKeepMigration.runIfNeeded(prefs))
+        assertEquals(listOf(HOME, CLASS_TABLE, SCHOOL_MAIL), prefs.configuredTabs)
+        assertFalse(LIBRARY in prefs.configuredTabs)
+    }
+
+    @Test
+    fun `a new install's first launch stays unstored and follows the default, which has library`() {
+        assertFalse(LibraryTabKeepMigration.runIfNeeded(prefs))
+        assertFalse(prefs.hasStoredConfiguredTabs)
+        assertEquals(AppFeature.defaultTabs, prefs.configuredTabs)
+        assertTrue(LIBRARY in prefs.configuredTabs)
+    }
+
+    @Test
+    fun `a stored bar with room stays as it is, for What's New to ask about`() {
+        prefs.hasCompletedOnboarding = true
         prefs.configuredTabs = listOf(HOME, CLASS_TABLE, SCHOOL_MAIL)
 
-        assertTrue(LibraryTabAddMigration.runIfNeeded(prefs))
-        assertEquals(listOf(HOME, CLASS_TABLE, SCHOOL_MAIL, LIBRARY), prefs.configuredTabs)
+        assertFalse(LibraryTabKeepMigration.runIfNeeded(prefs))
+        assertEquals(listOf(HOME, CLASS_TABLE, SCHOOL_MAIL), prefs.configuredTabs)
     }
 
     @Test
     fun `a full bar stays as it is`() {
         val full = listOf(HOME, CLASS_TABLE, CALENDAR, SCORE)
+        prefs.hasCompletedOnboarding = true
         prefs.configuredTabs = full
 
-        assertFalse(LibraryTabAddMigration.runIfNeeded(prefs))
+        assertFalse(LibraryTabKeepMigration.runIfNeeded(prefs))
         assertEquals(full, prefs.configuredTabs)
     }
 
     @Test
     fun `a user who had the library on and took it off the bar keeps their bar`() {
         storeOptIn(true)
+        prefs.hasCompletedOnboarding = true
         prefs.configuredTabs = listOf(HOME, ANNOUNCEMENTS)
 
-        assertFalse(LibraryTabAddMigration.runIfNeeded(prefs))
+        assertFalse(LibraryTabKeepMigration.runIfNeeded(prefs))
         assertEquals(listOf(HOME, ANNOUNCEMENTS), prefs.configuredTabs)
-    }
-
-    @Test
-    fun `a user who turned the library off gets it like anyone else`() {
-        storeOptIn(false)
-        prefs.configuredTabs = listOf(HOME, CLASS_TABLE)
-
-        assertTrue(LibraryTabAddMigration.runIfNeeded(prefs))
-        assertEquals(listOf(HOME, CLASS_TABLE, LIBRARY), prefs.configuredTabs)
-    }
-
-    @Test
-    fun `an untouched bar stays unstored and follows the default, which has library`() {
-        assertFalse(LibraryTabAddMigration.runIfNeeded(prefs))
-        assertFalse(prefs.hasStoredConfiguredTabs)
-        assertTrue(LIBRARY in prefs.configuredTabs)
-        assertEquals(AppFeature.defaultTabs, prefs.configuredTabs)
-    }
-
-    @Test
-    fun `a bar that already has library is not touched`() {
-        prefs.configuredTabs = listOf(LIBRARY, HOME)
-
-        assertFalse(LibraryTabAddMigration.runIfNeeded(prefs))
-        assertEquals(listOf(LIBRARY, HOME), prefs.configuredTabs)
     }
 
     @Test
     fun `the opt-in switch is deleted`() {
         storeOptIn(true)
 
-        LibraryTabAddMigration.runIfNeeded(prefs)
+        LibraryTabKeepMigration.runIfNeeded(prefs)
 
         assertFalse(raw().contains("libraryFeatureEnabled"))
     }
 
     @Test
-    fun `it runs once, so a bar set up afterwards keeps library off`() {
-        prefs.configuredTabs = listOf(HOME, CLASS_TABLE)
-        LibraryTabAddMigration.runIfNeeded(prefs)
-        prefs.configuredTabs = listOf(HOME, CLASS_TABLE)
+    fun `it runs once, so a bar reset to the default afterwards gets library`() {
+        LibraryTabKeepMigration.runIfNeeded(prefs)
+        prefs.hasCompletedOnboarding = true
 
-        assertFalse(LibraryTabAddMigration.runIfNeeded(prefs))
-        assertEquals(listOf(HOME, CLASS_TABLE), prefs.configuredTabs)
+        assertFalse(LibraryTabKeepMigration.runIfNeeded(prefs))
+        assertFalse(prefs.hasStoredConfiguredTabs)
+        assertTrue(LIBRARY in prefs.configuredTabs)
     }
 }

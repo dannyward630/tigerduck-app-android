@@ -84,7 +84,7 @@ class FullResetTest {
 
         assertEquals(DataMigration.CURRENT_SCHEMA, prefs.dataSchemaVersion)
         assertTrue(prefs.previousDefaultTabsChecked)
-        assertTrue(prefs.libraryTabAddChecked)
+        assertTrue(prefs.libraryTabKeepChecked)
         assertTrue(prefs.flipToLibraryDefaultOffChecked)
     }
 }
