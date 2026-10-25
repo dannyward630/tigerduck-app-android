@@ -148,6 +148,12 @@ android {
             // which java.base does not export. Without this, any test pinned
             // to API 36 fails before its first line runs.
             all { it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED") }
+            // Every unit test runs in one JVM, and Gradle gives it 512 MB. The
+            // suite fills that: G1 runs out of room to copy into and stops for
+            // a full collection, which a 4-core CI runner takes long enough
+            // over for a Glance test's 10 s wait to run out (WidgetScaleTest).
+            // At 320 MB it runs out of memory; at 1 GB it never collects in full.
+            all { it.maxHeapSize = "1g" }
             // ReleaseLogRulesTest reads the R8 rules, which are no input of the
             // test task otherwise: a change to them alone would leave it UP-TO-DATE.
             all { it.inputs.file("proguard-rules.pro") }
