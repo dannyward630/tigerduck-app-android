@@ -4,6 +4,11 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.data.moodle.MoodleFileDownloads
 import org.ntust.app.tigerduck.mail.store.MailCache
@@ -29,6 +34,9 @@ import javax.inject.Singleton
  * counted: one may still be downloading, and another app may still be reading one it was handed
  * (a draft it was shared into, a viewer that opens it again). Nothing here follows a link out of
  * the folders it measures and deletes.
+ *
+ * [sizes] is shared by every page that shows them, and [refresh], [delete] and [deleteAll] take
+ * turns: a delete outlives the page it started on, and the page open when it ends shows it.
  */
 @Singleton
 class DownloadedFiles internal constructor(
@@ -55,6 +63,17 @@ class DownloadedFiles internal constructor(
         CLASS_TABLE_IMAGES,
     }
 
+    private val _sizes = MutableStateFlow<Map<Kind, Long>?>(null)
+
+    /** The last [refresh]'s sizes, or the sizes after the last delete; null until the first. */
+    val sizes: StateFlow<Map<Kind, Long>?> = _sizes.asStateFlow()
+
+    private val busy = Mutex()
+
+    suspend fun refresh() {
+        busy.withLock { _sizes.value = measure() }
+    }
+
     /** The bytes each kind takes, as far as deleting it would free them. Real IO: off the main thread. */
     suspend fun measure(): Map<Kind, Long> {
         val moodleBytes = moodle.measure()
@@ -68,19 +87,29 @@ class DownloadedFiles internal constructor(
     }
 
     /**
-     * Deletes [kind]'s files. Moodle's downloads on their way stop first, as a sign-out stops
-     * them; each file downloads again when it is next opened.
+     * Deletes [kind]'s files, then measures. Moodle's downloads on their way stop first, as a
+     * sign-out stops them; each file downloads again when it is next opened.
      */
     suspend fun delete(kind: Kind) {
+        busy.withLock {
+            remove(kind)
+            _sizes.value = measure()
+        }
+    }
+
+    suspend fun deleteAll() {
+        busy.withLock {
+            Kind.entries.forEach { remove(it) }
+            _sizes.value = measure()
+        }
+    }
+
+    private suspend fun remove(kind: Kind) {
         when (kind) {
             Kind.MOODLE_FILES -> moodle.clear()
             Kind.MAIL_ATTACHMENTS -> withContext(io) { settledAttachments().forEach(::delete) }
             Kind.CLASS_TABLE_IMAGES -> withContext(io) { settled(classTableImages()).forEach(::delete) }
         }
-    }
-
-    suspend fun deleteAll() {
-        Kind.entries.forEach { delete(it) }
     }
 
     /**

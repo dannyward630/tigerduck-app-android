@@ -17,6 +17,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.attribute.BasicFileAttributeView
+import java.nio.file.attribute.FileTime
 
 /**
  * Settings' "Downloaded files": what each kind of file the app downloaded takes, and deleting a
@@ -176,11 +179,16 @@ class DownloadedFilesTest {
         imagesRoot.mkdirs()
         val link = File(imagesRoot, "4f1c")
         Files.createSymbolicLink(link.toPath(), heldSend.parentFile!!.toPath())
+        // The link's own time, an hour before, so it is settled whatever the real clock says.
+        val anHourBefore = FileTime.fromMillis(now - 60 * 60 * 1000L)
+        Files.getFileAttributeView(link.toPath(), BasicFileAttributeView::class.java, LinkOption.NOFOLLOW_LINKS)
+            .setTimes(anHourBefore, null, null)
         val downloaded = downloaded(backgroundScope)
         assertEquals(0L, downloaded.measure()[Kind.CLASS_TABLE_IMAGES])
 
         downloaded.delete(Kind.CLASS_TABLE_IMAGES)
 
+        assertFalse(Files.exists(link.toPath(), LinkOption.NOFOLLOW_LINKS))
         assertTrue(heldSend.exists())
     }
 
