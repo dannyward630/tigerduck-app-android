@@ -173,6 +173,85 @@ class AccountStateInventoryTest {
     }
 
     @Test
+    fun `a key written in a block inside an editor's block without a row fails`() {
+        val problems = edited(
+            "AppPreferences.kt",
+            "    var hasCompletedOnboarding: Boolean",
+            "    fun keepLastViewedCourse(value: String?) {\n" +
+                "        prefs.edit().apply { if (value != null) { putString(\"lastViewedCourse\", value) } }.apply()\n" +
+                "    }\n\n" +
+                "    var hasCompletedOnboarding: Boolean",
+        ).problems()
+        assertTrue(problems.toString(), "tigerduck_prefs `lastViewedCourse` has no row in docs/account-state.md" in problems)
+    }
+
+    @Test
+    fun `a key written in an edit block of its own without a row fails`() {
+        val problems = edited(
+            "AppPreferences.kt",
+            "    var hasCompletedOnboarding: Boolean",
+            "    fun keepLastViewedCourse(value: String) {\n" +
+                "        prefs.edit(commit = true) { putString(\"lastViewedCourse\", value) }\n" +
+                "    }\n\n" +
+                "    var hasCompletedOnboarding: Boolean",
+        ).problems()
+        assertTrue(problems.toString(), "tigerduck_prefs `lastViewedCourse` has no row in docs/account-state.md" in problems)
+    }
+
+    @Test
+    fun `a key handed through a parameter is read where the parameter is passed`() {
+        val problems = edited(
+            "AppPreferences.kt",
+            "    var hasCompletedOnboarding: Boolean",
+            "    private fun keep(key: String, value: String) {\n" +
+                "        prefs.edit().putString(key, value).apply()\n" +
+                "    }\n\n" +
+                "    fun keepLastViewedCourse(value: String) = keep(\"lastViewedCourse\", value)\n\n" +
+                "    var hasCompletedOnboarding: Boolean",
+        ).problems()
+        assertTrue(problems.toString(), "tigerduck_prefs `lastViewedCourse` has no row in docs/account-state.md" in problems)
+    }
+
+    @Test
+    fun `a key handed through a parameter something unreadable is passed for fails`() {
+        val problems = edited(
+            "AppPreferences.kt",
+            "    var hasCompletedOnboarding: Boolean",
+            "    private fun keep(key: String, value: String) {\n" +
+                "        prefs.edit().putString(key, value).apply()\n" +
+                "    }\n\n" +
+                "    fun keepLastViewedCourse(value: String) = keep(courseKey(), value)\n\n" +
+                "    var hasCompletedOnboarding: Boolean",
+        ).problems()
+        assertTrue(problems.toString(), problems.any { "a key of tigerduck_prefs this cannot read: `key`" in it })
+    }
+
+    // A comment is no code: the removal it holds removes nothing.
+    @Test
+    fun `a credential whose removal is commented out fails`() {
+        val problems = edited(
+            "CredentialManager.kt",
+            "                .remove(\"library_password\")\n",
+            "                // .remove(\"library_password\")\n",
+        ).problems()
+        assertTrue(
+            problems.toString(),
+            "tigerduck_credentials `library_password`: `clearLibraryCredentials` in CredentialManager.kt does not clear it" in problems,
+        )
+    }
+
+    // A brace in a string is no block's: the body read is still the function's.
+    @Test
+    fun `a brace in a string leaves the clearer's body whole`() {
+        val problems = edited(
+            "AppPreferences.kt",
+            "    fun clearSsoTimestamp() {\n",
+            "    fun clearSsoTimestamp() {\n        android.util.Log.d(\"AppPreferences\", \"} {\")\n",
+        ).problems()
+        assertEquals(emptyList<String>(), problems)
+    }
+
+    @Test
     fun `a store opened under a name the check cannot read fails`() {
         val problems = edited(
             "BulletinReadStateStore.kt",

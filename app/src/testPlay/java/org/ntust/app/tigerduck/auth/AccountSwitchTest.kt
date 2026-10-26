@@ -22,6 +22,7 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -349,6 +350,10 @@ class AccountSwitchTest {
         )
         assertNotNull(imported.add(classmate, "Ming", emptyMap()))
         val bulletins = File(context.filesDir, "bulletins")
+        // Writes a process death cut short.
+        val importedUnfinished = File(ImportedClassTableStore.fileIn(context).path + ".tmp").apply { writeText("{}") }
+        File(bulletins, "summaries.json.tmp").writeText("[]")
+        File(bulletins, "fetched_at.tmp").writeText("1")
         assertTrue(filesUnder(bulletins).isNotEmpty())
 
         auth.logout()
@@ -372,6 +377,7 @@ class AccountSwitchTest {
         assertEquals(emptyList<String>(), filesUnder(dataCache.moodleDownloadsRoot()))
         assertEquals(emptyList<String>(), filesUnder(bulletins))
         assertEquals(emptyList<String>(), imported.load().people.map { it.nickname })
+        assertFalse(importedUnfinished.exists())
         assertEquals(othersBefore, credentialPrefs.all.filterKeys { it.startsWith("mail_") || it.startsWith("library_") })
     }
 

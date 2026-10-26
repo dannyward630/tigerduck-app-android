@@ -32,7 +32,8 @@ those `KEY_…`, `K_…` or `…_KEY`.
 
 - every key the rows give the school account, typed as its source reads it;
 - every file the rows give to DataCache, in the folder DataCache keeps it in;
-- a bulletin snapshot, an imported class table and the in-app browser's data.
+- a bulletin snapshot and an imported class table, each with a write cut short beside it, and
+  the in-app browser's data.
 
 It then signs that student out with the real `AuthService.logout()` and `AccountSessionEffects`.
 It signs a second student in through `AuthService.login()`, against hand-made school pages, and
@@ -56,8 +57,8 @@ Scopes:
 |---|---|
 | The school session's cookies, in memory | `NtustSessionManager.signOut()` in `AuthService.logout()` |
 | Answers shared between callers, in memory: the course list, Moodle's enrollments and assignments, the empty-classroom days | `CourseService.cancelSharedFetches()`, `MoodleService.cancelSharedFetches()` and `forgetEmptyClassroom` in `AuthService.logout()` |
-| Bulletin snapshots, `filesDir/bulletins/` | `BulletinCache.clear()` in `AuthService.logout()` |
-| Imported class tables, `noBackupFilesDir/imported_class_tables.json` | `ImportedClassTableStore.clearForSignOut()` in `AuthService.logout()`; another student's sign-in empties it too (`accountDidSignIn`) |
+| Bulletin snapshots, `filesDir/bulletins/`, and what a write a process death cut short left there | `BulletinCache.clear()` in `AuthService.logout()` |
+| Imported class tables, `noBackupFilesDir/imported_class_tables.json`, and the `.tmp` a write a process death cut short left beside it | `ImportedClassTableStore.clearForSignOut()` in `AuthService.logout()`; another student's sign-in empties it too (`accountDidSignIn`) |
 | A share link held for a sign-in, in memory | `HeldShareLink.drop()` in `AuthService.logout()` |
 | The demo account | `DemoAccount.exit()` in `AuthService.logout()` |
 | The in-app browser's WebView data, cookies, downloads and photo uploads (`cacheDir/browser_uploads/`) | `BrowserDataCleaner.clear()`, which `AccountSessionEffects` runs after each sign-out and sign-in; `BrowserCleanup` keeps it owed across a process death |
