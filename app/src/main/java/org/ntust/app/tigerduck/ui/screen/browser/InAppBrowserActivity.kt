@@ -188,6 +188,9 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /** The scheme the page was last told; see [tellPage]. */
     private var toldDark: Boolean? = null
+
+    /** Whether the WebView darkens a page told dark that has no dark style of its own; see [BrowserColors.allowDarkening]. */
+    private var darkensPages = false
     private var schemePokePending = false
 
     private lateinit var loads: BrowserLoads
@@ -426,6 +429,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             builtInZoomControls = true
             displayZoomControls = false
         }
+        darkensPages = runCatching { BrowserColors.allowDarkening(settings) }.getOrDefault(false)
         mobileUserAgent = settings.userAgentString
         val web = this
         CookieManager.getInstance().apply {
@@ -544,7 +548,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private fun probeTone() {
         val told = toldDark ?: false
         webView.evaluateJavascript(BrowserColors.TONE_PROBE) { result ->
-            runCatching { BrowserColors.pageTone(result, told) }.getOrNull()?.let { state.pageDark = it }
+            runCatching { BrowserColors.pageTone(result, told, darkened = darkensPages) }.getOrNull()?.let { state.pageDark = it }
         }
     }
 
