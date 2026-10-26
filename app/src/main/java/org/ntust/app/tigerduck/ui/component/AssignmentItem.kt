@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +47,13 @@ import kotlin.math.abs
 private val BadgeGreen = Color(0xFF34C759)
 private val BadgeOrange = Color(0xFFFF9500)
 private val BadgeRed = Color(0xFFFF3B30)
+
+/**
+ * The font scale, the app's own text size included, from which a row stacks:
+ * beside the title, the status and the due time squeeze it to a few letters a
+ * line, so they go under it, as iOS does at its accessibility text sizes.
+ */
+internal const val STACKED_ROW_FONT_SCALE = 1.5f
 
 @Composable
 fun AssignmentItem(
@@ -70,6 +80,18 @@ fun AssignmentItem(
         assignment.submittedAt,
         clockVersion,
     ) { assignment.status() }
+    val stacked = LocalDensity.current.fontScale >= STACKED_ROW_FONT_SCALE
+
+    @Composable
+    fun trailing(alignment: Alignment.Horizontal) = AssignmentTrailing(
+        assignment = assignment,
+        status = status,
+        showAbsoluteTime = showAbsoluteTime,
+        markedCompleted = markedCompleted,
+        isIgnored = isIgnored,
+        clockVersion = clockVersion,
+        alignment = alignment,
+    )
 
     Row(
         modifier = modifier
@@ -80,13 +102,15 @@ fun AssignmentItem(
             .let { base ->
                 if (onClick != null) base.clickable { onClick() } else base.semantics(mergeDescendants = true) {}
             }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            // As tall as its texts, so the bar can span them.
+            .then(if (stacked) Modifier.height(IntrinsicSize.Min) else Modifier),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
             modifier = Modifier
                 .width(4.dp)
-                .height(40.dp)
+                .then(if (stacked) Modifier.fillMaxHeight() else Modifier.height(40.dp))
                 .background(courseColor)
         )
 
@@ -103,18 +127,16 @@ fun AssignmentItem(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY)
             )
+            if (stacked) {
+                Spacer(Modifier.height(4.dp))
+                trailing(Alignment.Start)
+            }
         }
 
-        Spacer(Modifier.width(8.dp))
-
-        AssignmentTrailing(
-            assignment = assignment,
-            status = status,
-            showAbsoluteTime = showAbsoluteTime,
-            markedCompleted = markedCompleted,
-            isIgnored = isIgnored,
-            clockVersion = clockVersion,
-        )
+        if (!stacked) {
+            Spacer(Modifier.width(8.dp))
+            trailing(Alignment.End)
+        }
     }
 }
 
@@ -126,6 +148,7 @@ private fun AssignmentTrailing(
     markedCompleted: Boolean,
     isIgnored: Boolean,
     clockVersion: Long,
+    alignment: Alignment.Horizontal,
 ) {
     val moodleBadge = statusBadge(status)
     val markCompleteLabel = stringResource(R.string.assignment_mark_complete)
@@ -159,7 +182,7 @@ private fun AssignmentTrailing(
         else -> null
     }
 
-    Column(horizontalAlignment = Alignment.End) {
+    Column(horizontalAlignment = alignment) {
         val badges = listOfNotNull(
             secondaryBadge,
             moodleBadge,
@@ -167,7 +190,7 @@ private fun AssignmentTrailing(
             if (secondaryBadge?.first == markCompleteLabel) null else markedBadge,
         )
         if (badges.isNotEmpty()) {
-            Column(horizontalAlignment = Alignment.End) {
+            Column(horizontalAlignment = alignment) {
                 badges.forEach { (label, color) ->
                     Text(
                         text = label,
