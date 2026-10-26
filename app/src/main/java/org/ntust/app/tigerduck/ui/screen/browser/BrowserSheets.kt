@@ -437,8 +437,8 @@ internal fun BrowserMenuPage(
     Column(Modifier.fillMaxWidth()) {
         Box(aside) { PageHeader(state, onCertificate = onCertificate.takeIf { state.shownCertificate != null }) }
         Row(Modifier.fillMaxWidth().then(aside).padding(horizontal = 8.dp)) {
-            QuickAction(Icons.Filled.ContentCopy, stringResource(R.string.browser_copy), enabled = url != null, onClick = { act { url?.let(actions::copy) } }, modifier = Modifier.weight(1f))
-            QuickAction(Icons.Filled.Share, stringResource(R.string.browser_share), enabled = url != null, onClick = { act { url?.let(actions::share) } }, modifier = Modifier.weight(1f))
+            QuickAction(Icons.Filled.ContentCopy, stringResource(R.string.browser_copy_short), enabled = url != null, onClick = { act { url?.let(actions::copy) } }, modifier = Modifier.weight(1f))
+            QuickAction(Icons.Filled.Share, stringResource(R.string.browser_share_short), enabled = url != null, onClick = { act { url?.let(actions::share) } }, modifier = Modifier.weight(1f))
             QuickAction(Icons.AutoMirrored.Filled.OpenInNew, stringResource(R.string.browser_open_external_short), enabled = url != null, onClick = { act { url?.let(actions::openExternal) } }, modifier = Modifier.weight(1f))
             QuickAction(Icons.Filled.Refresh, stringResource(R.string.browser_reload), onClick = { act(actions::reload) }, modifier = Modifier.weight(1f))
         }
