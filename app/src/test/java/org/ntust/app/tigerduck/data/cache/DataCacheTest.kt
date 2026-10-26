@@ -122,6 +122,19 @@ class DataCacheTest {
         assertFalse(File(context.filesDir, "TigerDuckData/pending_course_ignores.json").exists())
     }
 
+    // A process death between a write's temporary file and its rename leaves that file beside
+    // the one it was to replace, holding the departing student's data.
+    @Test
+    fun `signing out deletes what a write cut short left behind`() = runTest {
+        val leftInCache = File(context.cacheDir, "TigerDuckCache/assignments.json.tmp").apply { writeText("[]") }
+        val leftInData = File(context.filesDir, "TigerDuckData/manual_courses_1141.json.tmp").apply { writeText("[]") }
+
+        cache.clearAllUserData()
+
+        assertFalse(leftInCache.exists())
+        assertFalse(leftInData.exists())
+    }
+
     @Test
     fun `a waiting change too damaged to send is left out`() = runTest {
         cache.savePendingCourseIgnores(
