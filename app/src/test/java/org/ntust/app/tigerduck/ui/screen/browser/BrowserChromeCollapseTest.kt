@@ -9,7 +9,7 @@ import org.junit.Test
 class BrowserChromeCollapseTest {
 
     private var clock = 0L
-    private val chrome = BrowserChromeCollapse(jitterPx = 4, topZonePx = 40, endZonePx = 96, growthPx = 81, now = { clock })
+    private val chrome = BrowserChromeCollapse(jitterPx = 4, topZonePx = 40, now = { clock })
 
     /** A long page, far from its end, 1080 px wide as laid out. */
     private fun scrolled(offset: Int, contentWidth: Int = 1_080) = chrome.scrolled(offset, leftBelow = 10_000, contentWidth = contentWidth)
@@ -67,33 +67,75 @@ class BrowserChromeCollapseTest {
         assertFalse(chrome.collapsed)
     }
 
+    /**
+     * A page [heightPx] tall, 1080 px wide, in a view 1000 px tall with the bars shown and 81 px
+     * taller with them put away, scrolled as the WebView scrolls it: when the view grows at the
+     * page's end, the WebView pulls the page up so it still fills the view, and tells that as a
+     * scroll of its own.
+     */
+    private inner class Page(private val heightPx: Int) {
+        var offset = 0
+            private set
+
+        /** How many times the bars have moved. */
+        var flips = 0
+            private set
+
+        private val end get() = maxOf(0, heightPx - 1_000 - if (chrome.collapsed) 81 else 0)
+
+        /** The student drags the page [dy] down, or up if negative; it stops at either end. */
+        fun drag(dy: Int) {
+            val to = (offset + dy).coerceIn(0, end)
+            if (to == offset) return
+            offset = to
+            tell()
+        }
+
+        private fun tell() {
+            val was = chrome.collapsed
+            chrome.scrolled(offset, leftBelow = end - offset, contentWidth = 1_080)
+            if (chrome.collapsed == was) return
+            flips++
+            chrome.resized()
+            if (offset > end) {
+                offset = end
+                tell()
+            }
+        }
+    }
+
     @Test
-    fun `near the end of the page the bars show`() {
-        chrome.scrolled(300, leftBelow = 1_000, contentWidth = 1_080)
-        chrome.scrolled(400, leftBelow = 900, contentWidth = 1_080)
+    fun `at the end of the page the bars stay away till a drag up`() {
+        val page = Page(heightPx = 3_000)
+        repeat(1_000) { page.drag(3) }
         assertTrue(chrome.collapsed)
-        chrome.scrolled(1_250, leftBelow = 50 - 81, contentWidth = 1_080)
+        assertEquals("put away once, and not brought back by the end", 1, page.flips)
+        page.drag(-10)
         assertFalse(chrome.collapsed)
     }
 
     @Test
-    fun `scrolling down to the end puts the bars away once and brings them back once, however the page resizes`() {
-        // A page 3000 px tall in a view 1000 px tall with the bars shown, scrolled down 3 px at a time;
-        // collapsed, the view is 81 px taller.
-        val range = 3_000
-        var offset = 0
-        var flips = 0
-        var was = chrome.collapsed
-        while (true) {
-            val extent = 1_000 + if (chrome.collapsed) 81 else 0
-            offset = minOf(offset + 3, range - extent)
-            chrome.scrolled(offset, leftBelow = range - extent - offset, contentWidth = 1_080)
-            if (chrome.collapsed != was) flips++
-            was = chrome.collapsed
-            if (range - extent - offset == 0 && !chrome.collapsed) break
-            if (flips > 10) break
-        }
-        assertEquals("down: collapsed once, then shown once at the end", 2, flips)
+    fun `bars put away at the end stay away, though putting them away pulls the page up`() {
+        val page = Page(heightPx = 3_000)
+        repeat(1_000) { page.drag(3) }
+        // A tap on the collapsed bar brings them back at the end; the view shrinks, and the page
+        // can scroll down again by the bars' room.
+        chrome.expand()
+        chrome.resized()
+        val flips = page.flips
+        repeat(100) { page.drag(3) }
+        assertTrue(chrome.collapsed)
+        assertEquals("put away once more, and left away", flips + 1, page.flips)
+    }
+
+    @Test
+    fun `a page the bars' room leaves too short to scroll keeps them away till a drag up`() {
+        // 100 px to scroll with the bars shown, 19 with them away.
+        val page = Page(heightPx = 1_100)
+        repeat(100) { page.drag(3) }
+        assertTrue(chrome.collapsed)
+        assertEquals(1, page.flips)
+        page.drag(-10)
         assertFalse(chrome.collapsed)
     }
 
@@ -180,10 +222,5 @@ class BrowserChromeCollapseTest {
         assertFalse(chrome.collapsed)
         scrolled(260)
         assertTrue(chrome.collapsed)
-    }
-
-    @Test
-    fun `the bars' growth is the top bar's loss, the bottom bar and its divider`() {
-        assertEquals(81, BrowserChromeCollapse.GROWTH_DP)
     }
 }

@@ -3,12 +3,13 @@ package org.ntust.app.tigerduck.ui.screen.browser
 /**
  * Hides the browser's bars while the page scrolls down and brings them back on a scroll up, as
  * the iPhone's browser does (`BrowserChromeCollapse`). A scroll counts once it has gone
- * [jitterPx] one way, however small its steps; at the top of the page ([topZonePx]) and near its
- * end ([endZonePx]) the bars show.
+ * [jitterPx] one way, however small its steps; at the top of the page ([topZonePx]) the bars
+ * show. Unlike the iPhone's, the end of the page does not bring them back: only a scroll up does.
  *
- * Collapsing makes the page [growthPx] taller, so it can scroll that much less: the end is
- * measured as with the bars shown, or the room the collapse gave would bring them back, and the
- * next scroll would put them away again. Offsets the page did not scroll to are no scroll: the
+ * Putting the bars away makes the view taller, and at the end of the page the WebView then pulls
+ * the page up so it still fills the view. That move leaves the page at its end, where a scroll up
+ * never leaves it, so it is no scroll: counted, it would bring the bars back, and the next scroll
+ * down would put them away again. Other offsets the page did not scroll to are no scroll either: the
  * first after a new page (where the WebView may put back a page's old place), after a zoom (the
  * page's laid-out width changed, which the WebView tells before `onScaleChanged`) and after a
  * resize ([resized]) only set where the next scroll counts from. The bars' own resize, for
@@ -19,8 +20,6 @@ package org.ntust.app.tigerduck.ui.screen.browser
 internal class BrowserChromeCollapse(
     private val jitterPx: Int,
     private val topZonePx: Int,
-    private val endZonePx: Int,
-    private val growthPx: Int,
     private val now: () -> Long = { System.nanoTime() / 1_000_000 },
 ) {
     var collapsed = false
@@ -55,8 +54,11 @@ internal class BrowserChromeCollapse(
         }
         val last = lastOffset
         lastOffset = offset
-        val atEnd = leftBelow + (if (collapsed) growthPx else 0) <= endZonePx
-        if (offset <= topZonePx || atEnd) {
+        if (last != null && offset < last && leftBelow <= 0) {
+            travel = 0
+            return
+        }
+        if (offset <= topZonePx) {
             collapsed = false
             travel = 0
             return
@@ -104,9 +106,6 @@ internal class BrowserChromeCollapse(
         const val JITTER_DP = 4
         const val TOP_ZONE_DP = 40
 
-        /** How near the end of the page counts as its end, in dp. */
-        const val END_ZONE_DP = 96
-
         /** The bars' heights, shown and collapsed, in dp. */
         const val TOP_BAR_DP = 56
         const val TOP_BAR_COLLAPSED_DP = 32
@@ -114,8 +113,5 @@ internal class BrowserChromeCollapse(
 
         /** How long the bars take to move, and the page with them, in ms. */
         const val SETTLE_MS = 700L
-
-        /** How much taller the page gets with the bars collapsed, in dp: the top bar's loss, the bottom bar and its divider. */
-        const val GROWTH_DP = TOP_BAR_DP - TOP_BAR_COLLAPSED_DP + BOTTOM_BAR_DP + 1
     }
 }

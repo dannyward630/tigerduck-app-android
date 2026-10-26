@@ -261,8 +261,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         chrome = BrowserChromeCollapse(
             jitterPx = (BrowserChromeCollapse.JITTER_DP * density).toInt(),
             topZonePx = (BrowserChromeCollapse.TOP_ZONE_DP * density).toInt(),
-            endZonePx = (BrowserChromeCollapse.END_ZONE_DP * density).toInt(),
-            growthPx = (BrowserChromeCollapse.GROWTH_DP * density).toInt(),
         )
         signInFlow = BrowserSignInFlow(
             state, loads, signIns, lifecycleScope,
