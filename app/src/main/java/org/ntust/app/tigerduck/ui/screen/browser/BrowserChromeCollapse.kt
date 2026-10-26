@@ -10,20 +10,23 @@ package org.ntust.app.tigerduck.ui.screen.browser
  * included: the page also moves by itself, as when it lays out again while the bars move and the
  * WebView keeps its place, and such a move, either way, must not move the bars.
  *
- * Putting the bars away makes the view taller, and at the end of the page the WebView then pulls
- * the page up so it still fills the view. That move leaves the page at its end, where a scroll up
- * never leaves it, so it is no scroll: counted, it would bring the bars back, and the next scroll
- * down would put them away again. Other offsets the page did not scroll to are no scroll either: the
- * first after a new page (where the WebView may put back a page's old place), after a zoom (the
- * page's laid-out width changed, which the WebView tells before `onScaleChanged`) and after a
- * resize ([resized]) only set where the next scroll counts from. The bars' own resize, for
- * [SETTLE_MS] after they move by [now], moves no offset, so a scroll made meanwhile counts. For
- * [SETTLE_MS] after the keyboard comes or goes ([keyboardMoved]) no offset is a scroll, whatever
- * else moved: the WebView scrolls the field being typed in into view as the page shrinks.
+ * Putting the bars away makes the page [growthPx] taller on screen, so it can scroll that much
+ * less. A page that would then have no room to scroll past the top of the page keeps its bars:
+ * once they were away, nothing would be left to scroll up with to bring them back.
+ *
+ * Offsets the page did not scroll to are no scroll either: the first after a new page (where the
+ * WebView may put back a page's old place), after a zoom (the page's laid-out width changed, which
+ * the WebView tells before `onScaleChanged`) and after a resize ([resized]) only set where the next
+ * scroll counts from. A resize in the [SETTLE_MS] after the bars move (by [now]) is theirs and
+ * sets nothing back, so a scroll made meanwhile counts; what the page moves by itself then goes
+ * against the drag and is left out. For [SETTLE_MS] after the keyboard comes or goes
+ * ([keyboardMoved]) no offset is a scroll, whatever else moved: the WebView scrolls the field
+ * being typed in into view as the page shrinks.
  */
 internal class BrowserChromeCollapse(
     private val jitterPx: Int,
     private val topZonePx: Int,
+    private val growthPx: Int,
     private val now: () -> Long = { System.nanoTime() / 1_000_000 },
 ) {
     var collapsed = false
@@ -61,10 +64,6 @@ internal class BrowserChromeCollapse(
         }
         val last = lastOffset
         lastOffset = offset
-        if (last != null && offset < last && leftBelow <= 0) {
-            travel = 0
-            return
-        }
         if (offset <= topZonePx) {
             collapsed = false
             travel = 0
@@ -77,7 +76,11 @@ internal class BrowserChromeCollapse(
         val delta = offset - (last ?: return)
         if (delta == 0 || (delta > 0) != dragDown) return
         travel = if (travel == 0 || (delta > 0) == (travel > 0)) travel + delta else delta
-        if (travel > jitterPx) collapsed = true else if (travel < -jitterPx) collapsed = false
+        if (travel > jitterPx) {
+            if (!collapsed && offset + leftBelow - growthPx > topZonePx) collapsed = true
+        } else if (travel < -jitterPx) {
+            collapsed = false
+        }
     }
 
     /** The student's finger moved the page: [down] toward its end, or else toward its top. */
@@ -122,6 +125,9 @@ internal class BrowserChromeCollapse(
         const val TOP_BAR_DP = 56
         const val TOP_BAR_COLLAPSED_DP = 32
         const val BOTTOM_BAR_DP = 56
+
+        /** How much taller the page gets with the bars collapsed, in dp: the top bar's loss, the bottom bar and its divider. */
+        const val GROWTH_DP = TOP_BAR_DP - TOP_BAR_COLLAPSED_DP + BOTTOM_BAR_DP + 1
 
         /** How long the bars take to move, and the page with them, in ms. */
         const val SETTLE_MS = 700L

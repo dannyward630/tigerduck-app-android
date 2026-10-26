@@ -9,7 +9,7 @@ import org.junit.Test
 class BrowserChromeCollapseTest {
 
     private var clock = 0L
-    private val chrome = BrowserChromeCollapse(jitterPx = 4, topZonePx = 40, now = { clock })
+    private val chrome = BrowserChromeCollapse(jitterPx = 4, topZonePx = 40, growthPx = 81, now = { clock })
 
     /** Where [scrolled] last dragged the page to. */
     private var dragged = 0
@@ -112,7 +112,7 @@ class BrowserChromeCollapseTest {
      * page's end, the WebView pulls the page up so it still fills the view, and tells that as a
      * scroll of its own.
      */
-    private inner class Page(private val heightPx: Int) {
+    private inner class Page(private val heightPx: Int, private val chrome: BrowserChromeCollapse = this@BrowserChromeCollapseTest.chrome) {
         var offset = 0
             private set
 
@@ -169,14 +169,18 @@ class BrowserChromeCollapseTest {
     }
 
     @Test
-    fun `a page the bars' room leaves too short to scroll keeps them away till a drag up`() {
-        // 100 px to scroll with the bars shown, 19 with them away.
-        val page = Page(heightPx = 1_100)
+    fun `a page too short to scroll past the top with the bars away keeps them`() {
+        // 80, 100 and 121 px to scroll with the bars shown: none, 19 and 40 with them away.
+        for (height in listOf(1_080, 1_100, 1_121)) {
+            val chrome = BrowserChromeCollapse(jitterPx = 4, topZonePx = 40, growthPx = 81, now = { clock })
+            val page = Page(heightPx = height, chrome = chrome)
+            repeat(100) { page.drag(3) }
+            assertFalse("$height px tall", chrome.collapsed)
+        }
+        // 41 px to scroll with them away: past the top.
+        val page = Page(heightPx = 1_122)
         repeat(100) { page.drag(3) }
         assertTrue(chrome.collapsed)
-        assertEquals(1, page.flips)
-        page.drag(-10)
-        assertFalse(chrome.collapsed)
     }
 
     @Test
@@ -252,6 +256,11 @@ class BrowserChromeCollapseTest {
         scrolled(570)
         scrolled(580)
         assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `the bars' growth is the top bar's loss, the bottom bar and its divider`() {
+        assertEquals(81, BrowserChromeCollapse.GROWTH_DP)
     }
 
     @Test

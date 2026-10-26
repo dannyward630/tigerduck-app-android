@@ -105,7 +105,6 @@ import org.ntust.app.tigerduck.util.fileProviderAuthority
 import java.io.ByteArrayInputStream
 import java.io.File
 import javax.inject.Inject
-import kotlin.math.abs
 import org.ntust.app.tigerduck.debug.PretendMissingApps
 
 /**
@@ -264,6 +263,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         chrome = BrowserChromeCollapse(
             jitterPx = (BrowserChromeCollapse.JITTER_DP * density).toInt(),
             topZonePx = (BrowserChromeCollapse.TOP_ZONE_DP * density).toInt(),
+            growthPx = (BrowserChromeCollapse.GROWTH_DP * density).toInt(),
         )
         signInFlow = BrowserSignInFlow(
             state, loads, signIns, lifecycleScope,
@@ -963,10 +963,10 @@ class InAppBrowserActivity : AppCompatActivity() {
         val scrollLeftBelow: Int get() = computeVerticalScrollRange() - computeVerticalScrollExtent() - computeVerticalScrollOffset()
         val contentWidth: Int get() = computeHorizontalScrollRange()
 
-        private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
-
-        /** Where one finger was when its last move was told; null with no finger, or with two. */
-        private var touchY: Float? = null
+        private val drags = BrowserDragTracker(
+            touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+            dragged = { down -> chrome.dragged(down) },
+        )
 
         override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
             super.onSizeChanged(w, h, ow, oh)
@@ -977,16 +977,10 @@ class InAppBrowserActivity : AppCompatActivity() {
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouchEvent(event: MotionEvent): Boolean {
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> touchY = event.y
-                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> touchY = null
-                MotionEvent.ACTION_MOVE -> touchY?.let { from ->
-                    // A finger going up moves the page down.
-                    val dy = from - event.y
-                    if (abs(dy) >= touchSlop) {
-                        chrome.dragged(down = dy > 0)
-                        touchY = event.y
-                    }
-                }
+                MotionEvent.ACTION_DOWN -> drags.down(event.focalScreenY())
+                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> drags.pointersChanged(event.focalScreenY())
+                MotionEvent.ACTION_MOVE -> drags.moved(event.focalScreenY())
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> drags.up()
             }
             return super.onTouchEvent(event)
         }
