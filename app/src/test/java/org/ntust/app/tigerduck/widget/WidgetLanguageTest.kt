@@ -45,10 +45,12 @@ import java.time.ZonedDateTime
 /**
  * The widgets in the app's own language: redrawn when it changes, and drawn
  * in it below API 33, where an in-app language reaches Activities only. The
- * phone here is set to Traditional Chinese and the app to English.
+ * phone here is set to Traditional Chinese and the app to English. Nothing
+ * here sets the app's locales, so the application's context is the phone's on
+ * the default SDK too, as below 33, and the monitor is told the level itself.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.R], qualifiers = "zh-rTW")
+@Config(application = Application::class, qualifiers = "zh-rTW")
 class WidgetLanguageTest {
 
     private val app: Application = RuntimeEnvironment.getApplication()

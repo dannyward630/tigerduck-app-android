@@ -3,7 +3,6 @@ package org.ntust.app.tigerduck.ui.screen.mail
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -16,7 +15,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class AttachmentShareIntentTest {
 
     @Before

@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.ui.component
 
 import android.app.Application
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.getValue
@@ -21,7 +20,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class SearchClearButtonTest {
     @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 

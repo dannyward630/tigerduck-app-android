@@ -86,7 +86,6 @@ class TigerDuckAppThemeTest {
         assertEquals(VisualPreset.TigerDuck, seen?.preset)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `the wallpaper's colors leave the picked style in place`() {
         var seen: VisualStylePolicy? = null
@@ -104,7 +103,6 @@ class TigerDuckAppThemeTest {
         assertEquals(orange, scheme(darkTheme = false, useDynamicColor = false).primary)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `the wallpaper's light colors take the accent's roles and leave TigerDuck's surfaces`() {
         val seen = scheme(darkTheme = false, useDynamicColor = true)
@@ -121,7 +119,6 @@ class TigerDuckAppThemeTest {
         assertEquals(LightColorScheme.background, seen.background)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `in dark mode text on the wallpaper's primary takes its paired color, which reads`() {
         val seen = scheme(darkTheme = true, useDynamicColor = true)
@@ -139,7 +136,6 @@ class TigerDuckAppThemeTest {
         assertEquals(DarkColorScheme.background, seen.background)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `a dark theme inside a light one, as the import page's, draws the wallpaper's dark colors`() {
         var inner: ColorScheme? = null
@@ -173,7 +169,6 @@ class TigerDuckAppThemeTest {
         assertEquals(orange, inner?.primary)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `a switch's thumb on the wallpaper's dark primary takes its paired color`() {
         TigerDuckTheme.setDarkMode(true)
@@ -248,7 +243,6 @@ class TigerDuckAppThemeTest {
         assertEquals(orange, scheme.primary)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `the wallpaper's colors fill with their primary, a gradient picked or not`() {
         val (brush, _) = brushAndScheme(

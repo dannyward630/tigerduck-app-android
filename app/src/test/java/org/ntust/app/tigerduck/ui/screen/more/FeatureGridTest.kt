@@ -6,7 +6,6 @@
 package org.ntust.app.tigerduck.ui.screen.more
 
 import android.app.Application
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.requiredWidth
@@ -104,10 +103,11 @@ class FeatureGridTest {
     }
 
     @Test
-    @Config(sdk = [Build.VERSION_CODES.S_V2], qualifiers = "+en")
-    fun `an English app on a Chinese phone hyphenates in English below API 33`() {
+    @Config(qualifiers = "+en")
+    fun `an English app on a Chinese phone hyphenates in English, though the default locale is the phone's`() {
         // Below API 33 the app's own language changes its resources, not the default locale, which
-        // stays the phone's: hyphenation must follow the language the names are in.
+        // stays the phone's: hyphenation must follow the language the names are in. The test sets
+        // that default itself, and nothing on the way reads the SDK level, so it runs on the default.
         val phone = java.util.Locale.getDefault()
         java.util.Locale.setDefault(java.util.Locale.TAIWAN)
         try {

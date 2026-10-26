@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.ui.component
 
 import android.app.Application
-import android.os.Build
 import android.text.InputType
 import android.view.View
 import android.view.ViewGroup
@@ -25,7 +24,7 @@ import org.robolectric.annotation.Config
  * unless the user chose otherwise with the toggle; back on the touch keyboard, it flips again.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class AccountIdFieldKeyboardTest {
 
     @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()

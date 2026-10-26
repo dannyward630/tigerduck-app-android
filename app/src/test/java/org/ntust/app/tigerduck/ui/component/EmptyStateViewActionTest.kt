@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.ui.component
 
 import android.app.Application
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mail
@@ -16,7 +15,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class EmptyStateViewActionTest {
     @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 

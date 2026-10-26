@@ -38,7 +38,6 @@ class WidgetAccentColorTest {
         prefs = AppPreferences(context)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `with the wallpaper picked the widgets keep the swatch last picked`() {
         AccentSetting(prefs).apply {
@@ -50,7 +49,6 @@ class WidgetAccentColorTest {
         assertEquals(Color(0xFFFF375F), resolveWidgetAccentColor(prefs, isDark = true))
     }
 
-    @Config(sdk = [31])
     @Test
     fun `under TAT with the wallpaper picked the Week widget's class in session takes the swatch`() {
         AccentSetting(prefs).apply {
