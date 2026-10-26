@@ -192,6 +192,9 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     private lateinit var loads: BrowserLoads
     private lateinit var signInFlow: BrowserSignInFlow
+
+    /** Whether the page's scroll has put the bars away; see [BrowserChromeCollapse]. */
+    private lateinit var chrome: BrowserChromeCollapse
     private var appliedHost: String? = null
 
     private var pendingUpload: UploadRequest? = null
@@ -246,6 +249,13 @@ class InAppBrowserActivity : AppCompatActivity() {
         pageTheme = ContextThemeWrapper(this, R.style.Theme_TigerDuck)
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
         loads = BrowserLoads(state, signIns)
+        val density = resources.displayMetrics.density
+        chrome = BrowserChromeCollapse(
+            jitterPx = (BrowserChromeCollapse.JITTER_DP * density).toInt(),
+            topZonePx = (BrowserChromeCollapse.TOP_ZONE_DP * density).toInt(),
+            endZonePx = (BrowserChromeCollapse.END_ZONE_DP * density).toInt(),
+            growthPx = (BrowserChromeCollapse.GROWTH_DP * density).toInt(),
+        )
         signInFlow = BrowserSignInFlow(
             state, loads, signIns, lifecycleScope,
             load = ::load,
@@ -409,7 +419,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun createWebView(): WebView = WebView(pageTheme).apply {
+    private fun createWebView(): WebView = BrowserWebView(pageTheme).apply {
         layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setBackgroundColor(BrowserColors.webBackground(appearance, pageDark = null))
         settings.apply {
@@ -439,6 +449,10 @@ class InAppBrowserActivity : AppCompatActivity() {
             state.find = state.find?.copy(ordinal = if (count == 0) 0 else ordinal + 1, count = count, done = done)
         }
         setOnLongClickListener { onLongPress() }
+        setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            chrome.scrolled(scrollY, leftBelow = scrollLeftBelow, contentWidth = contentWidth)
+            state.barsCollapsed = chrome.collapsed
+        }
         // Before the page's own scripts, in each of its frames. Every WebView the browser opens in has
         // this: deleting all browsing data (InAppBrowser.canClearEverything) came long after it.
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
@@ -516,6 +530,9 @@ class InAppBrowserActivity : AppCompatActivity() {
             pokeSettings()
         }
         loads.started(url)
+        // A new page starts at its top, with the bars shown.
+        chrome.reset()
+        state.barsCollapsed = false
         state.url = loads.address(url)
         state.loading = true
         state.certificate = null
@@ -799,6 +816,10 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
         override fun stayHere() { state.outsideUrl = null }
         override fun closeLinkMenu() { state.linkMenuUrl = null }
+        override fun expandBars() {
+            chrome.expand()
+            state.barsCollapsed = false
+        }
         override fun answerDialog(confirmed: Boolean, value: String?) {
             val dialog = state.dialog ?: return
             state.dialog = null
@@ -913,6 +934,21 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback?) {
             callback?.invoke(origin, false, false)
+        }
+    }
+
+    /**
+     * The browser's WebView, which tells how far the page can still scroll down and how wide it is
+     * laid out, and tells the bars' collapse when it changes size: as the keyboard comes or goes,
+     * the page's offset moves without a scroll.
+     */
+    private inner class BrowserWebView(context: Context) : WebView(context) {
+        val scrollLeftBelow: Int get() = computeVerticalScrollRange() - computeVerticalScrollExtent() - computeVerticalScrollOffset()
+        val contentWidth: Int get() = computeHorizontalScrollRange()
+
+        override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+            super.onSizeChanged(w, h, ow, oh)
+            chrome.resized()
         }
     }
 
