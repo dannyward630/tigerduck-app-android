@@ -2,6 +2,10 @@
 
 <!-- What does this PR change, and why? -->
 
+## Related PR(s)
+
+<!-- Any realted PR(s)? Link them here! -->
+
 ## Checkboxes
 
 Pass these or you're not getting merged: a pull request with a box left unchecked may be closed.
@@ -11,6 +15,7 @@ Pass these or you're not getting merged: a pull request with a box left unchecke
 - [ ] This PR edits nothing inside `app-translation/`. Any string change went through a pull request in [app-translation](https://github.com/tigerduck-app/app-translation), following that repo's rules.
 - [ ] I followed the rest of [CONTRIBUTING.md](https://github.com/tigerduck-app/tigerduck-app-android/blob/dev/CONTRIBUTING.md).
 - [ ] I know what I'm doing here.
+- [ ] I'm aware that if I failed to reply to the core devs' comments in 3 days, this PR may be handled by the core devs. 
 
 ## AI use
 
@@ -21,6 +26,13 @@ Did any AI help with this PR? If so, list the models, for example:
 
 The effort level is optional. If no AI helped, write "None".
 -->
+
+## Unit tests
+
+<!-- Don't worry, we will write the unit test for you if you don't know how to write it. But please make sure you have tested your changes in your local environment. -->
+
+- [ ] I have changed unit tests to cover my changes.
+
 
 ## Testing
 

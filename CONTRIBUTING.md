@@ -24,6 +24,10 @@ rely on the author having done them.
   tigerduck-app/app-translation, where a pull request's head can always be fetched and a commit
   only on a fork may not. A core developer merges the app-translation pull request first, moves
   the pin to its `main`, then merges this PR.
+- I'm aware that if I failed to reply to the core devs' comments in 3 days, this PR may be handled by the core devs.
+- Don't update dependencies and gradle / gradle plugins unless necessary. 
+- You should fix any build warnings caused by your changes.
+- If require a [TigerSync](https://github.com/tigerduck-app/tigerduck-backend) (the backend) change, open the PR there also and mention it in this PR.
 
 **Into `dev`**
 
@@ -42,5 +46,7 @@ rely on the author having done them.
 - I have tested on my phone (watch) / emulator that no existing functions are broken.
 - I have tested on my phone (watch) / emulator that upgrading from the previous version does not
   break the app.
+- Check if update app's any policy (privacy policy, terms of service, etc.) is required. If yes, update them in the app and website.
+- Update (wiki)[https://github.com/tigerduck-app/wiki] first.
 
 See [`debug/DEBUG.md`](debug/DEBUG.md) for details on the installation scripts and build variants.
