@@ -2,7 +2,6 @@ package org.ntust.app.tigerduck.ui.screen.announcements
 
 import android.app.Application
 import android.content.Context
-import android.os.Build
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.Lifecycle
@@ -31,7 +30,7 @@ import org.robolectric.annotation.Config
  * when it went away from a bulletin's own page, where the list screen is not on screen to see it.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class BulletinSearchResetTest {
     @get:Rule val main = MainDispatcherRule()
 

@@ -115,7 +115,6 @@ class AccentSettingTest {
         assertEquals(blue, raw.getInt("accentColorHex", 0))
     }
 
-    @Config(sdk = [31])
     @Test
     fun `the app's screens follow a wallpaper pick from Android 12`() {
         val setting = AccentSetting(prefs)
@@ -135,7 +134,6 @@ class AccentSettingTest {
         assertEquals(pink, setting.lightHex)
     }
 
-    @Config(sdk = [31])
     @Test
     fun `a pick reaches the root theme at once`() {
         val setting = AccentSetting(prefs)

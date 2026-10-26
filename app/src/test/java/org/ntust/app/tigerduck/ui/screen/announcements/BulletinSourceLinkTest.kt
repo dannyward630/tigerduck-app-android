@@ -2,7 +2,6 @@ package org.ntust.app.tigerduck.ui.screen.announcements
 
 import android.app.Application
 import android.content.Intent
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import org.junit.Assert.assertEquals
@@ -17,7 +16,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class BulletinSourceLinkTest {
     // An activity, as on screen: an in-app tab needs one to start from.
     private val context = Robolectric.buildActivity(ComponentActivity::class.java).setup().get()

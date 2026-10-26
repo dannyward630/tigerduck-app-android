@@ -9,7 +9,6 @@
 package org.ntust.app.tigerduck.notification
 
 import android.app.Application
-import android.os.Build
 import androidx.core.content.ContextCompat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -22,7 +21,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.BAKLAVA])
+@Config(application = Application::class)
 class BrandedNotificationTest {
 
     private val context: Application = RuntimeEnvironment.getApplication()

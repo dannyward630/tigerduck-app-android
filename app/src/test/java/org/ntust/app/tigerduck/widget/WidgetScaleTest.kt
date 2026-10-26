@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
-import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -39,7 +38,7 @@ import org.robolectric.annotation.GraphicsMode
  * and their own padding multiplied, the phone's sizes left as they are.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.R])
+@Config(application = Application::class)
 class WidgetScaleTest {
 
     private val app: Application = RuntimeEnvironment.getApplication()

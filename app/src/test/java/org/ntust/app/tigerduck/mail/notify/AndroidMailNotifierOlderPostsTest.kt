@@ -4,7 +4,6 @@ import android.Manifest
 import android.app.Application
 import android.app.Notification
 import android.app.NotificationManager
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -25,7 +24,7 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class AndroidMailNotifierOlderPostsTest {
 
     private val context: Application = RuntimeEnvironment.getApplication()

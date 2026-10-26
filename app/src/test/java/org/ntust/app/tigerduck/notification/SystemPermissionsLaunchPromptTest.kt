@@ -63,8 +63,9 @@ class SystemPermissionsLaunchPromptTest {
 
     // Below API 33 there is no runtime permission to ask for. MainActivity
     // used to return early on the SDK level itself; that check now lives here.
+    // API 30, the level robolectric.properties picks for below 33.
     @Test
-    @Config(sdk = [Build.VERSION_CODES.S_V2])
+    @Config(sdk = [Build.VERSION_CODES.R])
     fun `nothing is asked for at launch below API 33`() {
         shadowOf(context).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
 

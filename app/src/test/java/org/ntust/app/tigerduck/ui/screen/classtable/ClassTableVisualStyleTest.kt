@@ -259,7 +259,6 @@ class ClassTableVisualStyleTest {
         }
     }
 
-    @Config(sdk = [31])
     @Test
     fun `under the wallpaper's light colors a TAT tile keeps its pastel and outline`() {
         outlinedTatCellUnderWallpaper(dark = false)
@@ -268,7 +267,6 @@ class ClassTableVisualStyleTest {
         assertNear("fill", calculusColour.pastel(), image[outlineAt(8f), outlineAt(8f)])
     }
 
-    @Config(sdk = [31])
     @Test
     fun `under the wallpaper's dark colors a TAT tile keeps the light pastel and outline`() {
         outlinedTatCellUnderWallpaper(dark = true)
