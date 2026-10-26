@@ -19,6 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.ntust.app.tigerduck.ui.screen.mail.HeldDispatcher
 import java.io.File
 
 /** The downloaded Moodle files' store on its own: a file's state, and what is left on the device. */
@@ -234,4 +235,40 @@ class MoodleFileDownloadsTest {
         assertEquals(100L, downloads.measure())
         assertTrue(dataset.exists())
     }
+
+    @Test
+    fun `a second open that found no copy just before the first download kept it does not download it again`() =
+        runTest(UnconfinedTestDispatcher()) {
+            // The disk and the second open's thread run only when told: the second open is held
+            // between its look for the copy and its look for a download to join, as a busy thread
+            // can hold it, while the first download keeps its copy and winds down.
+            val disk = HeldDispatcher()
+            val secondThread = HeldDispatcher()
+            val downloads = MoodleFileDownloads(root = { tmp.root }, scope = backgroundScope, io = disk)
+            val gate = CompletableDeferred<Unit>()
+            var fetches = 0
+            val fetch: suspend (File, (Float) -> Unit) -> Unit = { target, _ ->
+                fetches++
+                target.writeText("pdf bytes")
+                gate.await()
+            }
+            val first = async { downloads.download(location, fetch, isCurrent = { true }) }
+            disk.drain()
+            val second = async(secondThread) { downloads.download(location, fetch, isCurrent = { true }) }
+            secondThread.drain()
+            assertEquals(1, disk.pending)
+            disk.runNext()
+
+            gate.complete(Unit)
+            disk.drain()
+            assertTrue(first.isCompleted)
+            while (disk.pending + secondThread.pending > 0) {
+                secondThread.drain()
+                disk.drain()
+            }
+
+            assertEquals(location, first.await())
+            assertEquals(location, second.await())
+            assertEquals(1, fetches)
+        }
 }
