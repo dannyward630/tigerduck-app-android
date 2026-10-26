@@ -4,7 +4,7 @@ package org.ntust.app.tigerduck.ui.screen.browser
  * Hides the browser's bars while the page scrolls down and brings them back on a scroll up, as
  * the iPhone's browser does (`BrowserChromeCollapse`). A scroll counts once it has gone
  * [jitterPx] one way, however small its steps; at the top of the page ([topZonePx]) the bars
- * show. Unlike the iPhone's, the end of the page does not bring them back: only a scroll up does.
+ * show. The end of the page does not bring them back, on the iPhone either: only a scroll up does.
  *
  * Putting the bars away makes the view taller, and at the end of the page the WebView then pulls
  * the page up so it still fills the view. That move leaves the page at its end, where a scroll up
