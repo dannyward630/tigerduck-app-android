@@ -158,8 +158,8 @@ class AuthService @Inject constructor(
         signInToSchool = { studentId, password ->
             ssoLoginService.ensureServiceLogin(SSO_SERVICE_URL, studentId, password)
         },
-        signInAgainToSchool = { studentId, password, stillRefused ->
-            ssoLoginService.signInAgain(SSO_SERVICE_URL, studentId, password, stillRefused)
+        signInAgainToSchool = { studentId, password, accepted, stillRefused ->
+            ssoLoginService.signInAgain(SSO_SERVICE_URL, studentId, password, accepted, stillRefused)
         },
     )
 
@@ -308,11 +308,19 @@ class AuthService @Inject constructor(
      * nothing to try.
      */
     internal suspend fun retryStoredPassword(): Boolean {
-        if (demoAccount.isActive || credentials.ntustStudentId == null) return true
+        if (demoAccount.isActive) return true
+        // Made before anything is posted: a sign-in by hand or a sign-out meanwhile moves the
+        // generation it reads, and leaves it nothing to settle.
+        val settlement = RetrySettlement(
+            storedPasswordLatch,
+            studentId = credentials.ntustStudentId ?: return true,
+            password = credentials.ntustPassword ?: return true,
+        )
         return retryStoredPasswordChain(
-            signInToSchool = ::signInAgainToSchool,
+            signInToSchool = { signInAgainToSchool(settlement::schoolAccepted) },
             moodleTokenMissing = { credentials.moodleToken.isNullOrEmpty() },
             renewMoodleToken = { moodleTokenService.renewToken(null) },
+            settle = settlement::settle,
             // Past the pause after a failed sign-in only with the Moodle token it lacked, which
             // this try's harvest, paced by the refusals' own schedule, has just got: any other
             // try waits it out, as the backend takes 5 logins per 15 minutes.
@@ -322,15 +330,18 @@ class AuthService @Inject constructor(
         )
     }
 
-    /** [ensureAuthenticated] for the retry of a refused stored password: it posts, warm session or not. */
-    private suspend fun signInAgainToSchool(): Boolean {
+    /**
+     * [ensureAuthenticated] for the retry of a refused stored password: it posts, warm session or
+     * not, and tells [accepted] when the school takes the post.
+     */
+    private suspend fun signInAgainToSchool(accepted: () -> Unit): Boolean {
         // Read before the lock: a sign-in by hand this try waits behind clears the refusal, and
         // moves the generation, by the time the lock is held.
         val refused = storedPasswordLatch.generation
         return loginMutex.withLock {
             if (demoAccount.isActive) return@withLock false
             try {
-                schoolSignIn.storedAgain(stillRefused = {
+                schoolSignIn.storedAgain(accepted = accepted, stillRefused = {
                     storedPasswordLatch.generation == refused && storedPasswordLatch.refusals.value > 0
                 })
             } catch (e: CancellationException) {
