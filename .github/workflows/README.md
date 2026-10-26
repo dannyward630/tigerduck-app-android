@@ -24,6 +24,14 @@ A new version builds the same six artifacts as `release-manual.yaml` (see
 2. Tags the build commit (GPG-signed), pins the F-Droid metadata commit hash,
    and publishes the GitHub Release "TigerDuck Android vX.Y.Z" with every
    artifact attached and its notes written (see below).
+3. Opens a pull request merging `main` back into `dev`
+   (`tools/github/back_merge.py`), so `dev` gets the F-Droid pin and anything
+   that went to `main` on its own, and the next release pull request does not
+   conflict on the metadata file. It opens none when `dev` already has
+   everything, or when one is already open. The Releaser App's token opens it,
+   so its CI runs; the App needs "Pull requests: Read and write" for that, and
+   without it the step only warns. Merge it with a merge commit, not a squash.
+
 Play comes before the tag so that a failed upload leaves nothing tagged and the
 workflow can simply be run again. If a later step fails, use "Re-run failed
 jobs": the upload skips any bundle Play already has, the tag step keeps a tag
@@ -137,12 +145,13 @@ on release day, as the two upgrade crashes R8 and Gson caused did. Unsigned
 because fork PRs cannot read the `KEYSTORE_*` secrets, and the phone's without
 `google-services.json`, which only the release workflow decodes.
 
-It also tests the two scripts the release workflows run, which otherwise first
+It also tests the scripts the release workflows run, which otherwise first
 run once the PR is already on `main`: `tools/play/test_publish.py` runs the
 Play upload script against a fake Play (which bundles are uploaded, what each
-track is sent, the staged rollout, the commit and its fallback), and
+track is sent, the staged rollout, the commit and its fallback), ,
 `tools/github/test_release_notes.py` renders the GitHub Release notes from a
-scratch checkout.
+scratch checkout, and `tools/github/test_back_merge.py` runs the pull request
+that merges `main` back into `dev` against a fake `gh`.
 
 ### `submodules-up-to-date.yaml`
 

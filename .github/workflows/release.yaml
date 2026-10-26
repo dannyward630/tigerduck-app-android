@@ -507,3 +507,12 @@ jobs:
             dist/*.apk
             dist/*.aab
 
+      # Last, after the F-Droid pin, so dev gets that back too. The Releaser
+      # App's token opens it, so its CI runs; a refusal only warns, since the
+      # release is done by now. See tools/github/back_merge.py.
+      - name: Open the pull request merging main back into dev
+        if: env.FULL_RELEASE == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app_token.outputs.token }}
+          REPO: ${{ github.repository }}
+        run: python3 tools/github/back_merge.py --repo "$REPO" --tag "$TAG"
