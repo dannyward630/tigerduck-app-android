@@ -14,9 +14,11 @@ package org.ntust.app.tigerduck.ui.screen.browser
  * its own height can scroll that much less, while one laid out to the view's height scrolls as
  * far as before. A page left with no room past the top of the page once they are away is too
  * short for them to go: the top brings them back, and they stay for that page, as nothing would be
- * left to scroll up with to bring them back. They may go again once the page's room, the bars
- * shown and settled, has grown past what it was ([reset] and a zoom start afresh too): content
- * loaded late, or content laid out to the view's height, which keeps its room with the bars away.
+ * left to scroll up with to bring them back. Its room with the bars shown is then measured once
+ * they and the keyboard have settled, and measured again after the keyboard moves; room past
+ * that, or past what any page needs ([topZonePx] and [growthPx]), gives the bars another try:
+ * content loaded late, or content laid out to the view's height, which keeps its room with the
+ * bars away. [reset] and a zoom start afresh.
  *
  * Offsets the page did not scroll to are no scroll either: the first after a new page (where the
  * WebView may put back a page's old place), after a zoom (the page's laid-out width changed, which
@@ -57,11 +59,10 @@ internal class BrowserChromeCollapse(
     /** Whether the student's finger last moved the page down, toward its end; null before it has. */
     private var dragDown: Boolean? = null
 
-    /**
-     * The page's room with the bars shown, once it proved too short for them to go (with them away
-     * it had no room past the top): at first what they would give back, then the most seen while
-     * they settle. Null while the page has not proved too short.
-     */
+    /** Whether the page proved too short for the bars to go: with them away it had no room past the top. */
+    private var tooShort = false
+
+    /** The too-short page's room with the bars shown and settled; null till measured. */
     private var shortRoom: Int? = null
 
     /**
@@ -71,20 +72,25 @@ internal class BrowserChromeCollapse(
     fun scrolled(offset: Int, leftBelow: Int, contentWidth: Int) {
         if (contentWidth != lastWidth) {
             lastWidth = contentWidth
-            shortRoom = null
+            forgetShort()
             rebase()
         }
         val last = lastOffset
         lastOffset = offset
         val room = offset + leftBelow
-        shortRoom?.let { seen ->
-            if (collapsed) return@let
-            if (now() - movedAt < SETTLE_MS) shortRoom = maxOf(seen, room)
-            // Grown since, the bars settled: they get another try.
-            else if (room > seen + jitterPx) shortRoom = null
+        if (tooShort && !collapsed && now() - movedAt >= SETTLE_MS && now() - keyboardAt >= SETTLE_MS) {
+            val seen = shortRoom
+            when {
+                // Grown: the bars get another try.
+                room > topZonePx + growthPx || (seen != null && room > seen + jitterPx) -> forgetShort()
+                seen == null -> shortRoom = room
+            }
         }
         if (offset <= topZonePx) {
-            if (collapsed && room <= topZonePx) shortRoom = room + growthPx
+            if (collapsed && room <= topZonePx) {
+                tooShort = true
+                shortRoom = null
+            }
             collapsed = false
             travel = 0
             return
@@ -97,7 +103,7 @@ internal class BrowserChromeCollapse(
         if (delta == 0 || (delta > 0) != dragDown) return
         travel = if (travel == 0 || (delta > 0) == (travel > 0)) travel + delta else delta
         if (travel > jitterPx) {
-            if (shortRoom == null) collapsed = true
+            if (!tooShort) collapsed = true
         } else if (travel < -jitterPx) {
             collapsed = false
         }
@@ -106,6 +112,12 @@ internal class BrowserChromeCollapse(
     /** The student's finger moved the page: [down] toward its end, or else toward its top. */
     fun dragged(down: Boolean) {
         dragDown = down
+    }
+
+    /** The touch was taken away: the page's moves are its own till the next drag. */
+    fun dragCancelled() {
+        dragDown = null
+        travel = 0
     }
 
     /** The bars back, until the page scrolls down again. */
@@ -122,6 +134,8 @@ internal class BrowserChromeCollapse(
     /** The keyboard came up or went down. */
     fun keyboardMoved() {
         keyboardAt = now()
+        // A short page's room is measured again without it.
+        shortRoom = null
         rebase()
     }
 
@@ -130,11 +144,17 @@ internal class BrowserChromeCollapse(
         travel = 0
     }
 
-    /** A new page, with the bars shown. */
+    /** A new page, with the bars shown, and no drag yet. */
     fun reset() {
         collapsed = false
-        shortRoom = null
+        dragDown = null
+        forgetShort()
         rebase()
+    }
+
+    private fun forgetShort() {
+        tooShort = false
+        shortRoom = null
     }
 
     companion object {

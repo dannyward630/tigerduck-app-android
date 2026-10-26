@@ -22,7 +22,6 @@ import android.os.Message
 import android.print.PrintManager
 import android.view.ContextThemeWrapper
 import android.view.MotionEvent
-import android.view.VelocityTracker
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.webkit.CookieManager
@@ -964,14 +963,14 @@ class InAppBrowserActivity : AppCompatActivity() {
         val scrollLeftBelow: Int get() = computeVerticalScrollRange() - computeVerticalScrollExtent() - computeVerticalScrollOffset()
         val contentWidth: Int get() = computeHorizontalScrollRange()
 
-        private val drags = BrowserDragTracker(
-            touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
-            minFlingVelocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity.toFloat(),
-            dragged = { down -> chrome.dragged(down) },
+        private val touches = BrowserTouches(
+            drags = BrowserDragTracker(
+                touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+                minFlingVelocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity.toFloat(),
+                dragged = { down -> chrome.dragged(down) },
+            ),
+            cancelled = { chrome.dragCancelled() },
         )
-
-        /** The touch's velocity, on screen, for the way a lift flings the page; null between touches. */
-        private var velocity: VelocityTracker? = null
 
         override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
             super.onSizeChanged(w, h, ow, oh)
@@ -981,34 +980,8 @@ class InAppBrowserActivity : AppCompatActivity() {
         // Only watches the touch: the WebView handles it, its click included.
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouchEvent(event: MotionEvent): Boolean {
-            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                velocity?.recycle()
-                velocity = VelocityTracker.obtain()
-            }
-            val onScreen = event.onScreen()
-            velocity?.addMovement(onScreen)
-            onScreen.recycle()
-            when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> drags.down(event.focalScreenY())
-                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> drags.pointersChanged(event.focalScreenY())
-                MotionEvent.ACTION_MOVE -> drags.moved(event.focalScreenY())
-                MotionEvent.ACTION_UP -> {
-                    val tracker = velocity
-                    tracker?.computeCurrentVelocity(1_000)
-                    drags.up(tracker?.yVelocity ?: 0f)
-                    endTouch()
-                }
-                MotionEvent.ACTION_CANCEL -> {
-                    drags.cancel()
-                    endTouch()
-                }
-            }
+            touches.onTouch(event)
             return super.onTouchEvent(event)
-        }
-
-        private fun endTouch() {
-            velocity?.recycle()
-            velocity = null
         }
     }
 

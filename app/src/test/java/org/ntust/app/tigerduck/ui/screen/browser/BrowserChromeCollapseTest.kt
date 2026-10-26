@@ -117,6 +117,8 @@ class BrowserChromeCollapseTest {
         private val chrome: BrowserChromeCollapse = this@BrowserChromeCollapseTest.chrome,
         /** For a page laid out to the view's height and this much more, which grows with the view. */
         var beyondViewPx: Int? = null,
+        /** How the view grows, frame by frame, as the bars go: 81 px in all. */
+        private val growthFrames: List<Int> = listOf(81),
     ) {
         var offset = 0
             private set
@@ -125,7 +127,10 @@ class BrowserChromeCollapseTest {
         var flips = 0
             private set
 
-        private val end get() = beyondViewPx ?: maxOf(0, heightPx - 1_000 - if (chrome.collapsed) 81 else 0)
+        /** How much taller the view is now than with the bars shown, part way through their move. */
+        private var grown = 0
+
+        private val end get() = beyondViewPx ?: maxOf(0, heightPx - 1_000 - grown)
 
         /** The student drags the page [dy] down, or up if negative; it stops at either end. */
         fun drag(dy: Int) {
@@ -141,10 +146,24 @@ class BrowserChromeCollapseTest {
             chrome.scrolled(offset, leftBelow = end - offset, contentWidth = 1_080)
             if (chrome.collapsed == was) return
             flips++
-            chrome.resized()
-            if (offset > end) {
-                offset = end
-                tell()
+            move()
+        }
+
+        /** The bars moved by themselves (a tap on the collapsed bar): the view follows. */
+        fun barsMoved() = move()
+
+        /** The bars move, a frame at a time, and the WebView pulls the page up as the view grows. */
+        private fun move() {
+            val toward = chrome.collapsed
+            val steps = growthFrames.runningReduce(Int::plus)
+            for (target in if (toward) steps else steps.dropLast(1).reversed() + 0) {
+                if (chrome.collapsed != toward) return
+                grown = target
+                chrome.resized()
+                if (offset > end) {
+                    offset = end
+                    tell()
+                }
             }
         }
     }
@@ -166,7 +185,7 @@ class BrowserChromeCollapseTest {
         // A tap on the collapsed bar brings them back at the end; the view shrinks, and the page
         // can scroll down again by the bars' room.
         chrome.expand()
-        chrome.resized()
+        page.barsMoved()
         val flips = page.flips
         repeat(100) { page.drag(3) }
         assertTrue(chrome.collapsed)
@@ -225,10 +244,71 @@ class BrowserChromeCollapseTest {
         // A placeholder gave way to content as tall as the view and 100 px more, which keeps its
         // room with the bars away; the page's width stayed the same.
         clock += 10_000
+        repeat(30) { page.drag(-3) }
+        repeat(30) { page.drag(3) }
         page.beyondViewPx = 100
         repeat(30) { page.drag(-3) }
         repeat(100) { page.drag(3) }
         assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `a short page found part way through the bars' move lets them go once its content grows`() {
+        // 80 px to scroll with the bars shown; the WebView pulls the page up 40 px into their move.
+        val page = Page(heightPx = 1_080, growthFrames = listOf(40, 41))
+        repeat(100) { page.drag(3) }
+        assertFalse(chrome.collapsed)
+        clock += 10_000
+        repeat(30) { page.drag(-3) }
+        repeat(30) { page.drag(3) }
+        // Content as tall as the view and 100 px more takes the placeholder's place.
+        page.beyondViewPx = 100
+        repeat(30) { page.drag(-3) }
+        repeat(100) { page.drag(3) }
+        assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `a keyboard that came and went leaves the short page a try once its content grows`() {
+        val page = Page(heightPx = 1_080)
+        repeat(100) { page.drag(3) }
+        assertFalse(chrome.collapsed)
+        // The keyboard comes, and while it is up the page can scroll 380 px; then it goes.
+        chrome.keyboardMoved()
+        clock += 10_000
+        chrome.scrolled(0, leftBelow = 380, contentWidth = 1_080)
+        chrome.keyboardMoved()
+        clock += 10_000
+        // Short again: the bars may try once more, and come back.
+        repeat(30) { page.drag(-3) }
+        repeat(100) { page.drag(3) }
+        clock += 10_000
+        repeat(30) { page.drag(-3) }
+        repeat(30) { page.drag(3) }
+        assertFalse(chrome.collapsed)
+        // Content of 100 px more than the view takes the placeholder's place: room past the 80 measured.
+        page.beyondViewPx = 100
+        repeat(30) { page.drag(-3) }
+        repeat(100) { page.drag(3) }
+        assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `a new page waits for a drag before its own moves count`() {
+        scrolled(100)
+        scrolled(200)
+        chrome.reset()
+        movedItself(500)
+        movedItself(600)
+        assertFalse(chrome.collapsed)
+    }
+
+    @Test
+    fun `a touch taken away leaves the page's moves to itself`() {
+        scrolled(100)
+        chrome.dragCancelled()
+        movedItself(300)
+        assertFalse(chrome.collapsed)
     }
 
     @Test

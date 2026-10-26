@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.ui.screen.browser
 
 import android.view.MotionEvent
+import android.view.VelocityTracker
 import kotlin.math.abs
 
 /**
@@ -84,3 +85,75 @@ internal fun MotionEvent.focalScreenY(): Float {
  */
 internal fun MotionEvent.onScreen(): MotionEvent =
     MotionEvent.obtain(this).also { it.offsetLocation(rawX - x, rawY - y) }
+
+/**
+ * Reads the WebView's touch events for [drags], and tells [cancelled] when the touch is taken
+ * away, as by a parent that takes it over. The release velocity comes from Android's
+ * VelocityTracker, fed [onScreen] copies with their batched moves; it is read at each move, of
+ * the finger that move is led by, and a lift within [RELEASE_MS] of the last move flings at it, as
+ * the WebView's gesture detector does: Android's own tracker gives none for a lift 40 ms after the
+ * last move, and the lift repeats the last move's place, so it is not fed. A finger landing or
+ * lifting starts the velocity afresh.
+ */
+internal class BrowserTouches(
+    private val drags: BrowserDragTracker,
+    private val cancelled: () -> Unit,
+) {
+    /** The touch's velocity, on screen; null between touches. */
+    private var velocity: VelocityTracker? = null
+
+    /** The velocity at the last move, px a second down the screen, and when that move was; null since a finger landed or lifted. */
+    private var lastMove: Pair<Float, Long>? = null
+
+    fun onTouch(event: MotionEvent) {
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                velocity?.recycle()
+                velocity = VelocityTracker.obtain()
+                lastMove = null
+                feed(event)
+                drags.down(event.focalScreenY())
+            }
+            MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> {
+                feed(event)
+                lastMove = null
+                drags.pointersChanged(event.focalScreenY())
+            }
+            MotionEvent.ACTION_MOVE -> {
+                feed(event)
+                velocity?.let { tracker ->
+                    tracker.computeCurrentVelocity(1_000)
+                    lastMove = tracker.getYVelocity(event.getPointerId(0)) to event.eventTime
+                }
+                drags.moved(event.focalScreenY())
+            }
+            MotionEvent.ACTION_UP -> {
+                val move = lastMove
+                drags.up(if (move != null && event.eventTime - move.second <= RELEASE_MS) move.first else 0f)
+                end()
+            }
+            MotionEvent.ACTION_CANCEL -> {
+                drags.cancel()
+                cancelled()
+                end()
+            }
+        }
+    }
+
+    private fun feed(event: MotionEvent) {
+        val onScreen = event.onScreen()
+        velocity?.addMovement(onScreen)
+        onScreen.recycle()
+    }
+
+    private fun end() {
+        velocity?.recycle()
+        velocity = null
+        lastMove = null
+    }
+
+    companion object {
+        /** How long after the last move a lift still flings, in ms, as Chromium's gesture detector. */
+        const val RELEASE_MS = 80L
+    }
+}
