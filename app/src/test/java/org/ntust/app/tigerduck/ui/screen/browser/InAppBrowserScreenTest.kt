@@ -106,10 +106,21 @@ class InAppBrowserScreenTest {
         composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertIsNotEnabled()
         composeRule.onNodeWithContentDescription(string(R.string.browser_forward)).assertIsNotEnabled()
         composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
-        composeRule.onNodeWithText(string(R.string.browser_share)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_share_short)).performClick()
         composeRule.onNodeWithContentDescription(string(R.string.browser_close)).performClick()
 
         assertEquals(listOf("share $page", "close"), calls)
+    }
+
+    @Test
+    fun `the menu's quick actions say Copy and Share, short as the others`() {
+        show(loaded())
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).performClick()
+
+        composeRule.onNodeWithText(string(R.string.browser_copy_short)).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_share_short)).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_copy)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.browser_share)).assertDoesNotExist()
     }
 
     @Test
