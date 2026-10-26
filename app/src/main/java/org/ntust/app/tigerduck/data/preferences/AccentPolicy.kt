@@ -44,8 +44,8 @@ object AccentPolicy {
 
     /**
      * The fixed accent [lightHex] as [isDark]'s theme draws it: its dark pair
-     * in dark mode, and in light mode itself, or for a color of the user's own
-     * too light for the light cards a tone dark enough to stand out on them.
+     * in dark mode, and in light mode itself, or for a color too light for the
+     * light cards a tone dark enough to stand out on them.
      */
     fun fixedColor(lightHex: Int, isDark: Boolean): Color {
         val hex = if (isDark) darkHex(lightHex) else lightModeHex(lightHex)
@@ -97,13 +97,13 @@ object AccentPolicy {
     }
 
     /**
-     * [lightHex] as light mode draws it: a preset as it is, and a color of the
-     * user's own darkened just enough to stand out on the light cards, so
-     * white picked as one's own does not leave every link and switch
-     * invisible. The mirror of [darkHex].
+     * [lightHex] as light mode draws it: darkened just enough to stand out on
+     * the light cards, so white picked as one's own does not leave every link
+     * and switch invisible, nor, as on iOS, do Orange, Green and Teal, the
+     * presets that read faintly there as they are. The mirror of [darkHex],
+     * which gives a preset its dark pair instead.
      */
     private fun lightModeHex(lightHex: Int): Int {
-        if (isPreset(lightHex)) return lightHex
         val light = rgb(lightHex)
         // Toward black in steps of a twentieth: black stands out on the cards
         // at over 15:1, so the walk always ends.

@@ -26,6 +26,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.data.preferences.AccentPolicy
+import org.ntust.app.tigerduck.shared.AccentGradientDirection
+import org.ntust.app.tigerduck.ui.theme.AccentGradientBrush
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
@@ -173,6 +176,42 @@ class AccentColorSwatchesTest {
     @Test
     fun `a gradient's check reads on its middle, not only on its start`() {
         assertEquals(Color.White, checkOnGradient(0x808080, 0x000000, isDark = false))
+    }
+
+    // Light mode darkens Orange to stand out on the cards; its swatch still
+    // shows the preset itself, and a gradient's swatch its two presets.
+    @Test
+    fun `a preset's swatch shows the preset's own color in light mode`() {
+        val orange = 0xFF9500
+        val green = 0x34C759
+        val teal = 0x5AC8FA
+
+        assertEquals(SolidColor(Color(0xFFFF9500)), solidSwatch(orange, isDark = false))
+        assertEquals(
+            AccentGradientBrush(Color(0xFF34C759), Color(0xFF5AC8FA), AccentGradientDirection.DEFAULT),
+            gradientSwatch(green, teal, AccentGradientDirection.DEFAULT, isDark = false),
+        )
+    }
+
+    // A color of the user's own has no swatch of its own: it shows as the app draws it.
+    @Test
+    fun `a color of the user's own shows in its swatch as light mode draws it`() {
+        assertEquals(SolidColor(AccentPolicy.fixedColor(0xFFFFFF, isDark = false)), solidSwatch(0xFFFFFF, isDark = false))
+    }
+
+    // The picker opens on Orange as the app draws it, so the first nudge off
+    // the preset does not darken the preview in one jump.
+    @Test
+    fun `the picker's preview shows a preset as light mode draws it`() {
+        val orange = 0xFF9500
+        val teal = 0x5AC8FA
+        val direction = AccentGradientDirection.DEFAULT
+
+        assertEquals(SolidColor(AccentPolicy.fixedColor(orange, isDark = false)), drawnAccent(orange, null, direction, isDark = false))
+        assertEquals(
+            AccentGradientBrush(AccentPolicy.fixedColor(orange, isDark = false), AccentPolicy.fixedColor(teal, isDark = false), direction),
+            drawnAccent(orange, teal, direction, isDark = false),
+        )
     }
 
     private companion object {
