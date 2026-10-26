@@ -547,8 +547,8 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
     /**
      * Print each course's room in the corner of its class-table cell. On by
      * default, as on the iPhone: where a class meets is what students look up
-     * next to which course it is. It defaulted off until 2.6, and a default
-     * is nothing stored, so the flip alone upgrades everyone who never
+     * next to which course it is. It defaulted off before 2.4.0, and a
+     * default is nothing stored, so the flip alone upgrades everyone who never
      * touched the switch; whoever turned it off stored a false and keeps it.
      * Device-local, like every display preference; the settings document the
      * backend syncs does not carry it.
