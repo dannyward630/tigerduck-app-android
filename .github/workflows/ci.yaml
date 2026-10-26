@@ -102,9 +102,10 @@ jobs:
   release-scripts:
     # The scripts the release workflows run, which otherwise first run once
     # the PR is merged: tools/play/publish.py sends every release to Google
-    # Play, tools/github/release_notes.py writes the GitHub Release notes.
-    # Their tests use a fake Play and a scratch checkout, so they need no key
-    # and no build, and touch no real release.
+    # Play, tools/github/release_notes.py writes the GitHub Release notes, and
+    # tools/github/back_merge.py opens the pull request merging main back into
+    # dev. Their tests use a fake Play, a scratch checkout and a fake gh, so
+    # they need no key and no build, and touch no real release.
     name: release-scripts
     runs-on: ubuntu-latest
     steps:
