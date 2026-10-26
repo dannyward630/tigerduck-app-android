@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -134,21 +136,6 @@ fun HomeScreen(
         isEditing = false
     }
 
-    // Per-section measured height — needed for the drag-and-swap threshold
-    // math. Position on screen is *not* tracked because layout changes during
-    // reorder would pollute it; height is stable enough per section.
-    val sectionHeights = remember { mutableStateMapOf<String, Float>() }
-    var draggingId by remember { mutableStateOf<String?>(null) }
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
-
-    // If edit mode is cancelled (back gesture, etc.) mid-drag, clear drag state.
-    LaunchedEffect(isEditing) {
-        if (!isEditing) {
-            draggingId = null
-            dragOffsetY = 0f
-        }
-    }
-
     LaunchedEffect(Unit) { 
         viewModel.load()
         // Each time the page enters composition: a return to it from
@@ -197,149 +184,89 @@ fun HomeScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        TigerPullToRefresh(
+        HomePage(
+            sections = visibleSections,
+            isEditing = isEditing,
+            onStartEditing = { isEditing = true },
             isRefreshing = isLoading,
             onRefresh = { viewModel.refresh() },
-            modifier = Modifier.fillMaxSize(),
-            refreshingMessage = stringResource(R.string.refreshing_message),
-        ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                userScrollEnabled = !isEditing,
-            ) {
-                item {
-                    PageHeader(title = greetingText()) {
-                        if (isEditing) {
-                            IconButton(onClick = { showAddSectionDialog = true }) {
-                                Icon(
-                                    Icons.Filled.Add,
-                                    contentDescription = stringResource(R.string.home_add_section_title)
-                                )
-                            }
-                            TextButton(onClick = { isEditing = false }) {
-                                Text(
-                                    stringResource(R.string.action_done),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-                        } else {
-                            SyncStatusDot(
-                                servers = listOf(ServerKind.MOODLE, ServerKind.BACKEND),
-                                isLoading = isLoading,
-                                syncedAtMs = schoolDataSyncedAtMs,
+            onMoveSection = viewModel::moveSections,
+            onRemoveSection = viewModel::removeSection,
+            header = {
+                PageHeader(title = greetingText()) {
+                    if (isEditing) {
+                        IconButton(onClick = { showAddSectionDialog = true }) {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = stringResource(R.string.home_add_section_title)
                             )
                         }
-                    }
-                }
-
-                // As its own item only while shown: an empty one would still
-                // take the list's spacing.
-                if (bannerRejection(passwordRejection, signInViewModel.dismissedRejection, signedInForBanner) != null) {
-                    item(key = "autoSignInFailed") {
-                        AutoSignInFailedBanner(viewModel = signInViewModel)
-                    }
-                }
-
-                itemsIndexed(
-                    items = visibleSections,
-                    key = { _, s -> s.id },
-                ) { index, section ->
-                    ReorderableSection(
-                        section = section,
-                        isEditing = isEditing,
-                        isDragging = draggingId == section.id,
-                        dragOffsetY = if (draggingId == section.id) dragOffsetY else 0f,
-                        onStartEditing = { isEditing = true },
-                        onDragStart = {
-                            draggingId = section.id
-                            dragOffsetY = 0f
-                        },
-                        onDrag = { delta ->
-                            dragOffsetY += delta
-                            val fromIdx = visibleSections.indexOfFirst { it.id == section.id }
-                            if (fromIdx < 0) return@ReorderableSection
-
-                            // Threshold-based swap: when the drag has crossed half of
-                            // the neighbor's height, swap in the data model and
-                            // compensate `dragOffsetY` so the card stays visually
-                            // under the user's finger (no snap-back).
-                            if (dragOffsetY > 0 && fromIdx < visibleSections.lastIndex) {
-                                val next = visibleSections[fromIdx + 1]
-                                val nextH = sectionHeights[next.id]
-                                    ?: return@ReorderableSection
-                                if (dragOffsetY > nextH / 2f) {
-                                    viewModel.moveSections(section.id, next.id)
-                                    dragOffsetY -= nextH
-                                }
-                            } else if (dragOffsetY < 0 && fromIdx > 0) {
-                                val prev = visibleSections[fromIdx - 1]
-                                val prevH = sectionHeights[prev.id]
-                                    ?: return@ReorderableSection
-                                if (dragOffsetY < -prevH / 2f) {
-                                    viewModel.moveSections(section.id, prev.id)
-                                    dragOffsetY += prevH
-                                }
-                            }
-                        },
-                        onDragEnd = {
-                            draggingId = null
-                            dragOffsetY = 0f
-                        },
-                        onMeasured = { height ->
-                            sectionHeights[section.id] = height
-                        },
-                        onRemove = { viewModel.removeSection(section.id) },
-                    ) {
-                        HomeSectionContent(
-                            section = section,
-                            allCourses = allCourses,
-                            quietDays = quietDays,
-                            upcomingAssignments = upcomingAssignments,
-                            assignmentFilter = assignmentFilter,
-                            showIgnoredTab = hasIgnoredAssignments || ignoredTabPinned,
-                            ignoredAssignmentIds = ignoredAssignmentIds,
-                            markedCompletedIds = markedCompletedIds,
-                            courseIgnoredIds = courseIgnoredIds,
-                            isLoggedIn = isLoggedIn,
+                        TextButton(onClick = { isEditing = false }) {
+                            Text(
+                                stringResource(R.string.action_done),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    } else {
+                        SyncStatusDot(
+                            servers = listOf(ServerKind.MOODLE, ServerKind.BACKEND),
                             isLoading = isLoading,
-                            initialLoadComplete = initialLoadComplete,
-                            hasUnfinishedAssignment = hasUnfinishedAssignment,
-                            showAbsoluteTime = appState.showAbsoluteAssignmentTime,
-                            invertDirection = appState.invertSliderDirection,
-                            onCourseClick = { slot ->
-                                if (!isEditing) onOpenCourseDetail(slot.detailSelection)
-                            },
-                            onAssignmentClick = {
-                                if (!isEditing) onOpenAssignment(it)
-                            },
-                            onToggleIgnore = {
-                                if (!isEditing) viewModel.toggleIgnore(it)
-                            },
-                            onMarkCompleted = {
-                                if (!isEditing) viewModel.toggleMarkCompleted(it)
-                            },
-                            onSelectFilter = { viewModel.setAssignmentFilter(it) },
-                            // onSkipCourse = { course, date ->
-                            //     if (!isEditing) viewModel.toggleSkip(course, date)
-                            // },
-                            isEditing = isEditing,
-                            onOpenFeature = { feature ->
-                                // A stored layout may still hold a shortcut to a
-                                // feature that has not shipped (the first default
-                                // had four); it says so, as the More page does.
-                                if (isEditing) return@HomeSectionContent
-                                if (feature.isImplemented) onOpenFeature(feature) else showComingSoon = true
-                            },
-                            onRemoveWidget = viewModel::removeWidget,
-                            onMoveWidget = viewModel::moveWidget,
-                            onAddQuickFeature = { showAddSectionDialog = true },
-                            onOpenSignInSettings = onOpenSignInSettings,
+                            syncedAtMs = schoolDataSyncedAtMs,
                         )
                     }
                 }
-            }
+            },
+            banner = if (bannerRejection(passwordRejection, signInViewModel.dismissedRejection, signedInForBanner) != null) {
+                { AutoSignInFailedBanner(viewModel = signInViewModel) }
+            } else {
+                null
+            },
+        ) { section ->
+            HomeSectionContent(
+                section = section,
+                allCourses = allCourses,
+                quietDays = quietDays,
+                upcomingAssignments = upcomingAssignments,
+                assignmentFilter = assignmentFilter,
+                showIgnoredTab = hasIgnoredAssignments || ignoredTabPinned,
+                ignoredAssignmentIds = ignoredAssignmentIds,
+                markedCompletedIds = markedCompletedIds,
+                courseIgnoredIds = courseIgnoredIds,
+                isLoggedIn = isLoggedIn,
+                isLoading = isLoading,
+                initialLoadComplete = initialLoadComplete,
+                hasUnfinishedAssignment = hasUnfinishedAssignment,
+                showAbsoluteTime = appState.showAbsoluteAssignmentTime,
+                invertDirection = appState.invertSliderDirection,
+                onCourseClick = { slot ->
+                    if (!isEditing) onOpenCourseDetail(slot.detailSelection)
+                },
+                onAssignmentClick = {
+                    if (!isEditing) onOpenAssignment(it)
+                },
+                onToggleIgnore = {
+                    if (!isEditing) viewModel.toggleIgnore(it)
+                },
+                onMarkCompleted = {
+                    if (!isEditing) viewModel.toggleMarkCompleted(it)
+                },
+                onSelectFilter = { viewModel.setAssignmentFilter(it) },
+                // onSkipCourse = { course, date ->
+                //     if (!isEditing) viewModel.toggleSkip(course, date)
+                // },
+                isEditing = isEditing,
+                onOpenFeature = { feature ->
+                    // A stored layout may still hold a shortcut to a
+                    // feature that has not shipped (the first default
+                    // had four); it says so, as the More page does.
+                    if (isEditing) return@HomeSectionContent
+                    if (feature.isImplemented) onOpenFeature(feature) else showComingSoon = true
+                },
+                onRemoveWidget = viewModel::removeWidget,
+                onMoveWidget = viewModel::moveWidget,
+                onAddQuickFeature = { showAddSectionDialog = true },
+                onOpenSignInSettings = onOpenSignInSettings,
+            )
         }
         SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     } // Box
@@ -379,6 +306,119 @@ fun HomeScreen(
     }
 
 }
+/**
+ * Home's page under its pull to refresh: [header], [banner] when there is one, and [sections],
+ * each drawn by [sectionContent]. A long press on a section starts editing, in which each one
+ * takes a drag handle and a remove button and the drag moves it among the others.
+ */
+@Composable
+internal fun HomePage(
+    sections: List<HomeSection>,
+    isEditing: Boolean,
+    onStartEditing: () -> Unit,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    onMoveSection: (fromId: String, toId: String) -> Unit,
+    onRemoveSection: (sectionId: String) -> Unit,
+    header: @Composable () -> Unit,
+    banner: (@Composable () -> Unit)?,
+    modifier: Modifier = Modifier,
+    listState: LazyListState = rememberLazyListState(),
+    sectionContent: @Composable (HomeSection) -> Unit,
+) {
+    // Per-section measured height — needed for the drag-and-swap threshold
+    // math. Position on screen is *not* tracked because layout changes during
+    // reorder would pollute it; height is stable enough per section.
+    val sectionHeights = remember { mutableStateMapOf<String, Float>() }
+    var draggingId by remember { mutableStateOf<String?>(null) }
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+
+    // If edit mode is cancelled (back gesture, etc.) mid-drag, clear drag state.
+    LaunchedEffect(isEditing) {
+        if (!isEditing) {
+            draggingId = null
+            dragOffsetY = 0f
+        }
+    }
+
+    TigerPullToRefresh(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = modifier.fillMaxSize(),
+        refreshingMessage = stringResource(R.string.refreshing_message),
+    ) {
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            userScrollEnabled = !isEditing,
+        ) {
+            item { header() }
+
+            // As its own item only while shown: an empty one would still
+            // take the list's spacing.
+            if (banner != null) {
+                item(key = "autoSignInFailed") { banner() }
+            }
+
+            itemsIndexed(
+                items = sections,
+                key = { _, s -> s.id },
+            ) { _, section ->
+                ReorderableSection(
+                    section = section,
+                    isEditing = isEditing,
+                    isDragging = draggingId == section.id,
+                    dragOffsetY = if (draggingId == section.id) dragOffsetY else 0f,
+                    onStartEditing = onStartEditing,
+                    onDragStart = {
+                        draggingId = section.id
+                        dragOffsetY = 0f
+                    },
+                    onDrag = { delta ->
+                        dragOffsetY += delta
+                        val fromIdx = sections.indexOfFirst { it.id == section.id }
+                        if (fromIdx < 0) return@ReorderableSection
+
+                        // Threshold-based swap: when the drag has crossed half of
+                        // the neighbor's height, swap in the data model and
+                        // compensate `dragOffsetY` so the card stays visually
+                        // under the user's finger (no snap-back).
+                        if (dragOffsetY > 0 && fromIdx < sections.lastIndex) {
+                            val next = sections[fromIdx + 1]
+                            val nextH = sectionHeights[next.id]
+                                ?: return@ReorderableSection
+                            if (dragOffsetY > nextH / 2f) {
+                                onMoveSection(section.id, next.id)
+                                dragOffsetY -= nextH
+                            }
+                        } else if (dragOffsetY < 0 && fromIdx > 0) {
+                            val prev = sections[fromIdx - 1]
+                            val prevH = sectionHeights[prev.id]
+                                ?: return@ReorderableSection
+                            if (dragOffsetY < -prevH / 2f) {
+                                onMoveSection(section.id, prev.id)
+                                dragOffsetY += prevH
+                            }
+                        }
+                    },
+                    onDragEnd = {
+                        draggingId = null
+                        dragOffsetY = 0f
+                    },
+                    onMeasured = { height ->
+                        sectionHeights[section.id] = height
+                    },
+                    onRemove = { onRemoveSection(section.id) },
+                ) {
+                    sectionContent(section)
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun greetingText(): String {
     val hour = AppClock.calendar().get(Calendar.HOUR_OF_DAY)
