@@ -1400,6 +1400,7 @@ class DataCache @Inject constructor(
                     cacheDir.listFiles { _, name -> name.startsWith("score_") && name.endsWith(".json") }
                         ?.forEach { it.delete() }
                 }
+                runCatching { deleteUnfinishedWrites(cacheDir) }
                 // Every account's Moodle copies, member pictures and downloaded files, and the
                 // opened copies earlier builds kept apart.
                 runCatching { moodleDir.deleteRecursively() }
@@ -1439,11 +1440,20 @@ class DataCache @Inject constructor(
                     }
                         ?.forEach { it.delete() }
                 }
+                runCatching { deleteUnfinishedWrites(userDataDir) }
             }
         }
     }
 
     // --- Private helpers ---
+
+    /**
+     * The temporary files of [atomicWrite]s in [dir] a process death cut short before their
+     * rename, which hold the data they were writing. Called with the folder's lock held.
+     */
+    private fun deleteUnfinishedWrites(dir: File) {
+        dir.listFiles { _, name -> name.endsWith(TEMP_SUFFIX) }?.forEach { it.delete() }
+    }
 
     private suspend fun <T> save(value: T, filename: String) {
         val generation = writeGeneration()
@@ -1497,7 +1507,7 @@ class DataCache @Inject constructor(
      * failing to persist is otherwise undiagnosable in the field.
      */
     private fun atomicWrite(target: File, content: String) {
-        val tmp = File(target.parentFile, target.name + ".tmp")
+        val tmp = File(target.parentFile, target.name + TEMP_SUFFIX)
         try {
             tmp.writeText(content)
             if (!tmp.renameTo(target)) {
@@ -1546,6 +1556,9 @@ class DataCache @Inject constructor(
         private const val HAND_ADDED_HIDES_FILE = "hand_added_hides.json"
         private const val RESTORED_COURSES_FILE = "restored_courses.json"
         private const val SELECTION_ROSTERS_FILE = "selection_rosters.json"
+
+        /** What [atomicWrite] names its temporary file with, after the file it writes. */
+        private const val TEMP_SUFFIX = ".tmp"
 
         private const val MOODLE_DIR = "moodle"
         private const val ASSIGNMENT_RECORDS_FILE = "moodle_assignments.json"

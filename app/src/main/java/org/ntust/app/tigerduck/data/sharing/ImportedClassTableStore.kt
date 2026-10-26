@@ -336,6 +336,8 @@ class ImportedClassTableStore internal constructor(
             _tables.value = ImportedClassTables()
         }
         if (file.exists() && !file.delete()) Log.w(TAG, "Could not delete the imported class tables")
+        // A write a process death cut short leaves its temporary file, with the tables it held.
+        unfinishedWrite().delete()
     }
 
     // --- File ---
@@ -381,6 +383,9 @@ class ImportedClassTableStore internal constructor(
         return Stored(stored.owner, people)
     }
 
+    /** Where [save] writes before it renames the file into place. */
+    private fun unfinishedWrite() = File(file.parentFile, "${file.name}.tmp")
+
     /**
      * Writes [people] under [owner] and says whether the file now holds them. A caller publishes a
      * change only after this, so the people on screen are always the ones a relaunch reads back.
@@ -389,7 +394,7 @@ class ImportedClassTableStore internal constructor(
         if (!mayWrite) return false
         val stored = ImportedClassTablesFileDto(FILE_VERSION, owner, people.map { it.toDto() })
         // Written whole and moved over the old file, so a crash mid-write leaves the last good one.
-        val tmp = File(file.parentFile, "${file.name}.tmp")
+        val tmp = unfinishedWrite()
         return try {
             file.parentFile?.mkdirs()
             tmp.writeText(gson.toJson(stored))

@@ -178,6 +178,15 @@ android {
                     file("../wear/build.gradle.kts"),
                 ).withPathSensitivity(PathSensitivity.RELATIVE)
             }
+            // AccountStateInventoryTest and AccountSwitchTest read the account state inventory
+            // and every source set's sources, the other flavor's and debug's included, which a
+            // test task of one variant does not compile.
+            all {
+                it.inputs.files(
+                    file("../docs/account-state.md"),
+                    fileTree("src") { include("main/java/**/*.kt", "play/java/**/*.kt", "fdroid/java/**/*.kt", "debug/java/**/*.kt") },
+                ).withPathSensitivity(PathSensitivity.RELATIVE)
+            }
         }
     }
 
