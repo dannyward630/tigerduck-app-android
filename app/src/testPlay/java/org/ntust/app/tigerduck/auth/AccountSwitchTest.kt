@@ -356,11 +356,28 @@ class AccountSwitchTest {
         File(bulletins, "fetched_at.tmp").writeText("1")
         assertTrue(filesUnder(bulletins).isNotEmpty())
 
+        /** Nothing of the first student's is left, and their School Mail and library account stay. */
+        suspend fun assertNothingOfTheFirstLeft(after: String) {
+            // Gone, or back to a value of no one's: none still holds what the first student left.
+            val left = firstLeft.filter { (at, value) -> prefs(at.first).all[at.second] == value }.keys
+            assertEquals(after, emptySet<Pair<String, String>>(), left)
+            assertEquals(after, emptyList<String>(), listOf("cache", "data").flatMap { filesUnder(cacheRoots.getValue(it)) })
+            assertEquals(after, emptyList<String>(), filesUnder(dataCache.moodleDownloadsRoot()))
+            assertEquals(after, emptyList<String>(), filesUnder(bulletins))
+            assertEquals(after, emptyList<String>(), imported.load().people.map { it.nickname })
+            assertFalse(after, importedUnfinished.exists())
+            assertEquals(after, othersBefore, credentialPrefs.all.filterKeys { it.startsWith("mail_") || it.startsWith("library_") })
+        }
+
         auth.logout()
         withTimeout(10_000) {
             signOutJob.children.toList().joinAll()
             browserClearings.first { it >= 1 }
         }
+        // By the sign-out itself: the next sign-in clears some of the same again.
+        assertNothingOfTheFirstLeft(after = "the sign-out")
+        assertEquals(null, auth.storedStudentId)
+
         assertTrue(auth.login(SECOND, "second-password"))
         withTimeout(10_000) {
             // The browser's clearing that follows the sign-in.
@@ -370,15 +387,7 @@ class AccountSwitchTest {
         assertTrue(auth.authState.value)
         assertEquals(SECOND, auth.storedStudentId)
         assertEquals("second-password", credentials.ntustPassword)
-        // Gone, or back to a value of no one's: none still holds what the first student left.
-        val left = firstLeft.filter { (at, value) -> prefs(at.first).all[at.second] == value }.keys
-        assertEquals(emptySet<Pair<String, String>>(), left)
-        assertEquals(emptyList<String>(), listOf("cache", "data").flatMap { filesUnder(cacheRoots.getValue(it)) })
-        assertEquals(emptyList<String>(), filesUnder(dataCache.moodleDownloadsRoot()))
-        assertEquals(emptyList<String>(), filesUnder(bulletins))
-        assertEquals(emptyList<String>(), imported.load().people.map { it.nickname })
-        assertFalse(importedUnfinished.exists())
-        assertEquals(othersBefore, credentialPrefs.all.filterKeys { it.startsWith("mail_") || it.startsWith("library_") })
+        assertNothingOfTheFirstLeft(after = "the second sign-in")
     }
 
     private companion object {

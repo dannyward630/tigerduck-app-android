@@ -445,7 +445,8 @@ internal class AccountStateInventory(
         }
         val position = function.parameters.indexOf(name)
         if (position < 0) return null
-        // A call of it from another source names its class, and makes it on an instance of it.
+        // A call of it from another source names its class, and makes it on an instance of it: on
+        // `this`, or on a name the caller declares of that class, whatever the name.
         val owner = path.substringAfterLast('/').removeSuffix(".kt")
         val found = mutableListOf<String>()
         code.forEach { (caller, callerText) ->
@@ -457,7 +458,7 @@ internal class AccountStateInventory(
                 // A link of a chain, on another call's result: a SharedPreferences editor's among them.
                 if (bare.getValue(caller).substring(0, call.range.first).trimEnd().endsWith(".")) return@forEach
                 if (receiver.isNotEmpty()) {
-                    if (!Regex("""(?i)(prefs|preferences)$|^this$""").containsMatchIn(receiver)) return@forEach
+                    if (receiver != "this" && !Regex("""\b$receiver\s*:\s*$owner\b""").containsMatchIn(callerText)) return@forEach
                 } else if (caller != path || enclosing(caller, call.range.first)?.extension == true ||
                     editorBlockStart(caller, call.range.first) != null
                 ) {
@@ -776,6 +777,22 @@ internal class AccountStateInventory(
         return errors
     }
 
+    /**
+     * Whether the body at [range] in [path] clears [file] whole: `clear()` on an editor of it,
+     * `prefs.edit().clear()`, not on anything else that has a `clear()`.
+     */
+    private fun clearsEditor(path: String, range: IntRange, file: String): Boolean {
+        val named = receiverMaps.getValue(path)
+        val fallback = prefsFiles.filterValues { path in it }.keys.singleOrNull()
+        return Regex("""\.clear\(\)""").findAll(code.getValue(path).substring(range.first, range.last + 1)).any { match ->
+            val dot = range.first + match.range.first
+            val receiver = chainStart(path, dot) ?: return@any false
+            val chain = bare.getValue(path).substring(0, dot).substringAfterLast(receiver)
+            val store = named[receiver] ?: fallback?.takeIf { isPrefsName(receiver) }
+            store == file && (Regex("""^\s*\.edit\(\)\s*$""").matches(chain) || Regex("""(?i)edit(or)?$""").containsMatchIn(receiver))
+        }
+    }
+
     private fun clearingProblem(row: Row): String? {
         val clearer = row.clearer ?: return " belongs to an account but names nothing that clears it"
         val path = sourceNamed(clearer.file) ?: return ": no single source is named ${clearer.file}"
@@ -784,7 +801,7 @@ internal class AccountStateInventory(
         val clears = when {
             clearer.via != null -> clearer.via in body
             row.store == "prefs" -> path in prefsFiles[row.name].orEmpty() && (
-                ".clear()" in body ||
+                clearsEditor(path, range, row.name) ||
                     keys[row.name].orEmpty().all { removes(body, it.name, aliases(it.name, prefsFiles.getValue(row.name))) }
                 )
             row.store == "cache" -> path == dataCache && deletes(path, range, row.name, aliases(row.name, listOf(dataCache)))

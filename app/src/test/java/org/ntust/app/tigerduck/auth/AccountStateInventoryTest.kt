@@ -274,6 +274,29 @@ class AccountStateInventoryTest {
         }
     }
 
+    // Whatever the caller calls the instance it holds.
+    @Test
+    fun `a key passed to a helper of the store's class on an instance of any name without a row fails`() {
+        val problems = edited(
+            "PushIdentity.kt",
+            "    fun uuid(): String =",
+            "    fun keepLastViewedCourse(settings: AppPreferences, value: String) = settings.putString(\"lastViewedCourse\", value)\n\n" +
+                "    fun uuid(): String =",
+        ).problems()
+        assertTrue(problems.toString(), "tigerduck_prefs `lastViewedCourse` has no row in docs/account-state.md" in problems)
+    }
+
+    // A map's clear() is no store's: the file is cleared by its editor's.
+    @Test
+    fun `a whole file whose clearer clears something else fails`() {
+        val problems = edited(
+            "MailStateStore.kt",
+            "        clearCount++\n        prefs.edit().clear().apply()",
+            "        clearCount++\n        prefs.all.toMutableMap().clear()",
+        ).problems()
+        assertTrue(problems.toString(), "prefs `school_mail_state`: `clear` in MailStateStore.kt does not clear it" in problems)
+    }
+
     // A comment is no code: the removal it holds removes nothing.
     @Test
     fun `a credential whose removal is commented out fails`() {
