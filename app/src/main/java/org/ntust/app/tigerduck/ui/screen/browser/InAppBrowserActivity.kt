@@ -49,6 +49,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -71,7 +72,9 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
+import org.ntust.app.tigerduck.BuildConfig
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.browser.BrowserAllowlist
 import org.ntust.app.tigerduck.browser.BrowserAllowlistStore
 import org.ntust.app.tigerduck.browser.BrowserAppearance
 import org.ntust.app.tigerduck.browser.BrowserCleanup
@@ -119,6 +122,9 @@ import org.ntust.app.tigerduck.debug.PretendMissingApps
 object InAppBrowser {
     const val EXTRA_URL = "org.ntust.app.tigerduck.browser.URL"
 
+    /** Set by [openAnyPage]: the browser lets every page in, in a debug build only. */
+    const val EXTRA_ANY_PAGE = "org.ntust.app.tigerduck.browser.ANY_PAGE"
+
     /**
      * Whether this phone's WebView can delete everything a site keeps,
      * service workers and Cache Storage included. The browser opens only
@@ -138,10 +144,37 @@ object InAppBrowser {
      */
     fun open(context: Context, url: String): Boolean {
         if (url.toHttpUrlOrNull()?.isHttps != true) return false
+        return start(context, Intent(context, InAppBrowserActivity::class.java).putExtra(EXTRA_URL, url))
+    }
+
+    /**
+     * Settings › Developer › Browser allowlist's "Open a page": opens [url], any http or https
+     * page, in a TigerDuck browser that lets every page in, past any allowlist, for a developer
+     * to try a page. A release build ([debug] false) opens nothing. As [open] otherwise.
+     */
+    fun openAnyPage(context: Context, url: String): Boolean = openAnyPage(context, url, BuildConfig.DEBUG)
+
+    @VisibleForTesting
+    internal fun openAnyPage(context: Context, url: String, debug: Boolean): Boolean {
+        if (!debug || url.toHttpUrlOrNull() == null) return false
+        val intent = Intent(context, InAppBrowserActivity::class.java).putExtra(EXTRA_URL, url).putExtra(EXTRA_ANY_PAGE, true)
+        return start(context, intent)
+    }
+
+    private fun start(context: Context, intent: Intent): Boolean {
         if (!canClearEverything() || !BrowserSession.usable || BrowserCleanup.of(context).isPending()) return false
-        val intent = Intent(context, InAppBrowserActivity::class.java).putExtra(EXTRA_URL, url)
         if (context !is Activity) intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return runCatching { context.startActivity(intent) }.isSuccess
+    }
+
+    /** The allowlist a browser goes by: [stored], or every page when [anyPageAsked] ([openAnyPage]) in a [debug] build. */
+    internal fun allowlistFor(stored: BrowserAllowlist, anyPageAsked: Boolean, debug: Boolean = BuildConfig.DEBUG): BrowserAllowlist =
+        if (anyPageAsked && debug) stored.lettingAnyPageIn() else stored
+
+    /** The page a browser starts on: [url] when it is an https page, or any web page for [anyPage]. */
+    internal fun startPage(url: String?, anyPage: Boolean): String? {
+        val parsed = url?.toHttpUrlOrNull() ?: return null
+        return url.takeIf { parsed.isHttps || anyPage }
     }
 }
 
@@ -163,6 +196,13 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     @Inject lateinit var appState: AppState
     @Inject lateinit var allowlistStore: BrowserAllowlistStore
+
+    /** Opened by the developer page's "Open a page" ([InAppBrowser.openAnyPage]): every page loads, in a debug build. */
+    private var anyPage = false
+
+    /** The allowlist every navigation here is checked against. */
+    private val allowlist: BrowserAllowlist
+        get() = InAppBrowser.allowlistFor(allowlistStore.allowlist.value, anyPage)
     @Inject lateinit var settings: BrowserSettings
     @Inject lateinit var downloads: BrowserDownloads
     @Inject lateinit var signIns: BrowserSignIns
@@ -249,7 +289,8 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val target = intent.getStringExtra(InAppBrowser.EXTRA_URL)?.takeIf { it.toHttpUrlOrNull()?.isHttps == true }
+        anyPage = BuildConfig.DEBUG && intent.getBooleanExtra(InAppBrowser.EXTRA_ANY_PAGE, false)
+        val target = InAppBrowser.startPage(intent.getStringExtra(InAppBrowser.EXTRA_URL), anyPage)
         if (target == null) {
             finish()
             return
@@ -494,7 +535,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /** Loads [url], one the app chose, on the same terms as a page's own navigation. */
     private fun load(url: String) {
-        when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
+        when (val decision = BrowserRouting.navigation(url, allowlist)) {
             NavigationDecision.Load -> {
                 val web = web ?: return
                 state.error = null
@@ -514,7 +555,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             signInFlow.signInPageReached(provider, url)
             return true
         }
-        return when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
+        return when (val decision = BrowserRouting.navigation(url, allowlist)) {
             NavigationDecision.Load -> {
                 loads.requested(url)
                 false
@@ -538,7 +579,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             signInFlow.signInPageReached(provider, url)
             return
         }
-        val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)
+        val decision = BrowserRouting.navigation(url, allowlist)
         if (decision != NavigationDecision.Load) {
             webView.stopLoading()
             if (decision is NavigationDecision.OpenOutside) state.outsideUrl = decision.url
@@ -630,7 +671,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             url = url,
             contentDisposition = contentDisposition,
             mimeType = mimeType,
-            allowlist = allowlistStore.allowlist.value,
+            allowlist = allowlist,
             guessFileName = URLUtil::guessFileName,
             mimeOfExtension = { MimeTypeMap.getSingleton().getMimeTypeFromExtension(it) },
         )
@@ -863,13 +904,13 @@ class InAppBrowserActivity : AppCompatActivity() {
             // choice, as any script on it can send anywhere too. The allowlist decides which pages
             // this browser shows, and onPageStart stops such a page as it starts.
             val url = request.url.toString()
-            if (!BrowserRouting.blocksRequest(url, request.isForMainFrame, allowlistStore.allowlist.value)) {
+            if (!BrowserRouting.blocksRequest(url, request.isForMainFrame, allowlist)) {
                 // So a certificate refused for it is known for the page's, before the page starts.
                 if (request.isForMainFrame) loads.mainFrameRequested(url)
                 return null
             }
             view.post {
-                when (val decision = BrowserRouting.navigation(url, allowlistStore.allowlist.value)) {
+                when (val decision = BrowserRouting.navigation(url, allowlist)) {
                     is NavigationDecision.OpenOutside -> state.outsideUrl = decision.url
                     else -> Unit
                 }
@@ -888,7 +929,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
             // A page that changes its address itself (history.pushState) lands here only.
-            if (url != null && BrowserRouting.navigation(url, allowlistStore.allowlist.value) == NavigationDecision.Load) state.url = loads.address(url)
+            if (url != null && BrowserRouting.navigation(url, allowlist) == NavigationDecision.Load) state.url = loads.address(url)
             updateHistory()
         }
 
