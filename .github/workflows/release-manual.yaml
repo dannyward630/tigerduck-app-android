@@ -160,13 +160,22 @@ jobs:
 
       # Root-level task names fan out to every module, so this already covers
       # :wear:assembleRelease / :wear:bundleRelease.
+      # gradle.properties sizes the build for a laptop: a 2 GB heap, which the
+      # Kotlin daemon copies. Compiling every release variant in one run
+      # outgrew it in 2.4.0 (the Kotlin compiler stopped on "GC overhead limit
+      # exceeded"), so this takes what ci.yaml's legs take on the same 16 GB
+      # runner: 6 GB for the build and 3 GB for the Kotlin daemon.
       - name: Build release AAB and APK (phone + watch)
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           PUSH_SHARED_SECRET: ${{ secrets.PUSH_SHARED_SECRET }}
-        run: ./gradlew bundleRelease assembleRelease
+        run: >-
+          ./gradlew
+          -Dorg.gradle.jvmargs="-Xmx6g -Dfile.encoding=UTF-8"
+          -Pkotlin.daemon.jvmargs=-Xmx3g
+          bundleRelease assembleRelease
 
       - name: Rename build outputs
         run: |
