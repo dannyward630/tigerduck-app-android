@@ -806,8 +806,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
         override fun pickUpload(source: UploadSource) = this@InAppBrowserActivity.pickUpload(source)
         override fun cancelUpload() = deliverUpload(null)
-        override fun signInAgain() = signInFlow.signInAgain()
-        override fun signInOnWeb() = signInFlow.signInOnWeb()
+        override fun retrySignIn() = signInFlow.retry()
     }
 
     // ── WebView callbacks ─────────────────────────────────────────────────

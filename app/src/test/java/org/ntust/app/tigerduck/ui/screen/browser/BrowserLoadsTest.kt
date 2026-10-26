@@ -28,8 +28,6 @@ class BrowserLoadsTest {
         override fun isReturnPage(url: String) = MoodleBrowserSignIn.isMoodleReturnPage(url)
         override fun isSignInLink(url: String) = MoodleBrowserSignIn.isMoodleSignInLink(url)
         override suspend fun signedInUrl(target: String): String? = null
-        override fun msUntilRetry() = 0L
-        override fun webSignInUrl(target: String): String? = null
     }
     private val loads = BrowserLoads(state, BrowserSignIns(listOf(moodle)))
 

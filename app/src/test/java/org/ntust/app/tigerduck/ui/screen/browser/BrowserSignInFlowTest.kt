@@ -16,7 +16,7 @@ import org.ntust.app.tigerduck.browser.BrowserSignIns
 import org.ntust.app.tigerduck.browser.MoodleBrowserSignIn
 import org.ntust.app.tigerduck.ui.AppProcessing
 
-/** The sign-in screen: when it signs in by itself, and which page a sign-in goes on to. */
+/** The sign-in screen: when it signs in by itself, when it says it failed, and which page a sign-in goes on to. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class BrowserSignInFlowTest {
 
@@ -54,8 +54,7 @@ class BrowserSignInFlowTest {
             dueAt = clock() + intervalMs
             return "$SIGNED_IN$target"
         }
-        override fun msUntilRetry() = (dueAt - clock()).coerceAtLeast(0)
-        override fun webSignInUrl(target: String) = WEB_SIGN_IN
+        fun msUntilRetry() = (dueAt - clock()).coerceAtLeast(0)
         // As Moodle's: by itself once every 6 minutes, by hand at once.
         override fun maySignInWithoutLink(byHand: Boolean) =
             appSignIn != null && (byHand || appRuns.lastOrNull()?.let { clock() - it >= 360_000 } ?: true)
@@ -98,21 +97,39 @@ class BrowserSignInFlowTest {
     }
 
     @Test
-    fun `with no link due, the screen counts down and signs in once one is`() = runTest {
-        val site = Site(firstDueAtMs = 3_000)
+    fun `with no link due and no other way in, the screen says the sign-in failed and tries nothing more by itself`() = runTest {
+        val site = Site(firstDueAtMs = 300_000)
         val flow = flow(site)
         loads.requested(PAGE)
 
         flow.signInPageReached(site, SIGN_IN_PAGE)
         runCurrent()
+        assertEquals(PAGE, state.signIn?.target)
+        assertEquals(false, state.signIn?.working)
 
+        // Past the next link's time: no countdown ran to it.
+        advanceTimeBy(400_000)
+        runCurrent()
+
+        assertEquals("asked once, at the sign-in page", listOf(PAGE), site.asked)
         assertEquals(emptyList<String>(), loaded)
-        assertTrue(state.signIn!!.msLeft > 0)
+        assertEquals(false, state.signIn?.working)
+    }
 
-        advanceTimeBy(3_600)
+    @Test
+    fun `Retry once a link is due signs in with it`() = runTest {
+        val site = Site(firstDueAtMs = 300_000)
+        val flow = flow(site)
+        loads.requested(PAGE)
+        flow.signInPageReached(site, SIGN_IN_PAGE)
+        runCurrent()
+
+        advanceTimeBy(300_000)
+        flow.retry()
         runCurrent()
 
         assertEquals(listOf("$SIGNED_IN$PAGE"), loaded)
+        assertNull(state.signIn)
     }
 
     @Test
@@ -127,12 +144,12 @@ class BrowserSignInFlowTest {
         runCurrent()
 
         assertEquals(listOf(PAGE), site.asked)
-        assertEquals(true, state.signIn?.failed)
+        assertEquals(false, state.signIn?.working)
         assertEquals(emptyList<String>(), loaded)
     }
 
     @Test
-    fun `a site that bounces its link back to its sign-in page counts down rather than loop`() = runTest {
+    fun `a site that bounces its link back to its sign-in page ends on the failed screen rather than loop`() = runTest {
         val site = Site()
         val flow = flow(site)
         flow.signIn(site, PAGE)
@@ -145,9 +162,11 @@ class BrowserSignInFlowTest {
         advanceTimeBy(60_000)
         runCurrent()
 
-        assertEquals(listOf(PAGE), site.asked)
+        // Asked again at the sign-in page, where Moodle's 6 minutes have not passed.
+        assertEquals(listOf(PAGE, PAGE), site.asked)
         assertEquals(PAGE, state.signIn?.target)
-        assertTrue(state.signIn!!.msLeft > 0)
+        assertEquals(false, state.signIn?.working)
+        assertEquals(listOf("$SIGNED_IN$PAGE"), loaded)
     }
 
     @Test
@@ -187,52 +206,6 @@ class BrowserSignInFlowTest {
     }
 
     @Test
-    fun `the web sign-in opens the page first, so Moodle keeps it, then goes on from Moodle's sign-in page`() = runTest {
-        // No link to be had: the student signs in on the web page.
-        val site = Site(works = false)
-        val flow = flow(site)
-        flow.signIn(site, PAGE)
-        runCurrent()
-
-        flow.signInOnWeb()
-        runCurrent()
-        assertEquals(listOf(PAGE), loaded)
-        assertNull(state.signIn)
-
-        // Moodle, signed out, keeps the page and sends the browser to its sign-in page.
-        flow.signInPageReached(site, SIGN_IN_PAGE)
-        runCurrent()
-
-        assertEquals(listOf(PAGE, WEB_SIGN_IN), loaded)
-        assertNull(state.signIn)
-        assertEquals("no link asked for on the way", listOf(PAGE), site.asked)
-
-        // The web sign-in's own entry does not end the sign-in.
-        loads.started(WEB_SIGN_IN)
-        assertEquals(PAGE, loads.signInTarget)
-    }
-
-    @Test
-    fun `a web sign-in whose page opens as it is ends there`() = runTest {
-        val site = Site(works = false)
-        val flow = flow(site)
-        flow.signIn(site, PAGE)
-        runCurrent()
-        flow.signInOnWeb()
-        runCurrent()
-        // Signed in after all.
-        loads.started(PAGE)
-        loads.finished(PAGE)
-
-        // Signed out again later: the screen as ever, not the web sign-in.
-        site.works = true
-        flow.signInPageReached(site, SIGN_IN_PAGE)
-        runCurrent()
-
-        assertEquals("$SIGNED_IN$PAGE", loaded.last())
-    }
-
-    @Test
     fun `leaving the sign-in while its link is on its way loads nothing and forgets it`() = runTest {
         val site = Site(takesMs = 1_000)
         val flow = flow(site)
@@ -251,7 +224,7 @@ class BrowserSignInFlowTest {
     }
 
     @Test
-    fun `leaving the countdown stops it`() = runTest {
+    fun `leaving the failed screen forgets it`() = runTest {
         val site = Site(firstDueAtMs = 3_000)
         val flow = flow(site)
         loads.requested(PAGE)
@@ -262,14 +235,15 @@ class BrowserSignInFlowTest {
         advanceTimeBy(5_000)
         runCurrent()
 
-        assertEquals(emptyList<String>(), site.asked)
+        assertEquals(listOf(PAGE), site.asked)
         assertNull(state.signIn)
+        assertNull(loads.signInTarget)
     }
 
     @Test
-    fun `cancelling stops the countdown, also one a try that failed at once started`() = runTest(UnconfinedTestDispatcher()) {
+    fun `cancelling stops a try on its way, as the activity's Main dispatcher runs it`() = runTest(UnconfinedTestDispatcher()) {
         // As the activity's Main.immediate: a launch runs at once, up to its first wait.
-        val site = Site(firstDueAtMs = 3_000)
+        val site = Site(takesMs = 1_000)
         val flow = flow(site)
 
         flow.signIn(site, PAGE)
@@ -278,6 +252,7 @@ class BrowserSignInFlowTest {
         runCurrent()
 
         assertEquals(listOf(PAGE), site.asked)
+        assertEquals(emptyList<String>(), loaded)
     }
 
     // --- the app's own sign-in, when no link can be had ---
@@ -365,7 +340,7 @@ class BrowserSignInFlowTest {
     }
 
     @Test
-    fun `Sign in again by hand may try the app's own sign-in once more`() = runTest {
+    fun `Retry by hand may try the app's own sign-in once more`() = runTest {
         val site = Site(firstDueAtMs = 300_000, appSignIn = { false })
         val flow = flow(site)
         loads.requested(PAGE)
@@ -373,7 +348,7 @@ class BrowserSignInFlowTest {
         runCurrent()
 
         site.appSignIn = { true }
-        flow.signInAgain()
+        flow.retry()
         runCurrent()
 
         assertEquals(2, site.appRuns.size)
@@ -385,6 +360,5 @@ class BrowserSignInFlowTest {
         const val OTHER_PAGE = "https://moodle2.ntust.edu.tw/course/view.php?id=2"
         const val SIGN_IN_PAGE = "https://moodle2.ntust.edu.tw/login/index.php"
         const val SIGNED_IN = "https://moodle2.ntust.edu.tw/admin/tool/mobile/autologin.php?key=k&urltogo="
-        const val WEB_SIGN_IN = "https://moodle2.ntust.edu.tw/auth/oidc/?source=loginpage"
     }
 }

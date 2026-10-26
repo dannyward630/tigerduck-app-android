@@ -103,8 +103,7 @@ open class BrowserActions {
     open fun answerDialog(confirmed: Boolean, value: String?) {}
     open fun pickUpload(source: UploadSource) {}
     open fun cancelUpload() {}
-    open fun signInAgain() {}
-    open fun signInOnWeb() {}
+    open fun retrySignIn() {}
 }
 
 /**
