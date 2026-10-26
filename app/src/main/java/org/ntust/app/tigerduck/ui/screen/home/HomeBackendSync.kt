@@ -26,6 +26,7 @@ import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -178,6 +179,8 @@ class HomeBackendSync @Inject constructor(
             markBackendIdle()
             return
         }
+        // Before anything it sends or fetches, until it is done: see DataCache.beginCourseSync.
+        val courseSync = dataCache.beginCourseSync()
         try {
             if (BuildConfig.DEBUG) ServerFailureSimulator.check(ServerKind.BACKEND)
             val account = authService.storedStudentId
@@ -187,6 +190,8 @@ class HomeBackendSync @Inject constructor(
             // Every class-table delete asked before the fetch ranks below it, every later one
             // above: a course reset the snapshot reads lets go of the first only; see applyCourseReset.
             val beforeFetch = pendingCourseDeletes.stamp()
+            // An add back made from here on is newer than a course reset the snapshot reads.
+            courseSync.fetching()
             // The first-sync mark upload is pinned to the sign-in read here:
             // a sign-out and another sign-in meanwhile must not send these
             // marks as theirs.
@@ -219,7 +224,7 @@ class HomeBackendSync @Inject constructor(
             } else {
                 state.allCourses.value.isNotEmpty()
             }
-            applyCourseReset(result, account, beforeFetch)
+            applyCourseReset(result, account, beforeFetch, courseSync)
             // Not gated on any of the per-category sync toggles: a holiday
             // exception is a notification setting, not course or assignment
             // data, and the categories the user can turn off do not cover
@@ -239,7 +244,7 @@ class HomeBackendSync @Inject constructor(
                 switchOn = "courses" in switchedOn,
                 pendingConflictCategories = prefs.pendingConflictCategories,
             )
-            syncCourseList(result, syncCourses)
+            syncCourseList(result, syncCourses, courseSync)
             // Only what this sync took, and only for the account it was for:
             // recorded after a sign-out, it would mark the next account's
             // categories before their first sync.
@@ -323,6 +328,8 @@ class HomeBackendSync @Inject constructor(
                 }
             }
             Log.w(TAG, "[Sync] override sync failed: ${e.logSummary()}")
+        } finally {
+            dataCache.endCourseSync(courseSync)
         }
     }
 
@@ -433,8 +440,15 @@ class HomeBackendSync @Inject constructor(
      * The reset brings back the courses this phone hid, so the deletes still
      * waiting to go up from before the fetch ([beforeFetch]) go too: sent on
      * a later retry, one would take a restored course off the server again.
+     * An add back under way goes with the waiting adds, for [courseSync]'s
+     * commit as well; see DataCache.CourseSync.supersedeAddsBack.
      */
-    private suspend fun applyCourseReset(result: BackendSyncResult, account: String?, beforeFetch: Long) {
+    private suspend fun applyCourseReset(
+        result: BackendSyncResult,
+        account: String?,
+        beforeFetch: Long,
+        courseSync: DataCache.CourseSync,
+    ) {
         val reset = CourseSyncReconciler.coursesReset(
             result.coursesResetAt, prefs.lastSeenCoursesResetAt, prefs.legacyLastCourseSyncAtMs,
         )
@@ -447,6 +461,7 @@ class HomeBackendSync @Inject constructor(
             dataCache.saveDeletedCourseNos(emptySet())
             // In every term: the reconcile would keep a course whose add waits.
             pendingCourseAdds.forgetAll()
+            courseSync.supersedeAddsBack()
             // Under the adds lock, as a term reset's forgetTerm: a retry waiting behind it then
             // finds them gone. One asked since the fetch is newer than the reset, and stays.
             pendingCourseAdds.removing {
@@ -474,8 +489,10 @@ class HomeBackendSync @Inject constructor(
      * courses it is authoritative for deletions and we merge down; when it
      * knows none for that term but this device does, we upload. Reading an
      * empty term as "the server says you have no courses" would delete them.
+     * Each term's commit leaves be what was put back in it since [courseSync]
+     * began; see [commitReconciledTerm].
      */
-    private suspend fun syncCourseList(result: BackendSyncResult, syncCourses: Boolean) {
+    private suspend fun syncCourseList(result: BackendSyncResult, syncCourses: Boolean, courseSync: DataCache.CourseSync) {
         if (!syncCourses) return
 
         val resetAt = dataCache.loadSemesterResetAt()
@@ -527,15 +544,10 @@ class HomeBackendSync @Inject constructor(
             // courses to take out of the cache (a reset elsewhere, with one
             // hand-typed survivor left to upload).
             val pruned = CourseSyncReconciler.pruneHidden(semester, localCourses, tombstones)
-            // A course hidden since, here or on another device, takes its
-            // waiting colour and name with it; see PendingCourseOverrides.forget.
-            pruned?.let { kept ->
-                pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
-            }
             if (outcome.merged.isNotEmpty()) {
                 Log.i(TAG, "[Sync] $semester: merged from server ${outcome.merged.map { it.courseNo }}")
             }
-            if (commitReconciledTerm(dataCache, semester, read, tombstones, tombstoneNos, localCourses, pruned, outcome.merged) &&
+            if (commitReconciledTerm(dataCache, courseSync, semester, read, tombstones, tombstoneNos, localCourses, pruned, outcome.merged, pendingCourseOverrides) &&
                 semester == currentSemester
             ) {
                 touchedCurrent = true
@@ -583,11 +595,11 @@ class HomeBackendSync @Inject constructor(
         val rosters = semesters.associateWith { semester ->
             dataCache.loadCourses(semester).map { it.courseNo }.toSet()
         }
-        val migrated = CourseTombstoneKeys.migrateLegacyEntries(stored, rosters)
-        if (migrated != stored) {
-            // Only the entries it pinned: a hide lifted while the rosters were read stays lifted.
-            dataCache.updateDeletedCourseNos(stored, migrated)
-            Log.i(TAG, "[Sync] pinned ${stored.size - migrated.count { ':' !in it }} legacy tombstones to their terms")
+        // Under the hides lock: a bare one lifted while the rosters were read stays lifted.
+        val migrated = dataCache.pinLegacyCourseHides(stored, rosters)
+        val bare = migrated.count { ':' !in it }
+        if (bare < stored.count { ':' !in it }) {
+            Log.i(TAG, "[Sync] pinned ${stored.count { ':' !in it } - bare} legacy tombstones to their terms")
         }
         return migrated
     }
@@ -614,9 +626,20 @@ class HomeBackendSync @Inject constructor(
  * made after finds the course hidden and marks nothing (`DataCache.hideDeletedCourse`). A course
  * selection answer that lifted a tombstoned hide meanwhile is undone, and every course the
  * commit hid goes from the term, wherever the term has it now.
+ *
+ * A course put back in the term since [courseSync], the sync's, began is neither hidden nor
+ * pruned for the older read: added back by hand, or brought back where the server is silent
+ * (`DataCache.commitSyncHides`). Its hide not written, its row stays, as one whose hide was lifted.
+ *
+ * A course the commit takes out of the term, hidden since here or on another device, takes its
+ * waiting colour and name in [overrides] with it, those set before the commit wrote the term:
+ * a course put back meanwhile stays, and so does what waits for it. The two go together however
+ * the sync is cancelled: a course gone with its changes left waiting would have them refused at
+ * every sync, and given to it again if it came back.
  */
 internal suspend fun commitReconciledTerm(
     dataCache: DataCache,
+    courseSync: DataCache.CourseSync,
     semester: String,
     read: Set<String>,
     hides: Set<String>,
@@ -624,11 +647,21 @@ internal suspend fun commitReconciledTerm(
     localCourses: List<Course>,
     kept: List<Course>?,
     merged: List<Course>,
+    overrides: PendingCourseOverrides,
 ): Boolean {
-    val newlyHidden = dataCache.commitSyncHides(semester, read, hides, tombstoneNos)
+    val newlyHidden = dataCache.commitSyncHides(semester, read, hides, tombstoneNos, courseSync)
     if (kept == null && merged.isEmpty() && newlyHidden.isEmpty()) return false
-    dataCache.updateCourses(semester) { current, hidden ->
-        CourseSyncReconciler.committedCourses(current, localCourses, kept ?: localCourses, merged, hidden, newlyHidden)
+    withContext(NonCancellable) {
+        val before = overrides.reserveVersion()
+        var removed = emptyList<Course>()
+        dataCache.updateCourses(semester) { current, hidden ->
+            CourseSyncReconciler.committedCourses(current, localCourses, kept ?: localCourses, merged, hidden, newlyHidden)
+                .also { committed ->
+                    val stays = committed.mapTo(mutableSetOf()) { it.courseNo }
+                    removed = current.filter { it.courseNo !in stays }
+                }
+        }
+        overrides.forget(removed.mapNotNull { it.moodleIdNumber }, madeBefore = before)
     }
     return true
 }

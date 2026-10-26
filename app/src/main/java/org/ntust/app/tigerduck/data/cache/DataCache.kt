@@ -589,6 +589,27 @@ class DataCache @Inject constructor(
     }
 
     /**
+     * Pins the legacy bare hides to the terms whose courses [rosters] lists carry them
+     * ([CourseTombstoneKeys.migrateLegacyEntries]), under [courseHidesMutex] and from the hides
+     * as they are now: a bare hide lifted since [read], the sync's read of them, by adding the
+     * course back for one, is pinned to no term, where pinning the read hid the course in its
+     * term again. Returns [read] pinned the same way, less such a hide: what the sync goes on to
+     * reconcile and its commit is measured against. A hide written since, by a delete, is no part
+     * of it, as it was not of the read: taken for the sync's own, it would be lifted by a snapshot
+     * fetched before the delete that still lists the course.
+     */
+    suspend fun pinLegacyCourseHides(read: Set<String>, rosters: Map<String, Set<String>>): Set<String> = courseHidesMutex.withLock {
+        val now = loadDeletedCourseNos()
+        val pinned = CourseTombstoneKeys.migrateLegacyEntries(now, rosters)
+        if (pinned != now) writeDeletedCourseNos(pinned)
+        // A bare hide gone from the store was lifted, unless another sync pinned it meanwhile.
+        val stands = read.filterTo(mutableSetOf()) { entry ->
+            ':' in entry || entry in now || CourseTombstoneKeys.migrateLegacyEntries(setOf(entry), rosters).any { it in now }
+        }
+        CourseTombstoneKeys.migrateLegacyEntries(stands, rosters)
+    }
+
+    /**
      * [nos] written as the hides, under [courseHidesMutex], with the marks and
      * the courses being brought back kept in step; see [hideDeletedCourse]. A
      * mark goes once its hide does, and so does one whose hide was gone
@@ -636,6 +657,103 @@ class DataCache @Inject constructor(
     // has none, and the hides it kept bind as they did.
 
     private val courseHidesMutex = Mutex()
+
+    /**
+     * A full sync's course reconcile, from [beginCourseSync] before its fetch to [endCourseSync]
+     * after its commit. It collects the courses put back in a term since it began, by
+     * `<semester>:<courseNo>` key: those added back by hand ([addCourseBack]) and those a course
+     * selection answer brought back ([liftHandAddedHides]). Their rows are newer than the sync's
+     * read, so its commit does not hide or prune them for it, but for a course brought back that
+     * another device's tombstone names ([commitSyncHides]).
+     */
+    class CourseSync internal constructor(internal val startedAtMs: Long, private val addsBackSoFar: () -> Long) {
+        // By key, the latest add back's place in [addCourseBack]'s order.
+        private val noted = java.util.concurrent.ConcurrentHashMap<String, Long>()
+        internal val broughtBack: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+        @Volatile
+        private var fetchedAfter = Long.MAX_VALUE
+
+        @Volatile
+        private var supersededUpTo = Long.MIN_VALUE
+
+        internal fun noteAddBack(key: String, order: Long) {
+            noted.merge(key, order, ::maxOf)
+        }
+
+        /** The courses added back since it began whose adds no course reset elsewhere took. */
+        internal fun addedBack(): Set<String> = noted.filterValues { it > supersededUpTo }.keys
+
+        /** Call it right before the fetch: an add back made from here on is newer than the snapshot. */
+        fun fetching() {
+            fetchedAfter = addsBackSoFar()
+        }
+
+        /**
+         * Its snapshot reads a course reset made on another device, which takes the hand-added
+         * courses and every add of them, waiting or under way (HomeBackendSync.applyCourseReset):
+         * no add back from before the fetch ([fetching]) keeps a course from its commit then, or
+         * its upload would put the course back on every device. One made since is newer than the
+         * reset, and stays.
+         */
+        fun supersedeAddsBack() {
+            supersededUpTo = fetchedAfter
+        }
+    }
+
+    // The syncs under way, in this process only: none outlives it.
+    private val courseSyncs = java.util.concurrent.ConcurrentHashMap.newKeySet<CourseSync>()
+
+    // Every add back's place in the order they began, for [CourseSync.supersedeAddsBack].
+    private val addsBack = java.util.concurrent.atomic.AtomicLong()
+
+    // The adds back under way, from [addCourseBack] to [courseAddSent], by key: how many, and the
+    // latest one's place in the order.
+    private val addsUnderWay = java.util.concurrent.ConcurrentHashMap<String, Pair<Int, Long>>()
+
+    /**
+     * Begins a full sync's course reconcile; call it before the fetch, and [endCourseSync] however
+     * the sync ends. Until then a course added back or brought back is noted for its commit, and
+     * the courses brought back that its snapshot may predate stay held ([restoredCoursesListed]).
+     * An add back already under way counts too: its upload may not be kept or sent before this
+     * sync reads what waits, and its snapshot may predate it.
+     */
+    fun beginCourseSync(): CourseSync = CourseSync(System.currentTimeMillis(), addsBack::get).also { sync ->
+        courseSyncs += sync
+        addsUnderWay.forEach { (key, underWay) -> sync.noteAddBack(key, underWay.second) }
+    }
+
+    fun endCourseSync(sync: CourseSync) {
+        courseSyncs -= sync
+    }
+
+    /**
+     * Lifts [semester]'s hide of [courseNo], which the class table's add puts back in the term,
+     * and notes the add for every sync under way, and every one begun before [courseAddSent]: the
+     * add is newer than anything such a sync read, and once it lands it forces its key past a
+     * tombstone and the server's silence alike. The hide is lifted under [courseHidesMutex], so a
+     * sync's commit comes wholly before it or finds the add noted. Call [courseAddSent] however
+     * the add ends, once its upload is kept or sent (PendingCourseAdds.send).
+     */
+    suspend fun addCourseBack(courseNo: String, semester: String) {
+        val key = CourseTombstoneKeys.key(semester, courseNo)
+        val order = addsBack.incrementAndGet()
+        addsUnderWay.merge(key, 1 to order) { held, _ -> held.first + 1 to order }
+        courseSyncs.forEach { it.noteAddBack(key, order) }
+        courseHidesMutex.withLock {
+            val hides = loadDeletedCourseNos()
+            if (CourseTombstoneKeys.isHidden(courseNo, semester, hides)) {
+                writeDeletedCourseNos(CourseTombstoneKeys.unhide(courseNo, semester, hides))
+            }
+        }
+    }
+
+    /** Ends [addCourseBack]'s add of [courseNo] in [semester] for the syncs that begin from now. */
+    fun courseAddSent(courseNo: String, semester: String) {
+        addsUnderWay.computeIfPresent(CourseTombstoneKeys.key(semester, courseNo)) { _, (count, order) ->
+            (count - 1).takeIf { it > 0 }?.let { it to order }
+        }
+    }
 
     /**
      * Hides [courseNo] in [semester] for the class table's delete of
@@ -692,18 +810,30 @@ class DataCache @Inject constructor(
      * every hide this write added, those and the reconcile's own, for the
      * sync to take out of the term: an answer may have saved one back into
      * it since the sync read the term's courses.
+     *
+     * Nor does the reconcile hide a course put back in the term since [sync]
+     * began, whose row is newer than its read (tigerduck-app-android#461):
+     * one added back by hand, whatever the snapshot says, and one brought
+     * back that [tombstoned] does not name, as the reconcile leaves a course
+     * brought back to the server's silence but not to another device's
+     * tombstone. Hidden, it would also go from the term.
      */
     suspend fun commitSyncHides(
         semester: String,
         before: Set<String>,
         after: Set<String>,
         tombstoned: Collection<String>,
+        sync: CourseSync,
     ): Set<String> = courseHidesMutex.withLock {
         val now = loadDeletedCourseNos()
         val keys = tombstoned.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
         val restored = loadRestoredCourses()
-        val lifted = keys.filterTo(mutableSetOf()) { it in before && it in after && it !in now && it in restored }
-        val updated = now + (after - before) - (before - after) + lifted
+        val addedBack = sync.addedBack()
+        val lifted = keys.filterTo(mutableSetOf()) {
+            it in before && it in after && it !in now && it in restored && it !in addedBack
+        }
+        val putBack = addedBack + (sync.broughtBack - keys)
+        val updated = now + (after - before - putBack) - (before - after) + lifted
         if (updated != now) writeDeletedCourseNos(updated)
         val marks = loadHandAddedHides()
         val kept = marks - keys
@@ -731,20 +861,28 @@ class DataCache @Inject constructor(
      * and to that snapshot and every later one their absence is a delete
      * elsewhere again. A sync still reconciling an older one, however long
      * it has been held, leaves them be, so the hold stays until the course is
-     * hidden again or the data goes with a sign-out. An older snapshot may
-     * still list the row their delete took off.
+     * hidden again, the data goes with a sign-out, or no such sync is left
+     * (below). An older snapshot may still list the row their delete took off.
+     *
+     * A hold a snapshot has listed goes, in every term, once no sync under
+     * way ([beginCourseSync]) began before that snapshot was fetched: no
+     * snapshot it could still mean something to is left, and every later
+     * one is fetched after it. A process restart lets go of them all, as no
+     * sync outlives one. The file would otherwise keep one per term and
+     * course for good (tigerduck-app-android#461).
      */
     suspend fun restoredCoursesListed(semester: String, listed: Collection<String>, fetchedAtMs: Long) =
         courseHidesMutex.withLock {
             val restored = loadRestoredCourses()
             val keys = listed.mapTo(mutableSetOf()) { CourseTombstoneKeys.key(semester, it) }
+            val oldest = minOf(fetchedAtMs, courseSyncs.minOfOrNull { it.startedAtMs } ?: fetchedAtMs)
             val updated = restored.mapValues { (key, course) ->
                 if (course.listedAt == null && key in keys && fetchedAtMs > course.restoredAt) {
                     course.copy(listedAt = fetchedAtMs)
                 } else {
                     course
                 }
-            }
+            }.filterValues { it.listedAt == null || it.listedAt > oldest }
             if (updated != restored) saveToUserData(updated, RESTORED_COURSES_FILE)
         }
 
@@ -783,7 +921,8 @@ class DataCache @Inject constructor(
      * fetched since lists them. Only a mark whose hide still stands, and not
      * one whose DELETE is still queued (PendingCourseDeletes): landing after
      * the roster upload, it would take the course off the server again. An
-     * answer after it lands lifts that one.
+     * answer after it lands lifts that one. Noted for every sync under way,
+     * whose read is older ([commitSyncHides]).
      */
     private suspend fun liftHandAddedHides(semester: String, roster: List<String>) = courseHidesMutex.withLock {
         val marks = loadHandAddedHides()
@@ -794,6 +933,7 @@ class DataCache @Inject constructor(
             .map { CourseTombstoneKeys.key(semester, it) }
             .filterTo(mutableSetOf()) { it in marks && it in hides }
         if (lifted.isEmpty()) return@withLock
+        courseSyncs.forEach { it.broughtBack += lifted }
         // Ahead of the hides: one held while its hide still stands is let go by the next write.
         val restoredAt = System.currentTimeMillis()
         saveToUserData(loadRestoredCourses() + lifted.associateWith { RestoredCourse(restoredAt, listedAt = null) }, RESTORED_COURSES_FILE)

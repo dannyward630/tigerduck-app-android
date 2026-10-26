@@ -9,6 +9,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.CourseTombstoneKeys
+import org.ntust.app.tigerduck.data.PendingCourseOverrides
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.push.ServerCourse
@@ -38,11 +39,22 @@ class ClassTableHandAddedHideTest {
 
     private val enrolled = Course.fromSchedule("CS1010001", "Algorithms", moodleIdNumber = "${TERM}CS1010001")
     private val handAdded = Course.fromSchedule("GE1010009", "Art", schedule = mapOf(3 to listOf("2")), isManual = true)
+    private val portal = Course.fromSchedule("ME1010005", "Statics", moodleIdNumber = "${TERM}ME1010005")
+
+    /** The colours and names waiting to go up, which nothing sends here. */
+    private lateinit var overrides: PendingCourseOverrides
 
     @Before
     fun setUp() {
         val context = RuntimeEnvironment.getApplication()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
+        overrides = PendingCourseOverrides(
+            cache,
+            { _, _, _, _, _, _ -> false },
+            records = { true },
+            sends = { false },
+            signInGeneration = { 0 },
+        )
     }
 
     /** As the class table's delete leaves the store and the term, reading the course off the term. */
@@ -50,6 +62,21 @@ class ClassTableHandAddedHideTest {
         val held = cache.loadCourses(TERM).first { it.courseNo == course.courseNo }
         cache.hideDeletedCourse(held.courseNo, TERM, held)
         cache.saveCourses(cache.loadCourses(TERM).filter { it.courseNo != held.courseNo }, TERM)
+    }
+
+    /**
+     * [block], a sync's reconcile, within [sync] when one began earlier, or else a course sync of
+     * its own, begun before it reads anything as HomeBackendSync begins one before its fetch.
+     */
+    private suspend fun reconciling(sync: DataCache.CourseSync?, block: suspend (DataCache.CourseSync) -> Unit) {
+        if (sync != null) return block(sync)
+        val own = cache.beginCourseSync()
+        own.fetching()
+        try {
+            block(own)
+        } finally {
+            cache.endCourseSync(own)
+        }
     }
 
     /**
@@ -61,7 +88,10 @@ class ClassTableHandAddedHideTest {
         course: Course,
         afterCoursesRead: suspend () -> Unit = {},
         beforeCommit: suspend () -> Unit = {},
-    ) {
+        resetElsewhere: Boolean = false,
+    ) = reconciling(null) { sync ->
+        // As both syncs do once the snapshot reads a course reset made on another device.
+        if (resetElsewhere) sync.supersedeAddsBack()
         val localCourses = cache.loadCourses(TERM)
         afterCoursesRead()
         val restored = cache.restoredCoursesIn(TERM, Long.MAX_VALUE)
@@ -77,21 +107,22 @@ class ClassTableHandAddedHideTest {
         )
         beforeCommit()
         val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones)
-        commitReconciledTerm(cache, TERM, stored, outcome.tombstones, setOf(course.courseNo), localCourses, kept, outcome.merged)
+        commitReconciledTerm(cache, sync, TERM, stored, outcome.tombstones, setOf(course.courseNo), localCourses, kept, outcome.merged, overrides)
     }
 
     /**
      * A full sync whose snapshot, fetched at [fetchedAtMs] (by default after everything so far),
      * lists [serverNos] for the term, with no tombstone, as HomeBackendSync makes it: the hides read
      * first ([hides], when the sync read them earlier), then the term's courses, reconciled, pruned
-     * and committed.
+     * and committed. Within [sync], when the sync began earlier.
      */
     private suspend fun syncListing(
         vararg serverNos: String,
         fetchedAtMs: Long = Long.MAX_VALUE,
         hides: Set<String>? = null,
+        sync: DataCache.CourseSync? = null,
         beforeCommit: suspend () -> Unit = {},
-    ) {
+    ) = reconciling(sync) { courseSync ->
         val localCourses = cache.loadCourses(TERM)
         val restored = cache.restoredCoursesIn(TERM, fetchedAtMs)
         val stored = CourseSyncReconciler.withoutRestored(TERM, hides ?: cache.loadDeletedCourseNos(), restored)
@@ -108,7 +139,7 @@ class ClassTableHandAddedHideTest {
         cache.restoredCoursesListed(TERM, serverNos.toList(), fetchedAtMs)
         cache.saveServerKnownNos(mapOf(TERM to outcome.serverKnownNos.sorted()))
         val kept = CourseSyncReconciler.pruneHidden(TERM, localCourses, outcome.tombstones)
-        commitReconciledTerm(cache, TERM, stored, outcome.tombstones, emptySet(), localCourses, kept, outcome.merged)
+        commitReconciledTerm(cache, courseSync, TERM, stored, outcome.tombstones, emptySet(), localCourses, kept, outcome.merged, overrides)
     }
 
     /**
@@ -133,8 +164,47 @@ class ClassTableHandAddedHideTest {
         return merged.map { it.courseNo }.sorted()
     }
 
+    /**
+     * As the class table's add of [course] back by hand: the term's hide lifted, then the longer
+     * term saved and the upload sent.
+     */
+    private suspend fun addBack(course: Course) {
+        cache.addCourseBack(course.courseNo, TERM)
+        cache.saveCourses(cache.loadCourses(TERM).filter { it.courseNo != course.courseNo } + course, TERM)
+        cache.courseAddSent(course.courseNo, TERM)
+    }
+
+    /**
+     * Home's sync pinning the legacy bare hides to the terms whose cached courses carry them,
+     * held for [whileRead] after it reads them. Returns the hides it goes on to reconcile.
+     */
+    private suspend fun pinLegacy(whileRead: suspend () -> Unit): Set<String> {
+        val stored = cache.loadDeletedCourseNos()
+        val rosters = mapOf(TERM to cache.loadCourses(TERM).mapTo(mutableSetOf()) { it.courseNo })
+        whileRead()
+        return cache.pinLegacyCourseHides(stored, rosters)
+    }
+
+    /** The colours waiting to go up, by Moodle id. */
+    private suspend fun waitingColors(): Map<String?, String?> =
+        cache.loadPendingCourseOverrides().filter { it.colorHex != null }.associate { it.moodleId to it.colorHex }
+
     /** What Home and the background refresh leave out of the term. */
     private suspend fun hidden(): Set<String> = CourseTombstoneKeys.hiddenIn(TERM, cache.loadDeletedCourseNos())
+
+    private suspend fun courseNos(): List<String> = cache.loadCourses(TERM).map { it.courseNo }.sorted()
+
+    /** Whether `restored_courses.json` still holds [course]. */
+    private fun holds(course: Course): Boolean =
+        File(RuntimeEnvironment.getApplication().filesDir, "TigerDuckData/restored_courses.json")
+            .takeIf { it.isFile }?.readText()?.contains("\"$TERM:${course.courseNo}\"") == true
+
+    /** The clock once it has moved past now, so a time taken from it is later than everything before. */
+    private fun nextMillis(): Long {
+        val now = System.currentTimeMillis()
+        while (System.currentTimeMillis() <= now) Thread.sleep(1)
+        return System.currentTimeMillis()
+    }
 
     @Test
     fun `a deleted hand-added course shows again and goes up with the roster once course selection lists it`() = runTest {
@@ -185,9 +255,7 @@ class ClassTableHandAddedHideTest {
         cache.saveCourses(listOf(enrolled, handAdded), TERM)
         fetchListing(enrolled.courseNo)
         delete(handAdded)
-        // Added back by hand, which lifts the hide as ClassTableViewModel.addCourse does.
-        cache.saveDeletedCourseNos(CourseTombstoneKeys.unhide(handAdded.courseNo, TERM, cache.loadDeletedCourseNos()))
-        cache.saveCourses(cache.loadCourses(TERM) + handAdded, TERM)
+        addBack(handAdded)
 
         tombstonedElsewhere(handAdded)
 
@@ -554,10 +622,234 @@ class ClassTableHandAddedHideTest {
         assertEquals(setOf(handAdded.courseNo), hidden())
     }
 
+    @Test
+    fun `a course deleted and added back while a sync that prunes it for another device's delete waits stays in the term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+
+        // Another device deleted the course, and the sync has decided to prune it, when the student
+        // deletes it here and adds it back by hand, whose upload forces its key past that tombstone.
+        tombstonedElsewhere(handAdded, beforeCommit = {
+            delete(handAdded)
+            addBack(handAdded)
+        })
+
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), courseNos())
+        assertEquals(emptySet<String>(), hidden())
+    }
+
+    @Test
+    fun `a course brought back while a sync that prunes it for the server's silence waits stays in the term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+
+        // The snapshot no longer lists the course, and the sync has decided to prune it, when the
+        // student deletes it here and a course selection answer that lists it brings it back: until
+        // a snapshot fetched since lists it, its absence is no delete elsewhere.
+        syncListing(enrolled.courseNo, beforeCommit = {
+            delete(handAdded)
+            fetchListing(enrolled.courseNo, handAdded.courseNo)
+        })
+
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), courseNos())
+        assertEquals(emptySet<String>(), hidden())
+    }
+
+    @Test
+    fun `a hold a snapshot has listed goes once no sync that could still need it runs`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+
+        // A snapshot fetched since lists the course, and no sync that began before it is left.
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = nextMillis())
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = nextMillis())
+
+        assertEquals(false, holds(handAdded))
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), courseNos())
+    }
+
+    @Test
+    fun `a hold a snapshot has listed stays until a sync that began before it ends`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        // Home's sync begins, fetches its snapshot and reads the hides, then waits while the rest happens.
+        val older = cache.beginCourseSync()
+        val olderFetchedAt = System.currentTimeMillis()
+        val read = cache.loadDeletedCourseNos()
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+        // Background syncs fetched since list the course: its upload landed.
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = nextMillis())
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = nextMillis())
+        assertEquals(true, holds(handAdded))
+
+        // Home's older snapshot, from before the upload, does not list it.
+        syncListing(enrolled.courseNo, hides = read, fetchedAtMs = olderFetchedAt, sync = older)
+        cache.endCourseSync(older)
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), courseNos())
+        assertEquals(emptySet<String>(), hidden())
+
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = nextMillis())
+        assertEquals(false, holds(handAdded))
+    }
+
+    @Test
+    fun `a restart lets go of the holds a sync of the last process might have needed`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        fetchListing(enrolled.courseNo)
+        delete(handAdded)
+        syncListing(enrolled.courseNo)
+        // A sync that the process ends under, before it ends itself.
+        cache.beginCourseSync()
+        fetchListing(enrolled.courseNo, handAdded.courseNo)
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = nextMillis())
+        assertEquals(true, holds(handAdded))
+
+        // The next process, whose first sync's snapshot lists the course too.
+        setUp()
+        syncListing(enrolled.courseNo, handAdded.courseNo, fetchedAtMs = nextMillis())
+
+        assertEquals(false, holds(handAdded))
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), courseNos())
+    }
+
+    @Test
+    fun `a course whose add back is under way when a sync begins stays in the term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        delete(handAdded)
+
+        // The add has lifted the hide and saved the term, and has yet to keep its upload, when a
+        // sync begins whose snapshot carries another device's tombstone for the course.
+        cache.addCourseBack(handAdded.courseNo, TERM)
+        cache.saveCourses(cache.loadCourses(TERM) + handAdded, TERM)
+        tombstonedElsewhere(handAdded)
+        cache.courseAddSent(handAdded.courseNo, TERM)
+
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), courseNos())
+        assertEquals(emptySet<String>(), hidden())
+
+        // Once its upload is sent, a sync that begins reads the server's answer to it.
+        tombstonedElsewhere(handAdded)
+        assertEquals(listOf(enrolled.courseNo), courseNos())
+    }
+
+    @Test
+    fun `a course added back while a sync pins a legacy hide of it stays shown`() = runTest {
+        // From before hides were kept per term: a bare entry, for a course the term's cache still holds.
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        cache.saveDeletedCourseNos(setOf(handAdded.courseNo))
+
+        pinLegacy(whileRead = { addBack(handAdded) })
+
+        assertEquals(emptySet<String>(), hidden())
+    }
+
+    @Test
+    fun `a course added back while a sync that prunes it waits keeps its waiting colour and name`() = runTest {
+        cache.saveCourses(listOf(enrolled, portal), TERM)
+        syncListing(enrolled.courseNo, portal.courseNo)
+
+        tombstonedElsewhere(portal, beforeCommit = {
+            delete(portal)
+            overrides.forget(listOfNotNull(portal.moodleIdNumber))
+            addBack(portal)
+            overrides.send(portal.moodleIdNumber!!, colorHex = "#FF9500")
+        })
+
+        assertEquals(mapOf<String?, String?>(portal.moodleIdNumber to "#FF9500"), waitingColors())
+        assertEquals(listOf(enrolled.courseNo, portal.courseNo), courseNos())
+    }
+
+    @Test
+    fun `a course a sync prunes takes its waiting colour and name with it`() = runTest {
+        cache.saveCourses(listOf(enrolled, portal), TERM)
+        syncListing(enrolled.courseNo, portal.courseNo)
+        overrides.send(portal.moodleIdNumber!!, colorHex = "#FF9500")
+        overrides.send(enrolled.moodleIdNumber!!, colorHex = "#34C759")
+
+        tombstonedElsewhere(portal)
+
+        assertEquals(mapOf<String?, String?>(enrolled.moodleIdNumber to "#34C759"), waitingColors())
+        assertEquals(listOf(enrolled.courseNo), courseNos())
+    }
+
+    @Test
+    fun `a course deleted while a sync pins legacy hides stays hidden from that sync's older snapshot`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        // A bare hide from before hides were kept per term, of a course no roster here carries.
+        cache.saveDeletedCourseNos(setOf(LEGACY))
+
+        // While Home's sync reads the rosters, the student deletes a course, and its DELETE lands.
+        val read = pinLegacy(whileRead = { delete(handAdded) })
+        // The sync's snapshot, fetched before, still lists the course.
+        syncListing(enrolled.courseNo, handAdded.courseNo, hides = read)
+
+        assertEquals(setOf(LEGACY, handAdded.courseNo), hidden())
+        assertEquals(listOf(enrolled.courseNo), courseNos())
+    }
+
+    @Test
+    fun `a course added back once a sync has applied a reset elsewhere stays in the term`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+
+        // The sync has read the reset and decided to prune the course when the student deletes it
+        // and adds it back, newer than the reset.
+        tombstonedElsewhere(handAdded, resetElsewhere = true, beforeCommit = {
+            delete(handAdded)
+            addBack(handAdded)
+        })
+
+        assertEquals(emptySet<String>(), hidden())
+        assertEquals(listOf(enrolled.courseNo, handAdded.courseNo), courseNos())
+    }
+
+    @Test
+    fun `a sync that pins a legacy hide another sync pinned meanwhile still reads it as hidden`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        cache.saveDeletedCourseNos(setOf(handAdded.courseNo))
+
+        // Another sync pins it while this one reads the rosters.
+        val read = pinLegacy(whileRead = { pinLegacy(whileRead = {}) })
+
+        assertEquals(setOf(CourseTombstoneKeys.key(TERM, handAdded.courseNo)), read)
+        assertEquals(setOf(handAdded.courseNo), hidden())
+    }
+
+    @Test
+    fun `a course reset elsewhere takes a course whose add back is under way`() = runTest {
+        cache.saveCourses(listOf(enrolled, handAdded), TERM)
+        syncListing(enrolled.courseNo, handAdded.courseNo)
+        delete(handAdded)
+        cache.addCourseBack(handAdded.courseNo, TERM)
+        cache.saveCourses(cache.loadCourses(TERM) + handAdded, TERM)
+
+        // The sync's snapshot reads a course reset made on another device, which takes the
+        // hand-added courses and their adds; the reset's tombstone names this one.
+        tombstonedElsewhere(handAdded, resetElsewhere = true)
+        cache.courseAddSent(handAdded.courseNo, TERM)
+
+        assertEquals(setOf(handAdded.courseNo), hidden())
+        assertEquals(listOf(enrolled.courseNo), courseNos())
+    }
+
     private companion object {
         const val TERM = "1151"
 
         /** A course another device added, which a sync merges down. */
         const val MERGED = "EE1010007"
+
+        /** A legacy bare hide of a course no term here carries. */
+        const val LEGACY = "ZZ1010004"
     }
 }
