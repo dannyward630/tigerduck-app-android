@@ -9,7 +9,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
@@ -347,15 +346,19 @@ class ClassTableImportPageTest {
     }
 
     /**
-     * [node]'s left and right, and its distance from the bottom of the page's window. Robolectric
-     * sizes a dialog's window to its content within a pixel, so the top is not kept.
+     * [node]'s left and right, and its distance from the bottom of the page's window, read from one
+     * layout. The dialog first lays the page out a pixel taller than its window and fits it on a
+     * later pass, so the top is not kept. That pass can land between two reads, each of which waits
+     * for idle first, as when the theme's text measurement answers from its own thread.
      */
     private fun placeIn(node: SemanticsNodeInteraction): Triple<Dp, Dp, Dp> {
-        val bounds = node.getUnclippedBoundsInRoot()
-        val windowHeight = with(composeRule.density) {
-            composeRule.onAllNodes(isRoot()).fetchSemanticsNodes().maxOf { it.size.height }.toDp()
+        val semantics = node.fetchSemanticsNode()
+        val windowHeight = generateSequence(semantics) { it.parent }.last().size.height
+        return with(composeRule.density) {
+            val left = semantics.positionInRoot.x
+            val bottom = semantics.positionInRoot.y + semantics.size.height
+            Triple(left.toDp(), (left + semantics.size.width).toDp(), (windowHeight - bottom).toDp())
         }
-        return Triple(bounds.left, bounds.right, windowHeight - bounds.bottom)
     }
 
     @Test
