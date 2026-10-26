@@ -21,7 +21,11 @@ import android.os.Looper
 import android.os.Message
 import android.print.PrintManager
 import android.view.ContextThemeWrapper
+import android.view.KeyEvent
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeProvider
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.JsPromptResult
@@ -261,7 +265,6 @@ class InAppBrowserActivity : AppCompatActivity() {
         chrome = BrowserChromeCollapse(
             jitterPx = (BrowserChromeCollapse.JITTER_DP * density).toInt(),
             topZonePx = (BrowserChromeCollapse.TOP_ZONE_DP * density).toInt(),
-            endZonePx = (BrowserChromeCollapse.END_ZONE_DP * density).toInt(),
             growthPx = (BrowserChromeCollapse.GROWTH_DP * density).toInt(),
         )
         signInFlow = BrowserSignInFlow(
@@ -955,16 +958,61 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /**
      * The browser's WebView, which tells how far the page can still scroll down and how wide it is
-     * laid out, and tells the bars' collapse when it changes size: as the keyboard comes or goes,
-     * the page's offset moves without a scroll.
+     * laid out, and tells the bars' collapse when it changes size (as the keyboard comes or goes,
+     * the page's offset moves without a scroll) and which way the student's finger moves the page.
      */
     private inner class BrowserWebView(context: Context) : WebView(context) {
         val scrollLeftBelow: Int get() = computeVerticalScrollRange() - computeVerticalScrollExtent() - computeVerticalScrollOffset()
         val contentWidth: Int get() = computeHorizontalScrollRange()
 
+        private val touches = BrowserTouches(
+            drags = BrowserDragTracker(
+                touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+                minFlingVelocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity.toFloat(),
+                dragged = { down -> chrome.dragged(down) },
+            ),
+            cancelled = { chrome.dragCancelled() },
+        )
+
         override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
             super.onSizeChanged(w, h, ow, oh)
             chrome.resized()
+        }
+
+        // Only watches the touch: the WebView handles it, its click included.
+        @SuppressLint("ClickableViewAccessibility")
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            touches.onTouch(event)
+            return super.onTouchEvent(event)
+        }
+
+        // Keys, a mouse wheel and accessibility scrolls move the page with no touch: each tells the
+        // bars its way first, so their scroll is the student's, not the page's own.
+        override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+            if (event.action == KeyEvent.ACTION_DOWN) keyScrollsDown(event.keyCode, event.isShiftPressed)?.let(chrome::dragged)
+            return super.dispatchKeyEvent(event)
+        }
+
+        override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+            if (event.actionMasked == MotionEvent.ACTION_SCROLL) {
+                wheelScrollsDown(event.getAxisValue(MotionEvent.AXIS_VSCROLL))?.let(chrome::dragged)
+            }
+            return super.onGenericMotionEvent(event)
+        }
+
+        override fun performAccessibilityAction(action: Int, arguments: Bundle?): Boolean {
+            accessibilityScrollsDown(action)?.let(chrome::dragged)
+            return super.performAccessibilityAction(action, arguments)
+        }
+
+        /** The WebView's provider, wrapped once: its virtual nodes are where TalkBack's scrolls go. */
+        private var scrollTelling: ScrollTellingProvider? = null
+
+        override fun getAccessibilityNodeProvider(): AccessibilityNodeProvider? {
+            val provider = super.getAccessibilityNodeProvider() ?: return null
+            scrollTelling?.takeIf { it.delegate === provider }?.let { return it }
+            return ScrollTellingProvider(provider, dragged = chrome::dragged, refused = chrome::dragCancelled)
+                .also { scrollTelling = it }
         }
     }
 
