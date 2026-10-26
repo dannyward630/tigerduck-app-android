@@ -117,17 +117,30 @@ class SsoLoginService internal constructor(
     /**
      * [ensureServiceLogin] past the session the jar holds, for the retry of a refused stored
      * password: a session still live lets [ensureServiceLogin] through without a post, which says
-     * nothing about the password, so the jar is emptied first, under the same lock, and the
-     * school's answer to the post is what the latch records. A refusal's wait still holds it back.
+     * nothing about the password, so the jar is emptied first, under the same lock. A refusal
+     * the school answers is counted; its yes ends nothing yet, and goes to [accepted] instead, as
+     * the retry settles the count itself once the Moodle token step is through too
+     * ([org.ntust.app.tigerduck.auth.RetrySettlement]). A sign-in that needed no post calls it
+     * not at all.
      *
      * [stillRefused] is asked once the lock is held: an automatic sign-in that held it first, and
      * that the school took, settles the refusal, and this then keeps its session and posts nothing.
+     * A refusal's wait still holds it back, checked before the jar is emptied: another automatic
+     * post refused while this one waited for the lock starts a new wait, and a session no post
+     * could replace stays as it is.
      */
-    suspend fun signInAgain(serviceUrl: String, studentId: String, password: String, stillRefused: () -> Boolean): Boolean =
+    suspend fun signInAgain(
+        serviceUrl: String,
+        studentId: String,
+        password: String,
+        accepted: () -> Unit = {},
+        stillRefused: () -> Boolean,
+    ): Boolean =
         loginMutex.withLock {
             if (!stillRefused()) return@withLock true
+            if (passwordLatch.postMustWait()) throw SsoLoginError.LoginFailed(passwordLatch.rejection.value?.reason)
             sessionManager.invalidateSession()
-            logIn(serviceUrl, studentId, password)
+            logIn(serviceUrl, studentId, password, accepted = accepted)
         }
 
     /**
@@ -155,12 +168,16 @@ class SsoLoginService internal constructor(
     /**
      * [typed] for credentials the user just entered. Any other login is one
      * the user did not start, and posts no password the school refused.
+     * The school taking an automatic post ends the refusals, or with
+     * [accepted] goes to it instead: the retry of a refused password settles
+     * them itself.
      */
     private suspend fun logIn(
         serviceUrl: String,
         studentId: String,
         password: String,
         typed: Boolean = false,
+        accepted: (() -> Unit)? = null,
     ): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
         // Before anything that could be refused, so a refusal that lands after
         // the user signed in again or signed out latches nothing.
@@ -238,7 +255,8 @@ class SsoLoginService internal constructor(
         ) {
             try {
                 submitLoginForm(actionUrl, fields).also { signedIn ->
-                    if (signedIn) passwordLatch.markAccepted(latchGeneration, studentId, password)
+                    if (!signedIn) return@also
+                    if (accepted != null) accepted() else passwordLatch.markAccepted(latchGeneration, studentId, password)
                 }
             } catch (e: SsoLoginError.LoginFailed) {
                 passwordLatch.markRejected(latchGeneration, studentId, password, e.reason)

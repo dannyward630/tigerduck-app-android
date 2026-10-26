@@ -43,6 +43,11 @@ internal class InMemoryStoredPasswordLatch : StoredPasswordLatch {
         changed.value++
     }
 
+    override fun settle(generation: Int, changesSeen: Int, studentId: String, password: String) {
+        if (changed.value != changesSeen) return
+        markAccepted(generation, studentId, password)
+    }
+
     /** It keeps no account, so any one counts as the stored one. */
     override fun isStoredAccount(studentId: String, password: String) = true
 

@@ -195,11 +195,12 @@ class StoredPasswordRetryTest {
             signInToSchool = { steps += "school"; true },
             moodleTokenMissing = { true },
             renewMoodleToken = { steps += "moodle" },
+            settle = { steps += "settle" },
             signInToBackend = { renewed -> steps += "backend $renewed"; true },
         )
 
         assertTrue(ranThrough)
-        assertEquals(listOf("school", "moodle", "backend true"), steps)
+        assertEquals(listOf("school", "moodle", "settle", "backend true"), steps)
     }
 
     @Test
@@ -210,10 +211,11 @@ class StoredPasswordRetryTest {
             signInToSchool = { steps += "school"; true },
             moodleTokenMissing = { false },
             renewMoodleToken = { steps += "moodle" },
+            settle = { steps += "settle" },
             signInToBackend = { renewed -> steps += "backend $renewed"; true },
         )
 
-        assertEquals(listOf("school", "backend false"), steps)
+        assertEquals(listOf("school", "settle", "backend false"), steps)
     }
 
     @Test
@@ -225,6 +227,7 @@ class StoredPasswordRetryTest {
                 signInToSchool = { steps += "school"; false },
                 moodleTokenMissing = { true },
                 renewMoodleToken = { steps += "moodle" },
+                settle = { steps += "settle" },
                 signInToBackend = { renewed -> steps += "backend $renewed"; true },
             ),
         )
@@ -233,6 +236,7 @@ class StoredPasswordRetryTest {
                 signInToSchool = { steps += "school"; true },
                 moodleTokenMissing = { true },
                 renewMoodleToken = { steps += "moodle"; error("refused") },
+                settle = { steps += "settle" },
                 signInToBackend = { renewed -> steps += "backend $renewed"; true },
             ),
         )
@@ -241,10 +245,11 @@ class StoredPasswordRetryTest {
                 signInToSchool = { true },
                 moodleTokenMissing = { false },
                 renewMoodleToken = {},
+                settle = { steps += "settle" },
                 signInToBackend = { _ -> false },
             ),
         )
-        assertEquals(listOf("school", "school", "moodle"), steps)
+        assertEquals(listOf("school", "school", "moodle", "settle"), steps)
     }
 
     private companion object {

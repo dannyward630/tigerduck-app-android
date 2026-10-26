@@ -249,11 +249,20 @@ class MoodleFileDownloads internal constructor(
         val key = location.path
         var part: File? = null
         try {
-            // Noted as soon as it is made: a stop that lands before this returns still deletes it.
-            withContext(io) {
+            // The copy is looked for again here, where a file has one download at a time: one
+            // that kept it may have wound down between the caller's look for the copy and its
+            // look for a download to join. The partial file is noted as soon as it is made: a
+            // stop that lands before this returns still deletes it.
+            val onDevice = withContext(io) {
+                if (location.isFile) return@withContext true
                 val dir = location.parentFile ?: throw IOException("no folder for the file")
                 dir.mkdirs()
                 part = File.createTempFile(PART_PREFIX, PART_SUFFIX, dir)
+                false
+            }
+            if (onDevice) {
+                _snapshot.update { it.copy(copies = it.copies + key, failures = it.failures - key) }
+                return location
             }
             val target = part ?: throw IOException("no partial file")
             fetch(target, progress)

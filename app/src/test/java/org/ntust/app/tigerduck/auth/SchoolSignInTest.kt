@@ -30,7 +30,7 @@ class SchoolSignInTest {
             signedInAs += studentId
             true
         },
-        signInAgainToSchool = { studentId, _, _ ->
+        signInAgainToSchool = { studentId, _, _, _ ->
             signInsAgain++
             signedInAs += studentId
             true
