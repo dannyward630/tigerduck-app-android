@@ -148,12 +148,20 @@ android {
             // which java.base does not export. Without this, any test pinned
             // to API 36 fails before its first line runs.
             all { it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED") }
-            // Every unit test runs in one JVM, and Gradle gives it 512 MB. The
-            // suite fills that: G1 runs out of room to copy into and stops for
-            // a full collection, which a 4-core CI runner takes long enough
-            // over for a Glance test's 10 s wait to run out (WidgetScaleTest).
-            // At 320 MB it runs out of memory; at 1 GB it never collects in full.
+            // Gradle gives each test JVM 512 MB. One JVM running the whole suite
+            // filled that: G1 ran out of room to copy into and stopped for a
+            // full collection, which a 4-core CI runner took long enough over
+            // for a Glance test's 10 s wait to run out (WidgetScaleTest). At
+            // 320 MB it ran out of memory; at 1 GB it never collects in full.
             all { it.maxHeapSize = "1g" }
+            // The test classes are dealt out to several JVMs at once: one fewer
+            // than the cores, and at most four. On four cores, as a CI runner
+            // has, one JVM took 96-126 s and three took 69-78 s. Two took 75-108 s,
+            // since Gradle deals the classes out in turn and one JVM can draw the
+            // slow ones, and four, more than the cores could run, 77-88 s. Each
+            // JVM builds the Robolectric sandboxes its own classes need, so three
+            // hold about 4.8 GB together.
+            all { it.maxParallelForks = (Runtime.getRuntime().availableProcessors() - 1).coerceIn(1, 4) }
             // ReleaseLogRulesTest reads the R8 rules, which are no input of the
             // test task otherwise: a change to them alone would leave it UP-TO-DATE.
             all { it.inputs.file("proguard-rules.pro") }
