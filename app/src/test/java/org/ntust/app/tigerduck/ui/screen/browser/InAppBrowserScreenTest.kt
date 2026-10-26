@@ -19,6 +19,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.click
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.semantics.SemanticsActions
@@ -59,6 +62,11 @@ class InAppBrowserScreenTest {
         override fun setAppearance(appearance: BrowserAppearance) { calls += "appearance $appearance" }
         override fun setDesktopSite(desktop: Boolean) { calls += "desktop $desktop" }
         override fun leaveFor(url: String) { calls += "leave $url" }
+        override fun expandBars() {
+            calls += "expandBars"
+            // As the activity's: the bars back for good.
+            shown?.barsCollapsed = false
+        }
         override fun stayHere() { calls += "stay" }
         override fun retry() { calls += "retry" }
         override fun openCurrentExternal() { calls += "external" }
@@ -73,7 +81,11 @@ class InAppBrowserScreenTest {
 
     private val page = "https://moodle2.ntust.edu.tw/user/edit.php"
 
+    /** The state on screen, which [actions]' expandBars changes as the activity's does. */
+    private var shown: BrowserPageState? = null
+
     private fun show(state: BrowserPageState, downloads: List<BrowserDownload> = emptyList(), appearance: BrowserAppearance = BrowserAppearance.AUTO) {
+        shown = state
         composeRule.setContent {
             MaterialTheme {
                 InAppBrowserScreen(state, appearance, downloads, actions) { Box(it) }
@@ -353,6 +365,96 @@ class InAppBrowserScreenTest {
         show(loaded().apply { find = FindState(query = "zzz", ordinal = 0, count = 0, done = true) })
         composeRule.onNodeWithText(string(R.string.browser_find_none)).assertExists()
         composeRule.onNodeWithContentDescription(string(R.string.browser_find_next)).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `collapsed, the bars keep the host alone, and their buttons are gone, from TalkBack too`() {
+        show(loaded().apply { barsCollapsed = true })
+
+        composeRule.onNodeWithText("moodle2.ntust.edu.tw").assertExists()
+        composeRule.onNodeWithText("Edit profile").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_close)).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_more)).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a tap on the collapsed bar brings the bars back rather than open the address`() {
+        show(loaded().apply { barsCollapsed = true })
+
+        composeRule.onNodeWithContentDescription(string(R.string.browser_address).replaceIosArg(1, "moodle2.ntust.edu.tw")).performClick()
+
+        assertEquals(listOf("expandBars"), calls)
+        composeRule.onNodeWithText(string(R.string.browser_address_title)).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertExists()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_close)).assertExists()
+    }
+
+    @Test
+    fun `as the bars collapse, their buttons take no touch and leave TalkBack at once, while they still fade`() {
+        val state = loaded()
+        show(state)
+        val reload = composeRule.onNodeWithContentDescription(string(R.string.browser_reload)).getBoundsInRoot()
+
+        composeRule.mainClock.autoAdvance = false
+        composeRule.runOnUiThread {
+            state.barsCollapsed = true
+            androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications()
+        }
+        // A frame or two into a fade of some hundred milliseconds.
+        composeRule.mainClock.advanceTimeBy(32)
+
+        composeRule.onNodeWithContentDescription(string(R.string.browser_reload)).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_close)).assertDoesNotExist()
+        composeRule.onRoot().performTouchInput {
+            click(androidx.compose.ui.geometry.Offset(((reload.left + reload.right) / 2).toPx(), ((reload.top + reload.bottom) / 2).toPx()))
+        }
+        assertEquals(emptyList<String>(), calls)
+    }
+
+    @Test
+    fun `the load's progress line stays while the bars are collapsed`() {
+        show(loaded().apply { barsCollapsed = true; loading = true; progress = 40 })
+
+        composeRule.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo)).assertExists()
+    }
+
+    @Test
+    fun `find, a page's dialog or an error page keep the bars shown, and once they go the bars stay`() {
+        val holds = listOf<BrowserPageState.() -> Unit>(
+            { find = FindState() },
+            { dialog = PageDialog(PageDialog.Kind.ALERT, "moodle2.ntust.edu.tw", "Saved") { _, _ -> } },
+            { error = BrowserError.Unreachable("moodle2.ntust.edu.tw") },
+        )
+        val state = loaded()
+        show(state)
+        for (hold in holds) {
+            calls.clear()
+            state.barsCollapsed = true
+            composeRule.waitForIdle()
+            composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertDoesNotExist()
+
+            state.hold()
+            composeRule.waitForIdle()
+            composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertExists()
+            assertEquals(listOf("expandBars"), calls)
+
+            state.find = null
+            state.dialog = null
+            state.error = null
+            composeRule.waitForIdle()
+            composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertExists()
+        }
+    }
+
+    @Test
+    fun `with TalkBack on the bars stay shown`() {
+        val accessibility = composeRule.activity.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
+        org.robolectric.Shadows.shadowOf(accessibility).setTouchExplorationEnabled(true)
+        show(loaded().apply { barsCollapsed = true })
+
+        composeRule.onNodeWithContentDescription(string(R.string.browser_back)).assertExists()
+        composeRule.onNodeWithContentDescription(string(R.string.browser_close)).assertExists()
     }
 
     @Test

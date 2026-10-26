@@ -46,6 +46,12 @@ class BrowserPageState {
     /** Whether the page's site has signed the browser in, for the address sheet. */
     var signedIn by mutableStateOf(false)
 
+    /**
+     * Whether the page scrolled the bars away ([BrowserChromeCollapse]); the screen still shows them
+     * while something over the page needs them, and for TalkBack.
+     */
+    var barsCollapsed by mutableStateOf(false)
+
     var zoom by mutableIntStateOf(BrowserZoom.DEFAULT)
     var desktopSite by mutableStateOf(false)
 
