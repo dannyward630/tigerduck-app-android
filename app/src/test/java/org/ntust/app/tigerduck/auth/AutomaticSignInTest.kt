@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.auth
 
-import android.app.Application
 import android.content.Context
 import com.google.gson.JsonObject
 import kotlinx.coroutines.CancellationException
@@ -17,7 +16,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager.SignInAttempt
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
@@ -32,9 +30,7 @@ import org.ntust.app.tigerduck.push.PushApiClient
 import org.ntust.app.tigerduck.push.PushTokenIn
 import org.ntust.app.tigerduck.push.SettingsDocumentApiClient
 import org.ntust.app.tigerduck.push.SyncApiClient
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The backend sign-in [AuthTokenManager] makes on its own: before a request that needs a session
@@ -42,8 +38,6 @@ import org.robolectric.annotation.Config
  * (https://github.com/tigerduck-app/tigerduck-app-android/issues/202).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class AutomaticSignInTest {
 
     private lateinit var prefs: AppPreferences
@@ -56,7 +50,7 @@ class AutomaticSignInTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

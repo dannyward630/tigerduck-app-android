@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.push
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
@@ -9,23 +8,18 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.ScriptedBackend
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The change feed a revision poll reads ([SyncApiClient.fetchChanges]),
  * tigerduck-app-android#120: one page after the asked revision, or null once
  * the server no longer keeps those changes.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SyncChangesFeedTest {
 
     private val backend = ScriptedBackend()
@@ -33,7 +27,7 @@ class SyncChangesFeedTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

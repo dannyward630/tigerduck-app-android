@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.network
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.test.runTest
 import okhttp3.MediaType.Companion.toMediaType
@@ -14,7 +13,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.PersistedStoredPasswordLatch
 import org.ntust.app.tigerduck.auth.RetrySettlement
 import org.ntust.app.tigerduck.auth.guardAutomaticHarvest
@@ -22,18 +20,14 @@ import org.ntust.app.tigerduck.auth.retryStoredPasswordChain
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.concurrent.CopyOnWriteArrayList
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * [SsoLoginService] against hand-made school pages: an automatic sign-in the school refuses
  * latches, a latched one posts no password, and a sign-in the user types lifts the latch
  * (https://github.com/tigerduck-app/tigerduck-app-android/issues/163).
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SsoLoginLatchTest {
 
     private lateinit var latch: PersistedStoredPasswordLatch
@@ -55,7 +49,7 @@ class SsoLoginLatchTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val latchPrefs = context.getSharedPreferences("sso-latch-test", Context.MODE_PRIVATE)
         latchPrefs.edit().clear().commit()
         latch = PersistedStoredPasswordLatch(latchPrefs, now = { clock }) { stored }

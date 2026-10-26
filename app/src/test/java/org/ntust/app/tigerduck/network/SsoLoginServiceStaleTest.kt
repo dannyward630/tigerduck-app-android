@@ -1,29 +1,23 @@
 package org.ntust.app.tigerduck.network
 
-import android.app.Application
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
 import org.junit.Assert.fail
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.InMemoryStoredPasswordLatch
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The [SsoLoginService.ensureServiceLogin] overload a caller passes `isStillWanted` to: a login no
  * longer wanted once it holds the lock makes no request at all. The service URL is a closed port
  * on the loopback address, so a login that does go out fails at once instead of reaching anyone.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SsoLoginServiceStaleTest {
 
-    private val context = RuntimeEnvironment.getApplication()
+    private val context = JvmContext()
     private val sso = SsoLoginService(
         NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context))),
         InMemoryStoredPasswordLatch(),

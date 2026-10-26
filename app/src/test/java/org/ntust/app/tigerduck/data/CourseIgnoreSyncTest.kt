@@ -2,7 +2,6 @@
 
 package org.ntust.app.tigerduck.data
 
-import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -14,7 +13,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.auth.NotSignedInException
 import org.ntust.app.tigerduck.data.cache.DataCache
@@ -24,14 +22,12 @@ import org.ntust.app.tigerduck.push.CourseOverrideResult
 import org.ntust.app.tigerduck.push.PushApiException
 import org.ntust.app.tigerduck.push.ServerCourse
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** Course ignores over real files, with the backend faked. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class CourseIgnoreSyncTest {
+
+    private val context = JvmContext()
 
     private data class Sent(val moodleId: String, val ignore: Boolean?, val moodleCourseId: Int?)
 
@@ -46,7 +42,6 @@ class CourseIgnoreSyncTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
         sync = newProcess()
     }
@@ -457,7 +452,7 @@ class CourseIgnoreSyncTest {
 
     @Test
     fun `changes go out and a sync takes the backend's set only with course sync on too`() = runTest {
-        val prefs = AppPreferences(RuntimeEnvironment.getApplication())
+        val prefs = AppPreferences(context)
         prefs.syncAssignments = true
         prefs.syncCourses = true
         // Off on fdroid whatever is stored, which leaves nothing to sync either.

@@ -1,22 +1,16 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The Moodle tokens kept with the NTUST account, and gone with it. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class CredentialManagerMoodleTest {
 
-    private val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("credentials-test", Context.MODE_PRIVATE)
+    private val prefs = JvmContext().getSharedPreferences("credentials-test", Context.MODE_PRIVATE)
     private val credentials = CredentialManager(prefs)
 
     @Test

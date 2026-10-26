@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.data.sharing
 
-import android.app.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -10,26 +9,21 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Format
 import org.ntust.app.tigerduck.data.sharing.ClassTableShareCode.Term
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.File
 import java.time.Instant
+import org.ntust.app.tigerduck.util.JvmContext
+import android.content.Context
 
 /**
- * [ImportedClassTableStore] over its real file, in Robolectric's per-test app folders: the order
+ * [ImportedClassTableStore] over its real file, in each test's own app folders: the order
  * and replacement rules, the shown person, the file it keeps, and when it empties.
  */
-@RunWith(RobolectricTestRunner::class)
-// A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class)
 class ImportedClassTableStoreTest {
 
-    private val context: Application = RuntimeEnvironment.getApplication()
+    private val context: Context = JvmContext()
     private val file get() = ImportedClassTableStore.fileIn(context)
 
     /** The student ID the store reads as signed in; a test changes it to sign another account in. */

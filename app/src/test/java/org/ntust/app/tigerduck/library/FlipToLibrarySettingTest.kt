@@ -1,24 +1,18 @@
 package org.ntust.app.tigerduck.library
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptController
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptKey
 import org.ntust.app.tigerduck.ui.navigation.FlipToLibraryPrompt
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The prompt's answers and the Settings switch, as stored. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class FlipToLibrarySettingTest {
 
     private lateinit var prefs: AppPreferences
@@ -28,7 +22,7 @@ class FlipToLibrarySettingTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         context.getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE).edit().clear().commit()
         prefs = AppPreferences(context)
         setting = FlipToLibrarySetting(prefs)

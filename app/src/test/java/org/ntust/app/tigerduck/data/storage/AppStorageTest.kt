@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.data.storage
 
-import android.app.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -9,13 +8,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.moodle.MoodleFileDownloads
 import org.ntust.app.tigerduck.data.storage.AppStorage.Kind
 import org.ntust.app.tigerduck.mail.model.MailBody
 import org.ntust.app.tigerduck.mail.store.MailCache
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -26,8 +22,6 @@ import java.nio.file.attribute.FileTime
  * Settings' "Downloaded files": what each kind of file the app downloaded takes, and deleting a
  * kind, or all of them, without touching anything else the app or the user keeps.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class AppStorageTest {
 
     @get:Rule

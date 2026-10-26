@@ -1,30 +1,24 @@
 package org.ntust.app.tigerduck.ui.screen.classtable
 
-import android.app.Application
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.push.PushApiException
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.IOException
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * Resetting a term, over real files (tigerduck-app-android#241). The backend goes first: with
  * no connection, or a session that has expired, nothing on the phone may change. The hidden
  * courses used to come back before the DELETE was even sent, and the reset said nothing.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class ClassTableTermResetTest {
 
     private lateinit var cache: DataCache
@@ -44,7 +38,7 @@ class ClassTableTermResetTest {
 
     @Before
     fun setUp() = runTest {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
         reset = ClassTableTermReset(cache, clock = { 42L })
         cache.saveCourses(listOf(portal, typed), term)

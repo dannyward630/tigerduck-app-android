@@ -1,19 +1,15 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.DataMigration
 import org.ntust.app.tigerduck.library.FlipToLibraryDefaultOffMigration
 import org.ntust.app.tigerduck.liveactivity.LiveActivityPreferences
 import org.ntust.app.tigerduck.notification.ClassReminders
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The class table's display switches in Settings > Display, as the iPhone app
@@ -22,15 +18,13 @@ import org.robolectric.annotation.Config
  * once the user asks. Each is device-local and read through a flow by the
  * class table, which lives on another screen than its switch.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class ClassTableDisplayPreferencesTest {
 
     private lateinit var context: Context
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         raw().edit().clear().commit()
     }
 

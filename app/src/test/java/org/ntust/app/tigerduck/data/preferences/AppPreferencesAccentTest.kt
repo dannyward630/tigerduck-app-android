@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import org.junit.Assert.assertEquals
@@ -8,16 +7,10 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.shared.AccentGradientDirection
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The accent picked in Settings, as its two preferences store it and read it back. */
-@RunWith(RobolectricTestRunner::class)
-// A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class)
 class AppPreferencesAccentTest {
 
     private lateinit var context: Context
@@ -26,7 +19,7 @@ class AppPreferencesAccentTest {
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         raw.edit().clear().commit()
     }
 

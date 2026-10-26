@@ -1,13 +1,11 @@
 package org.ntust.app.tigerduck.ui.screen.settings
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import okhttp3.OkHttpClient
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.auth.AuthTokenManager
@@ -19,9 +17,7 @@ import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
 import org.ntust.app.tigerduck.push.PushApiClient
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * Use Local's requests fail, rather than go quietly unsent, once course sync
@@ -29,8 +25,6 @@ import org.robolectric.annotation.Config
  * then, so Use Local went on as if they had landed: a term reset followed by
  * no upload left every other device hiding the whole term.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class PushCourseSyncBackendTest {
 
     private val backend = ScriptedBackend()
@@ -39,7 +33,7 @@ class PushCourseSyncBackendTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.auth
 
-import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.test.runTest
@@ -12,19 +11,14 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.network.MoodleWebserviceError
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The app-wide latch that keeps automatic sign-ins from posting a password the school refused
  * (https://github.com/tigerduck-app/tigerduck-app-android/issues/163), and the guard the
  * automatic Moodle token harvest runs under.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class StoredPasswordLatchTest {
 
     private lateinit var prefs: SharedPreferences
@@ -32,7 +26,7 @@ class StoredPasswordLatchTest {
 
     @Before
     fun setUp() {
-        prefs = RuntimeEnvironment.getApplication().getSharedPreferences("latch-test", Context.MODE_PRIVATE)
+        prefs = JvmContext().getSharedPreferences("latch-test", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
     }
 

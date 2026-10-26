@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.ui
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -8,27 +7,22 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.DataMigration
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.CredentialManager
 import org.ntust.app.tigerduck.library.libraryCredentialsForWatch
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The full reset [AppState.performFullReset] runs: it leaves no library
  * account on the watch, another student's included, which the school
  * sign-out it begins with keeps.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class FullResetTest {
 
-    private val context = RuntimeEnvironment.getApplication()
+    private val context = JvmContext()
 
-    // Plain preferences: Robolectric has no Android keystore for the encrypted ones.
+    // Plain preferences: the JVM has no Android keystore for the encrypted ones.
     private val credentialPrefs = context.getSharedPreferences("credentials-reset-test", Context.MODE_PRIVATE)
     private lateinit var credentials: CredentialManager
     private val prefs = AppPreferences(context)

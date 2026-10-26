@@ -1,16 +1,12 @@
 package org.ntust.app.tigerduck.ui.screen.home
 
-import android.app.Application
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The first-sync mark upload runs once per account
@@ -22,15 +18,15 @@ import org.robolectric.annotation.Config
  * [AppPreferences.assignmentMarksSyncedOnce], as `HomeBackendSync.pull` and
  * `BackgroundSyncWorker` read it.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class FirstSyncMarkUploadTest {
+
+    private val context = JvmContext()
 
     private lateinit var prefs: AppPreferences
 
     @Before
     fun setUp() {
-        prefs = AppPreferences(RuntimeEnvironment.getApplication())
+        prefs = AppPreferences(context)
     }
 
     private fun uploadsLocalMarks(serverCompleted: Set<String>, localCompleted: Set<String>) =
@@ -78,7 +74,7 @@ class FirstSyncMarkUploadTest {
     fun `the record outlives the process`() {
         prefs.assignmentMarksSyncedOnce = true
 
-        val nextLaunch = AppPreferences(RuntimeEnvironment.getApplication())
+        val nextLaunch = AppPreferences(context)
 
         assertTrue(nextLaunch.assignmentMarksSyncedOnce)
     }

@@ -1,29 +1,23 @@
 package org.ntust.app.tigerduck.push
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.ScriptedBackend
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * A refused revision poll carries its HTTP status, so the poller can tell a
  * 401, which gets one relogin and then stops polling, from a failure it backs
  * off from (tigerduck-app-android#154).
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SyncRevisionStatusTest {
 
     private val backend = ScriptedBackend()
@@ -31,7 +25,7 @@ class SyncRevisionStatusTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

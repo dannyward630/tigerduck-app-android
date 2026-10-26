@@ -1,24 +1,20 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * What a sync keeps per account goes at sign-out ([AppPreferences.clearSyncStamps]),
  * and the upload ledger also when a sync switch comes back on
  * ([AppPreferences.forgetUploads]).
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SyncStampsTest {
 
-    private val prefs = AppPreferences(RuntimeEnvironment.getApplication())
+    private val context = JvmContext()
+
+    private val prefs = AppPreferences(context)
 
     private fun keep() {
         prefs.lastSeenCoursesResetAt = "2026-10-10T16:42:49+00:00"
@@ -74,7 +70,7 @@ class SyncStampsTest {
 
     @Test
     fun `the older build's sync stamp is read once, and sign-out forgets it too`() {
-        val legacy = RuntimeEnvironment.getApplication().getSharedPreferences("tigerduck_sync", 0)
+        val legacy = context.getSharedPreferences("tigerduck_sync", 0)
         legacy.edit().putLong("last_course_sync_at", 42L).commit()
 
         assertEquals(42L, prefs.legacyLastCourseSyncAtMs)

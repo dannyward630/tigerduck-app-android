@@ -1,24 +1,18 @@
 package org.ntust.app.tigerduck.network
 
-import android.app.Application
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class NtustSessionCookiesTest {
 
-    private val context = RuntimeEnvironment.getApplication()
+    private val context = JvmContext()
     private val manager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
     private val cour01 = "https://cour01.ntust.edu.tw/classroom_user/classroom_usecondition.aspx".toHttpUrl()
     private val sso = "https://ssoam2.ntust.edu.tw/account/login".toHttpUrl()

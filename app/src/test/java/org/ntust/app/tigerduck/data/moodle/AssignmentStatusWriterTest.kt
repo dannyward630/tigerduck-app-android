@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.data.moodle
 
-import android.app.Application
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
@@ -8,19 +7,14 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.Date
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** A status an assignment's page fetched reaches the cached list Home, the Live Update and the reminders read. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class AssignmentStatusWriterTest {
 
     private lateinit var cache: DataCache
@@ -30,7 +24,7 @@ class AssignmentStatusWriterTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
         ledger = AssignmentStatusLedger { cache.userDataGeneration }
         writer = AssignmentStatusWriter(ledger, cache) { published += it }

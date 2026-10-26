@@ -1,24 +1,19 @@
 package org.ntust.app.tigerduck.demo
 
-import android.app.Application
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.sharing.ImportedClassTableStore
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.time.Instant
+import org.ntust.app.tigerduck.util.JvmContext
+import android.content.Context
 
 /** The demo sign-in imports each classmate as their share code would, under the demo account. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class DemoClassmatesTest {
 
-    private val context: Application = RuntimeEnvironment.getApplication()
+    private val context: Context = JvmContext()
     private var account: String? = null
     private fun store() = ImportedClassTableStore({ ImportedClassTableStore.fileIn(context) }, { account }, Dispatchers.Unconfined)
 
