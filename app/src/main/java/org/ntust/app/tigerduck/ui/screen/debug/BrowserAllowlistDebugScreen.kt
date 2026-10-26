@@ -221,12 +221,13 @@ internal const val ADD_DOMAIN_FIELD_TAG = "browserAllowlist.addDomain"
 
 /**
  * What "Open a page" opens for [text]: the address as typed, https when it names no scheme; null
- * for anything but an http or https address. A host and port (`localhost:8080`) names no scheme.
+ * for anything but an http or https address. A host and port (`localhost:8080`, with a path, a
+ * query or a fragment after it) names no scheme.
  */
 internal fun debugPageUrl(text: String): String? {
     val typed = text.trim()
     if (typed.isEmpty()) return null
     val scheme = Regex("^[A-Za-z][A-Za-z0-9+.-]*:(.*)$").find(typed)
-    val namesScheme = scheme != null && !Regex("^\\d+(/.*)?$").matches(scheme.groupValues[1])
+    val namesScheme = scheme != null && !Regex("^\\d+([/?#].*)?$").matches(scheme.groupValues[1])
     return (if (namesScheme) typed else "https://$typed").toHttpUrlOrNull()?.toString()
 }

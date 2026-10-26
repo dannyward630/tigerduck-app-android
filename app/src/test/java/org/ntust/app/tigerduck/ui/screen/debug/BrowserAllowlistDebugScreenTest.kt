@@ -79,6 +79,8 @@ class BrowserAllowlistDebugScreenTest {
         assertEquals("https://example.com/", debugPageUrl("https:/example.com"))
         assertEquals("https://localhost:8080/", debugPageUrl("localhost:8080"))
         assertEquals("https://example.com:8443/x", debugPageUrl("example.com:8443/x"))
+        assertEquals("https://localhost:8080/?x=1", debugPageUrl("localhost:8080?x=1"))
+        assertEquals("https://example.com:8443/#top", debugPageUrl("example.com:8443#top"))
         assertEquals("http://10.0.2.2:8080/", debugPageUrl(" http://10.0.2.2:8080 "))
         assertEquals(null, debugPageUrl("   "))
     }
