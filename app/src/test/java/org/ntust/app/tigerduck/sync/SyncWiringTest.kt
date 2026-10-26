@@ -76,6 +76,41 @@ class SyncWiringTest {
         )
     }
 
+    /**
+     * tigerduck-app-android#461: a sync's commit leaves be a course added back or brought back since
+     * it began (`DataCache.commitSyncHides`), which it knows only when the sync begins before its
+     * fetch, ends however it ends, and the class table's add goes through the call that tells it.
+     */
+    @Test
+    fun `Home's sync and the worker hold their read for the add-backs made while they run`() {
+        assertCalls(
+            "ui/screen/classtable/ClassTableViewModel.kt", "addCourse",
+            "dataCache.addCourseBack(course.courseNo, semester)",
+            "} finally {\n                dataCache.courseAddSent(course.courseNo, semester)",
+        )
+        for ((rel, name) in listOf(
+            "ui/screen/home/HomeBackendSync.kt" to "pull",
+            "notification/BackgroundSyncWorker.kt" to "syncOverridesFromBackend",
+        )) {
+            val body = body(rel, name)
+            val begin = body.indexOf("val courseSync = dataCache.beginCourseSync()")
+            val fetching = body.indexOf("courseSync.fetching()")
+            val fetch = body.indexOf("syncApiClient.fetchFullSync()")
+            assertTrue("$rel $name no longer begins its course sync before the fetch", begin in 0 until fetch)
+            assertTrue("$rel $name no longer marks its course sync's fetch", fetching in begin until fetch)
+            assertTrue("$rel $name no longer ends its course sync", "} finally {\n            dataCache.endCourseSync(courseSync)" in body)
+        }
+        // Marked for the fetch the snapshot comes from, a retry after a relogin included.
+        val worker = body("notification/BackgroundSyncWorker.kt", "syncOverridesFromBackend")
+        assertTrue(
+            "the worker no longer marks each attempt's fetch",
+            worker.indexOf("retryingAfterRelogin(") in 0 until worker.indexOf("courseSync.fetching()"),
+        )
+        // A course reset elsewhere takes the hand-added courses and their adds, those under way too.
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "applyCourseReset", "courseSync.supersedeAddsBack()")
+        assertCalls("notification/BackgroundSyncWorker.kt", "reconcileCurrentSemester", "if (resetElsewhere) courseSync.supersedeAddsBack()")
+    }
+
     @Test
     fun `Home's sync records only the categories it took`() {
         assertCalls("ui/screen/home/HomeBackendSync.kt", "pull", "categoriesTaken(", "categoriesSynced(switchedOn, took, prefs)")
@@ -282,9 +317,10 @@ class SyncWiringTest {
     /** tigerduck-app-android#380: a course gone from this phone would be PATCHed, and refused, at every sync. */
     @Test
     fun `the syncs forget the waiting colours and names of the courses they prune or a reset elsewhere wipes`() {
-        assertCalls("ui/screen/home/HomeBackendSync.kt", "syncCourseList", "pendingCourseOverrides.forget(")
+        // The term's commit hands the courses it took out to the forget (commitReconciledTerm).
+        assertCalls("ui/screen/home/HomeBackendSync.kt", "syncCourseList", "outcome.merged, pendingCourseOverrides)")
         assertCalls("ui/screen/home/HomeBackendSync.kt", "applyCourseReset", "pendingCourseOverrides.forget(")
-        assertCalls("notification/BackgroundSyncWorker.kt", "reconcileCurrentSemester", "pendingCourseOverrides.forget(")
+        assertCalls("notification/BackgroundSyncWorker.kt", "reconcileCurrentSemester", "pendingCourseOverrides,\n")
     }
 
     /** tigerduck-app-android#380: the answer decides the waiting colours and names too. */

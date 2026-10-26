@@ -204,14 +204,16 @@ class PendingCourseOverrides internal constructor(
      * another device, or their term reset, and the backend's override went
      * with the course row. Sent later, a change would set its colour or name
      * on the row a re-add or an upload makes anew, and until then be refused
-     * at every sync.
+     * at every sync. Only the changes older than [madeBefore], a version
+     * [reserveVersion] gave before the course went: one made since is the
+     * course's put back meanwhile, and stays.
      */
-    suspend fun forget(moodleIds: Collection<String>) {
+    suspend fun forget(moodleIds: Collection<String>, madeBefore: Long = Long.MAX_VALUE) {
         if (moodleIds.isEmpty()) return
         val generation = dataCache.writeGeneration()
         mutex.withLock {
             val waiting = waiting()
-            val kept = waiting.filterValues { it.moodleId !in moodleIds }
+            val kept = waiting.filterValues { it.moodleId !in moodleIds || it.seq >= madeBefore }
             if (kept.size != waiting.size) save(kept, generation)
         }
     }

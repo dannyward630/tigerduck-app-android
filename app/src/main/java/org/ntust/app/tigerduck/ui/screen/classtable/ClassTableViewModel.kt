@@ -1006,23 +1006,25 @@ class ClassTableViewModel @Inject constructor(
             // (Main.immediate), so the stamp is the tap's.
             val reAddedAt = pendingCourseDeletes.stamp()
             try {
-                val deleted = dataCache.loadDeletedCourseNos()
-                if (CourseTombstoneKeys.isHidden(course.courseNo, semester, deleted)) {
-                    dataCache.saveDeletedCourseNos(
-                        CourseTombstoneKeys.unhide(course.courseNo, semester, deleted)
-                    )
+                try {
+                    // Its hide lifted, and the add noted for every sync under way
+                    // or begun before it is sent, whose older read must not prune
+                    // it again; see DataCache.addCourseBack.
+                    dataCache.addCourseBack(course.courseNo, semester)
+                } finally {
+                    tombstoneEdits.saved(tombstone)
                 }
+                dataCache.saveCourses(updated, semester)
+                // A delete of it still queued goes first, or it could land after
+                // this add and take the course off the server again; as the
+                // iPhone's `discardCourseDeletes` before an add.
+                pendingCourseDeletes.forget(semester, course.courseNo, reAddedAt)
+                // Kept until it lands: in a term the server already has, no
+                // sync would send it again otherwise.
+                pendingCourseAdds.send(updated, semester, course.courseNo)
             } finally {
-                tombstoneEdits.saved(tombstone)
+                dataCache.courseAddSent(course.courseNo, semester)
             }
-            dataCache.saveCourses(updated, semester)
-            // A delete of it still queued goes first, or it could land after
-            // this add and take the course off the server again; as the
-            // iPhone's `discardCourseDeletes` before an add.
-            pendingCourseDeletes.forget(semester, course.courseNo, reAddedAt)
-            // Kept until it lands: in a term the server already has, no
-            // sync would send it again otherwise.
-            pendingCourseAdds.send(updated, semester, course.courseNo)
             widgetUpdater.requestUpdate()
         }
         localEdits.noteEdit()

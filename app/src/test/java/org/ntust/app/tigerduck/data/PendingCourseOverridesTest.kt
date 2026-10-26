@@ -89,6 +89,20 @@ class PendingCourseOverridesTest {
     private fun refused(code: Int): suspend () -> Boolean = { throw PushApiException("patchCourseOverride failed: HTTP $code", code) }
 
     @Test
+    fun `a sync's forget of a course it took out keeps a change made since it began to`() = runTest {
+        sends = { false }
+        overrides.send(calculus, colorHex = "#FF0000")
+        // The sync's commit reserves a version before it writes the term's courses; the course is
+        // put back and named meanwhile, before its forget.
+        val before = overrides.reserveVersion()
+        overrides.send(calculus, customName = "Calc", locale = "en")
+
+        overrides.forget(listOf(calculus), madeBefore = before)
+
+        assertEquals(listOf<String?>("Calc"), cache.loadPendingCourseOverrides().map { it.customName })
+    }
+
+    @Test
     fun `a colour whose PATCH fails is kept, and the next sync sends it again and lets it go once it lands`() = runTest {
         answer = { throw IOException("offline") }
         overrides.send(calculus, colorHex = "#FF0000")
