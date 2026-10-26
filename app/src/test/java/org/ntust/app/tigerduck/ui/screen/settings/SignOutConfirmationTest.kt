@@ -1,13 +1,12 @@
 package org.ntust.app.tigerduck.ui.screen.settings
 
-import android.app.Application
+import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.model.PendingCourseIgnore
@@ -19,17 +18,13 @@ import org.ntust.app.tigerduck.data.sharing.ImportedClassTableStore
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.screen.settings.SignOutLoss.IMPORTED_CLASS_TABLES
 import org.ntust.app.tigerduck.ui.screen.settings.SignOutLoss.UNSYNCED_DATA
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * Signing out deletes what exists only on the phone, so it asks first and says what goes: the
  * edits TigerSync does not keep (always, on fdroid), and the imported class tables, which the
  * iPhone app asks about.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SignOutConfirmationTest {
 
     private val allSynced = SyncedKinds(
@@ -118,7 +113,7 @@ class SignOutConfirmationTest {
 
     // What the phone holds
 
-    private val context: Application = RuntimeEnvironment.getApplication()
+    private val context: Context = JvmContext()
     private val prefs = AppPreferences(context).apply { cloudSyncEnabled = false }
     private val dataCache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), prefs))
     private val imported = ImportedClassTableStore({ ImportedClassTableStore.fileIn(context) }, { "B11300000" }, Dispatchers.Unconfined)

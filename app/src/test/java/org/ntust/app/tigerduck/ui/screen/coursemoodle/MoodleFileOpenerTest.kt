@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.ui.screen.coursemoodle
 
-import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -12,7 +11,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.moodle.MoodleCacheContext
 import org.ntust.app.tigerduck.data.moodle.MoodleCachePort
 import org.ntust.app.tigerduck.data.moodle.MoodleCourseStore
@@ -27,15 +25,11 @@ import org.ntust.app.tigerduck.network.model.moodle.MoodleForum
 import org.ntust.app.tigerduck.network.model.moodle.MoodleGradeItem
 import org.ntust.app.tigerduck.network.model.moodle.MoodleMemberList
 import org.ntust.app.tigerduck.network.moodle.MoodleCourseApi
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.File
 import java.lang.reflect.Type
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** Only the latest tap, on a screen still in view, opens what finishes downloading. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class MoodleFileOpenerTest {
 
@@ -84,7 +78,7 @@ class MoodleFileOpenerTest {
             downloads = MoodleFileDownloads(root = { tmp.root }, scope = backgroundScope, io = Dispatchers.Unconfined),
             filesDir = File(tmp.root, "acct/5"),
         )
-        val opener = MoodleFileOpener(store, RuntimeEnvironment.getApplication(), backgroundScope, { "system" }) { copy, _, share ->
+        val opener = MoodleFileOpener(store, JvmContext(), backgroundScope, { "system" }) { copy, _, share ->
             presented += copy.name to share
         }
         opener.isOnScreen = true

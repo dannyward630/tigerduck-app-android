@@ -1,17 +1,13 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.shared.StoredPasswordSchedule
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The library's refusals of the stored password, counted with the time of the
@@ -19,12 +15,10 @@ import org.robolectric.annotation.Config
  * the password again by itself, until credentials that work are saved or the
  * library account signs out.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class CredentialManagerRefusedPasswordTest {
 
-    // Plain preferences: Robolectric has no Android keystore for the encrypted ones.
-    private val prefs = RuntimeEnvironment.getApplication()
+    // Plain preferences: the JVM has no Android keystore for the encrypted ones.
+    private val prefs = JvmContext()
         .getSharedPreferences("credentials-refused-test", Context.MODE_PRIVATE)
     private lateinit var credentials: CredentialManager
 

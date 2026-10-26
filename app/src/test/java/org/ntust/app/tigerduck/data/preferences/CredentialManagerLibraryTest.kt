@@ -1,30 +1,23 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * Every way the phone removes the library account keeps a library sign-in begun
  * before it from storing that account again
  * (tigerduck-app/tigerduck-app-android#293).
  */
-@RunWith(RobolectricTestRunner::class)
-// A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class)
 class CredentialManagerLibraryTest {
 
-    // Plain preferences: Robolectric has no Android keystore for the encrypted ones.
+    // Plain preferences: the JVM has no Android keystore for the encrypted ones.
     private val credentials = CredentialManager(
-        RuntimeEnvironment.getApplication().getSharedPreferences("credentials-test", Context.MODE_PRIVATE),
+        JvmContext().getSharedPreferences("credentials-test", Context.MODE_PRIVATE),
     )
 
     private fun signedIn() {

@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.academic
 
-import android.app.Application
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
@@ -14,12 +13,10 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.concurrent.atomic.AtomicInteger
+import org.ntust.app.tigerduck.util.JvmContext
+import android.content.Context
 
 /**
  * [AcademicCalendarStore.changes] is what sends the paired watch a new list
@@ -27,16 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger
  * quiet when nothing changed.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class AcademicCalendarStoreChangesTest {
 
-    private lateinit var context: Application
+    private lateinit var context: Context
     private lateinit var prefs: AppPreferences
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         prefs = AppPreferences(context)
     }
 

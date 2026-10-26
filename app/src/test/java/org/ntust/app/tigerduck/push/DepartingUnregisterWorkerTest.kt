@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.push
 
-import android.app.Application
 import android.content.Context
 import androidx.work.ListenableWorker
 import androidx.work.WorkerFactory
@@ -10,20 +9,15 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.DepartingRefresh
 import org.ntust.app.tigerduck.auth.DepartingSession
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.IOException
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The worker that sends the owed unregister gives up in the end, and drops the debt then. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class DepartingUnregisterWorkerTest {
 
-    private val context: Application = RuntimeEnvironment.getApplication()
+    private val context: Context = JvmContext()
 
     private var pending: PendingUnregister? = null
     private val store = object : PendingUnregisterStore {

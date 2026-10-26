@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.push
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -9,23 +8,18 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.ScriptedBackend
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * A course override PATCH reads [PushApiClient.patchCourseOverride]'s `allowed` once more right
  * before the request goes, after the header is made, which can renew the session: a hold the
  * course outbox put on the kind meanwhile stops it (tigerduck-app-android#380).
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class CourseOverrideHoldTest {
 
     private val backend = ScriptedBackend()
@@ -34,7 +28,7 @@ class CourseOverrideHoldTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

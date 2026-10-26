@@ -1,28 +1,22 @@
 package org.ntust.app.tigerduck.auth
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager.SignInAttempt
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.MoodleWebserviceError
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * [StoredAccountSignIn], the automatic sign-in AuthService hands [AuthTokenManager], against a
  * scripted backend, with stand-ins for the stored account and the Moodle token harvest.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class StoredAccountSignInTest {
 
     private lateinit var manager: AuthTokenManager
@@ -39,7 +33,7 @@ class StoredAccountSignInTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

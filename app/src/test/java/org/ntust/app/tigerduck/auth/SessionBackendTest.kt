@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.auth
 
-import android.app.Application
 import android.content.Context
 import com.google.gson.JsonObject
 import kotlinx.coroutines.test.runTest
@@ -11,7 +10,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager.SignInAttempt
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
@@ -22,10 +20,8 @@ import org.ntust.app.tigerduck.push.PushApiClient
 import org.ntust.app.tigerduck.push.PushTokenIn
 import org.ntust.app.tigerduck.push.SettingsDocumentApiClient
 import org.ntust.app.tigerduck.push.SyncApiClient
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.IOException
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * A backend session goes only to the backend that issued it: neither its access token nor its
@@ -33,8 +29,6 @@ import java.io.IOException
  * first. The setting's own change signs out before it stores (EndpointChange); this holds for a
  * request already on its way then, as for one queued behind another.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SessionBackendTest {
 
     private lateinit var prefs: AppPreferences
@@ -44,7 +38,7 @@ class SessionBackendTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = ISSUER }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

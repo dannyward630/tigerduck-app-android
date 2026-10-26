@@ -1,28 +1,22 @@
 package org.ntust.app.tigerduck.mail.store
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.mail.notify.MailMutePreset
 import org.ntust.app.tigerduck.mail.notify.MailMuteRule
 import org.ntust.app.tigerduck.mail.notify.MailMuteSettings
 import org.ntust.app.tigerduck.mail.notify.MailQuietHours
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
+import org.ntust.app.tigerduck.util.JvmContext
 
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SharedPrefsMailStateStoreTest {
 
-    private val context = RuntimeEnvironment.getApplication()
+    private val context = JvmContext()
 
     /** Mute settings are the student's: a sign-in again keeps them, a sign-out takes them. */
     @Test

@@ -1,14 +1,11 @@
 package org.ntust.app.tigerduck.network
 
-import android.app.Application
 import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
@@ -16,18 +13,15 @@ import org.ntust.app.tigerduck.di.NetworkModule
 import org.ntust.app.tigerduck.shared.tls.PinnedTls
 import org.ntust.app.tigerduck.shared.tls.PinnedTrustManager
 import org.ntust.app.tigerduck.shared.tls.PinPolicy
-import org.robolectric.RobolectricTestRunner
 import java.io.File
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509ExtendedTrustManager
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * Every HTTPS client goes through [PinnedTrustManager] (TLS pins spec, A9): a source check that
  * no client is started any other way, and the root clients' wiring itself.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class AllHttpsClientsPinnedTest {
 
     private val roots = listOf(
@@ -126,7 +120,7 @@ class AllHttpsClientsPinnedTest {
 
     @Test
     fun `the root clients take the pinned socket factory`() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+        val context = JvmContext()
         val tls = PinnedTls(PinnedTrustManager(NoTrust, { _, _, _ -> emptyList() }, { PinPolicy(appVersion = 1) }, {}))
         val demoMode = DemoModeInterceptor(DebugFixtureStore(context))
 

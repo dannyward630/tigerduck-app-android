@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.auth
 
-import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.test.runTest
@@ -11,20 +10,15 @@ import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.network.MoodleWebserviceError
 import org.ntust.app.tigerduck.shared.StoredPasswordSchedule
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The waits between automatic posts of a stored password the school refused, in place of the latch
  * that held them off until the user signed in by hand (tigerduck-app/tigerduck-app#768): 10
  * seconds, 1 minute and 5 minutes after the first three refusals in a row, then 6 hours each time.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class StoredPasswordScheduleTest {
 
     private lateinit var prefs: SharedPreferences
@@ -33,7 +27,7 @@ class StoredPasswordScheduleTest {
 
     @Before
     fun setUp() {
-        prefs = RuntimeEnvironment.getApplication().getSharedPreferences("schedule-test", Context.MODE_PRIVATE)
+        prefs = JvmContext().getSharedPreferences("schedule-test", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
     }
 

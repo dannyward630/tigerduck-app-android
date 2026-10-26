@@ -2,7 +2,6 @@
 
 package org.ntust.app.tigerduck.data
 
-import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -11,15 +10,12 @@ import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.push.PushApiException
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.IOException
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * Marks tapped here whose PATCH failed ([UnsentMarks]), over real files. A
@@ -27,8 +23,6 @@ import java.io.IOException
  * through a sync, the next one took the server — which never got the mark —
  * as the truth and wiped it here.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class UnsentMarksTest {
 
     private lateinit var cache: DataCache
@@ -44,7 +38,7 @@ class UnsentMarksTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
         marks = newProcess()
     }

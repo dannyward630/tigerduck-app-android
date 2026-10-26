@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.push
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -8,24 +7,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.ScriptedBackend
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.Date
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The assignment upload ledger ([UploadLedger]) through [PushApiClient]: what it remembers is
  * what one backend accepted, and a list it holds goes again once the app is pointed at another.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class AssignmentUploadGateTest {
 
     private val backend = ScriptedBackend()
@@ -34,7 +28,7 @@ class AssignmentUploadGateTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

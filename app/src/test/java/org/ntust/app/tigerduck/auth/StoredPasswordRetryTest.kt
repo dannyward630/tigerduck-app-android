@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.auth
 
-import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,18 +12,13 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The try of a stored password the school refused, once its wait is over, which takes the place
  * of waiting for the user to sign in by hand (tigerduck-app/tigerduck-app#768).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class StoredPasswordRetryTest {
 
     private lateinit var prefs: SharedPreferences
@@ -32,7 +26,7 @@ class StoredPasswordRetryTest {
 
     @Before
     fun setUp() {
-        prefs = RuntimeEnvironment.getApplication().getSharedPreferences("retry-test", Context.MODE_PRIVATE)
+        prefs = JvmContext().getSharedPreferences("retry-test", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
     }
 

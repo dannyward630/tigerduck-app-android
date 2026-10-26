@@ -1,12 +1,10 @@
 package org.ntust.app.tigerduck.ui.screen.classtable
 
-import android.app.Application
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.CourseTombstoneKeys
 import org.ntust.app.tigerduck.data.cache.DataCache
@@ -15,10 +13,8 @@ import org.ntust.app.tigerduck.push.ServerCourse
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.screen.home.CourseSyncReconciler
 import org.ntust.app.tigerduck.ui.screen.home.commitReconciledTerm
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.File
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * A hand-added course the student deletes and later really enrolls in (tigerduck-app-android#425,
@@ -26,10 +22,9 @@ import java.io.File
  * names the course, so the course selection answer that lists it has to bring it back here first;
  * every other hide keeps binding.
  */
-@RunWith(RobolectricTestRunner::class)
-// A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class)
 class ClassTableHandAddedHideTest {
+
+    private val context = JvmContext()
 
     private lateinit var cache: DataCache
 
@@ -41,7 +36,6 @@ class ClassTableHandAddedHideTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
     }
 
@@ -266,7 +260,7 @@ class ClassTableHandAddedHideTest {
         fetchListing(enrolled.courseNo)
         delete(handAdded)
         // The hides gone from under the mark, as a damaged file leaves them.
-        File(RuntimeEnvironment.getApplication().filesDir, "TigerDuckData/deleted_courses.json").delete()
+        File(context.filesDir, "TigerDuckData/deleted_courses.json").delete()
 
         tombstonedElsewhere(handAdded)
 

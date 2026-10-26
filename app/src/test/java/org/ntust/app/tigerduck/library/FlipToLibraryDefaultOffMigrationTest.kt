@@ -1,24 +1,18 @@
 package org.ntust.app.tigerduck.library
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.ui.firsttrigger.FirstTriggerPromptKey
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * [FlipToLibraryDefaultOffMigration] against what the old first-flip prompt
  * and the Settings switch left behind, when the switch defaulted on.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class FlipToLibraryDefaultOffMigrationTest {
 
     private lateinit var context: Context
@@ -27,7 +21,7 @@ class FlipToLibraryDefaultOffMigrationTest {
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         raw().edit().clear().commit()
         prefs = AppPreferences(context)
     }

@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.auth
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -20,7 +19,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager.SignInAttempt
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
@@ -28,9 +26,7 @@ import org.ntust.app.tigerduck.debug.DemoModeInterceptor
 import org.ntust.app.tigerduck.network.NtustSessionManager
 import org.ntust.app.tigerduck.network.SsoLoginError
 import org.ntust.app.tigerduck.network.SsoLoginService
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The sign-in with a password the user typed, against hand-made school pages, while the school's
@@ -38,8 +34,6 @@ import org.robolectric.annotation.Config
  * new password, whenever the sign-in is cancelled, and nothing is signed in to the library: each
  * account signs in by itself.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class TypedAccountSignInTest {
 
     private lateinit var latch: PersistedStoredPasswordLatch
@@ -84,7 +78,7 @@ class TypedAccountSignInTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val latchPrefs = context.getSharedPreferences("typed-sign-in-test", Context.MODE_PRIVATE)
         latchPrefs.edit().clear().commit()
         latch = PersistedStoredPasswordLatch(latchPrefs, now = { 1_800_000_000_000L }) { stored }

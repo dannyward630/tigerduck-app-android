@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.push
 
-import android.app.Application
 import android.content.Context
 import com.google.gson.JsonParser
 import kotlinx.coroutines.test.runTest
@@ -9,24 +8,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.auth.ScriptedBackend
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
 import org.ntust.app.tigerduck.network.resolveAnnouncementEndpoint
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.Date
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The `due_at` TigerSync is told: the date the student's work is due, a teacher's extension
  * included, as iOS uploads it and the backend's own Moodle fetch writes it (tigerduck-backend#82).
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class AssignmentUploadDueDateTest {
 
     private val backend = ScriptedBackend()
@@ -34,7 +28,7 @@ class AssignmentUploadDueDateTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val prefs = AppPreferences(context).apply { announcementApiBaseUrlOverride = "http://127.0.0.1:9/v3" }
         // Never the real backend, even past the scripted one.
         assertTrue(resolveAnnouncementEndpoint(prefs).overrideApplied)

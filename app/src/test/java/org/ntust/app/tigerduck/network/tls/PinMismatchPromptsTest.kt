@@ -1,26 +1,20 @@
 package org.ntust.app.tigerduck.network.tls
 
-import android.app.Application
 import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.shared.tls.PinDomain
-import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The prompt queue (TLS pins spec, A6 and D5). */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class PinMismatchPromptsTest {
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val context = JvmContext()
     private val store = PinAcceptanceStore(context.getSharedPreferences(PinAcceptanceStore.FILE, Context.MODE_PRIVATE), 30)
     private var now = 1_000_000L
     private val continued = mutableListOf<String>()
