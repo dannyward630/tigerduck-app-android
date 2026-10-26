@@ -18,11 +18,11 @@ A new version builds the same six artifacts as `release-manual.yaml`, then:
    all in one edit (`tools/play/publish.py`). The phone goes to `internal` and
    `production`, the watch to `wear:internal` and `wear:production`: Play has
    required Wear OS releases on their own form-factor tracks since 2023.
-   Internal releases go to every tester at once; production starts as a staged
-   rollout.
+   Both reach everyone at once: every tester on internal, every user on
+   production, unless a smaller production rollout is picked.
 2. Tags the build commit (GPG-signed), pins the F-Droid metadata commit hash,
    and publishes the GitHub Release "TigerDuck Android vX.Y.Z" with every
-   artifact attached.
+   artifact attached and its notes written (see below).
 
 Play comes before the tag so that a failed upload leaves nothing tagged and the
 workflow can simply be run again. If a later step fails, use "Re-run failed
@@ -32,13 +32,13 @@ own earlier success. If Play refuses to send the release for review on its own
 (it does after a rejection, or with other changes pending), the edit is still
 saved and the run warns you to click "Send changes for review" in Play Console.
 
-A commit releases to all four tracks at a 10% production rollout. From the
+A commit releases to all four tracks, production to every user. From the
 Actions tab you can tick which of phone/watch × internal/production to upload
-and pick the rollout (10, 20, 50 or 100%). On a version that is already tagged,
-a click sends it to the ticked tracks only, built from the tag, and does not
-tag or publish again; that is how a release goes from internal testing to
-production, or to a wider rollout (which then starts at the percentage picked,
-not where it was). Everything is built either way, because the GitHub Release
+and pick the rollout: 100% by default, or a staged 10, 20 or 50%. On a version
+that is already tagged, a click sends it to the ticked tracks only, built from
+the tag, and does not tag or publish again; that is how a release goes from
+internal testing to production, or from a staged rollout to a wider one (which
+then starts at the percentage picked, not where it was). Everything is built either way, because the GitHub Release
 carries all six files and Play may not have a bundle yet.
 
 Runs queue one at a time, and each decides what to release only once the run
@@ -64,6 +64,22 @@ Preview them with `python3 tools/play/publish.py notes --phone-code N`.
 Needs the `PLAY_SERVICE_ACCOUNT_JSON` secret, a service account with release
 permissions on the app in Play Console.
 
+The GitHub Release notes come from `.github/release-notes-template.md`. The
+script `tools/github/release_notes.py` fills in its placeholders:
+- `{{WHATS_NEW}}`: the What's New item titles for the phone `versionCode`, each
+  `zh-Hant` title with the `en` one under it.
+- `{{VERSION_NAME}}`, `{{PHONE_CODE}}` and `{{WATCH_CODE}}`: from the Gradle
+  files.
+- `{{COMPARE_URL}}`: the compare link from the previous `vX.Y.Z` tag.
+
+Everything else, the notes on upgrading and on the F-Droid build among it, is
+the template's own text: edit it there. The first job checks that the notes
+can be written, so a What's New entry whose two languages list different
+numbers of items fails before the build. The notes are written only when the
+release is created. A release that already exists keeps its notes, so editing
+them on GitHub afterwards is safe. Preview them with
+`python3 tools/github/release_notes.py --repo tigerduck-app/tigerduck-app-android`.
+
 ### `release-manual.yaml` — Release (Manual)
 
 Manually dispatched, no inputs. Takes the commit `main` points at when the run
@@ -71,9 +87,10 @@ starts, reads `versionName` from its `app/build.gradle.kts`, and releases it as
 `v<versionName>`: tags that commit if the tag does not yet exist, builds signed
 `play` and `fdroid` phone AABs/APKs plus the signed `:wear` AAB/APK, pins the
 F-Droid metadata commit hash, and publishes the GitHub Release "TigerDuck
-Android vX.Y.Z" with the artifacts attached. If the tag already exists, it
-checks the tag out and attaches the artifacts to the existing release. Does
-**not** upload to Google Play.
+Android vX.Y.Z" with the artifacts attached and the same notes as Release
+(Auto). If the tag already exists, it checks the tag out and attaches the
+artifacts to the existing release, keeping that release's notes. Does **not**
+upload to Google Play.
 
 Both release workflows pin the F-Droid metadata only while the metadata on
 `main` still describes the version being released. If a newer version bump
@@ -91,18 +108,23 @@ watch build to ship. It is signed with the same keystore as the phone (same
 ### `ci.yaml`
 
 Runs on PRs to `main` and `dev`. Compiles both phone flavors plus `:wear`,
-builds the `:wear` release AAB/APK unsigned, and runs every JVM unit test. Lean
-on purpose: no emulator, no lint baseline.
+builds the `:wear` release AAB/APK and both phone flavors' release APKs
+unsigned, and runs every JVM unit test. Lean on purpose: no emulator, no lint
+baseline.
 
-The wear release build is there because `:wear` is minified with its own
-`proguard-rules.pro` and nothing else in the PR gate runs R8 over it — without
-this step a missing keep rule would surface for the first time on release day.
-Unsigned because fork PRs cannot read the `KEYSTORE_*` secrets.
+The release builds are there because the phone and `:wear` are each minified
+with their own `proguard-rules.pro` and nothing else in the PR gate runs R8
+over them — without them a missing keep rule would surface for the first time
+on release day, as the two upgrade crashes R8 and Gson caused did. Unsigned
+because fork PRs cannot read the `KEYSTORE_*` secrets, and the phone's without
+`google-services.json`, which only the release workflow decodes.
 
-It also runs `tools/play/test_publish.py`, which tests the Play upload script
-against a fake Play: which bundles are uploaded, what each track is sent, the
-staged rollout, and the commit and its fallback. That script otherwise first
-runs once the PR is already on `main`.
+It also tests the two scripts the release workflows run, which otherwise first
+run once the PR is already on `main`: `tools/play/test_publish.py` runs the
+Play upload script against a fake Play (which bundles are uploaded, what each
+track is sent, the staged rollout, the commit and its fallback), and
+`tools/github/test_release_notes.py` renders the GitHub Release notes from a
+scratch checkout.
 
 ### `submodules-up-to-date.yaml`
 

@@ -5,33 +5,30 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.text.intl.LocaleList
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
-import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
 internal val FeatureGridPadding = 16.dp
 internal val FeatureCardSpacing = 12.dp
 internal val FeatureCardPadding = 14.dp
 internal val FeatureIconSize = 32.dp
-internal const val FeatureLabelMaxLines = 2
+internal const val FeatureLabelMaxLines = 3
 
 /** The least room between the icon and a name that has made the cards taller. */
 private val IconLabelGap = 8.dp
 private const val CardAspectRatio = 1.6f
-
-/** The smallest a name is set, so fitting it never undoes much of a larger font. */
-private val LabelMinFontSize = 16.sp
-private const val LabelFontSizeStep = 1f
 
 /**
  * The size every card on the More screen shares.
@@ -39,15 +36,26 @@ private const val LabelFontSizeStep = 1f
  * A card's height used to follow its width alone, which left one line under the icon for the
  * name, so a larger font or display size, or a language with long names, cut the second line
  * off. [height] is now what the tallest name needs, and never less than the 1.6:1 card it was,
- * so the grid stays even. Each name is set at its [labelFontSizes] entry in a box [labelWidth]
- * wide, exactly as it was measured here.
+ * so the grid stays even. Every name is set at the one size, in a box [labelWidth] wide, with
+ * [labelStyle], exactly as it was measured here.
  */
 internal class FeatureCardSize(
     val height: Dp,
     val labelWidth: Dp,
-    /** Each name's size, from [fitLabel]: the style's own, or smaller where that one does not fit. */
-    val labelFontSizes: Map<String, TextUnit>,
-)
+    /** The names that only fit their lines by breaking inside a word, which are hyphenated. */
+    val hyphenatedLabels: Set<String>,
+) {
+    /**
+     * [style] as [label] is set. A word too long for its line, "Announcements" in a phone's card,
+     * breaks with a hyphen, as a book would, rather than wherever it runs out of room. Only such
+     * a name is hyphenated: Android's breaker would otherwise split a word that fits whole on the
+     * next line.
+     */
+    fun labelStyle(label: String, style: TextStyle): TextStyle =
+        if (label in hyphenatedLabels) style.hyphenated() else style
+}
+
+private fun TextStyle.hyphenated(): TextStyle = copy(hyphens = Hyphens.Auto)
 
 internal fun featureGridColumns(width: Dp): Int = when {
     width >= 840.dp -> 4
@@ -55,15 +63,17 @@ internal fun featureGridColumns(width: Dp): Int = when {
     else -> 2
 }
 
+/**
+ * The names' style, in the language they are written in. That picks the hyphenation patterns,
+ * and below API 33 the default locale stays the device's while the app runs in another language
+ * (see `AppLanguageManager.localizedContext`).
+ */
 @Composable
 @ReadOnlyComposable
-internal fun featureLabelStyle(): TextStyle = MaterialTheme.typography.titleLarge.let {
-    it.copy(
-        fontWeight = FontWeight.SemiBold,
-        // In proportion, so a name set smaller to fit closes its lines up too.
-        lineHeight = (it.lineHeight.value / it.fontSize.value).em,
-    )
-}
+internal fun featureLabelStyle(): TextStyle = MaterialTheme.typography.titleLarge.copy(
+    fontWeight = FontWeight.SemiBold,
+    localeList = LocalConfiguration.current.locales[0]?.let { LocaleList(Locale(it.toLanguageTag())) },
+)
 
 /** The [FeatureCardSize] of a grid [gridWidthPx] wide in [columns], for cards named [labels]. */
 @Composable
@@ -71,60 +81,51 @@ internal fun rememberFeatureCardSize(labels: List<String>, gridWidthPx: Int, col
     val measurer = rememberTextMeasurer()
     val style = featureLabelStyle()
     val density = LocalDensity.current
-    return remember(measurer, style, density, labels, gridWidthPx, columns) {
+    val locale = LocalConfiguration.current.locales[0]
+    return remember(measurer, style, density, locale, labels, gridWidthPx, columns) {
         with(density) {
             // Rounded as the padding and spacing modifiers round them, and floored where the row
             // shares its width out, so no card is narrower than the one measured here.
             val cellWidth = (gridWidthPx - 2 * FeatureGridPadding.roundToPx() -
                 (columns - 1) * FeatureCardSpacing.roundToPx()) / columns
             val labelWidth = (cellWidth - 2 * FeatureCardPadding.roundToPx()).coerceAtLeast(0)
-            val breaks = BreakIterator.getLineInstance()
-            val fitted = labels.associateWith { label ->
-                val layout = { fontSize: TextUnit ->
-                    measurer.measure(
-                        text = label,
-                        style = style.copy(fontSize = fontSize),
-                        overflow = TextOverflow.Ellipsis,
-                        maxLines = FeatureLabelMaxLines,
-                        constraints = Constraints(maxWidth = labelWidth),
-                    )
-                }
-                val fontSize = fitLabel(style.fontSize, breaks, layout)
-                fontSize to layout(fontSize).size.height
+            val breaks = BreakIterator.getLineInstance(locale)
+            val measure = { label: String, labelStyle: TextStyle ->
+                measurer.measure(
+                    text = label,
+                    style = labelStyle,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = FeatureLabelMaxLines,
+                    constraints = Constraints(maxWidth = labelWidth),
+                )
             }
-            val tallestLabel = fitted.values.maxOfOrNull { (_, height) -> height } ?: 0
+            val hyphenated = mutableSetOf<String>()
+            val tallestLabel = labels.maxOfOrNull { label ->
+                val whole = measure(label, style)
+                val layout = if (whole.fitsWholeWords(breaks)) {
+                    whole
+                } else {
+                    hyphenated += label
+                    measure(label, style.hyphenated())
+                }
+                layout.size.height
+            } ?: 0
             val content = 2 * FeatureCardPadding.roundToPx() + FeatureIconSize.roundToPx() +
                 IconLabelGap.roundToPx() + tallestLabel
             FeatureCardSize(
                 height = maxOf((cellWidth / CardAspectRatio).roundToInt(), content).toDp(),
                 labelWidth = labelWidth.toDp(),
-                labelFontSizes = fitted.mapValues { (_, sized) -> sized.first },
+                hyphenatedLabels = hyphenated,
             )
         }
     }
 }
 
 /**
- * The largest size from [maxFontSize] down to [LabelMinFontSize] at which [layout] fits a name in
- * its lines without breaking a word, or the smallest if none does; the name is then cut short.
- *
- * Unlike [androidx.compose.foundation.text.TextAutoSize.StepBased], this also shrinks a name that
- * would only fit by breaking inside a word, which Android does to a word too long for its line:
- * "Announcements" in a phone's card, or "Университетская" at a larger font. [breaks] is a line
- * instance, reused across every name and size.
+ * Whether this layout fits its name in its lines without breaking inside a word, which Android
+ * does to a word too long for its line: "Announcements" in a phone's card, or "Университетская"
+ * at a larger font. [breaks] is a line instance, reused across every name.
  */
-private inline fun fitLabel(
-    maxFontSize: TextUnit,
-    breaks: BreakIterator,
-    layout: (TextUnit) -> TextLayoutResult,
-): TextUnit {
-    var size = maxFontSize.value
-    while (size > LabelMinFontSize.value && !layout(size.sp).fitsWholeWords(breaks)) {
-        size = maxOf(size - LabelFontSizeStep, LabelMinFontSize.value)
-    }
-    return size.sp
-}
-
 private fun TextLayoutResult.fitsWholeWords(breaks: BreakIterator): Boolean {
     if (hasVisualOverflow || isLineEllipsized(lineCount - 1)) return false
     breaks.setText(layoutInput.text.text)

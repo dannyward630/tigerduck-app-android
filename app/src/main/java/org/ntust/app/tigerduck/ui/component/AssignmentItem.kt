@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
@@ -30,6 +31,7 @@ import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.data.model.status
 import org.ntust.app.tigerduck.shared.clock.AppClock
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.ui.theme.LocalVisualStylePolicy
 import org.ntust.app.tigerduck.ui.theme.TigerDuckTheme
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -53,7 +55,9 @@ fun AssignmentItem(
     isIgnored: Boolean = false,
     onClick: (() -> Unit)? = null
 ) {
-    val courseColor = TigerDuckTheme.courseColorVibrant(assignment.courseNo)
+    val courseColor = TigerDuckTheme.courseColorVibrant(assignment.courseNo).let {
+        LocalVisualStylePolicy.current.courseAccentColor(it, tint = it)
+    }
     // Subscribe to AppClock changes so toggling the debug clock (forward,
     // back, or off) re-evaluates status — otherwise the badge would stay
     // pinned to whatever "now" was the first time this row composed.
@@ -61,8 +65,8 @@ fun AssignmentItem(
     val status = remember(
         assignment.assignmentId,
         assignment.isCompleted,
-        assignment.dueDate,
-        assignment.cutoffDate,
+        assignment.studentDueDate,
+        assignment.studentCutoffDate,
         assignment.submittedAt,
         clockVersion,
     ) { assignment.status() }
@@ -70,7 +74,12 @@ fun AssignmentItem(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .let { base -> if (onClick != null) base.clickable { onClick() } else base }
+            // Without a tap the row still reads to TalkBack as one element,
+            // as the click merges it, so the actions a caller puts on
+            // [modifier] stay with its text.
+            .let { base ->
+                if (onClick != null) base.clickable { onClick() } else base.semantics(mergeDescendants = true) {}
+            }
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -142,8 +151,8 @@ private fun AssignmentTrailing(
             markCompleteLabel to BadgeGreen
         (status == AssignmentStatus.SUBMITTED || status == AssignmentStatus.SUBMITTED_LATE) && isIgnored ->
             ignoredLabel to secondaryColor
-        (markedCompleted || isIgnored) && assignment.dueDate.before(now) -> {
-            if (assignment.cutoffDate != null && now.after(assignment.cutoffDate))
+        (markedCompleted || isIgnored) && assignment.studentDueDate.before(now) -> {
+            if (assignment.studentCutoffDate?.let(now::after) == true)
                 overdueRejectedLabel to BadgeRed
             else overdueLabel to BadgeRed
         }
@@ -173,12 +182,13 @@ private fun AssignmentTrailing(
         }
 
         val useAbsolute = showAbsoluteTime ||
-                ((assignment.isCompleted || markedCompleted || isIgnored) && assignment.dueDate.before(now))
-        val timeText = if (useAbsolute) formatAbsolute(assignment.dueDate)
-        else formatRelative(assignment.dueDate, now)
+                ((assignment.isCompleted || markedCompleted || isIgnored) && assignment.studentDueDate.before(now))
+        // The student's own date, an extension included, as everything here judges by.
+        val timeText = if (useAbsolute) formatAbsolute(assignment.studentDueDate)
+        else formatRelative(assignment.studentDueDate, now)
         val timeColor = when {
             isOverdue -> BadgeRed
-            (isIgnored || markedCompleted) && assignment.dueDate.before(now) -> BadgeRed
+            (isIgnored || markedCompleted) && assignment.studentDueDate.before(now) -> BadgeRed
             else -> MaterialTheme.colorScheme.onSurface.copy(alpha = ContentAlpha.SECONDARY)
         }
         val timeWeight = if (emphasise) FontWeight.Bold else FontWeight.Normal

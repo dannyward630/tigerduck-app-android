@@ -121,8 +121,12 @@ data points.
 
 - Anywhere the client PATCHes `/sync/courses/{id}/override` (currently every
   caller of `pushApiClient.patchCourseOverride`:
-  `CourseColorStore.resetAllColors`, `ClassTableViewModel.syncCourseOverride`
-  and `SettingsViewModel.resolveReenableConflict`), do **not** flag
+  `CourseColorStore.resetAllColors`, `ClassTableViewModel.syncCourseOverride`,
+  `SettingsViewModel.resolveReenableConflict` and
+  `PushCourseSyncBackend.patchCustomName`, which Use Local's
+  `keepLocalCourses` calls after a term reset, and
+  `pushApiClient.patchCourseIgnore`, which `CourseIgnoreSync` calls with the
+  id `ClassTableViewModel.toggleIgnoreAssignments` picks), do **not** flag
   passing `Course.moodleIdNumber` or `"{semester}{courseNo}"` as the path
   segment, and do **not** suggest changing it to the
   `"client:{semester}:{courseNo}"` course_key format.
@@ -131,7 +135,7 @@ data points.
       `_get_course_by_moodle_id`) — there is no fallback lookup by
       `course_key`. The server stores `moodle_id` as the client's uploaded
       `moodleIdNumber`, or the `{semester}{courseNo}` concatenation when
-      that is null (`server/routes/sync.py`, `upload_courses`). The
+      that is null (`server/routes/sync/uploads.py`, `upload_courses`). The
       `"client:{semester}:{courseNo}"` string is the `course_key` column —
       a different column this endpoint never consults — so PATCHing with it
       404s on every course, and the callers swallow the failure silently.

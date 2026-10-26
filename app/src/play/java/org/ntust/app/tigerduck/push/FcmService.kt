@@ -1,5 +1,6 @@
 package org.ntust.app.tigerduck.push
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +14,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.ntust.app.tigerduck.MainActivity
+import org.ntust.app.tigerduck.auth.AuthService
 import org.ntust.app.tigerduck.di.ApplicationScope
 import org.ntust.app.tigerduck.notification.BackgroundSyncWorker
 import org.ntust.app.tigerduck.notification.NotificationChannelRegistrar
@@ -20,6 +22,7 @@ import org.ntust.app.tigerduck.notification.NotificationChannels
 import org.ntust.app.tigerduck.notification.NotificationGroup
 import org.ntust.app.tigerduck.notification.brandedNotification
 import org.ntust.app.tigerduck.serverpush.ServerPushIntentToken
+import org.ntust.app.tigerduck.util.logSummary
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -34,6 +37,8 @@ class FcmService : FirebaseMessagingService() {
     lateinit var intentToken: ServerPushIntentToken
     @Inject
     lateinit var notificationChannels: NotificationChannelRegistrar
+    @Inject
+    lateinit var authService: AuthService
 
     // Deprecated in firebase-messaging 25.1.2 with no replacement callback —
     // see the note in FcmBootstrap.start(). Suppressed rather than marked
@@ -62,6 +67,10 @@ class FcmService : FirebaseMessagingService() {
             )
         }
         val data = message.data
+        if (!handlesPush(data["kind"], signedIn = authService.authState.value)) {
+            Log.d(TAG, "Account push received while signed out — ignored")
+            return
+        }
         // Accept any case-variant the backend might emit ("true"/"True"/"TRUE")
         // plus "1"; anything else (including null) defaults to silent.
         val forceRing = data["force_ring"]?.lowercase() in setOf("true", "1")
@@ -118,6 +127,8 @@ class FcmService : FirebaseMessagingService() {
         }
     }
 
+    // Checked: areNotificationsEnabled() returns early, which lint does not count.
+    @SuppressLint("MissingPermission")
     private fun showBulletinNotification(
         id: Int,
         title: String,
@@ -164,9 +175,11 @@ class FcmService : FirebaseMessagingService() {
         // notify leaves it standing as an empty row.
         runCatching { manager.notify(id, notification) }
             .onSuccess { NotificationGroup.OTHER.postSummary(this) }
-            .onFailure { Log.w(TAG, "notify failed for bulletin $id", it) }
+            .onFailure { Log.w(TAG, "notify failed for bulletin $id: ${it.logSummary()}") }
     }
 
+    // Checked: areNotificationsEnabled() returns early, which lint does not count.
+    @SuppressLint("MissingPermission")
     private fun showServerPopupNotification(
         notificationId: String,
         title: String,
@@ -229,7 +242,7 @@ class FcmService : FirebaseMessagingService() {
         // overwrite each other on a 32-bit hash collision.
         runCatching { manager.notify(notificationId, NOTIFY_ID_SERVER_POPUP, notification) }
             .onSuccess { NotificationGroup.OTHER.postSummary(this) }
-            .onFailure { Log.w(TAG, "notify failed for popup $notificationId", it) }
+            .onFailure { Log.w(TAG, "notify failed for a server popup: ${it.logSummary()}") }
     }
 
     /**
@@ -237,11 +250,12 @@ class FcmService : FirebaseMessagingService() {
      * stacking. The account is either broken or it isn't — one row says
      * that as well as five.
      */
+    // Checked: areNotificationsEnabled() returns early, which lint does not count.
+    @SuppressLint("MissingPermission")
     private fun showReauthNotification(title: String, body: String) {
-        // `tigerduck://home` is not a registered deep link — the manifest only
-        // declares the `announcement` host and MainActivity routes nothing for
-        // a `home` authority — so open the launcher entry point rather than
-        // mint a URI no one consumes.
+        // `tigerduck://home` is not a link the app opens — AppLink.parse takes
+        // only `announcement`, `assignment`, `classtable` and `library` — so
+        // open the launcher entry point rather than mint a URI no one consumes.
         val intent = packageManager.getLaunchIntentForPackage(packageName)
             ?: Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -268,7 +282,7 @@ class FcmService : FirebaseMessagingService() {
             .build()
         runCatching { manager.notify(REAUTH_NOTIFICATION_ID, notification) }
             .onSuccess { NotificationGroup.OTHER.postSummary(this) }
-            .onFailure { Log.w(TAG, "notify failed for reauth", it) }
+            .onFailure { Log.w(TAG, "notify failed for reauth: ${it.logSummary()}") }
     }
 
     companion object {

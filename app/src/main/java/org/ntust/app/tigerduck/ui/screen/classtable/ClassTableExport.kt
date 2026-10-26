@@ -1,4 +1,4 @@
-// "Export class table screenshot": the timetable drawn into a PNG off
+// "Export screenshot": the timetable drawn into a PNG off
 // screen, then handed to the system share sheet.
 
 package org.ntust.app.tigerduck.ui.screen.classtable
@@ -43,6 +43,7 @@ import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.data.model.TimetablePeriod
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.ui.theme.ContentAlpha
+import org.ntust.app.tigerduck.data.storage.AppStorage
 import org.ntust.app.tigerduck.util.fileProviderAuthority
 import java.io.File
 import java.util.UUID
@@ -59,8 +60,6 @@ private val EXPORT_WIDTH = 390.dp
  */
 private const val EXPORT_DENSITY = 3f
 
-/** Under cacheDir, and served by the app's FileProvider (`file_provider_paths.xml`). */
-private const val EXPORT_DIR = "class_table_export"
 
 /**
  * How long an export stays readable after it is shared. The share sheet
@@ -75,21 +74,22 @@ private const val EXPORT_RETENTION_MS = 24 * 60 * 60 * 1000L
  * term above, then the same grid the screen draws.
  *
  * The grid is the live [TimetableGrid], not a copy, so the image keeps
- * whatever the screen shows — colours, custom and abbreviated names, the
- * start / 節 / end period column, the room hint when it is switched on. Only
- * the assignment badge stays out: it marks work still due, a reminder for
- * whoever is looking at the screen today, not part of the timetable someone
- * is being shown.
+ * whatever the screen shows — the interface style's grid, colours, custom
+ * and abbreviated names, the room hint when it is switched on. Only
+ * the corner marks stay out: they mark work still due, or a course whose
+ * work the user ignores, notes for whoever is looking at the screen today,
+ * not part of the timetable someone is being shown.
  */
 @Composable
 internal fun ClassTableExportCard(
-    viewModel: ClassTableViewModel,
     courses: List<Course>,
     semesterLabel: String,
     studentId: String?,
     showRoomHints: Boolean,
     weekdays: List<Int>,
     periods: List<TimetablePeriod>,
+    /** Outline each required course, as the screen does when it is switched on. */
+    outlineRequiredCourses: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -120,12 +120,12 @@ internal fun ClassTableExportCard(
         }
         Spacer(Modifier.height(12.dp))
         TimetableGrid(
-            viewModel = viewModel,
             courses = courses,
             showRoomHints = showRoomHints,
             weekdays = weekdays,
             periods = periods,
             courseNosWithAssignments = emptySet(),
+            outlineRequiredCourses = outlineRequiredCourses,
         )
     }
 }
@@ -250,7 +250,8 @@ private val WHITESPACE = Regex("\\s+")
  */
 internal suspend fun writeClassTableImage(context: Context, bitmap: ImageBitmap, fileName: String): File =
     withContext(Dispatchers.IO) {
-        val root = File(context.cacheDir, EXPORT_DIR)
+        // Under cacheDir, and served by the app's FileProvider (`file_provider_paths.xml`).
+        val root = File(context.cacheDir, AppStorage.CLASS_TABLE_EXPORT_DIR)
         val dir = File(root, UUID.randomUUID().toString()).apply { mkdirs() }
         val file = File(dir, fileName)
         try {

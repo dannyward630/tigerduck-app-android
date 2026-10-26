@@ -11,6 +11,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.ntust.app.tigerduck.network.model.BulletinDetail
 import org.ntust.app.tigerduck.network.model.BulletinSummary
+import org.ntust.app.tigerduck.util.logSummary
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,6 +27,7 @@ class BulletinCache @Inject constructor(@ApplicationContext context: Context) {
 
     private val dir: File = File(context.filesDir, "bulletins").also { it.mkdirs() }
     private val file = File(dir, "summaries.json")
+    private val fetchedAtFile = File(dir, "fetched_at")
     private val detailDir: File = File(dir, "details").also { it.mkdirs() }
     private val mutex = Mutex()
 
@@ -72,6 +74,46 @@ class BulletinCache @Inject constructor(@ApplicationContext context: Context) {
         withContext(Dispatchers.IO) {
             writeAtomically(file, gson.toJson(items))
         }
+    }
+
+    /**
+     * When a refresh last brought the list's first page from the server,
+     * wall clock ms; 0 for never. Not a later page, nor the cached list a
+     * visit opens on. The page's "Last synced" row, and it goes with the
+     * list in [clear].
+     */
+    suspend fun loadFetchedAt(): Long = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            try {
+                if (!fetchedAtFile.exists()) 0L else fetchedAtFile.readText().trim().toLong()
+            } catch (_: Exception) {
+                0L
+            }
+        }
+    }
+
+    suspend fun saveFetchedAt(atMs: Long) = mutex.withLock {
+        withContext(Dispatchers.IO) {
+            writeAtomically(fetchedAtFile, atMs.toString())
+        }
+    }
+
+    /**
+     * Saves [items], and the list's date when [fetchedAt] is given, unless [stillCurrent] says
+     * the account they were fetched for has signed out meanwhile. Asked under the cache's lock,
+     * which the sign-out's [clear] takes too -- and the sign-out moves what [stillCurrent] reads
+     * before it starts the clear -- so the answer cannot be overtaken between the asking and the
+     * write: either this write lands first and the clear removes it, or the clear has run and
+     * nothing is written. The same shape as
+     * [org.ntust.app.tigerduck.mail.store.MailCache.saveBodyIf]. Returns whether it wrote.
+     */
+    suspend fun saveIf(items: List<BulletinSummary>, fetchedAt: Long?, stillCurrent: () -> Boolean): Boolean = mutex.withLock {
+        if (!stillCurrent()) return@withLock false
+        withContext(Dispatchers.IO) {
+            writeAtomically(file, gson.toJson(items))
+            if (fetchedAt != null) writeAtomically(fetchedAtFile, fetchedAt.toString())
+        }
+        true
     }
 
     /** One JSON file per id mirrors iOS DataCache.bulletinDetailDir(); keeps
@@ -121,7 +163,10 @@ class BulletinCache @Inject constructor(@ApplicationContext context: Context) {
      *  loop could deadlock if another coroutine holds a detail lock while
      *  waiting on `mutex`. */
     suspend fun clear() = withContext(Dispatchers.IO) {
-        mutex.withLock { runCatching { file.delete() } }
+        mutex.withLock {
+            runCatching { file.delete() }
+            runCatching { fetchedAtFile.delete() }
+        }
         // Detail file deletion is intentionally outside the mutex lock.
         val files = detailDir.listFiles() ?: return@withContext
         for (f in files) {
@@ -146,7 +191,7 @@ class BulletinCache @Inject constructor(@ApplicationContext context: Context) {
                 tmp.delete()
             }
         } catch (e: Exception) {
-            Log.w(TAG, "atomic write failed for ${target.name}", e)
+            Log.w(TAG, "atomic write failed for ${target.name}: ${e.logSummary()}")
             tmp.delete()
         }
     }

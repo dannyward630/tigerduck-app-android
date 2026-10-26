@@ -86,6 +86,12 @@ sealed class WhatsNewPage {
     abstract val id: String
     abstract val isApplicable: () -> Boolean
 
+    /**
+     * Whether the page opens the whole run, before every release's pages, its own release's
+     * among them: a page about the sheet itself rather than one release's features.
+     */
+    open val leadsTheRun: Boolean get() = false
+
     /** Demo + title + body. The primary button advances. */
     class Feature(
         override val id: String,
@@ -93,12 +99,18 @@ sealed class WhatsNewPage {
         val title: WhatsNewText,
         val body: WhatsNewText,
         override val isApplicable: () -> Boolean = { true },
+        override val leadsTheRun: Boolean = false,
     ) : WhatsNewPage()
 
     /**
      * Offers a change: [confirmLabel] runs [apply] and advances,
      * [declineLabel] just advances. Skipping the page or closing the sheet
      * leaves the setting as it was.
+     *
+     * [instead] is the page to show in its place when an answer earlier in
+     * the same run took away what it offers: a run keeps the pages it started
+     * with, so the offer can still come up. Read once, when the page comes
+     * up, so confirming on it doesn't swap it out; null shows the offer.
      */
     class OptIn(
         override val id: String,
@@ -109,6 +121,9 @@ sealed class WhatsNewPage {
         val declineLabel: WhatsNewText,
         val apply: () -> Unit,
         override val isApplicable: () -> Boolean = { true },
+        val instead: () -> Feature? = { null },
+        /** Runs on [declineLabel], before the flow advances: the question was answered too. */
+        val onDecline: () -> Unit = {},
     ) : WhatsNewPage()
 
     /**

@@ -12,17 +12,11 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -49,12 +43,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import org.ntust.app.tigerduck.R
+import org.ntust.app.tigerduck.academic.QuietDays
+import org.ntust.app.tigerduck.data.model.AppFeature
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.model.AssignmentFilter
 import org.ntust.app.tigerduck.shared.Course
 import org.ntust.app.tigerduck.data.model.HomeSection
 import org.ntust.app.tigerduck.ui.component.SectionHeader
-import org.ntust.app.tigerduck.ui.navigation.icon
 import kotlin.math.roundToInt
 
 @Composable
@@ -163,23 +158,32 @@ internal fun ReorderableSection(
 internal fun HomeSectionContent(
     section: HomeSection,
     allCourses: List<Course>,
+    quietDays: QuietDays,
     upcomingAssignments: List<Assignment>,
     assignmentFilter: AssignmentFilter,
     showIgnoredTab: Boolean,
     ignoredAssignmentIds: Set<String>,
     markedCompletedIds: Set<String>,
+    courseIgnoredIds: Set<String>,
     isLoggedIn: Boolean,
     isLoading: Boolean,
     initialLoadComplete: Boolean,
     hasUnfinishedAssignment: (String) -> Boolean,
     showAbsoluteTime: Boolean,
     invertDirection: Boolean,
-    onCourseClick: (Course, String) -> Unit,
+    onCourseClick: (CourseTimeSlot) -> Unit,
     onAssignmentClick: (Assignment) -> Unit,
     onToggleIgnore: (Assignment) -> Unit,
     onMarkCompleted: (Assignment) -> Unit,
     onSelectFilter: (AssignmentFilter) -> Unit,
-    onWidgetClick: () -> Unit,
+    /** Edit mode, which a shortcut grid needs to show its own remove-and-drag chrome. */
+    isEditing: Boolean,
+    /** A shortcut card tapped; HomeScreen opens the page or says "Coming soon". */
+    onOpenFeature: (AppFeature) -> Unit,
+    onRemoveWidget: (sectionId: String, widgetId: String) -> Unit,
+    onMoveWidget: (sectionId: String, widgetId: String, toIndex: Int) -> Unit,
+    /** An empty shortcut grid's button: the Add dialog. */
+    onAddQuickFeature: () -> Unit,
     onOpenSignInSettings: () -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -187,9 +191,11 @@ internal fun HomeSectionContent(
             HomeSection.HomeSectionType.TODAY_COURSES -> {
                 TimeSliderSection(
                     courses = allCourses,
+                    quietDays = quietDays,
                     invertDirection = invertDirection,
                     isLoggedIn = isLoggedIn,
                     initialLoadComplete = initialLoadComplete,
+                    onSignIn = onOpenSignInSettings,
                     onSelectCourse = onCourseClick
                 )
             }
@@ -238,13 +244,18 @@ internal fun HomeSectionContent(
                             // ignoring an assignment would rebind the next
                             // row to the prior Animatable and leak swipe state.
                             key(assignment.assignmentId) {
-                                val isMarkedCompleted =
-                                    assignment.assignmentId in markedCompletedIds
+                                // Ignored with its course: shown as ignored even
+                                // if marked done, and only the class table
+                                // undoes it, so the row takes no swipe.
+                                val ignoredWithCourse = assignment.assignmentId in courseIgnoredIds
                                 SwipeableAssignmentRow(
                                     assignment = assignment,
                                     course = courseByNo[assignment.courseNo],
-                                    isIgnored = assignment.assignmentId in ignoredAssignmentIds,
-                                    isMarkedCompleted = isMarkedCompleted,
+                                    isIgnored = ignoredWithCourse ||
+                                        assignment.assignmentId in ignoredAssignmentIds,
+                                    isMarkedCompleted = !ignoredWithCourse &&
+                                        assignment.assignmentId in markedCompletedIds,
+                                    swipeEnabled = !ignoredWithCourse,
                                     showAbsoluteTime = showAbsoluteTime,
                                     onClick = { onAssignmentClick(assignment) },
                                     onToggleIgnore = { onToggleIgnore(assignment) },
@@ -259,7 +270,6 @@ internal fun HomeSectionContent(
                 }
             }
 
-            @Suppress("DEPRECATION")
             HomeSection.HomeSectionType.QUICK_WIDGETS,
             HomeSection.HomeSectionType.CUSTOM -> {
                 SectionHeader(
@@ -267,42 +277,14 @@ internal fun HomeSectionContent(
                         section.type.defaultTitleRes
                     )
                 )
-                if (section.widgets.isNotEmpty()) {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(section.widgets, key = { it.id }) { widget ->
-                            Card(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clickable { onWidgetClick() },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surface
-                                )
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = widget.feature.icon,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        text = stringResource(widget.feature.displayNameRes),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                ShortcutGrid(
+                    widgets = section.widgets,
+                    isEditing = isEditing,
+                    onOpen = onOpenFeature,
+                    onRemove = { onRemoveWidget(section.id, it.id) },
+                    onMove = { widgetId, toIndex -> onMoveWidget(section.id, widgetId, toIndex) },
+                    onAdd = onAddQuickFeature,
+                )
             }
         }
     }

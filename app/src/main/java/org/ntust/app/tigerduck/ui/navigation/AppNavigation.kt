@@ -1,15 +1,20 @@
 package org.ntust.app.tigerduck.ui.navigation
 
 import android.app.Activity
+import android.util.Log
 import android.content.Context
 import android.os.SystemClock
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -19,11 +24,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
@@ -41,7 +47,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -57,6 +65,7 @@ import org.ntust.app.tigerduck.ui.screen.announcements.AnnouncementDetailScreen
 import org.ntust.app.tigerduck.ui.screen.announcements.AnnouncementsScreen
 import org.ntust.app.tigerduck.ui.screen.announcements.SubscriptionSettingsScreen
 import org.ntust.app.tigerduck.data.model.AppFeature
+import org.ntust.app.tigerduck.data.sharing.ClassTableShare
 import org.ntust.app.tigerduck.mail.ComposeMode
 import org.ntust.app.tigerduck.mail.MailRoutes
 import org.ntust.app.tigerduck.shared.clock.AppClock
@@ -69,6 +78,14 @@ import org.ntust.app.tigerduck.ui.screen.calendar.CalendarScreen
 import org.ntust.app.tigerduck.ui.screen.calendar.CalendarViewModel
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableScreen
 import org.ntust.app.tigerduck.ui.screen.classtable.ClassTableViewModel
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportHost
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ScannerShareSheet
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherEntry
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableSwitcherMenuItems
+import org.ntust.app.tigerduck.ui.screen.classtable.sharing.ClassTableImportViewModel
+import org.ntust.app.tigerduck.ui.screen.coursemoodle.MoodleAssignmentScreen
+import org.ntust.app.tigerduck.ui.screen.coursemoodle.MoodleRoutes
+import org.ntust.app.tigerduck.ui.screen.emptyclassroom.EmptyClassroomScreen
 import org.ntust.app.tigerduck.ui.screen.home.HomeScreen
 import org.ntust.app.tigerduck.ui.screen.home.HomeViewModel
 import org.ntust.app.tigerduck.ui.screen.library.LibraryScreen
@@ -76,10 +93,14 @@ import org.ntust.app.tigerduck.ui.screen.more.MoreScreen
 import org.ntust.app.tigerduck.ui.screen.onboarding.OnboardingScreen
 import org.ntust.app.tigerduck.ui.screen.score.ScoreScreen
 import org.ntust.app.tigerduck.ui.screen.settings.AboutOthersScreen
+import org.ntust.app.tigerduck.ui.screen.settings.AccentColorScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LanguagePickerScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LicenseDetailScreen
 import org.ntust.app.tigerduck.ui.screen.settings.AssignmentReminderSettingsScreen
+import org.ntust.app.tigerduck.ui.screen.settings.ClassReminderSettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.CourseNameSizeSettingsScreen
+import org.ntust.app.tigerduck.ui.screen.settings.DisplaySizeSettingsScreen
+import org.ntust.app.tigerduck.ui.screen.settings.StorageScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LibrarySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.LiveActivitySettingsScreen
 import org.ntust.app.tigerduck.ui.screen.settings.NotificationPermissionSettingsScreen
@@ -91,6 +112,8 @@ import org.ntust.app.tigerduck.ui.screen.settings.SyncContentScreen
 import org.ntust.app.tigerduck.ui.screen.settings.SourceCodePickerScreen
 import org.ntust.app.tigerduck.ui.screen.settings.TabEditorScreen
 import org.ntust.app.tigerduck.ui.screen.settings.VibrationSettingsScreen
+import org.ntust.app.tigerduck.ui.screen.signin.NtustSignInSheetHost
+import org.ntust.app.tigerduck.ui.screen.signin.NtustSignInViewModel
 import org.ntust.app.tigerduck.widget.LibraryShortcutWidget
 
 sealed class Screen(val route: String) {
@@ -103,16 +126,28 @@ sealed class Screen(val route: String) {
     }
 
     object AnnouncementSubscriptions : Screen("announcements/subscriptions")
+
+    /** An assignment's page, opened from Home, a reminder or the Live Update; see MoodleAssignmentScreen. */
+    object Assignment : Screen("assignment/{assignmentId}") {
+        fun route(assignmentId: String) = "assignment/$assignmentId"
+
+        /** The assignment [route] opens, when it is one of these pages. */
+        fun idIn(route: String): String? =
+            route.removePrefix("assignment/").takeIf { route.startsWith("assignment/") && it.isNotEmpty() && '/' !in it }
+    }
     object Library : Screen("library")
     object Score : Screen("score")
+    object EmptyClassroom : Screen("emptyClassroom")
     object More : Screen("more")
     object Settings : Screen("settings")
     object TabEditor : Screen("tabEditor")
     object LanguagePicker : Screen("languagePicker")
+    object AccentColor : Screen("accentColor")
     object LiveActivitySettings : Screen("liveActivitySettings")
     object SchoolMailNotificationSettings : Screen("schoolMailNotificationSettings")
     object NotificationPermissionSettings : Screen("notificationPermissionSettings")
     object AssignmentReminderSettings : Screen("assignmentReminderSettings")
+    object ClassReminderSettings : Screen("classReminderSettings")
     object SourceCodePicker : Screen("sourceCodePicker")
     object OtherSettings : Screen("otherSettings")
     object AboutOthers : Screen("aboutOthers")
@@ -128,9 +163,12 @@ sealed class Screen(val route: String) {
         fun route(folder: String, uid: Long) = MailRoutes.message(folder, uid)
     }
     object SchoolMailCompose : Screen(MailRoutes.COMPOSE) {
-        fun route(mode: ComposeMode, folder: String? = null, uid: Long? = null) = MailRoutes.compose(mode, folder, uid)
+        fun route(mode: ComposeMode, folder: String? = null, uid: Long? = null, mailto: String? = null, to: String? = null) =
+            MailRoutes.compose(mode, folder, uid, mailto, to)
     }
     object CourseNameSizeSettings : Screen("courseNameSizeSettings")
+    object DisplaySizeSettings : Screen("displaySizeSettings")
+    object Storage : Screen("storage")
     object CloudSync : Screen("cloudSync")
     object SyncContent : Screen("syncContent")
     object VibrationSettings : Screen("vibrationSettings")
@@ -140,6 +178,9 @@ sealed class Screen(val route: String) {
     object TriggersDebug : Screen("triggersDebug")
     object ServerFailureDebug : Screen("serverFailureDebug")
     object MailDevServerDebug : Screen("mailDevServerDebug")
+    object BrowserAllowlistDebug : Screen("browserAllowlistDebug")
+    object OutsideAppsDebug : Screen("outsideAppsDebug")
+    object ViewerSamplesDebug : Screen("viewerSamplesDebug")
 }
 
 @Composable
@@ -159,6 +200,7 @@ fun AppNavigation(
             onStartRouteConsumed = onStartRouteConsumed,
         )
         PermissionWarningDialogHost(appState.systemPermissions)
+        NtustSignInSheetHost()
     }
 
     val needsReset by appState.needsUserReset.collectAsStateWithLifecycle()
@@ -176,6 +218,28 @@ fun AppNavigation(
     }
 }
 
+/**
+ * Opens the screen a widget, a notification or a link asked for, on top of
+ * the current one. Returns whether it opened.
+ *
+ * MainActivity only passes routes it accepts (`startRouteOf`), but a route
+ * the graph cannot take, or an argument it cannot read, must still leave the
+ * app where it is: thrown here, it would end the effect that called this,
+ * and the app with it, and come back with the intent from Recents.
+ */
+internal fun NavHostController.navigateToStartRoute(route: String): Boolean =
+    runCatching {
+        if (MailRoutes.reopens(route)) {
+            // In place of a composer on top, never into it: one the system rebuilt after ending the
+            // app would keep its view model under singleTop, and show nothing of the kept mail.
+            navigate(route) { popUpTo(MailRoutes.COMPOSE) { inclusive = true } }
+        } else {
+            navigate(route) { launchSingleTop = true }
+        }
+    }
+        .onFailure { Log.w("StartRoute", "not opened: ${it.javaClass.simpleName}") }
+        .isSuccess
+
 @Composable
 fun MainNavigation(
     appState: AppState,
@@ -184,20 +248,111 @@ fun MainNavigation(
     onStartRouteConsumed: () -> Unit = {},
 ) {
     val navController = rememberNavController()
-    FlipToLibraryEffect(navController = navController, appState = appState)
+    FlipToLibraryEffect(
+        navController = navController,
+        appState = appState,
+    )
+    // Hoist Home / ClassTable / Calendar VMs to the activity scope so they
+    // exist from app open and survive tab switches. load() is called once
+    // here on first composition; the per-screen LaunchedEffect that also
+    // calls load() becomes a no-op via the VM's hasLoaded guard.
+    val homeViewModel: HomeViewModel = hiltViewModel()
+    val classTableViewModel: ClassTableViewModel = hiltViewModel()
+    val calendarViewModel: CalendarViewModel = hiltViewModel()
+    val classTableImportViewModel: ClassTableImportViewModel = hiltViewModel()
+    ShowOwnClassTableFromWidget(widgetStartRoute) { classTableViewModel.showTable(null) }
+    LaunchedEffect(Unit) {
+        homeViewModel.load()
+        classTableViewModel.load()
+        calendarViewModel.load()
+    }
+    val pollingLifecycleOwner = LocalLifecycleOwner.current
+    val hostActivity = LocalActivity.current
+    // Set when the app goes to the background, and saved across the activity
+    // being rebuilt. A dark-mode or font-size change stops and restarts the
+    // activity as well, and that is not the user coming back.
+    var wentToBackground by rememberSaveable { mutableStateOf(false) }
+    DisposableEffect(pollingLifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_STOP) {
+                if (hostActivity?.isChangingConfigurations != true) wentToBackground = true
+            } else if (event == Lifecycle.Event.ON_START && wentToBackground) {
+                wentToBackground = false
+                // Back in the foreground. Each page fetches if its
+                // RefreshPolicy says so, and the services hand the ones that
+                // do one answer between them. Before load() has run (a
+                // process the system brought back) these do nothing: that is
+                // the launch, not a return.
+                homeViewModel.onAppForeground()
+                classTableViewModel.onAppForeground()
+                calendarViewModel.onAppForeground()
+            } else if (event == Lifecycle.Event.ON_RESUME) {
+                homeViewModel.startRevisionPolling()
+            } else if (event == Lifecycle.Event.ON_PAUSE) {
+                homeViewModel.stopRevisionPolling()
+            }
+        }
+        pollingLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { pollingLifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    val configuredTabs = appState.configuredTabs
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    LaunchedEffect(currentRoute) {
+        val route = currentRoute ?: return@LaunchedEffect
+        val screenName = route.replace(Regex("/[{][^}]+[}]"), "")
+        analyticsLogger.log("screen_view", mapOf("screen_name" to screenName))
+    }
+    val selectedTabRoute = selectedTabRoute(currentRoute)
+
+    val context = LocalContext.current
+    val backPressExitHint = stringResource(R.string.app_exit_confirm_toast)
+    val nonTaipeiTimezoneHint = stringResource(R.string.app_non_taipei_timezone_hint)
+    val bottomItems = configuredTabs + listOf(AppFeature.MORE)
+    val tabRoutes = remember(bottomItems) { bottomItems.map { it.toRoute() }.toSet() }
+    val tabTap = remember { TabTap() }
+    // The Class Table tab's switcher, which its long press opens.
+    var showClassTableSwitcher by remember { mutableStateOf(false) }
+    val importedTables by classTableViewModel.importedTables.collectAsStateWithLifecycle()
+    val switcherUserName = classTableViewModel.studentId?.takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.common_not_signed_in)
+    val switchClassTableLabel = stringResource(R.string.a11y_class_table_switch)
+    // NavHost startDestination must not change mid-session, so freeze it on
+    // first composition. popUpTo, in contrast, needs the *current* first tab
+    // so reordering via TabEditor doesn't pop to a removed route.
+    val startDest = remember { configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route }
+    val popUpToDest = configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route
+    val leaveGuard = remember { LeaveGuard() }
+    // A tab the user picks: a course sheet under a page it opened closes, rather than coming back
+    // over its page later.
+    val goToTab: (String) -> Unit = { route ->
+        classTableViewModel.clearSelection()
+        navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
+    }
+    // The same once the page on screen lets go of the user, a mail being written above all.
+    val openTab: (String) -> Unit = { route -> leaveGuard.leave { goToTab(route) } }
+    // The same instance NtustSignInSheetHost shows, both held at the activity.
+    val ntustSignInViewModel: NtustSignInViewModel = hiltViewModel()
+    // The user's own share sheet, which the scanner's QR button opens in its place, as iOS's
+    // root presents both: shown once the scanner is gone. The class table's ⋯ menu keeps its own.
+    var shareFromScanner by remember { mutableStateOf<ClassTableShare?>(null) }
+    // What a link closes over the pages on its way to another page.
+    val linkOverlays =remember(classTableViewModel, ntustSignInViewModel, classTableImportViewModel) {
+        LinkOverlays(
+            closeCourseSheet = classTableViewModel::clearSelection,
+            closeTabMenu = { showClassTableSwitcher = false },
+            closeSignInSheet = ntustSignInViewModel::closeForLink,
+            closeImport = classTableImportViewModel::closeForLink,
+            closeShareSheet = { shareFromScanner = null },
+        )
+    }
+
     LaunchedEffect(widgetStartRoute) {
         widgetStartRoute ?: return@LaunchedEffect
         // The library-shortcut widget emits a sentinel instead of a direct
-        // route so the feature gate is re-evaluated at tap time. If library
-        // has been turned off since the widget was placed, reroute to
-        // Settings and raise the "enable first" prompt.
+        // route; widgets already on a home screen still send it.
         val target = if (widgetStartRoute == LibraryShortcutWidget.ROUTE_SENTINEL) {
-            if (appState.libraryFeatureEnabled) {
-                Screen.Library.route
-            } else {
-                appState.pendingLibraryEnablePrompt = true
-                Screen.Settings.route
-            }
+            Screen.Library.route
         } else {
             widgetStartRoute
         }
@@ -209,68 +364,16 @@ fun MainNavigation(
         snapshotFlow { navController.currentBackStackEntry }
             .filterNotNull()
             .first()
-        navController.navigate(target) {
-            launchSingleTop = true
+        navController.followLink(target, leaveGuard, linkOverlays) {
+            // A tab through the bottom bar's own path: launchSingleTop alone looks only at the
+            // page on top, and pushed a second class table over its course detail.
+            navController.openStartRoute(target, tabRoutes, firstTab = popUpToDest, tabTap)
         }
         // Consume so that re-tapping the same notification (which delivers the
         // identical route string) re-fires this LaunchedEffect instead of
         // being deduped by the same key.
         onStartRouteConsumed()
     }
-    // Hoist Home / ClassTable / Calendar VMs to the activity scope so they
-    // exist from app open and survive tab switches. load() is called once
-    // here on first composition; the per-screen LaunchedEffect that also
-    // calls load() becomes a no-op via the VM's hasLoaded guard.
-    val homeViewModel: HomeViewModel = hiltViewModel()
-    val classTableViewModel: ClassTableViewModel = hiltViewModel()
-    val calendarViewModel: CalendarViewModel = hiltViewModel()
-    LaunchedEffect(Unit) {
-        homeViewModel.load()
-        classTableViewModel.load()
-        calendarViewModel.load()
-    }
-    val pollingLifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(pollingLifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                homeViewModel.startRevisionPolling()
-            } else if (event == Lifecycle.Event.ON_PAUSE) {
-                homeViewModel.stopRevisionPolling()
-            }
-        }
-        pollingLifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { pollingLifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-    val configuredTabs by remember {
-        derivedStateOf {
-            appState.configuredTabs.filter { feature ->
-                !feature.isLibraryRelated || appState.libraryFeatureEnabled
-            }
-        }
-    }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = navBackStackEntry?.destination?.route
-    LaunchedEffect(currentRoute) {
-        val route = currentRoute ?: return@LaunchedEffect
-        val screenName = route.replace(Regex("/[{][^}]+[}]"), "")
-        analyticsLogger.log("screen_view", mapOf("screen_name" to screenName))
-    }
-    val selectedTabRoute = when (currentRoute) {
-        Screen.Settings.route, Screen.TabEditor.route -> Screen.More.route
-        else -> currentRoute
-    }
-
-    val context = LocalContext.current
-    val backPressExitHint = stringResource(R.string.app_exit_confirm_toast)
-    val nonTaipeiTimezoneHint = stringResource(R.string.app_non_taipei_timezone_hint)
-    val bottomItems = configuredTabs + listOf(AppFeature.MORE)
-    val tabRoutes = remember(bottomItems) { bottomItems.map { it.toRoute() }.toSet() }
-    val tabTap = remember { TabTap() }
-    // NavHost startDestination must not change mid-session, so freeze it on
-    // first composition. popUpTo, in contrast, needs the *current* first tab
-    // so reordering via TabEditor doesn't pop to a removed route.
-    val startDest = remember { configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route }
-    val popUpToDest = configuredTabs.firstOrNull()?.toRoute() ?: Screen.Home.route
 
     // Two-press-to-exit on the leftmost tab. Deeper BackHandlers (e.g., Home
     // edit mode) register later in composition and still win. startDest is
@@ -331,12 +434,61 @@ fun MainNavigation(
                 NavigationBar {
                     bottomItems.forEach { feature ->
                         val route = feature.toRoute()
+                        val isClassTable = route == Screen.ClassTable.route
                         NavigationBarItem(
                             icon = {
-                                Icon(
-                                    feature.icon,
-                                    contentDescription = stringResource(feature.displayNameRes)
+                                Box {
+                                    Icon(
+                                        feature.icon,
+                                        contentDescription = stringResource(feature.displayNameRes)
+                                    )
+                                    if (isClassTable) {
+                                        // On the tab, above it: the user's own row ends nearest.
+                                        DropdownMenu(
+                                            expanded = showClassTableSwitcher,
+                                            onDismissRequest = { showClassTableSwitcher = false },
+                                            shape = RoundedCornerShape(12.dp),
+                                        ) {
+                                            ClassTableSwitcherMenuItems(
+                                                ClassTableSwitcherEntry.sections(importedTables, switcherUserName),
+                                            ) { entry ->
+                                                showClassTableSwitcher = false
+                                                // All of it once the page on screen lets go: an
+                                                // import opened over a mail still asking whether to
+                                                // save would cover the question. The page shows what
+                                                // the row picks, or hosts the import.
+                                                leaveGuard.leave {
+                                                    if (navController.currentBackStackEntry?.destination?.route != route) goToTab(route)
+                                                    when (entry) {
+                                                        ClassTableSwitcherEntry.ImportClassTable ->
+                                                            classTableImportViewModel.start()
+                                                        is ClassTableSwitcherEntry.Person ->
+                                                            classTableViewModel.showTable(entry.id)
+                                                        is ClassTableSwitcherEntry.User ->
+                                                            classTableViewModel.showTable(null)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            modifier = if (isClassTable) {
+                                Modifier.classTableTabGestures(
+                                    isShowingClassTable = { currentRoute == route },
+                                    onLongPress = {
+                                        Haptics.perform(context, HapticScenario.ClassTableLongPress)
+                                        showClassTableSwitcher = true
+                                    },
+                                    onDoubleTap = {
+                                        if (classTableViewModel.tabDoubleTapped()) {
+                                            Haptics.perform(context, HapticScenario.TabSwitch)
+                                        }
+                                    },
+                                    longPressLabel = switchClassTableLabel,
                                 )
+                            } else {
+                                Modifier
                             },
                             label = {
                                 Text(
@@ -356,7 +508,7 @@ fun MainNavigation(
                                     context,
                                     HapticScenario.TabSwitch,
                                 )
-                                navController.navigateToTab(route, firstTab = popUpToDest, tabTap)
+                                openTab(route)
                             }
                         )
                     }
@@ -388,23 +540,58 @@ fun MainNavigation(
                 appState.pendingNtustSignInHighlight = true
                 navController.navigate(Screen.Settings.route)
             }
-            page(Screen.Home.route) {
+            page(Screen.Home.route) { entry ->
                 HomeScreen(
                     appState = appState,
                     viewModel = homeViewModel,
                     onOpenSignInSettings = openSignInSettings,
+                    onOpenAssignment = { navController.navigate(Screen.Assignment.route(it.assignmentId)) },
+                    onOpenCourseDetail = { picked ->
+                        // The slider shows the live term, as the class table's today strip does.
+                        classTableViewModel.selectCourse(picked.course, picked.weekday, picked.periodId, fromLiveTerm = true)
+                    },
+                    // As a widget or notification opens a page: a feature the bar
+                    // shows becomes that tab rather than a second copy over Home.
+                    onOpenFeature = { feature ->
+                        navController.openStartRoute(feature.toRoute(), tabRoutes, firstTab = popUpToDest, tabTap)
+                    },
+                )
+                // The class table's course detail sheet, as iOS opens the same sheet from Home.
+                CourseDetailSheetHost(
+                    classTableViewModel,
+                    appState.browserPreference,
+                    pageOnTop = navController.isOnTop(entry),
+                    onOpenPage = { navController.navigate(it) },
                 )
             }
-            page(Screen.ClassTable.route) {
+            page(
+                Screen.Assignment.route,
+                arguments = listOf(navArgument(MoodleRoutes.ARG_ASSIGNMENT_ID) { type = NavType.StringType }),
+            ) {
+                MoodleAssignmentScreen(
+                    browserPreference = appState.browserPreference,
+                    onBack = { navController.popBackStack() },
+                )
+            }
+            page(Screen.ClassTable.route) { entry ->
                 ClassTableScreen(
                     viewModel = classTableViewModel,
                     onOpenSignInSettings = openSignInSettings,
+                    onRequestImport = classTableImportViewModel::start,
+                )
+                CourseDetailSheetHost(
+                    classTableViewModel,
+                    appState.browserPreference,
+                    pageOnTop = navController.isOnTop(entry),
+                    onOpenPage = { navController.navigate(it) },
                 )
             }
+            coursePages(navController, browserPreference = { appState.browserPreference })
             page(Screen.Calendar.route) {
                 CalendarScreen(
                     viewModel = calendarViewModel,
                     onOpenSignInSettings = openSignInSettings,
+                    onOpenAssignment = { navController.navigate(Screen.Assignment.route(it)) },
                 )
             }
             page(Screen.Announcements.route) {
@@ -421,7 +608,10 @@ fun MainNavigation(
                 Screen.AnnouncementDetail.route,
                 arguments = listOf(navArgument("id") { type = NavType.IntType }),
             ) {
-                AnnouncementDetailScreen(onBack = { navController.popBackStack() })
+                AnnouncementDetailScreen(
+                    browserPreference = appState.browserPreference,
+                    onBack = { navController.popBackStack() },
+                )
             }
             page(Screen.AnnouncementSubscriptions.route) {
                 SubscriptionSettingsScreen(onBack = { navController.popBackStack() })
@@ -447,6 +637,9 @@ fun MainNavigation(
                     browserPreference = appState.browserPreference,
                     onBack = { navController.popBackStack() },
                     onCompose = { mode, folder, uid -> navController.navigate(Screen.SchoolMailCompose.route(mode, folder, uid)) },
+                    onComposeMailto = { folder, uid, href ->
+                        navController.navigate(Screen.SchoolMailCompose.route(ComposeMode.NEW, folder, uid, mailto = href))
+                    },
                 )
             }
             page(
@@ -455,18 +648,29 @@ fun MainNavigation(
                     navArgument("mode") { type = NavType.StringType; defaultValue = ComposeMode.NEW.name },
                     navArgument("folder") { type = NavType.StringType; defaultValue = "" },
                     navArgument("uid") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("mailto") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("to") { type = NavType.StringType; defaultValue = "" },
+                    navArgument("held") { type = NavType.StringType; defaultValue = "" },
                 ),
-            ) {
-                org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeScreen(onDone = { navController.popBackStack() })
+            ) { entry ->
+                // Not a bare pop: a send can finish after a link has opened another page over it.
+                org.ntust.app.tigerduck.ui.screen.mail.SchoolMailComposeScreen(
+                    onDone = { navController.popIfTop(entry) },
+                    leaveGuard = leaveGuard,
+                )
             }
             page(Screen.Score.route) {
                 ScoreScreen(onOpenSignInSettings = openSignInSettings)
             }
-            page(Screen.More.route) { MoreScreen(navController, appState) }
+            page(Screen.EmptyClassroom.route) {
+                EmptyClassroomScreen(onOpenSignInSettings = openSignInSettings)
+            }
+            page(Screen.More.route) { MoreScreen(navController) }
             page(Screen.Settings.route) {
                 SettingsScreen(
                     onNavigateToTabEditor = { navController.navigate(Screen.TabEditor.route) },
                     onNavigateToLanguagePicker = { navController.navigate(Screen.LanguagePicker.route) },
+                    onNavigateToAccentColor = { navController.navigate(Screen.AccentColor.route) },
                     onNavigateToLiveActivity = { navController.navigate(Screen.LiveActivitySettings.route) },
                     onNavigateToSchoolMailNotificationSettings = {
                         navController.navigate(Screen.SchoolMailNotificationSettings.route)
@@ -474,6 +678,7 @@ fun MainNavigation(
                     onNavigateToNotificationPermissionSettings = {
                         navController.navigate(Screen.NotificationPermissionSettings.route)
                     },
+                    onNavigateToClassReminders = { navController.navigate(Screen.ClassReminderSettings.route) },
                     onNavigateToAssignmentReminders = { navController.navigate(Screen.AssignmentReminderSettings.route) },
                     onNavigateToCloudSync = { navController.navigate(Screen.CloudSync.route) },
                     onNavigateToLibrarySettings = { navController.navigate(Screen.LibrarySettings.route) },
@@ -498,8 +703,17 @@ fun MainNavigation(
                     onNavigateToServerFailureDebug = {
                         if (BuildConfig.DEBUG) navController.navigate(Screen.ServerFailureDebug.route)
                     },
+                    onNavigateToOutsideAppsDebug = {
+                        if (BuildConfig.DEBUG) navController.navigate(Screen.OutsideAppsDebug.route)
+                    },
                     onNavigateToMailDevServerDebug = {
                         if (BuildConfig.DEBUG) navController.navigate(Screen.MailDevServerDebug.route)
+                    },
+                    onNavigateToBrowserAllowlistDebug = {
+                        if (BuildConfig.DEBUG) navController.navigate(Screen.BrowserAllowlistDebug.route)
+                    },
+                    onNavigateToViewerSamplesDebug = {
+                        if (BuildConfig.DEBUG) navController.navigate(Screen.ViewerSamplesDebug.route)
                     },
                 )
             }
@@ -525,8 +739,23 @@ fun MainNavigation(
                         onBack = { navController.popBackStack() },
                     )
                 }
+                page(Screen.OutsideAppsDebug.route) {
+                    org.ntust.app.tigerduck.ui.screen.debug.OutsideAppsDebugScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
                 page(Screen.MailDevServerDebug.route) {
                     org.ntust.app.tigerduck.ui.screen.debug.MailDevServerDebugScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                page(Screen.BrowserAllowlistDebug.route) {
+                    org.ntust.app.tigerduck.ui.screen.debug.BrowserAllowlistDebugScreen(
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                page(Screen.ViewerSamplesDebug.route) {
+                    org.ntust.app.tigerduck.ui.screen.debug.ViewerSamplesDebugScreen(
                         onBack = { navController.popBackStack() },
                     )
                 }
@@ -549,8 +778,12 @@ fun MainNavigation(
                         navController.navigate(Screen.ApiEndpointDebug.route)
                     },
                     onNavigateToVibration = { navController.navigate(Screen.VibrationSettings.route) },
-                    onNavigateToCourseNameSize = { navController.navigate(Screen.CourseNameSizeSettings.route) },
+                    onNavigateToDisplaySize = { navController.navigate(Screen.DisplaySizeSettings.route) },
+                    onNavigateToStorage = { navController.navigate(Screen.Storage.route) },
                 )
+            }
+            page(Screen.Storage.route) {
+                StorageScreen(onBack = { navController.popBackStack() })
             }
             page(Screen.AboutOthers.route) {
                 AboutOthersScreen(
@@ -581,6 +814,7 @@ fun MainNavigation(
                 org.ntust.app.tigerduck.ui.screen.mail.SchoolMailSettingsScreen(
                     onBack = { navController.popBackStack() },
                     onOpenGuide = { navController.navigate(Screen.SchoolMailGuide.route) },
+                    onOpenStorage = { navController.navigate(Screen.Storage.route) },
                 )
             }
             page(Screen.SchoolMailGuide.route) {
@@ -592,11 +826,20 @@ fun MainNavigation(
             page(Screen.VibrationSettings.route) {
                 VibrationSettingsScreen(onBack = { navController.popBackStack() })
             }
+            page(Screen.DisplaySizeSettings.route) {
+                DisplaySizeSettingsScreen(
+                    onBack = { navController.popBackStack() },
+                    onNavigateToCourseNameSize = { navController.navigate(Screen.CourseNameSizeSettings.route) },
+                )
+            }
             page(Screen.CourseNameSizeSettings.route) {
                 CourseNameSizeSettingsScreen(onBack = { navController.popBackStack() })
             }
             page(Screen.LanguagePicker.route) {
                 LanguagePickerScreen(onBack = { navController.popBackStack() })
+            }
+            page(Screen.AccentColor.route) {
+                AccentColorScreen(onBack = { navController.popBackStack() })
             }
             page(Screen.TabEditor.route) {
                 TabEditorScreen(
@@ -619,6 +862,9 @@ fun MainNavigation(
             }
             page(Screen.NotificationPermissionSettings.route) {
                 NotificationPermissionSettingsScreen(onBack = { navController.popBackStack() })
+            }
+            page(Screen.ClassReminderSettings.route) {
+                ClassReminderSettingsScreen(onBack = { navController.popBackStack() })
             }
             page(Screen.AssignmentReminderSettings.route) {
                 AssignmentReminderSettingsScreen(onBack = { navController.popBackStack() })
@@ -644,6 +890,93 @@ fun MainNavigation(
             }
         }
     }
+
+    // What the scanner's QR button shares, read again as the class table's courses load.
+    val signedIn by classTableViewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val shareTerms by classTableViewModel.shareTerms.collectAsStateWithLifecycle()
+    val shownCourses by classTableViewModel.courses.collectAsStateWithLifecycle()
+    val semesters by classTableViewModel.availableSemesters.collectAsStateWithLifecycle()
+    // Other terms load into the cache in the background, which the share terms read too.
+    val coursesVersion by classTableViewModel.coursesVersion.collectAsStateWithLifecycle()
+    val ownStudentId = classTableViewModel.studentId
+        ?.takeIf { signedIn && shareTerms.isNotEmpty() && ClassTableShare.canName(it) }
+
+    // Over every page: the tab's menu can start an import from any of them.
+    ClassTableImportHost(
+        viewModel = classTableImportViewModel,
+        onImported = {
+            // The class table shows the person just imported.
+            if (navController.currentBackStackEntry?.destination?.route != Screen.ClassTable.route) {
+                openTab(Screen.ClassTable.route)
+            }
+        },
+        onShare = ownStudentId?.let { studentId ->
+            {
+                shareFromScanner = ClassTableShare(studentId, shareTerms)
+                classTableImportViewModel.end()
+            }
+        },
+        refreshShare = classTableViewModel::refreshShareTerms,
+        shareSource = Triple(shownCourses, semesters, coursesVersion),
+    )
+    val importSession by classTableImportViewModel.session.collectAsStateWithLifecycle()
+    ScannerShareSheet(
+        share = shareFromScanner,
+        importOpen = importSession != null,
+        signedIn = signedIn,
+        labelFor = classTableViewModel::displayLabel,
+        onDismiss = { shareFromScanner = null },
+        onScan = classTableImportViewModel::start,
+    )
+}
+
+/** The tab the bottom bar shows selected on [route]: a page's own tab, or the one it was opened from. */
+internal fun selectedTabRoute(route: String?): String? = when {
+    route == Screen.Settings.route || route == Screen.TabEditor.route -> Screen.More.route
+    else -> route
+}
+
+/**
+ * Whether this is the page a link to [target] opens: the same route, or the page its arguments
+ * name, written as the link writes it: the same bulletin, the same mail, or the same assignment,
+ * which a reminder names `assignment/<id>` and a course opens under its Moodle route.
+ */
+internal fun NavBackStackEntry?.showsPage(target: String): Boolean {
+    if (this == null) return false
+    val route = destination.route
+    if (route == target) return true
+    val args = arguments ?: return false
+    return when (route) {
+        Screen.AnnouncementDetail.route -> target == Screen.AnnouncementDetail.route(args.getInt("id"))
+        Screen.SchoolMailMessage.route ->
+            target == Screen.SchoolMailMessage.route(args.getString("folder").orEmpty(), args.getLong("uid"))
+        Screen.Assignment.route, MoodleRoutes.ASSIGNMENT ->
+            Screen.Assignment.idIn(target)?.let { it == args.getString(MoodleRoutes.ARG_ASSIGNMENT_ID) } == true
+        else -> false
+    }
+}
+
+/**
+ * Opens [target] from outside the app, a widget or a notification: a tab as the bottom bar opens
+ * it, so a page pushed over it is cleared rather than covered by a second copy of the tab.
+ */
+internal fun NavHostController.openStartRoute(target: String, tabRoutes: Set<String>, firstTab: String, tabTap: TabTap) {
+    // As the bottom bar does: navigating to the page on screen pops it before singleTop applies,
+    // which rebuilds the tab, or closes a mail being written without offering to save it.
+    if (currentBackStackEntry?.destination?.route == target) return
+    if (target in tabRoutes) {
+        navigateToTab(target, firstTab, tabTap)
+    } else {
+        navigateToStartRoute(target)
+    }
+}
+
+/**
+ * Pops [entry] when it is the page on top, and does nothing otherwise: a back tapped twice, or a
+ * page closing itself while its pop already runs, must not take the page under it too.
+ */
+internal fun NavController.popIfTop(entry: NavBackStackEntry) {
+    if (currentBackStackEntry?.id == entry.id) popBackStack()
 }
 
 /**
@@ -663,6 +996,18 @@ internal fun NavController.navigateToTab(route: String, firstTab: String, tabTap
     tabTap.record(fromId, currentBackStackEntry?.id)
 }
 
+/**
+ * The class table widget draws the user's own class table, so each start from it, a
+ * [startRoute] that opens the class table, shows that one with [showOwnClassTable].
+ */
+@Composable
+internal fun ShowOwnClassTableFromWidget(startRoute: String?, showOwnClassTable: () -> Unit) {
+    val latest by rememberUpdatedState(showOwnClassTable)
+    LaunchedEffect(startRoute) {
+        if (startRoute == Screen.ClassTable.route) latest()
+    }
+}
+
 fun AppFeature.toRoute(): String = when (this) {
     AppFeature.HOME -> Screen.Home.route
     AppFeature.CLASS_TABLE -> Screen.ClassTable.route
@@ -671,6 +1016,7 @@ fun AppFeature.toRoute(): String = when (this) {
     AppFeature.SCHOOL_MAIL -> Screen.SchoolMail.route
     AppFeature.LIBRARY -> Screen.Library.route
     AppFeature.SCORE -> Screen.Score.route
+    AppFeature.EMPTY_CLASSROOM -> Screen.EmptyClassroom.route
     AppFeature.MORE -> Screen.More.route
     AppFeature.SETTINGS -> Screen.Settings.route
     else -> "placeholder/$id"

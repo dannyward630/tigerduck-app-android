@@ -1,6 +1,7 @@
 package org.ntust.app.tigerduck.data.model
 
 import androidx.annotation.StringRes
+import com.google.gson.annotations.SerializedName
 import org.ntust.app.tigerduck.R
 
 enum class AppFeature(val id: String) {
@@ -9,6 +10,11 @@ enum class AppFeature(val id: String) {
     CALENDAR("calendar"),
     ANNOUNCEMENTS("announcements"),
     SCHOOL_MAIL("schoolMail"),
+    // Gson stores a feature by constant name (a Home shortcut's
+    // `WidgetItem.feature`). This was GPA until the Scores page shipped, and
+    // the first default Home layout saved a GPA shortcut; the alternate reads
+    // those layouts back as this constant instead of as null.
+    @SerializedName("SCORE", alternate = ["GPA"])
     SCORE("score"),
     COURSE_SELECTION("courseSelection"),
     GRADUATION_REQUIREMENTS("graduationRequirements"),
@@ -79,9 +85,6 @@ enum class AppFeature(val id: String) {
             else -> null
         }
 
-    val isLibraryRelated: Boolean
-        get() = this == LIBRARY || this == DISCUSSION_ROOM || this == LIBRARY_LECTURE
-
     val isSchoolMail: Boolean
         get() = this == SCHOOL_MAIL
 
@@ -100,7 +103,7 @@ enum class AppFeature(val id: String) {
      */
     val isImplemented: Boolean
         get() = when (this) {
-            HOME, CLASS_TABLE, CALENDAR, ANNOUNCEMENTS, LIBRARY, SCORE, SCHOOL_MAIL -> true
+            HOME, CLASS_TABLE, CALENDAR, ANNOUNCEMENTS, LIBRARY, SCORE, SCHOOL_MAIL, EMPTY_CLASSROOM -> true
             else -> false
         }
 
@@ -110,11 +113,21 @@ enum class AppFeature(val id: String) {
          * restores. Calendar until 2.3.0, when Mail took its place — an
          * existing user who never customized keeps Calendar (see
          * [previousDefaultTabs]) and is asked about Mail in What's New.
+         * Library joined in 2.4.0, when its opt-in switch went away; an
+         * existing user who never customized keeps the bar without it (see
+         * [defaultTabsBeforeLibrary]) and is asked about Library in What's New.
          */
-        val defaultTabs = listOf(HOME, CLASS_TABLE, SCHOOL_MAIL)
+        val defaultTabs = listOf(HOME, CLASS_TABLE, SCHOOL_MAIL, LIBRARY)
 
         /** [defaultTabs] before 2.3.0, kept for installs that never customized. */
         val previousDefaultTabs = listOf(HOME, CLASS_TABLE, CALENDAR)
+
+        /**
+         * [defaultTabs] in 2.3.x, before Library joined, kept for installs that
+         * never customized; see
+         * [org.ntust.app.tigerduck.data.preferences.LibraryTabKeepMigration].
+         */
+        val defaultTabsBeforeLibrary = listOf(HOME, CLASS_TABLE, SCHOOL_MAIL)
 
         /** The most tabs a user can pin; the bottom bar adds MORE after them. */
         const val MAX_CUSTOM_TABS = 4
@@ -145,9 +158,21 @@ enum class AppFeature(val id: String) {
             ENGLISH_VOCAB,
         )
 
+        /**
+         * Same contract as [pinnableOrder], for the shortcut cards Home's Add
+         * dialog offers. A deliberate subset, as on iOS (`widgetFeatures`):
+         * the core pages are reachable from the tab bar and are not offered.
+         */
+        private val widgetOrder = listOf(
+            ANNOUNCEMENTS, FREE_LUNCH, CLUBS, EMPTY_CLASSROOM, SCORE, SCHOLARSHIP, ENGLISH_VOCAB,
+        )
+
         val pinnableFeatures: List<AppFeature> = pinnableOrder.filter { it.isImplemented }
 
         val moreFeatures: List<AppFeature> = moreOrder.filter { it.isImplemented }
+
+        /** The features a Home shortcut card can open, in the Add dialog's order. */
+        val widgetFeatures: List<AppFeature> = widgetOrder.filter { it.isImplemented }
 
         /**
          * Features a user may have pinned before they were withdrawn, or that

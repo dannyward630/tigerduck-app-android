@@ -2,6 +2,7 @@
 <img width="2000" src="https://github.com/user-attachments/assets/cf6a1d18-a348-4b83-adfd-81c6dc82855f" />
 <br>
 
+[![Version](https://img.shields.io/badge/Version-v2.4.0-00BB00?style=for-the-badge)](https://github.com/tigerduck-app/tigerduck-app-android/releases/tag/v2.4.0)
 [![License](https://img.shields.io/github/license/tigerduck-app/tigerduck-app-android?style=for-the-badge)](LICENSE)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.4-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Android](https://img.shields.io/badge/Android-10.0%2B-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
@@ -92,7 +93,8 @@ TigerDuck 是由一群學生共同開發的校園助手
 
 ### 🔄 **自動更新**（Play 限定）
 
-- 內建 Play In-App Update FLEXIBLE 流程，新版本主動提示
+- Play 上有新版本時跳出更新提示：「立即更新」開啟 Play 商店頁面，也可以選「稍後」或「跳過此版本」
+- Play 提供新版本滿 3 天後才提示，按「稍後」後同一版本 7 天內不再提示；「設定 → 關於 → 檢查更新」可隨時手動檢查
 - 升級後顯示「新功能說明」，讓你一眼看完新功能
 
 ### ⌚ **Wear OS**（Play 限定）
@@ -208,8 +210,9 @@ git submodule update --init --recursive
 ./gradlew :app:installPlayDebug      # 或 :app:installFdroidDebug
 ```
 
-> 💡 課程/教室簡稱（`name-abbr/`）與多語系字串（`app-translation/generated/android/`）皆由子模組提供，clone 後
-**務必**先抓子模組再開 Android Studio，否則 build 會找不到資源檔。
+> 💡 課程/教室簡稱（`name-abbr/`）與多語系字串（`app-translation/`）皆由子模組提供，clone 後
+**務必**先抓子模組再開 Android Studio，否則 build 會找不到資源檔。編譯時也需要 Python 3.9 以上來產生字串
+（macOS 內建的 `python3` 是 3.9；CI 會測 3.9 和最新版）。
 
 ### Wear OS App（`:wear` 模組）
 
@@ -227,7 +230,8 @@ F-Droid 變體**，也不會出現在 F-Droid 商店上。
 ### 一鍵安裝腳本（`debug/`）
 
 `debug/` 目錄收錄了三支安裝腳本，會依 `ro.build.characteristics` 自動把 APK
-推到對的裝置，遇到同時連著手機 + 手錶時尤其方便：
+推到對的裝置，遇到同時連著手機 + 手錶時尤其方便。連著多台時會出現選單，可以一次選好幾台：
+方向鍵移動、空白鍵勾選、`a` 全選、Enter 確定、`q` 取消。
 
 | 腳本                                | 用途                                                        |
 |-----------------------------------|-----------------------------------------------------------|
@@ -244,27 +248,11 @@ F-Droid 變體**，也不會出現在 F-Droid 商店上。
 
 - 翻譯原始檔在 `app-translation/source/`，共 55 份（`en.json`、`zh-Hant.json`、`ja.json`、`ko.json`、
   `ar.json` …）
-- 共用翻譯輸出在 `app-translation/generated/`：
-    - Android：`android/values/strings.xml`（英文預設）、`android/values-<lang>/strings.xml`
-    - Apple（iOS / macOS）：`apple/<lang>.lproj/Localizable.strings`
-- 手機的 `app/src/main/res/values*/strings.xml` 與手錶的 `wear/src/main/res/values*/strings.xml`
-  都是從 Android 輸出複製過來、一併提交的副本，每次同步都會被覆寫，請不要手動改動生成檔。
-
-手動同步一次翻譯（重新產生輸出，再複製進 `app/` 與 `wear/`）：
-
-```bash
-./debug/sync-localizations.sh
-```
-
-單獨跑 `python3 tools/localization/sync_localizations.py` 只會重新產生 `app-translation/generated/`
-與 `locales_config.xml`，不會更新兩個模組的 `strings.xml`。
-
-Gradle 也能在編譯前自動同步，但**預設不啟用**——要加上 `-PsyncLocalizations`，
-同步與複製的 task 才會掛到 `preBuild` 上（見 `app/build.gradle.kts`、`wear/build.gradle.kts`）：
-
-```bash
-./gradlew :app:assemblePlayDebug -PsyncLocalizations
-```
+- 每次編譯都會從子模組的 `source/*.json` 產生 Android 字串：`generateAppTranslationStrings`
+  （`gradle/app-translation.gradle.kts`，`:app` 與 `:wear` 都會套用）把 `values*/strings.xml` 和手機的
+  `xml/locales_config.xml` 寫進 `build/generated/appTranslation/res`。這邊和子模組都不再提交 Android 的字串，
+  翻譯有更新時只要移動子模組的 pin。編譯需要 PATH 上有 Python 3.9 以上。
+- 子模組仍會提交 Apple（`generated/apple/`）與後端（`generated/backend/`）的輸出，給 Apple App 和後端讀取。
 
 新語系或字串請對 [`app-translation/`](https://github.com/tigerduck-app/app-translation) 子模組另開 PR，*
 *不要**直接改生成檔。
@@ -349,7 +337,7 @@ tigerduck-app-android/                  # Android App + Wear OS（Kotlin 2.4 / C
 │   └── libs.versions.toml              # Version Catalog
 ├── app-translation/                    # ⤴ git submodule：65 語系翻譯（含 `watch_*` 鍵）
 ├── name-abbr/                          # ⤴ git submodule：課程 / 教室簡稱字典
-├── tools/localization/                 # 翻譯同步腳本（需 -PsyncLocalizations 才綁進 preBuild）
+├── tools/localization/                 # 每次編譯時從 app-translation 產生字串
 ├── build.gradle.kts
 └── settings.gradle.kts
 ```
