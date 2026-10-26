@@ -1,7 +1,9 @@
 package org.ntust.app.tigerduck.ui.screen.browser
 
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.VelocityTracker
+import android.view.accessibility.AccessibilityNodeInfo
 import kotlin.math.abs
 
 /**
@@ -156,4 +158,30 @@ internal class BrowserTouches(
         /** How long after the last move a lift still flings, in ms, as Chromium's gesture detector. */
         const val RELEASE_MS = 80L
     }
+}
+
+/**
+ * Which way [keyCode] scrolls the page, for [BrowserChromeCollapse.dragged]: true down, false up,
+ * null for a key that doesn't. A key, like a mouse wheel and an accessibility scroll, moves the
+ * page with no touch, which the bars would otherwise take for the page's own move.
+ */
+internal fun keyScrollsDown(keyCode: Int, shift: Boolean): Boolean? = when (keyCode) {
+    KeyEvent.KEYCODE_DPAD_DOWN, KeyEvent.KEYCODE_PAGE_DOWN, KeyEvent.KEYCODE_MOVE_END -> true
+    KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_MOVE_HOME -> false
+    KeyEvent.KEYCODE_SPACE -> !shift
+    else -> null
+}
+
+/** Which way a mouse wheel's [vscroll] (`AXIS_VSCROLL`) scrolls the page: true down, null for none. */
+internal fun wheelScrollsDown(vscroll: Float): Boolean? = if (vscroll == 0f) null else vscroll < 0
+
+/** Which way an accessibility [action] scrolls the page: true down, null for one that doesn't scroll. */
+internal fun accessibilityScrollsDown(action: Int): Boolean? = when (action) {
+    AccessibilityNodeInfo.ACTION_SCROLL_FORWARD,
+    android.R.id.accessibilityActionScrollDown,
+    android.R.id.accessibilityActionPageDown -> true
+    AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD,
+    android.R.id.accessibilityActionScrollUp,
+    android.R.id.accessibilityActionPageUp -> false
+    else -> null
 }

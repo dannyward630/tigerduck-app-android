@@ -21,6 +21,7 @@ import android.os.Looper
 import android.os.Message
 import android.print.PrintManager
 import android.view.ContextThemeWrapper
+import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.ViewGroup
@@ -982,6 +983,25 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun onTouchEvent(event: MotionEvent): Boolean {
             touches.onTouch(event)
             return super.onTouchEvent(event)
+        }
+
+        // Keys, a mouse wheel and accessibility scrolls move the page with no touch: each tells the
+        // bars its way first, so their scroll is the student's, not the page's own.
+        override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+            if (event.action == KeyEvent.ACTION_DOWN) keyScrollsDown(event.keyCode, event.isShiftPressed)?.let(chrome::dragged)
+            return super.dispatchKeyEvent(event)
+        }
+
+        override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+            if (event.actionMasked == MotionEvent.ACTION_SCROLL) {
+                wheelScrollsDown(event.getAxisValue(MotionEvent.AXIS_VSCROLL))?.let(chrome::dragged)
+            }
+            return super.onGenericMotionEvent(event)
+        }
+
+        override fun performAccessibilityAction(action: Int, arguments: Bundle?): Boolean {
+            accessibilityScrollsDown(action)?.let(chrome::dragged)
+            return super.performAccessibilityAction(action, arguments)
         }
     }
 
