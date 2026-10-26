@@ -379,6 +379,17 @@ class AppState @Inject constructor(
             prefs.browserPreference = value
         }
 
+    private var moodleOpenInState by mutableStateOf(prefs.moodleOpenIn)
+
+    /** The Open Moodle in setting; see [AppPreferences.moodleOpenIn]. */
+    var moodleOpenIn: String
+        get() = moodleOpenInState
+        set(value) {
+            if (moodleOpenInState == value) return
+            moodleOpenInState = value
+            prefs.moodleOpenIn = value
+        }
+
     private var themeModeState by mutableStateOf(prefs.themeMode)
 
     /** One of "system", "dark", "light". */
@@ -649,6 +660,7 @@ class AppState @Inject constructor(
             useEnglishClassroomAbbreviationState = prefs.useEnglishClassroomAbbreviation
             classroomMandarinDisplayState = prefs.classroomMandarinDisplay
             browserPreferenceState = prefs.browserPreference
+            moodleOpenInState = prefs.moodleOpenIn
             themeModeState = prefs.themeMode
             appLanguageState = prefs.appLanguage
             invertSliderDirectionState = prefs.invertSliderDirection

@@ -55,6 +55,7 @@ import org.ntust.app.tigerduck.ui.component.TigerDuckDialog
 import org.ntust.app.tigerduck.ui.haptics.HapticScenario
 import org.ntust.app.tigerduck.ui.haptics.Haptics
 import org.ntust.app.tigerduck.ui.openLink
+import org.ntust.app.tigerduck.ui.screen.coursemoodle.rememberMoodleAppInstalled
 import org.ntust.app.tigerduck.ui.screen.mail.ForgotMailPasswordLink
 import org.ntust.app.tigerduck.ui.screen.mail.MailAccountViewModel
 import org.ntust.app.tigerduck.ui.screen.mail.messageRes
@@ -133,6 +134,8 @@ fun SettingsScreen(
     val pinTodayCoursesOnClassTable = viewModel.appState.pinTodayCoursesOnClassTable
     val outlineRequiredCourses = viewModel.appState.outlineRequiredCourses
     val browserPreference = viewModel.appState.browserPreference
+    val moodleOpenIn = viewModel.appState.moodleOpenIn
+    val moodleAppInstalled = rememberMoodleAppInstalled()
     val useEnglishCourseAbbreviation = viewModel.appState.useEnglishCourseAbbreviation
     val useEnglishClassroomAbbreviation = viewModel.appState.useEnglishClassroomAbbreviation
     val classroomMandarinDisplay = viewModel.appState.classroomMandarinDisplay
@@ -379,6 +382,7 @@ fun SettingsScreen(
                             selectedKey = browserPreference,
                             onSelect = { viewModel.appState.browserPreference = it }
                         )
+                        MoodleOpenInSetting(moodleAppInstalled, moodleOpenIn) { viewModel.appState.moodleOpenIn = it }
                     }
                 }
             }
@@ -817,4 +821,27 @@ internal fun appVersionLabel(versionName: String, versionCode: Int): String = "$
 internal interface SettingsEntryPoint {
     fun updateChecker(): UpdateChecker
     fun whatsNewRepository(): WhatsNewRepository
+}
+
+/**
+ * The Open Moodle in setting, below "Open links with": the Moodle app or the TigerDuck browser for
+ * "Open in Moodle". Shown only while the Moodle app is [installed]; without it every Moodle page
+ * opens in the browser, whatever [selected] says (`openMoodlePage`).
+ */
+@Composable
+internal fun MoodleOpenInSetting(installed: Boolean, selected: String, onSelect: (String) -> Unit) {
+    if (!installed) return
+    val app = stringResource(R.string.settings_moodle_open_in_app)
+    val browser = stringResource(R.string.settings_browser_in_app)
+    HorizontalDivider()
+    SettingsPickerRow(
+        label = stringResource(R.string.settings_moodle_open_in),
+        value = if (selected == AppPreferences.MOODLE_OPEN_IN_BROWSER) browser else app,
+        options = listOf(
+            AppPreferences.MOODLE_OPEN_IN_APP to app,
+            AppPreferences.MOODLE_OPEN_IN_BROWSER to browser,
+        ),
+        selectedKey = selected,
+        onSelect = onSelect,
+    )
 }

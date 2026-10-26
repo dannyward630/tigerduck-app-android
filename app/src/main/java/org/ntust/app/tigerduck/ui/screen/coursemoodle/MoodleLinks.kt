@@ -37,7 +37,8 @@ import java.net.URLEncoder
 
 /**
  * A page on the Moodle site, opened as every "Open in Moodle" opens one: in the Moodle app where
- * it is installed, else in the browser, signed in. Paths are site-relative.
+ * it is installed and the Open Moodle in setting asks for it, else in the browser, signed in.
+ * Paths are site-relative.
  */
 object MoodlePage {
     fun course(courseId: Int) = "/course/view.php?id=$courseId"
@@ -77,21 +78,29 @@ object MoodlePage {
 }
 
 /**
- * Opens [path] in the Moodle app through its `moodlemobile://` link, or, when no app takes it, on
- * the website in the TigerDuck browser, signed in; see [MoodleWebPages.of]. A link the Moodle app
- * takes asks for no key.
+ * Opens [path] in the Moodle app through its `moodlemobile://` link while [inMoodleApp], the Open
+ * Moodle in setting, asks for the app, or else, and when no app takes the link, on the website in
+ * the TigerDuck browser, signed in; see [MoodleWebPages.of]. A link the Moodle app takes asks for
+ * no key.
  */
 fun openMoodlePage(
     context: Context,
     path: String,
+    inMoodleApp: () -> Boolean = { opensInMoodleApp(context) },
     pages: () -> MoodleWebPages = { MoodleWebPages.of(context) },
 ) {
-    val app = Intent(Intent.ACTION_VIEW, MoodlePage.deepLink(path).toUri()).apply {
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+    if (inMoodleApp()) {
+        val app = Intent(Intent.ACTION_VIEW, MoodlePage.deepLink(path).toUri()).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+        }
+        if (runCatching { context.startActivity(app) }.isSuccess) return
     }
-    if (runCatching { context.startActivity(app) }.isSuccess) return
     openMoodleWebPage(context, MoodlePage.webUrl(path), pages = pages)
 }
+
+/** Whether the Open Moodle in setting asks for the Moodle app, as it does until set otherwise. */
+private fun opensInMoodleApp(context: Context): Boolean =
+    AppPreferences.storedMoodleOpenIn(context.applicationContext) != AppPreferences.MOODLE_OPEN_IN_BROWSER
 
 /**
  * Opens [url], a page on the Moodle site, in the TigerDuck browser, or where it does not open in

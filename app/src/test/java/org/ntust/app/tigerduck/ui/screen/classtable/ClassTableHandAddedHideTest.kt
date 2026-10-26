@@ -190,7 +190,7 @@ class ClassTableHandAddedHideTest {
 
     /** Whether `restored_courses.json` still holds [course]. */
     private fun holds(course: Course): Boolean =
-        File(RuntimeEnvironment.getApplication().filesDir, "TigerDuckData/restored_courses.json")
+        File(context.filesDir, "TigerDuckData/restored_courses.json")
             .takeIf { it.isFile }?.readText()?.contains("\"$TERM:${course.courseNo}\"") == true
 
     /** The clock once it has moved past now, so a time taken from it is later than everything before. */

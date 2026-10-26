@@ -168,6 +168,7 @@ keeps through `getOrCreateString`.
 | tigerduck_prefs | `librarySyncedAtMs` | library | `AppPreferences.kt` `forgetLibrarySynced` |
 | tigerduck_prefs | `libraryTabKeepChecked` | device | |
 | tigerduck_prefs | `mailBarQuestionAsked` | device | |
+| tigerduck_prefs | `moodleOpenIn` | device | |
 | tigerduck_prefs | `notifyAssignmentOffsets` | device | |
 | tigerduck_prefs | `notifyAssignments` | device | |
 | tigerduck_prefs | `onboardingVersion` | device | |
