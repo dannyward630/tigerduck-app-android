@@ -10,9 +10,12 @@ package org.ntust.app.tigerduck.ui.screen.browser
  * included: the page also moves by itself, as when it lays out again while the bars move and the
  * WebView keeps its place, and such a move, either way, must not move the bars.
  *
- * Putting the bars away makes the page [growthPx] taller on screen, so it can scroll that much
- * less. A page that would then have no room to scroll past the top of the page keeps its bars:
- * once they were away, nothing would be left to scroll up with to bring them back.
+ * Putting the bars away gives the page up to [growthPx] more room on screen, so a page laid out to
+ * its own height can scroll that much less, while one laid out to the view's height scrolls as
+ * far as before. A page left with no room past the top of the page once they are away is too
+ * short for them to go: the top brings them back, and they stay for that page, as nothing would be
+ * left to scroll up with to bring them back. They may go again once the page has grown past the
+ * room they would take ([reset] and a zoom start afresh too).
  *
  * Offsets the page did not scroll to are no scroll either: the first after a new page (where the
  * WebView may put back a page's old place), after a zoom (the page's laid-out width changed, which
@@ -53,6 +56,9 @@ internal class BrowserChromeCollapse(
     /** Whether the student's finger last moved the page down, toward its end; null before it has. */
     private var dragDown: Boolean? = null
 
+    /** Whether the page proved too short for the bars to go: with them away it had no room past the top. */
+    private var tooShort = false
+
     /**
      * [offset] is how far the page has scrolled from its top; [leftBelow] how far it can still go
      * down as laid out now; [contentWidth] how wide it is laid out, zoom and all.
@@ -60,11 +66,15 @@ internal class BrowserChromeCollapse(
     fun scrolled(offset: Int, leftBelow: Int, contentWidth: Int) {
         if (contentWidth != lastWidth) {
             lastWidth = contentWidth
+            tooShort = false
             rebase()
         }
         val last = lastOffset
         lastOffset = offset
+        val room = offset + leftBelow
+        if (tooShort && !collapsed && room > topZonePx + growthPx) tooShort = false
         if (offset <= topZonePx) {
+            if (collapsed && room <= topZonePx) tooShort = true
             collapsed = false
             travel = 0
             return
@@ -77,7 +87,7 @@ internal class BrowserChromeCollapse(
         if (delta == 0 || (delta > 0) != dragDown) return
         travel = if (travel == 0 || (delta > 0) == (travel > 0)) travel + delta else delta
         if (travel > jitterPx) {
-            if (!collapsed && offset + leftBelow - growthPx > topZonePx) collapsed = true
+            if (!tooShort) collapsed = true
         } else if (travel < -jitterPx) {
             collapsed = false
         }
@@ -113,6 +123,7 @@ internal class BrowserChromeCollapse(
     /** A new page, with the bars shown. */
     fun reset() {
         collapsed = false
+        tooShort = false
         rebase()
     }
 

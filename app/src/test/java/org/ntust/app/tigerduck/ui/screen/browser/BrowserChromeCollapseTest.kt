@@ -112,7 +112,12 @@ class BrowserChromeCollapseTest {
      * page's end, the WebView pulls the page up so it still fills the view, and tells that as a
      * scroll of its own.
      */
-    private inner class Page(private val heightPx: Int, private val chrome: BrowserChromeCollapse = this@BrowserChromeCollapseTest.chrome) {
+    private inner class Page(
+        var heightPx: Int,
+        private val chrome: BrowserChromeCollapse = this@BrowserChromeCollapseTest.chrome,
+        /** For a page laid out to the view's height and this much more, which grows with the view. */
+        private val beyondViewPx: Int? = null,
+    ) {
         var offset = 0
             private set
 
@@ -120,7 +125,7 @@ class BrowserChromeCollapseTest {
         var flips = 0
             private set
 
-        private val end get() = maxOf(0, heightPx - 1_000 - if (chrome.collapsed) 81 else 0)
+        private val end get() = beyondViewPx ?: maxOf(0, heightPx - 1_000 - if (chrome.collapsed) 81 else 0)
 
         /** The student drags the page [dy] down, or up if negative; it stops at either end. */
         fun drag(dy: Int) {
@@ -169,16 +174,44 @@ class BrowserChromeCollapseTest {
     }
 
     @Test
-    fun `a page too short to scroll past the top with the bars away keeps them`() {
+    fun `a page too short to scroll past the top with the bars away keeps them after one try`() {
         // 80, 100 and 121 px to scroll with the bars shown: none, 19 and 40 with them away.
         for (height in listOf(1_080, 1_100, 1_121)) {
             val chrome = BrowserChromeCollapse(jitterPx = 4, topZonePx = 40, growthPx = 81, now = { clock })
             val page = Page(heightPx = height, chrome = chrome)
             repeat(100) { page.drag(3) }
+            // Away at most once, which leaves the page nowhere to scroll up from, and back for good.
             assertFalse("$height px tall", chrome.collapsed)
+            val flips = page.flips
+            assertTrue("$height px tall: the bars moved $flips times", flips <= 2)
+            repeat(10) {
+                repeat(30) { page.drag(-3) }
+                repeat(30) { page.drag(3) }
+            }
+            assertEquals("$height px tall, dragged on", flips, page.flips)
         }
         // 41 px to scroll with them away: past the top.
         val page = Page(heightPx = 1_122)
+        repeat(100) { page.drag(3) }
+        assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `a page laid out to the view's height keeps its room with the bars away, and they go`() {
+        // 100 px to scroll past the view's height, with the bars shown or away.
+        val page = Page(heightPx = 0, beyondViewPx = 100)
+        repeat(100) { page.drag(3) }
+        assertTrue(chrome.collapsed)
+        assertEquals(1, page.flips)
+    }
+
+    @Test
+    fun `a short page that grows lets the bars go away again`() {
+        val page = Page(heightPx = 1_080)
+        repeat(100) { page.drag(3) }
+        assertFalse(chrome.collapsed)
+        // Its content loaded late.
+        page.heightPx = 3_000
         repeat(100) { page.drag(3) }
         assertTrue(chrome.collapsed)
     }

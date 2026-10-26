@@ -965,6 +965,7 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         private val drags = BrowserDragTracker(
             touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat(),
+            minFlingVelocity = ViewConfiguration.get(context).scaledMinimumFlingVelocity.toFloat(),
             dragged = { down -> chrome.dragged(down) },
         )
 
@@ -977,10 +978,12 @@ class InAppBrowserActivity : AppCompatActivity() {
         @SuppressLint("ClickableViewAccessibility")
         override fun onTouchEvent(event: MotionEvent): Boolean {
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN -> drags.down(event.focalScreenY())
-                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP -> drags.pointersChanged(event.focalScreenY())
-                MotionEvent.ACTION_MOVE -> drags.moved(event.focalScreenY())
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> drags.up()
+                MotionEvent.ACTION_DOWN -> drags.down(event.focalScreenY(), event.eventTime)
+                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_POINTER_UP ->
+                    drags.pointersChanged(event.focalScreenY(), event.eventTime)
+                MotionEvent.ACTION_MOVE -> drags.moved(event.focalScreenY(), event.eventTime)
+                MotionEvent.ACTION_UP -> drags.up(event.focalScreenY(), event.eventTime)
+                MotionEvent.ACTION_CANCEL -> drags.cancel()
             }
             return super.onTouchEvent(event)
         }
