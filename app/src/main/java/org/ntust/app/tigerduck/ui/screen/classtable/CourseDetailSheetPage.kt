@@ -482,10 +482,9 @@ private fun SideBySideOrStacked(gap: Dp, content: @Composable () -> Unit) {
 }
 
 /**
- * Open course id [moodleCourseId] in the Moodle Mobile app via the
- * `moodlemobile://` deep link envelope, falling back to the browser if
- * Moodle Mobile isn't installed or the OS refuses to route the intent.
- * Falls back the way every "Open in Moodle" does, through [openMoodlePage].
+ * Open course id [moodleCourseId] as every "Open in Moodle" opens a page,
+ * through [openMoodlePage]: in the Moodle app where it is installed and the
+ * Open Moodle in setting asks for it, else in the TigerDuck browser.
  */
 internal fun openCourseInMoodle(context: Context, moodleCourseId: Int) {
     openMoodlePage(context, MoodlePage.course(moodleCourseId))

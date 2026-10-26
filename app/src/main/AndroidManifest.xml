@@ -29,12 +29,18 @@
         android:required="false" />
 
     <!-- The browsers, so a Moodle page signed in with a one-time key is handed to the default
-         one by name rather than to whatever app claims the link (ui/screen/coursemoodle/MoodleLinks.kt). -->
+         one by name rather than to whatever app claims the link (ui/screen/coursemoodle/MoodleLinks.kt).
+         And the Moodle app, which Settings offers the Open Moodle in setting for only while it is
+         installed (ui/screen/coursemoodle/MoodleApp.kt). -->
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="moodlemobile" />
         </intent>
     </queries>
 

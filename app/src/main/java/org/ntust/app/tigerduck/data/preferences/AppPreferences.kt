@@ -481,6 +481,15 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         get() = prefs.getString("browserPreference", "system") ?: "system"
         set(value) = prefs.edit().putString("browserPreference", value).apply()
 
+    /**
+     * Where "Open in Moodle" goes while the Moodle app is installed: [MOODLE_OPEN_IN_APP], the
+     * default, as before the setting, or [MOODLE_OPEN_IN_BROWSER], the TigerDuck browser signed in.
+     * Without the app every page opens in the browser, whatever this says; see `openMoodlePage`.
+     */
+    var moodleOpenIn: String
+        get() = readMoodleOpenIn(prefs)
+        set(value) = prefs.edit().putString(MOODLE_OPEN_IN_KEY, value).apply()
+
     /** One of "system", "dark", "light". */
     var themeMode: String
         get() = prefs.getString("themeMode", "system") ?: "system"
@@ -1309,6 +1318,18 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
         fun storedDisplayScale(context: Context, scale: DisplayScale): Float =
             scale.read(context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE))
 
+        /**
+         * [moodleOpenIn] as stored, read straight from the file: for `openMoodlePage`, which every
+         * "Open in Moodle" calls with no more than a context.
+         */
+        fun storedMoodleOpenIn(context: Context): String =
+            readMoodleOpenIn(context.getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE))
+
+        private const val MOODLE_OPEN_IN_KEY = "moodleOpenIn"
+
+        private fun readMoodleOpenIn(prefs: SharedPreferences): String =
+            prefs.getString(MOODLE_OPEN_IN_KEY, null)?.takeIf { it == MOODLE_OPEN_IN_BROWSER } ?: MOODLE_OPEN_IN_APP
+
         /** The same key the iPhone app stores its interface style under. */
         private const val VISUAL_PRESET_KEY = "visualPreset"
         // The iPhone's UserDefaults key names, for whoever reads both apps.
@@ -1351,6 +1372,9 @@ class AppPreferences @Inject constructor(@ApplicationContext context: Context) :
             ROTATION_MODE_ENABLED,
             ROTATION_MODE_DISABLED,
         )
+
+        const val MOODLE_OPEN_IN_APP = "app"
+        const val MOODLE_OPEN_IN_BROWSER = "browser"
 
         const val CLASSROOM_MANDARIN_DISPLAY_ORIGINAL = "original"
         const val CLASSROOM_MANDARIN_DISPLAY_PINYIN = "pinyin"
