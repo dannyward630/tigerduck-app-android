@@ -202,6 +202,20 @@ jobs:
           TAGGER_EMAIL: ${{ steps.gpg.outputs.email }}
         run: |
           set -euo pipefail
+          # Already there from an earlier attempt of this run: "Re-run failed
+          # jobs" re-runs publish, not resolve, whose answer predates the tag.
+          # Keep it if it marks this commit, stop if it marks another.
+          peeled=$(git ls-remote origin "refs/tags/${TAG}^{}" | cut -f1)
+          plain=$(git ls-remote origin "refs/tags/${TAG}" | cut -f1)
+          existing="${peeled:-$plain}"
+          if [ -n "$existing" ]; then
+            if [ "$existing" = "$SHA" ]; then
+              echo "Tag ${TAG} already marks ${SHA}; keeping it."
+              exit 0
+            fi
+            echo "::error::Tag ${TAG} already exists on ${existing}, not on ${SHA}." >&2
+            exit 1
+          fi
           git config user.name "${TAGGER_NAME}"
           git config user.email "${TAGGER_EMAIL}"
           git tag -s "${TAG}" "${SHA}" -m "${TAG}"
@@ -309,11 +323,16 @@ jobs:
 
       # Last, after the F-Droid pin, so dev gets that back too. The Releaser
       # App's token opens it, so its CI runs; a refusal only warns, since the
-      # release is done by now. See tools/github/back_merge.py.
+      # release is done by now. On every publish that gets here, not only one
+      # that tagged: a run that finishes a release an earlier run tagged still
+      # owes the pull request, and the script opens none that is not needed.
+      # It comes from the commit this run started on, which a checked-out tag
+      # may predate. See tools/github/back_merge.py.
       - name: Open the pull request merging main back into dev
-        if: needs.resolve.outputs.tag_exists == 'false'
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
           REPO: ${{ github.repository }}
           TAG: ${{ needs.resolve.outputs.tag }}
-        run: python3 tools/github/back_merge.py --repo "$REPO" --tag "$TAG"
+        run: |
+          git show "${GITHUB_SHA}:tools/github/back_merge.py" > "$RUNNER_TEMP/back_merge.py"
+          python3 "$RUNNER_TEMP/back_merge.py" --repo "$REPO" --tag "$TAG"

@@ -509,10 +509,15 @@ jobs:
 
       # Last, after the F-Droid pin, so dev gets that back too. The Releaser
       # App's token opens it, so its CI runs; a refusal only warns, since the
-      # release is done by now. See tools/github/back_merge.py.
+      # release is done by now. On every publish that gets here, not only one
+      # that tagged: a run that finishes a release an earlier run tagged still
+      # owes the pull request, and the script opens none that is not needed.
+      # It comes from the commit this run started on, which a checked-out tag
+      # may predate. See tools/github/back_merge.py.
       - name: Open the pull request merging main back into dev
-        if: env.FULL_RELEASE == 'true'
         env:
           GH_TOKEN: ${{ steps.app_token.outputs.token }}
           REPO: ${{ github.repository }}
-        run: python3 tools/github/back_merge.py --repo "$REPO" --tag "$TAG"
+        run: |
+          git show "${GITHUB_SHA}:tools/github/back_merge.py" > "$RUNNER_TEMP/back_merge.py"
+          python3 "$RUNNER_TEMP/back_merge.py" --repo "$REPO" --tag "$TAG"
