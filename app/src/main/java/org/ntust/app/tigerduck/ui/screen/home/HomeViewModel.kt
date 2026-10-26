@@ -123,6 +123,9 @@ class HomeViewModel @Inject constructor(
     /** The days the time slider leaves off; see [QuietDays]. */
     fun quietDays(): QuietDays = academicCalendar.quietDays()
 
+    /** Whether Home is being arranged; held here so leaving the page can end it (see [HomeEditing]). */
+    val editing = HomeEditing()
+
     private val _sections = MutableStateFlow(prefs.homeSections)
     val sections: StateFlow<List<HomeSection>> = _sections
 

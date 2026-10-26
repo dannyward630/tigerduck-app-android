@@ -1,14 +1,14 @@
 // The body of a Home section that holds shortcuts (Quick widgets, or a
 // custom section): a two-column grid of cards that open a feature, the
 // iPhone's WidgetGridView. In edit mode each card loses its tap, gains a
-// remove button and can be dragged to another slot.
+// remove button and, held, can be dragged to another slot.
 
 package org.ntust.app.tigerduck.ui.screen.home
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -171,12 +171,11 @@ internal fun ShortcutGrid(
                         .onSizeChanged { cellSize = it }
                         .then(
                             if (isEditing) {
-                                // No long press: the section's own handle
-                                // starts on first touch-and-move too, and a
-                                // card has nothing else to do with a drag
-                                // while editing.
+                                // After a long press, as on the iPhone: the
+                                // page scrolls while editing, and a swipe
+                                // that starts on a card is that scroll.
                                 Modifier.pointerInput(widget.id) {
-                                    detectDragGestures(
+                                    detectDragGesturesAfterLongPress(
                                         onDragStart = {
                                             draggingId = widget.id
                                             dragOffset = Offset.Zero

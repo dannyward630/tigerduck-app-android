@@ -33,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,9 +43,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -126,14 +133,17 @@ fun HomeScreen(
     val passwordRejection by signInViewModel.rejection.collectAsStateWithLifecycle()
     val signedInForBanner by signInViewModel.signedIn.collectAsStateWithLifecycle()
 
-    var isEditing by remember { mutableStateOf(false) }
+    val editing = viewModel.editing
+    val isEditing = editing.isEditing
     var showAddSectionDialog by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    HomeEditingLeaveEffect(editing, listState)
 
     // Intercept the system back gesture while editing — exit edit mode
     // instead of navigating away. This matches Android-native expectations
     // for any screen with a distinct modal edit state.
     BackHandler(enabled = isEditing) {
-        isEditing = false
+        editing.finish()
     }
 
     LaunchedEffect(Unit) { 
@@ -187,11 +197,15 @@ fun HomeScreen(
         HomePage(
             sections = visibleSections,
             isEditing = isEditing,
-            onStartEditing = { isEditing = true },
+            onStartEditing = editing::start,
             isRefreshing = isLoading,
             onRefresh = { viewModel.refresh() },
             onMoveSection = viewModel::moveSections,
             onRemoveSection = viewModel::removeSection,
+            onRemoveWidget = viewModel::removeWidget,
+            onMoveWidget = viewModel::moveWidget,
+            onAddQuickFeature = { showAddSectionDialog = true },
+            listState = listState,
             header = {
                 PageHeader(title = greetingText()) {
                     if (isEditing) {
@@ -201,7 +215,7 @@ fun HomeScreen(
                                 contentDescription = stringResource(R.string.home_add_section_title)
                             )
                         }
-                        TextButton(onClick = { isEditing = false }) {
+                        TextButton(onClick = editing::finish) {
                             Text(
                                 stringResource(R.string.action_done),
                                 fontWeight = FontWeight.SemiBold
@@ -238,32 +252,20 @@ fun HomeScreen(
                 hasUnfinishedAssignment = hasUnfinishedAssignment,
                 showAbsoluteTime = appState.showAbsoluteAssignmentTime,
                 invertDirection = appState.invertSliderDirection,
-                onCourseClick = { slot ->
-                    if (!isEditing) onOpenCourseDetail(slot.detailSelection)
-                },
-                onAssignmentClick = {
-                    if (!isEditing) onOpenAssignment(it)
-                },
-                onToggleIgnore = {
-                    if (!isEditing) viewModel.toggleIgnore(it)
-                },
-                onMarkCompleted = {
-                    if (!isEditing) viewModel.toggleMarkCompleted(it)
-                },
+                // Composed only while browsing (HomePage draws an arranged
+                // section as its outline), so none of these checks for editing.
+                onCourseClick = { slot -> onOpenCourseDetail(slot.detailSelection) },
+                onAssignmentClick = onOpenAssignment,
+                onToggleIgnore = viewModel::toggleIgnore,
+                onMarkCompleted = viewModel::toggleMarkCompleted,
                 onSelectFilter = { viewModel.setAssignmentFilter(it) },
-                // onSkipCourse = { course, date ->
-                //     if (!isEditing) viewModel.toggleSkip(course, date)
-                // },
-                isEditing = isEditing,
+                // onSkipCourse = { course, date -> viewModel.toggleSkip(course, date) },
                 onOpenFeature = { feature ->
                     // A stored layout may still hold a shortcut to a
                     // feature that has not shipped (the first default
                     // had four); it says so, as the More page does.
-                    if (isEditing) return@HomeSectionContent
                     if (feature.isImplemented) onOpenFeature(feature) else showComingSoon = true
                 },
-                onRemoveWidget = viewModel::removeWidget,
-                onMoveWidget = viewModel::moveWidget,
                 onAddQuickFeature = { showAddSectionDialog = true },
                 onOpenSignInSettings = onOpenSignInSettings,
             )
@@ -308,8 +310,10 @@ fun HomeScreen(
 }
 /**
  * Home's page under its pull to refresh: [header], [banner] when there is one, and [sections],
- * each drawn by [sectionContent]. A long press on a section starts editing, in which each one
- * takes a drag handle and a remove button and the drag moves it among the others.
+ * each drawn by [sectionContent]. A long press on a section starts editing, which makes the page
+ * a layout editor, as iOS's is (tigerduck-app/tigerduck-app#852): each section is an
+ * [EditableSection] outline whose handle moves it among the others, nothing else on the page
+ * responds but [header], and the page still scrolls, so a section below the screen can be reached.
  */
 @Composable
 internal fun HomePage(
@@ -320,6 +324,10 @@ internal fun HomePage(
     onRefresh: () -> Unit,
     onMoveSection: (fromId: String, toId: String) -> Unit,
     onRemoveSection: (sectionId: String) -> Unit,
+    onRemoveWidget: (sectionId: String, widgetId: String) -> Unit,
+    onMoveWidget: (sectionId: String, widgetId: String, toIndex: Int) -> Unit,
+    /** An arranged shortcut section's empty-grid button: the Add dialog. */
+    onAddQuickFeature: () -> Unit,
     header: @Composable () -> Unit,
     banner: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
@@ -332,6 +340,9 @@ internal fun HomePage(
     val sectionHeights = remember { mutableStateMapOf<String, Float>() }
     var draggingId by remember { mutableStateOf<String?>(null) }
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    // A swap moves the dragged section by its neighbor's height and the gap
+    // between them.
+    val sectionGapPx = with(LocalDensity.current) { SectionGap.toPx() }
 
     // If edit mode is cancelled (back gesture, etc.) mid-drag, clear drag state.
     LaunchedEffect(isEditing) {
@@ -339,6 +350,21 @@ internal fun HomePage(
             draggingId = null
             dragOffsetY = 0f
         }
+    }
+
+    // A LazyColumn keeps its first visible item where it is, by key, when the
+    // list changes, so a drag moving that item would scroll the page along
+    // with it, out from under the finger. A move during a drag keeps the page
+    // where it was by position instead. Asked for when the new order is
+    // applied, which comes after the drag callback that caused it, because
+    // the request holds for the next measure only.
+    val order = sections.map { it.id }
+    val appliedOrder = remember { arrayOf(order) }
+    SideEffect {
+        if (draggingId != null && order != appliedOrder[0]) {
+            listState.requestScrollToItem(listState.firstVisibleItemIndex, listState.firstVisibleItemScrollOffset)
+        }
+        appliedOrder[0] = order
     }
 
     TigerPullToRefresh(
@@ -349,16 +375,21 @@ internal fun HomePage(
     ) {
         LazyColumn(
             state = listState,
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                // While arranging, a pull past the top stops here, short of
+                // the refresh around the list: iOS refreshes only the page
+                // being browsed, and nothing an outline shows would change.
+                .then(if (isEditing) Modifier.nestedScroll(KeepPullDown) else Modifier),
             contentPadding = PaddingValues(bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            userScrollEnabled = !isEditing,
+            verticalArrangement = Arrangement.spacedBy(SectionGap),
         ) {
-            item { header() }
+            item(key = "header") { header() }
 
             // As its own item only while shown: an empty one would still
-            // take the list's spacing.
-            if (banner != null) {
+            // take the list's spacing. Not while arranging, where its buttons
+            // would be the one live thing left on the page.
+            if (banner != null && !isEditing) {
                 item(key = "autoSignInFailed") { banner() }
             }
 
@@ -366,12 +397,16 @@ internal fun HomePage(
                 items = sections,
                 key = { _, s -> s.id },
             ) { _, section ->
-                ReorderableSection(
+                if (!isEditing) {
+                    BrowsedSection(section = section, onStartEditing = onStartEditing) {
+                        sectionContent(section)
+                    }
+                    return@itemsIndexed
+                }
+                EditableSection(
                     section = section,
-                    isEditing = isEditing,
                     isDragging = draggingId == section.id,
                     dragOffsetY = if (draggingId == section.id) dragOffsetY else 0f,
-                    onStartEditing = onStartEditing,
                     onDragStart = {
                         draggingId = section.id
                         dragOffsetY = 0f
@@ -379,27 +414,28 @@ internal fun HomePage(
                     onDrag = { delta ->
                         dragOffsetY += delta
                         val fromIdx = sections.indexOfFirst { it.id == section.id }
-                        if (fromIdx < 0) return@ReorderableSection
+                        if (fromIdx < 0) return@EditableSection
 
                         // Threshold-based swap: when the drag has crossed half of
-                        // the neighbor's height, swap in the data model and
-                        // compensate `dragOffsetY` so the card stays visually
-                        // under the user's finger (no snap-back).
+                        // the step to the neighbor's place (its height and the gap
+                        // after it), swap in the data model and compensate
+                        // `dragOffsetY` by that step, so the card stays visually
+                        // under the user's finger (no snap-back). The same step
+                        // both ways, or a swap would land past the point that
+                        // swaps it back.
                         if (dragOffsetY > 0 && fromIdx < sections.lastIndex) {
                             val next = sections[fromIdx + 1]
-                            val nextH = sectionHeights[next.id]
-                                ?: return@ReorderableSection
-                            if (dragOffsetY > nextH / 2f) {
+                            val step = (sectionHeights[next.id] ?: return@EditableSection) + sectionGapPx
+                            if (dragOffsetY > step / 2f) {
                                 onMoveSection(section.id, next.id)
-                                dragOffsetY -= nextH
+                                dragOffsetY -= step
                             }
                         } else if (dragOffsetY < 0 && fromIdx > 0) {
                             val prev = sections[fromIdx - 1]
-                            val prevH = sectionHeights[prev.id]
-                                ?: return@ReorderableSection
-                            if (dragOffsetY < -prevH / 2f) {
+                            val step = (sectionHeights[prev.id] ?: return@EditableSection) + sectionGapPx
+                            if (dragOffsetY < -step / 2f) {
                                 onMoveSection(section.id, prev.id)
-                                dragOffsetY += prevH
+                                dragOffsetY += step
                             }
                         }
                     },
@@ -411,12 +447,28 @@ internal fun HomePage(
                         sectionHeights[section.id] = height
                     },
                     onRemove = { onRemoveSection(section.id) },
-                ) {
-                    sectionContent(section)
-                }
+                    onRemoveWidget = { onRemoveWidget(section.id, it) },
+                    onMoveWidget = { widgetId, toIndex -> onMoveWidget(section.id, widgetId, toIndex) },
+                    onAddQuickFeature = onAddQuickFeature,
+                )
             }
         }
     }
+}
+
+/** Between the page's items, sections and header alike. */
+private val SectionGap = 16.dp
+
+/**
+ * Takes what is left of a pull down past the top, the one thing the refresh around the list acts
+ * on, so it never gets there. Whatever else is left over still stretches the list's own edge.
+ */
+private object KeepPullDown : NestedScrollConnection {
+    override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset =
+        Offset(0f, available.y.coerceAtLeast(0f))
+
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity): Velocity =
+        Velocity(0f, available.y.coerceAtLeast(0f))
 }
 
 @Composable
