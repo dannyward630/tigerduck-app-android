@@ -151,6 +151,28 @@ class BrowserChromeCollapseTest {
     }
 
     @Test
+    fun `the keyboard coming up just after the bars came back is no scroll, its page's move neither`() {
+        clock = 10_000
+        scrolled(100)
+        scrolled(200)
+        chrome.expand()
+        // A field tapped at once: the keyboard comes, the page shrinks, and the WebView scrolls the field into view.
+        clock += 100
+        chrome.keyboardMoved()
+        clock += 16
+        chrome.resized()
+        scrolled(500)
+        clock += 300
+        scrolled(560)
+        assertFalse(chrome.collapsed)
+        // Once it has settled, a scroll is a scroll again.
+        clock += BrowserChromeCollapse.SETTLE_MS
+        scrolled(570)
+        scrolled(580)
+        assertTrue(chrome.collapsed)
+    }
+
+    @Test
     fun `tapping the collapsed bar brings the bars back, till the page scrolls down again`() {
         scrolled(100)
         scrolled(200)

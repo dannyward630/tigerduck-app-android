@@ -12,7 +12,9 @@ package org.ntust.app.tigerduck.ui.screen.browser
  * first after a new page (where the WebView may put back a page's old place), after a zoom (the
  * page's laid-out width changed, which the WebView tells before `onScaleChanged`) and after a
  * resize ([resized]) only set where the next scroll counts from. The bars' own resize, for
- * [SETTLE_MS] after they move by [now], moves no offset, so a scroll made meanwhile counts.
+ * [SETTLE_MS] after they move by [now], moves no offset, so a scroll made meanwhile counts. For
+ * [SETTLE_MS] after the keyboard comes or goes ([keyboardMoved]) no offset is a scroll, whatever
+ * else moved: the WebView scrolls the field being typed in into view as the page shrinks.
  */
 internal class BrowserChromeCollapse(
     private val jitterPx: Int,
@@ -29,6 +31,9 @@ internal class BrowserChromeCollapse(
 
     /** When the bars last moved, by [now]. */
     private var movedAt = Long.MIN_VALUE / 2
+
+    /** When the keyboard last came or went, by [now]. */
+    private var keyboardAt = Long.MIN_VALUE / 2
 
     /** The page's laid-out width at the last scroll, which a zoom changes. */
     private var lastWidth: Int? = null
@@ -56,6 +61,10 @@ internal class BrowserChromeCollapse(
             travel = 0
             return
         }
+        if (now() - keyboardAt < SETTLE_MS) {
+            travel = 0
+            return
+        }
         val delta = offset - (last ?: return)
         if (delta == 0) return
         travel = if (travel == 0 || (delta > 0) == (travel > 0)) travel + delta else delta
@@ -70,7 +79,13 @@ internal class BrowserChromeCollapse(
 
     /** The page was resized: by the keyboard, say, which may move its offset; not by the bars' own move. */
     fun resized() {
-        if (now() - movedAt >= SETTLE_MS) rebase()
+        if (now() - keyboardAt < SETTLE_MS || now() - movedAt >= SETTLE_MS) rebase()
+    }
+
+    /** The keyboard came up or went down. */
+    fun keyboardMoved() {
+        keyboardAt = now()
+        rebase()
     }
 
     private fun rebase() {

@@ -58,6 +58,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -195,6 +197,9 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /** Whether the page's scroll has put the bars away; see [BrowserChromeCollapse]. */
     private lateinit var chrome: BrowserChromeCollapse
+
+    /** Whether the keyboard was up at the last layout. */
+    private var keyboardShown = false
     private var appliedHost: String? = null
 
     private var pendingUpload: UploadRequest? = null
@@ -277,6 +282,14 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
 
         onBackPressedDispatcher.addCallback(this) { handleBack() }
+        // The keyboard's coming or going moves the page without a scroll; see BrowserChromeCollapse.
+        window.decorView.viewTreeObserver.addOnGlobalLayoutListener {
+            val keyboard = ViewCompat.getRootWindowInsets(window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) == true
+            if (keyboard != keyboardShown) {
+                keyboardShown = keyboard
+                chrome.keyboardMoved()
+            }
+        }
 
         setContent {
             val appDark = appIsDark(systemDark = isSystemInDarkTheme())
