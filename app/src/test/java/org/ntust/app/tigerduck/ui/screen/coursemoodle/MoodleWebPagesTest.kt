@@ -266,7 +266,7 @@ class MoodleWebPagesTest {
 
     @Test
     fun `a Moodle page opens in the Moodle app, and nothing else`() {
-        openMoodlePage(context, "/mod/assign/view.php?id=890") { recording }
+        openMoodlePage(context, "/mod/assign/view.php?id=890", inMoodleApp = { true }) { recording }
 
         assertEquals(listOf("moodlemobile://https://moodle2.ntust.edu.tw?redirect=/mod/assign/view.php?id%3D890"), started.map { it.dataString })
         assertTrue("the website is not opened behind the app", routed.isEmpty())
@@ -281,7 +281,7 @@ class MoodleWebPagesTest {
             }
         }
 
-        openMoodlePage(noMoodleApp, "/mod/assign/view.php?id=890") { recording }
+        openMoodlePage(noMoodleApp, "/mod/assign/view.php?id=890", inMoodleApp = { true }) { recording }
 
         assertEquals(listOf("https://moodle2.ntust.edu.tw/mod/assign/view.php?id=890" to null), routed)
         assertTrue(started.isEmpty())
@@ -335,7 +335,7 @@ class MoodleWebPagesTest {
                 }
             }
 
-            openMoodlePage(noMoodleApp, "/course/view.php?id=5") { MoodleWebPages.inAppFirst(fallback = recording) }
+            openMoodlePage(noMoodleApp, "/course/view.php?id=5", inMoodleApp = { true }) { MoodleWebPages.inAppFirst(fallback = recording) }
 
             assertEquals(InAppBrowserActivity::class.java.name, started.single().component?.className)
             assertEquals(page, started.single().getStringExtra(InAppBrowser.EXTRA_URL))
