@@ -137,7 +137,8 @@ fun BrowserAllowlistDebugScreen(
             pageNote?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
             Text(
                 "In the TigerDuck browser, letting every http and https page in, whatever the list below says. " +
-                    "An address with no scheme opens as https.",
+                    "An address with no scheme opens as https. Plain http still loads only where the network " +
+                    "security config allows cleartext, which the school's hosts never do.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -218,10 +219,14 @@ private fun EntryRow(entry: AllowlistEntry, isDefault: Boolean, isRedundant: Boo
 internal const val OPEN_PAGE_FIELD_TAG = "browserAllowlist.openPage"
 internal const val ADD_DOMAIN_FIELD_TAG = "browserAllowlist.addDomain"
 
-/** What "Open a page" opens for [text]: the address as typed, https when it names no scheme; null for no web address. */
+/**
+ * What "Open a page" opens for [text]: the address as typed, https when it names no scheme; null
+ * for anything but an http or https address. A host and port (`localhost:8080`) names no scheme.
+ */
 internal fun debugPageUrl(text: String): String? {
     val typed = text.trim()
     if (typed.isEmpty()) return null
-    val address = if (Regex("^[A-Za-z][A-Za-z0-9+.-]*://").containsMatchIn(typed)) typed else "https://$typed"
-    return address.toHttpUrlOrNull()?.toString()
+    val scheme = Regex("^[A-Za-z][A-Za-z0-9+.-]*:(.*)$").find(typed)
+    val namesScheme = scheme != null && !Regex("^\\d+(/.*)?$").matches(scheme.groupValues[1])
+    return (if (namesScheme) typed else "https://$typed").toHttpUrlOrNull()?.toString()
 }

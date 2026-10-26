@@ -45,6 +45,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -147,7 +148,10 @@ object InAppBrowser {
      * page, in a TigerDuck browser that lets every page in, past any allowlist, for a developer
      * to try a page. A release build ([debug] false) opens nothing. As [open] otherwise.
      */
-    fun openAnyPage(context: Context, url: String, debug: Boolean = BuildConfig.DEBUG): Boolean {
+    fun openAnyPage(context: Context, url: String): Boolean = openAnyPage(context, url, BuildConfig.DEBUG)
+
+    @VisibleForTesting
+    internal fun openAnyPage(context: Context, url: String, debug: Boolean): Boolean {
         if (!debug || url.toHttpUrlOrNull() == null) return false
         val intent = Intent(context, InAppBrowserActivity::class.java).putExtra(EXTRA_URL, url).putExtra(EXTRA_ANY_PAGE, true)
         return start(context, intent)

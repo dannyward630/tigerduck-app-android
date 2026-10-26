@@ -72,6 +72,18 @@ class BrowserAllowlistDebugScreenTest {
     }
 
     @Test
+    fun `Open a page reads a scheme as one, and a host and port as a host`() {
+        assertEquals(null, debugPageUrl("mailto:alice@example.com"))
+        assertEquals(null, debugPageUrl("file:/sdcard/a"))
+        assertEquals(null, debugPageUrl("javascript:alert(1)"))
+        assertEquals("https://example.com/", debugPageUrl("https:/example.com"))
+        assertEquals("https://localhost:8080/", debugPageUrl("localhost:8080"))
+        assertEquals("https://example.com:8443/x", debugPageUrl("example.com:8443/x"))
+        assertEquals("http://10.0.2.2:8080/", debugPageUrl(" http://10.0.2.2:8080 "))
+        assertEquals(null, debugPageUrl("   "))
+    }
+
+    @Test
     fun `Open a page says so for a line that is not a web address`() {
         open("not a page")
         assertEquals(emptyList<String>(), opened)
