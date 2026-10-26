@@ -2,25 +2,39 @@ package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -48,6 +62,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -141,6 +156,7 @@ import java.text.NumberFormat
 import java.util.Locale
 
 /** Spec §6.2 — the Announcements list pattern, over the school inbox. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SchoolMailScreen(
     browserPreference: String,
@@ -261,191 +277,199 @@ fun SchoolMailScreen(
     // a message -- and for a field that takes focus without a gesture having opened anything.
     searchReveal.pinned = searchFocused || state.searchText.isNotEmpty()
 
-    TigerPullToRefresh(
-        isRefreshing = isLoading,
-        onRefresh = viewModel::refresh,
-        modifier = Modifier.fillMaxSize(),
-        refreshingMessage = stringResource(R.string.refreshing_message),
-        appBar = appBar,
-        searchReveal = searchReveal,
-    ) {
-        // Clipped, because the chrome overlay hides by translating up past this
-        // box's top edge, and the root Scaffold has already padded that edge down
-        // to the bottom of the status bar. Unclipped, the band of chrome that
-        // lands behind the status bar stayed drawn there, under the clock.
-        Box(Modifier.fillMaxSize().clipToBounds()) {
-            LazyColumn(
-                state = listState,
-                // The thumb's track starts where the chrome overlay ends, or the bar would hide
-                // it whenever the list is near its top.
-                modifier = Modifier
-                    .fillMaxSize()
-                    .scrollbar(
-                        listState,
-                        topInsetPx = { appBar.heightPx + appBar.offsetPx },
-                        // A fast scroll moves the list without a nested-scroll delta, so a bar it
-                        // left hidden over the very top would uncover bare content padding.
-                        onFastScrollStopped = {
-                            if (!listState.canScrollBackward) chromeScope.launch { appBar.snapToRest() }
-                        },
-                    ),
-                // The chrome is a sibling overlay now rather than the first item, so the list
-                // keeps the room for it here instead. The overlay translates away on scroll
-                // while this padding stays put, which is what lets the rows travel up under it.
-                //
-                // Measured lazily (see [ChromeContentPadding]): the chrome's height changes on
-                // every frame the search drawer moves, and reading it in this composition body
-                // would recompose the whole screen for the length of the gesture.
-                contentPadding = chromePadding,
-            ) {
-                // The cached page paints first and the refresh lands newer mail ahead of it; this
-                // is what opens the list on that newer mail rather than on the cache's first row.
-                listTopAnchor()
-                val displayed = state.displayed
-                val failed = state.loadState as? SchoolMailListViewModel.LoadState.Failed
-                when {
-                    // A search under way with nothing found yet shows nothing, its field's spinner
-                    // aside: not the mail from before it, nor "no mail" before it has looked.
-                    displayed.isEmpty() && state.isSearching -> Unit
-                    displayed.isEmpty() && failed != null -> item(key = "failed") {
-                        Box(Modifier.fillParentMaxHeight(0.6f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            EmptyStateView(
-                                icon = Icons.Filled.Mail,
-                                title = stringResource(R.string.school_mail_load_failed_title),
-                                message = stringResource(failed.error.messageRes()),
-                                actionLabel = stringResource(R.string.action_retry),
-                                onAction = viewModel::refresh,
-                            )
-                        }
-                    }
-                    displayed.isEmpty() && state.loadState is SchoolMailListViewModel.LoadState.Loaded -> item(key = "empty") {
-                        Box(Modifier.fillParentMaxHeight(0.6f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            EmptyStateView(
-                                icon = Icons.Filled.Mail,
-                                title = stringResource(R.string.school_mail_empty_title),
-                                message = stringResource(R.string.school_mail_empty_message),
-                            )
-                        }
-                    }
-                    else -> {
-                        items(displayed, key = { it.key }) { row ->
-                            SwipeableMailCard(
-                                row = row,
-                                mailDomain = viewModel.mailDomain,
-                                writing = row.key in state.writing,
-                                // The row's own folder decides everything, never the selected chip:
-                                // opened from All mail, a Sent mail has to behave exactly as it
-                                // would had the user opened Sent itself.
-                                onClick = {
-                                    if (state.kindOf(row.folder) == SpecialFolder.DRAFTS) onEditDraft(row.folder, row.uid)
-                                    else onOpenMessage(row.folder, row.uid)
-                                },
-                                onToggleRead = { viewModel.toggleRead(row) },
-                                onMove = { viewModel.requestMove(row) },
-                                onDelete = { viewModel.delete(row) },
-                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
-                            )
-                        }
-                        if (state.isPaginating || state.isSearching) {
-                            item(key = "spinner") {
-                                Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
-                                    CircularProgressIndicator()
-                                }
+    // The compose button is the pull's sibling, not its content, so a pull does not carry it down.
+    Box(Modifier.fillMaxSize()) {
+        TigerPullToRefresh(
+            isRefreshing = isLoading,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize(),
+            refreshingMessage = stringResource(R.string.refreshing_message),
+            appBar = appBar,
+            searchReveal = searchReveal,
+        ) {
+            // Clipped, because the chrome overlay hides by translating up past this
+            // box's top edge, and the root Scaffold has already padded that edge down
+            // to the bottom of the status bar. Unclipped, the band of chrome that
+            // lands behind the status bar stayed drawn there, under the clock.
+            Box(Modifier.fillMaxSize().clipToBounds()) {
+                LazyColumn(
+                    state = listState,
+                    // The thumb's track starts where the chrome overlay ends, or the bar would hide
+                    // it whenever the list is near its top.
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .scrollbar(
+                            listState,
+                            topInsetPx = { appBar.heightPx + appBar.offsetPx },
+                            // A fast scroll moves the list without a nested-scroll delta, so a bar it
+                            // left hidden over the very top would uncover bare content padding.
+                            onFastScrollStopped = {
+                                if (!listState.canScrollBackward) chromeScope.launch { appBar.snapToRest() }
+                            },
+                        ),
+                    // The chrome is a sibling overlay now rather than the first item, so the list
+                    // keeps the room for it here instead. The overlay translates away on scroll
+                    // while this padding stays put, which is what lets the rows travel up under it.
+                    //
+                    // Measured lazily (see [ChromeContentPadding]): the chrome's height changes on
+                    // every frame the search drawer moves, and reading it in this composition body
+                    // would recompose the whole screen for the length of the gesture.
+                    contentPadding = chromePadding,
+                ) {
+                    // The cached page paints first and the refresh lands newer mail ahead of it; this
+                    // is what opens the list on that newer mail rather than on the cache's first row.
+                    listTopAnchor()
+                    val displayed = state.displayed
+                    val failed = state.loadState as? SchoolMailListViewModel.LoadState.Failed
+                    when {
+                        // A search under way with nothing found yet shows nothing, its field's spinner
+                        // aside: not the mail from before it, nor "no mail" before it has looked.
+                        displayed.isEmpty() && state.isSearching -> Unit
+                        displayed.isEmpty() && failed != null -> item(key = "failed") {
+                            Box(Modifier.fillParentMaxHeight(0.6f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                EmptyStateView(
+                                    icon = Icons.Filled.Mail,
+                                    title = stringResource(R.string.school_mail_load_failed_title),
+                                    message = stringResource(failed.error.messageRes()),
+                                    actionLabel = stringResource(R.string.action_retry),
+                                    onAction = viewModel::refresh,
+                                )
                             }
                         }
-                        item(key = "bottom-spacer") { Spacer(Modifier.height(8.dp)) }
+                        displayed.isEmpty() && state.loadState is SchoolMailListViewModel.LoadState.Loaded -> item(key = "empty") {
+                            Box(Modifier.fillParentMaxHeight(0.6f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                EmptyStateView(
+                                    icon = Icons.Filled.Mail,
+                                    title = stringResource(R.string.school_mail_empty_title),
+                                    message = stringResource(R.string.school_mail_empty_message),
+                                )
+                            }
+                        }
+                        else -> {
+                            items(displayed, key = { it.key }) { row ->
+                                SwipeableMailCard(
+                                    row = row,
+                                    mailDomain = viewModel.mailDomain,
+                                    writing = row.key in state.writing,
+                                    // The row's own folder decides everything, never the selected chip:
+                                    // opened from All mail, a Sent mail has to behave exactly as it
+                                    // would had the user opened Sent itself.
+                                    onClick = {
+                                        if (state.kindOf(row.folder) == SpecialFolder.DRAFTS) onEditDraft(row.folder, row.uid)
+                                        else onOpenMessage(row.folder, row.uid)
+                                    },
+                                    onToggleRead = { viewModel.toggleRead(row) },
+                                    onMove = { viewModel.requestMove(row) },
+                                    onDelete = { viewModel.delete(row) },
+                                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp),
+                                )
+                            }
+                            if (state.isPaginating || state.isSearching) {
+                                item(key = "spinner") {
+                                    Box(Modifier.fillMaxWidth().padding(vertical = 16.dp), contentAlignment = Alignment.Center) {
+                                        CircularProgressIndicator()
+                                    }
+                                }
+                            }
+                            // Room for the compose button too, so the last row scrolls clear of it.
+                            item(key = "bottom-spacer") { Spacer(Modifier.height(ComposeButtonClearance)) }
+                        }
                     }
                 }
-            }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onSizeChanged { appBar.heightPx = it.height.toFloat() }
-                    .graphicsLayer { translationY = appBar.offsetPx }
-                    .background(MaterialTheme.colorScheme.background),
-            ) {
-                PageHeader(title = stringResource(R.string.feature_school_mail)) {
-                    val failed = state.loadState as? SchoolMailListViewModel.LoadState.Failed
-                    val mailStatus = when {
-                        failed != null || authFailed -> ServerStatus.FAILED
-                        state.loadState is SchoolMailListViewModel.LoadState.Loaded -> ServerStatus.OK
-                        else -> ServerStatus.UNKNOWN
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { appBar.heightPx = it.height.toFloat() }
+                        .graphicsLayer { translationY = appBar.offsetPx }
+                        .background(MaterialTheme.colorScheme.background),
+                ) {
+                    PageHeader(title = stringResource(R.string.feature_school_mail)) {
+                        val failed = state.loadState as? SchoolMailListViewModel.LoadState.Failed
+                        val mailStatus = when {
+                            failed != null || authFailed -> ServerStatus.FAILED
+                            state.loadState is SchoolMailListViewModel.LoadState.Loaded -> ServerStatus.OK
+                            else -> ServerStatus.UNKNOWN
+                        }
+                        SyncStatusDot(
+                            status = mailStatus,
+                            label = stringResource(R.string.feature_school_mail),
+                            icon = Icons.Filled.Mail,
+                            // The state of the mail server, in the same words every other row of
+                            // this dot uses -- not the student ID, which is an identity and says
+                            // nothing about whether anything is reaching the server. The specific
+                            // failure still has a home: the list itself shows the error.
+                            //
+                            // While every mail downloads for search, which the first time takes a
+                            // while, the dot syncs and the row says how far it has come -- or that it
+                            // is syncing while it still counts, rather than an "OK" that says nothing
+                            // has started.
+                            text = indexProgress?.let { indexProgressText(it) ?: stringResource(R.string.sync_status_syncing) }
+                                ?: statusText(mailStatus),
+                            isLoading = isLoading || indexProgress != null,
+                            syncedAtMs = state.fetchedAt,
+                        )
+                        IconButton(onClick = { viewModel.setUnreadOnly(!state.unreadOnly) }) {
+                            Icon(
+                                if (state.unreadOnly) Icons.Filled.FilterAlt else Icons.Filled.FilterAltOff,
+                                contentDescription = stringResource(R.string.school_mail_unread_only),
+                            )
+                        }
+                        IconButton(onClick = onOpenGuide) {
+                            Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = stringResource(R.string.school_mail_use_other_app))
+                        }
                     }
-                    SyncStatusDot(
-                        status = mailStatus,
-                        label = stringResource(R.string.feature_school_mail),
-                        icon = Icons.Filled.Mail,
-                        // The state of the mail server, in the same words every other row of
-                        // this dot uses -- not the student ID, which is an identity and says
-                        // nothing about whether anything is reaching the server. The specific
-                        // failure still has a home: the list itself shows the error.
-                        //
-                        // While every mail downloads for search, which the first time takes a
-                        // while, the dot syncs and the row says how far it has come -- or that it
-                        // is syncing while it still counts, rather than an "OK" that says nothing
-                        // has started.
-                        text = indexProgress?.let { indexProgressText(it) ?: stringResource(R.string.sync_status_syncing) }
-                            ?: statusText(mailStatus),
-                        isLoading = isLoading || indexProgress != null,
-                        syncedAtMs = state.fetchedAt,
-                    )
-                    IconButton(onClick = { viewModel.setUnreadOnly(!state.unreadOnly) }) {
-                        Icon(
-                            if (state.unreadOnly) Icons.Filled.FilterAlt else Icons.Filled.FilterAltOff,
-                            contentDescription = stringResource(R.string.school_mail_unread_only),
+                    DevMailServerBanner(accountViewModel.devServer)
+                    if (showAuthFailedBanner) {
+                        AuthFailedBanner(
+                            onSignInAgain = {
+                                accountViewModel.clearError()
+                                showReauthSheet = true
+                            },
+                            onClose = viewModel::dismissAuthFailedBanner,
                         )
                     }
-                    IconButton(onClick = onOpenGuide) {
-                        Icon(Icons.AutoMirrored.Filled.HelpOutline, contentDescription = stringResource(R.string.school_mail_use_other_app))
+                    sentCopyNotice?.let { SentCopyNoticeBanner(it, onDismiss = viewModel::dismissSentCopyNotice) }
+                    SearchDrawer(searchReveal) {
+                        OutlinedTextField(
+                            value = state.searchText,
+                            onValueChange = viewModel::setSearchText,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .onFocusChanged { searchFocused = it.isFocused },
+                            leadingIcon = { SearchFieldIcon(searching = state.searchBusy) },
+                            trailingIcon = searchClearIcon(state.searchText) { viewModel.setSearchText("") },
+                            placeholder = { Text(stringResource(R.string.school_mail_search_prompt)) },
+                            singleLine = true,
+                            shape = RoundedCornerShape(12.dp),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { viewModel.submitSearch() }),
+                        )
                     }
-                    IconButton(onClick = onCompose) {
-                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.school_mail_compose))
+                    FolderChips(state = state, onSelect = viewModel::selectFolder)
+                    searchNote(
+                        searched = state.searchResults != null,
+                        loadedOnly = state.searchLocalOnly,
+                        partial = state.searchIndexPartial,
+                    )?.let { note ->
+                        Text(
+                            stringResource(note),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        )
                     }
-                }
-                DevMailServerBanner(accountViewModel.devServer)
-                if (showAuthFailedBanner) {
-                    AuthFailedBanner(
-                        onSignInAgain = {
-                            accountViewModel.clearError()
-                            showReauthSheet = true
-                        },
-                        onClose = viewModel::dismissAuthFailedBanner,
-                    )
-                }
-                sentCopyNotice?.let { SentCopyNoticeBanner(it, onDismiss = viewModel::dismissSentCopyNotice) }
-                SearchDrawer(searchReveal) {
-                    OutlinedTextField(
-                        value = state.searchText,
-                        onValueChange = viewModel::setSearchText,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .onFocusChanged { searchFocused = it.isFocused },
-                        leadingIcon = { SearchFieldIcon(searching = state.searchBusy) },
-                        trailingIcon = searchClearIcon(state.searchText) { viewModel.setSearchText("") },
-                        placeholder = { Text(stringResource(R.string.school_mail_search_prompt)) },
-                        singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                        keyboardActions = KeyboardActions(onSearch = { viewModel.submitSearch() }),
-                    )
-                }
-                FolderChips(state = state, onSelect = viewModel::selectFolder)
-                searchNote(
-                    searched = state.searchResults != null,
-                    loadedOnly = state.searchLocalOnly,
-                    partial = state.searchIndexPartial,
-                )?.let { note ->
-                    Text(
-                        stringResource(note),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
                 }
             }
         }
+        ComposeButton(
+            // Closing the keyboard leaves the field focused, so the keyboard, not the focus alone,
+            // is what brings the button back.
+            visible = !(searchFocused && WindowInsets.isImeVisible),
+            onClick = onCompose,
+            modifier = Modifier.align(Alignment.BottomEnd),
+        )
     }
 
     if (showReauthSheet) {
@@ -500,6 +524,41 @@ fun SchoolMailScreen(
                     Text(target.kind?.let { stringResource(it.labelRes()) } ?: target.folder)
                 }
             }
+        }
+    }
+}
+
+/** A floating button's 56dp and the 16dp below it, and 16dp more between it and the last row. */
+private val ComposeButtonClearance = 88.dp
+
+/**
+ * Compose, as a round floating button at the bottom end, as iOS floats it
+ * (tigerduck-app/tigerduck-app#864). The page ends at the top of the tab bar, so this sits just
+ * above it; the system bars' insets the page was not already given keep it clear of a navigation
+ * bar beside it. Hidden while [visible] is false: the search field holding the keyboard, where
+ * typing is searching rather than writing.
+ */
+@Composable
+private fun ComposeButton(visible: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier
+            .windowInsetsPadding(
+                WindowInsets.systemBars.union(WindowInsets.displayCutout)
+                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.End),
+            )
+            .padding(16.dp),
+        enter = scaleIn() + fadeIn(),
+        exit = scaleOut() + fadeOut(),
+    ) {
+        // The accent color, as Material's own components draw it; never the accent's gradient.
+        FloatingActionButton(
+            onClick = onClick,
+            shape = CircleShape,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+        ) {
+            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.school_mail_compose))
         }
     }
 }
