@@ -116,7 +116,7 @@ class BrowserChromeCollapseTest {
         var heightPx: Int,
         private val chrome: BrowserChromeCollapse = this@BrowserChromeCollapseTest.chrome,
         /** For a page laid out to the view's height and this much more, which grows with the view. */
-        private val beyondViewPx: Int? = null,
+        var beyondViewPx: Int? = null,
     ) {
         var offset = 0
             private set
@@ -210,10 +210,40 @@ class BrowserChromeCollapseTest {
         val page = Page(heightPx = 1_080)
         repeat(100) { page.drag(3) }
         assertFalse(chrome.collapsed)
-        // Its content loaded late.
+        // Its content loaded late, once the bars had settled.
+        clock += 10_000
         page.heightPx = 3_000
         repeat(100) { page.drag(3) }
         assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `a short page whose content comes laid out to the view's height lets the bars go again`() {
+        val page = Page(heightPx = 1_080)
+        repeat(100) { page.drag(3) }
+        assertFalse(chrome.collapsed)
+        // A placeholder gave way to content as tall as the view and 100 px more, which keeps its
+        // room with the bars away; the page's width stayed the same.
+        clock += 10_000
+        page.beyondViewPx = 100
+        repeat(30) { page.drag(-3) }
+        repeat(100) { page.drag(3) }
+        assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `a short page's room while the bars come back is no growth`() {
+        // 100 px to scroll with the bars shown, 19 with them away.
+        val page = Page(heightPx = 1_100)
+        repeat(100) { page.drag(3) }
+        val flips = page.flips
+        clock += 10_000
+        repeat(10) {
+            repeat(30) { page.drag(-3) }
+            repeat(30) { page.drag(3) }
+        }
+        assertFalse(chrome.collapsed)
+        assertEquals(flips, page.flips)
     }
 
     @Test

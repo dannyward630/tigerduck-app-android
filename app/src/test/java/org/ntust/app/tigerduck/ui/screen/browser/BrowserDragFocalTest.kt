@@ -32,6 +32,22 @@ class BrowserDragFocalTest {
         lifting.recycle()
     }
 
+    @Test
+    fun `the copy for the fling's velocity is on screen, its batched history too`() {
+        val event = MotionEvent.obtain(0L, 0L, MotionEvent.ACTION_MOVE, 100f, 900f, 0)
+        event.addBatch(16L, 100f, 950f, 1f, 1f, 0)
+        event.addBatch(32L, 100f, 1_000f, 1f, 1f, 0)
+        // The WebView moved up 30 px on screen while the finger went down it.
+        event.offsetLocation(0f, 30f)
+        val copy = event.onScreen()
+        assertEquals(1_000f, copy.y, 0f)
+        assertEquals(2, copy.historySize)
+        assertEquals(900f, copy.getHistoricalY(0), 0f)
+        assertEquals(950f, copy.getHistoricalY(1), 0f)
+        copy.recycle()
+        event.recycle()
+    }
+
     /** Two fingers, at y 1000 and 800. */
     private fun twoFingers(action: Int): MotionEvent {
         val properties = Array(2) { i -> MotionEvent.PointerProperties().apply { id = i; toolType = MotionEvent.TOOL_TYPE_FINGER } }

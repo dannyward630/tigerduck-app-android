@@ -6,11 +6,10 @@ import kotlin.math.abs
 /**
  * Which way the student's finger moves the page, for [BrowserChromeCollapse.dragged]. A touch
  * drags the page once it has gone [touchSlop] from where it started; from then on each move is
- * told, a turn back of any length included. A lift then tells the way the page flings: the
- * release velocity's, from the last [HORIZON_MS] of the touch, when it is [minFlingVelocity] or
- * more, as the WebView's own fling, so a fling that ends in a short turn back is told the way it
- * goes. A finger held still for [STOPPED_MS] before lifting flings nothing. With more than one
- * finger it follows their middle, and a finger landing or lifting moves nothing.
+ * told, a turn back of any length included. A lift that flings the page, at [minFlingVelocity] or
+ * more, is told the fling's way: a fling ending in a short turn back goes the way the finger went,
+ * as the WebView flings it. With more than one finger it follows their middle, and a finger
+ * landing or lifting moves nothing.
  */
 internal class BrowserDragTracker(
     private val touchSlop: Float,
@@ -27,87 +26,39 @@ internal class BrowserDragTracker(
     /** Whether the touch has gone past the slop, and so drags the page. */
     private var dragging = false
 
-    /** The touch's recent moves, oldest first, as (ms, y). */
-    private val samples = ArrayDeque<Pair<Long, Float>>()
-
-    /** A first finger landed at [y], at [timeMs]. */
-    fun down(y: Float, timeMs: Long) {
+    /** A first finger landed at [y]. */
+    fun down(y: Float) {
         start = y
         last = y
         dragging = false
-        restart(y, timeMs)
     }
 
-    /** A finger landed or lifted; [y] is where the fingers on the page are now, at [timeMs]. */
-    fun pointersChanged(y: Float, timeMs: Long) {
+    /** A finger landed or lifted; [y] is where the fingers on the page are now. */
+    fun pointersChanged(y: Float) {
         last = y
         if (!dragging) start = y
-        // The middle jumped: the moves before it are no part of a fling.
-        restart(y, timeMs)
     }
 
-    /** The fingers moved to [y], at [timeMs]. */
-    fun moved(y: Float, timeMs: Long) {
+    /** The fingers moved to [y]. */
+    fun moved(y: Float) {
         if (!dragging && abs(y - start) >= touchSlop) dragging = true
         // A finger going up moves the page down.
         if (dragging && y != last) dragged(y < last)
         last = y
-        record(y, timeMs)
-    }
-
-    /** The last finger lifted at [y], at [timeMs]. */
-    fun up(y: Float, timeMs: Long) {
-        record(y, timeMs)
-        if (dragging) {
-            val velocity = velocity()
-            if (abs(velocity) >= minFlingVelocity) dragged(velocity < 0)
-        }
-        dragging = false
-        samples.clear()
-    }
-
-    /** The touch was taken away: no fling. */
-    fun cancel() {
-        dragging = false
-        samples.clear()
-    }
-
-    private fun restart(y: Float, timeMs: Long) {
-        samples.clear()
-        samples.addLast(timeMs to y)
-    }
-
-    private fun record(y: Float, timeMs: Long) {
-        samples.addLast(timeMs to y)
-        while (samples.first().first < timeMs - HORIZON_MS) samples.removeFirst()
     }
 
     /**
-     * The release velocity in px a second, down the screen positive: the least-squares slope of
-     * the moves since the finger last held still, within [HORIZON_MS].
+     * The last finger lifted, at [velocity] px a second down the screen: Android's VelocityTracker
+     * on [onScreen] copies of the touch, which weighs its batched moves as the WebView's fling does.
      */
-    private fun velocity(): Float {
-        var from = samples.size - 1
-        while (from > 0 && samples[from].first - samples[from - 1].first <= STOPPED_MS) from--
-        val run = samples.subList(from, samples.size)
-        if (run.size < 2) return 0f
-        val meanT = run.sumOf { it.first.toDouble() } / run.size
-        val meanY = run.sumOf { it.second.toDouble() } / run.size
-        var covariance = 0.0
-        var variance = 0.0
-        for ((t, y) in run) {
-            covariance += (t - meanT) * (y - meanY)
-            variance += (t - meanT) * (t - meanT)
-        }
-        return if (variance == 0.0) 0f else (covariance / variance * 1_000).toFloat()
+    fun up(velocity: Float) {
+        if (dragging && abs(velocity) >= minFlingVelocity) dragged(velocity < 0)
+        dragging = false
     }
 
-    companion object {
-        /** How far back the release velocity looks, in ms, as Android's VelocityTracker. */
-        const val HORIZON_MS = 100L
-
-        /** A gap between moves this long, in ms, is the finger held still, as Android's VelocityTracker. */
-        const val STOPPED_MS = 40L
+    /** The touch was taken away. */
+    fun cancel() {
+        dragging = false
     }
 }
 
@@ -126,3 +77,10 @@ internal fun MotionEvent.focalScreenY(): Float {
     }
     return if (count == 0) rawY else sum / count
 }
+
+/**
+ * A copy of this event in screen coordinates, its batched history included, for a VelocityTracker:
+ * the WebView moves on screen while the bars resize. The caller recycles it.
+ */
+internal fun MotionEvent.onScreen(): MotionEvent =
+    MotionEvent.obtain(this).also { it.offsetLocation(rawX - x, rawY - y) }
