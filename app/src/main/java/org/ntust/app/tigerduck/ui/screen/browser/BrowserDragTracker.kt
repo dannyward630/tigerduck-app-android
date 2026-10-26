@@ -3,7 +3,9 @@ package org.ntust.app.tigerduck.ui.screen.browser
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.VelocityTracker
+import android.os.Bundle
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityNodeProvider
 import kotlin.math.abs
 
 /**
@@ -184,4 +186,33 @@ internal fun accessibilityScrollsDown(action: Int): Boolean? = when (action) {
     android.R.id.accessibilityActionScrollUp,
     android.R.id.accessibilityActionPageUp -> false
     else -> null
+}
+
+/**
+ * The WebView's accessibility node provider, which accessibility scrolls (TalkBack's among them)
+ * go through rather than the view's own performAccessibilityAction: a scroll tells [dragged] its
+ * way before the WebView does it, and one the WebView refuses tells [refused], so that the way it
+ * named is not left for the page's own moves to follow.
+ */
+internal class ScrollTellingProvider(
+    val delegate: AccessibilityNodeProvider,
+    private val dragged: (down: Boolean) -> Unit,
+    private val refused: () -> Unit,
+) : AccessibilityNodeProvider() {
+    override fun createAccessibilityNodeInfo(virtualViewId: Int): AccessibilityNodeInfo? =
+        delegate.createAccessibilityNodeInfo(virtualViewId)
+
+    override fun findAccessibilityNodeInfosByText(text: String?, virtualViewId: Int): MutableList<AccessibilityNodeInfo>? =
+        delegate.findAccessibilityNodeInfosByText(text, virtualViewId)
+
+    override fun findFocus(focus: Int): AccessibilityNodeInfo? = delegate.findFocus(focus)
+
+    override fun addExtraDataToAccessibilityNodeInfo(virtualViewId: Int, info: AccessibilityNodeInfo, extraDataKey: String, arguments: Bundle?) =
+        delegate.addExtraDataToAccessibilityNodeInfo(virtualViewId, info, extraDataKey, arguments)
+
+    override fun performAction(virtualViewId: Int, action: Int, arguments: Bundle?): Boolean {
+        val down = accessibilityScrollsDown(action) ?: return delegate.performAction(virtualViewId, action, arguments)
+        dragged(down)
+        return delegate.performAction(virtualViewId, action, arguments).also { done -> if (!done) refused() }
+    }
 }

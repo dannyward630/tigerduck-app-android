@@ -25,6 +25,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.view.accessibility.AccessibilityNodeProvider
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
 import android.webkit.JsPromptResult
@@ -1002,6 +1003,16 @@ class InAppBrowserActivity : AppCompatActivity() {
         override fun performAccessibilityAction(action: Int, arguments: Bundle?): Boolean {
             accessibilityScrollsDown(action)?.let(chrome::dragged)
             return super.performAccessibilityAction(action, arguments)
+        }
+
+        /** The WebView's provider, wrapped once: its virtual nodes are where TalkBack's scrolls go. */
+        private var scrollTelling: ScrollTellingProvider? = null
+
+        override fun getAccessibilityNodeProvider(): AccessibilityNodeProvider? {
+            val provider = super.getAccessibilityNodeProvider() ?: return null
+            scrollTelling?.takeIf { it.delegate === provider }?.let { return it }
+            return ScrollTellingProvider(provider, dragged = chrome::dragged, refused = chrome::dragCancelled)
+                .also { scrollTelling = it }
         }
     }
 
