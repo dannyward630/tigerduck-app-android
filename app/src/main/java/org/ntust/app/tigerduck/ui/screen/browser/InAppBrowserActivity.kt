@@ -21,6 +21,8 @@ import android.os.Looper
 import android.os.Message
 import android.print.PrintManager
 import android.view.ContextThemeWrapper
+import android.view.MotionEvent
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.webkit.CookieManager
 import android.webkit.GeolocationPermissions
@@ -103,6 +105,7 @@ import org.ntust.app.tigerduck.util.fileProviderAuthority
 import java.io.ByteArrayInputStream
 import java.io.File
 import javax.inject.Inject
+import kotlin.math.abs
 import org.ntust.app.tigerduck.debug.PretendMissingApps
 
 /**
@@ -953,16 +956,39 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /**
      * The browser's WebView, which tells how far the page can still scroll down and how wide it is
-     * laid out, and tells the bars' collapse when it changes size: as the keyboard comes or goes,
-     * the page's offset moves without a scroll.
+     * laid out, and tells the bars' collapse when it changes size (as the keyboard comes or goes,
+     * the page's offset moves without a scroll) and which way the student's finger moves the page.
      */
     private inner class BrowserWebView(context: Context) : WebView(context) {
         val scrollLeftBelow: Int get() = computeVerticalScrollRange() - computeVerticalScrollExtent() - computeVerticalScrollOffset()
         val contentWidth: Int get() = computeHorizontalScrollRange()
 
+        private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop
+
+        /** Where one finger was when its last move was told; null with no finger, or with two. */
+        private var touchY: Float? = null
+
         override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
             super.onSizeChanged(w, h, ow, oh)
             chrome.resized()
+        }
+
+        // Only watches the touch: the WebView handles it, its click included.
+        @SuppressLint("ClickableViewAccessibility")
+        override fun onTouchEvent(event: MotionEvent): Boolean {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> touchY = event.y
+                MotionEvent.ACTION_POINTER_DOWN, MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> touchY = null
+                MotionEvent.ACTION_MOVE -> touchY?.let { from ->
+                    // A finger going up moves the page down.
+                    val dy = from - event.y
+                    if (abs(dy) >= touchSlop) {
+                        chrome.dragged(down = dy > 0)
+                        touchY = event.y
+                    }
+                }
+            }
+            return super.onTouchEvent(event)
         }
     }
 

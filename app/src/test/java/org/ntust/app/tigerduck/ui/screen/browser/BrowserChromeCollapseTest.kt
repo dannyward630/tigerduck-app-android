@@ -11,8 +11,18 @@ class BrowserChromeCollapseTest {
     private var clock = 0L
     private val chrome = BrowserChromeCollapse(jitterPx = 4, topZonePx = 40, now = { clock })
 
-    /** A long page, far from its end, 1080 px wide as laid out. */
-    private fun scrolled(offset: Int, contentWidth: Int = 1_080) = chrome.scrolled(offset, leftBelow = 10_000, contentWidth = contentWidth)
+    /** Where [scrolled] last dragged the page to. */
+    private var dragged = 0
+
+    /** The student drags a long page, far from its end, 1080 px wide as laid out, to [offset]. */
+    private fun scrolled(offset: Int, contentWidth: Int = 1_080) {
+        if (offset != dragged) chrome.dragged(down = offset > dragged)
+        dragged = offset
+        chrome.scrolled(offset, leftBelow = 10_000, contentWidth = contentWidth)
+    }
+
+    /** The page moves to [offset] by itself, as the WebView tells it, with no finger on it. */
+    private fun movedItself(offset: Int) = chrome.scrolled(offset, leftBelow = 10_000, contentWidth = 1_080)
 
     @Test
     fun `scrolling down hides the bars and up brings them back`() {
@@ -58,6 +68,35 @@ class BrowserChromeCollapseTest {
     }
 
     @Test
+    fun `the page moving up by itself while the student drags it down is no scroll`() {
+        scrolled(100)
+        scrolled(200)
+        assertTrue(chrome.collapsed)
+        // Laid out again as the bars go away, the page is moved up by the WebView.
+        movedItself(182)
+        assertTrue(chrome.collapsed)
+        scrolled(260)
+        assertTrue(chrome.collapsed)
+    }
+
+    @Test
+    fun `the page moving down by itself while the student drags it up is no scroll`() {
+        scrolled(100)
+        scrolled(200)
+        scrolled(150)
+        assertFalse(chrome.collapsed)
+        movedItself(284)
+        assertFalse(chrome.collapsed)
+    }
+
+    @Test
+    fun `before the student drags the page its own moves change nothing`() {
+        movedItself(100)
+        movedItself(300)
+        assertFalse(chrome.collapsed)
+    }
+
+    @Test
     fun `back at the top of the page the bars show`() {
         scrolled(300)
         scrolled(400)
@@ -85,6 +124,7 @@ class BrowserChromeCollapseTest {
 
         /** The student drags the page [dy] down, or up if negative; it stops at either end. */
         fun drag(dy: Int) {
+            chrome.dragged(down = dy > 0)
             val to = (offset + dy).coerceIn(0, end)
             if (to == offset) return
             offset = to

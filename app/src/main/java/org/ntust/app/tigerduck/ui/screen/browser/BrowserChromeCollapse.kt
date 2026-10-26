@@ -6,6 +6,10 @@ package org.ntust.app.tigerduck.ui.screen.browser
  * [jitterPx] one way, however small its steps; at the top of the page ([topZonePx]) the bars
  * show. The end of the page does not bring them back, on the iPhone either: only a scroll up does.
  *
+ * A move counts only the way the student's finger last moved the page ([dragged]), a fling
+ * included: the page also moves by itself, as when it lays out again while the bars move and the
+ * WebView keeps its place, and such a move, either way, must not move the bars.
+ *
  * Putting the bars away makes the view taller, and at the end of the page the WebView then pulls
  * the page up so it still fills the view. That move leaves the page at its end, where a scroll up
  * never leaves it, so it is no scroll: counted, it would bring the bars back, and the next scroll
@@ -43,6 +47,9 @@ internal class BrowserChromeCollapse(
     /** How far the page has gone one way since it last turned, down positive. */
     private var travel = 0
 
+    /** Whether the student's finger last moved the page down, toward its end; null before it has. */
+    private var dragDown: Boolean? = null
+
     /**
      * [offset] is how far the page has scrolled from its top; [leftBelow] how far it can still go
      * down as laid out now; [contentWidth] how wide it is laid out, zoom and all.
@@ -68,9 +75,14 @@ internal class BrowserChromeCollapse(
             return
         }
         val delta = offset - (last ?: return)
-        if (delta == 0) return
+        if (delta == 0 || (delta > 0) != dragDown) return
         travel = if (travel == 0 || (delta > 0) == (travel > 0)) travel + delta else delta
         if (travel > jitterPx) collapsed = true else if (travel < -jitterPx) collapsed = false
+    }
+
+    /** The student's finger moved the page: [down] toward its end, or else toward its top. */
+    fun dragged(down: Boolean) {
+        dragDown = down
     }
 
     /** The bars back, until the page scrolls down again. */
