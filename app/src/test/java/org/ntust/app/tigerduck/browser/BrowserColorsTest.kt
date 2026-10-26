@@ -10,9 +10,16 @@ import org.junit.Test
 /** The browser's bars following the page, and what the page is told. */
 class BrowserColorsTest {
 
-    private fun probe(body: String? = null, root: String? = null, theme: String? = null, scheme: String? = null): String {
+    private fun probe(
+        body: String? = null,
+        root: String? = null,
+        theme: String? = null,
+        scheme: String? = null,
+        meta: String? = null,
+        prefersScheme: Boolean = false,
+    ): String {
         fun q(v: String?) = v?.let { "\"$it\"" } ?: "null"
-        return """{"body":${q(body)},"root":${q(root)},"theme":${q(theme)},"scheme":${q(scheme)}}"""
+        return """{"body":${q(body)},"root":${q(root)},"theme":${q(theme)},"scheme":${q(scheme)},"meta":${q(meta)},"prefersScheme":$prefersScheme}"""
     }
 
     @Test
@@ -72,6 +79,66 @@ class BrowserColorsTest {
     @Test
     fun `a page naming nothing is the WebView's white`() {
         assertFalse(BrowserColors.pageTone(probe(body = "rgba(0, 0, 0, 0)", scheme = "normal"), toldDark = true)!!)
+    }
+
+    @Test
+    fun `a light page the WebView darkens reads as dark, so the bars follow it`() {
+        // Darkened as it is drawn: its own colors still read white.
+        assertTrue(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)"), toldDark = true, darkened = true)!!)
+        assertTrue(BrowserColors.pageTone(probe(body = "rgba(0, 0, 0, 0)", scheme = "normal"), toldDark = true, darkened = true)!!)
+    }
+
+    @Test
+    fun `nothing is darkened while the page is told light, or where the WebView cannot darken`() {
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)"), toldDark = false, darkened = true)!!)
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)"), toldDark = true, darkened = false)!!)
+    }
+
+    @Test
+    fun `a page that keeps itself light is not darkened`() {
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", meta = "only light"), toldDark = true, darkened = true)!!)
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", scheme = "light only"), toldDark = true, darkened = true)!!)
+        // Light alone still lets the WebView darken it.
+        assertTrue(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", meta = "light"), toldDark = true, darkened = true)!!)
+    }
+
+    @Test
+    fun `a page with its own dark style reads as its own colors`() {
+        assertTrue(BrowserColors.pageTone(probe(body = "rgb(32, 32, 32)", meta = "dark light"), toldDark = true, darkened = true)!!)
+        // It offers a dark scheme, so the WebView leaves it alone, light background and all.
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", meta = "dark light"), toldDark = true, darkened = true)!!)
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", scheme = "light dark"), toldDark = true, darkened = true)!!)
+    }
+
+    @Test
+    fun `a page whose style asks prefers-color-scheme is left as it draws itself`() {
+        // Its own style answers dark, white background and all, and the WebView leaves it alone.
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", prefersScheme = true), toldDark = true, darkened = true)!!)
+        assertTrue(BrowserColors.pageTone(probe(body = "rgb(20, 20, 20)", prefersScheme = true), toldDark = true, darkened = true)!!)
+    }
+
+    @Test
+    fun `the page's own color-scheme style wins over its meta`() {
+        // Its style lets the WebView darken it, whatever the meta said.
+        assertTrue(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", scheme = "light", meta = "only light"), toldDark = true, darkened = true)!!)
+        // With no style of its own, the meta counts.
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", scheme = "normal", meta = "only light"), toldDark = true, darkened = true)!!)
+    }
+
+    @Test
+    fun `the meta is read as CSS reads it`() {
+        // Any white space between the words.
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", meta = "only\nlight"), toldDark = true, darkened = true)!!)
+        // A comma makes it no scheme at all, which the WebView darkens.
+        assertTrue(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", meta = "only,light"), toldDark = true, darkened = true)!!)
+    }
+
+    @Test
+    fun `the probe reads the page's color-scheme meta, and a page with no root`() {
+        assertTrue(BrowserColors.TONE_PROBE.contains("meta[name=\"color-scheme\"]"))
+        assertTrue(BrowserColors.TONE_PROBE.contains("meta: "))
+        assertTrue(BrowserColors.TONE_PROBE.contains("prefersScheme: "))
+        assertTrue(BrowserColors.TONE_PROBE.contains("scheme: root ?"))
     }
 
     @Test

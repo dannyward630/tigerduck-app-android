@@ -24,8 +24,8 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 /**
- * A shortcut drag in edit mode is one gesture from touch-down to lift,
- * however many slots it crosses. Four cards, two rows:
+ * A shortcut drag in edit mode starts with a long press and is one gesture
+ * from there to lift, however many slots it crosses. Four cards, two rows:
  *
  *     Announcements  Scores
  *     Free rooms     Calendar
@@ -70,6 +70,12 @@ class ShortcutGridDragTest {
 
     private fun bounds(feature: AppFeature): Rect = card(feature).fetchSemanticsNode().boundsInRoot
 
+    /** A finger down on [feature]'s card, held until the long press lifts it. */
+    private fun hold(feature: AppFeature) {
+        card(feature).performTouchInput { down(center) }
+        composeRule.mainClock.advanceTimeBy(1_000)
+    }
+
     @Test
     fun `one drag can cross into the next row and keep going`() {
         show()
@@ -79,7 +85,7 @@ class ShortcutGridDragTest {
         // Separate injections with an idle between them, so the card has been
         // recomposed in its new row before the finger moves on: the gesture
         // must survive that, as a real one does.
-        card(AppFeature.ANNOUNCEMENTS).performTouchInput { down(center) }
+        hold(AppFeature.ANNOUNCEMENTS)
         card(AppFeature.ANNOUNCEMENTS).performTouchInput { moveBy(Offset(0f, pitchY)) }
         composeRule.waitForIdle()
         assertEquals(
@@ -100,11 +106,27 @@ class ShortcutGridDragTest {
     }
 
     @Test
+    fun `a quick swipe across a card moves nothing, so it can scroll the page`() {
+        show()
+        val pitchY = bounds(AppFeature.EMPTY_CLASSROOM).top - bounds(AppFeature.ANNOUNCEMENTS).top
+
+        card(AppFeature.ANNOUNCEMENTS).performTouchInput {
+            down(center)
+            moveBy(Offset(0f, pitchY))
+            up()
+        }
+        composeRule.waitForIdle()
+
+        assertEquals(features, widgets.value.map { it.feature })
+        assertEquals(emptyList<Pair<String, Int>>(), moves)
+    }
+
+    @Test
     fun `a drag can come back to where it started`() {
         show()
         val pitchY = bounds(AppFeature.EMPTY_CLASSROOM).top - bounds(AppFeature.ANNOUNCEMENTS).top
 
-        card(AppFeature.ANNOUNCEMENTS).performTouchInput { down(center) }
+        hold(AppFeature.ANNOUNCEMENTS)
         card(AppFeature.ANNOUNCEMENTS).performTouchInput { moveBy(Offset(0f, pitchY)) }
         composeRule.waitForIdle()
         card(AppFeature.ANNOUNCEMENTS).performTouchInput { moveBy(Offset(0f, -pitchY)) }

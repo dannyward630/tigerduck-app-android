@@ -153,8 +153,16 @@ class AccentPolicyTest {
         assertEquals(color(navy), AccentPolicy.fixedColor(navy, isDark = false))
     }
 
+    // Orange, Green and Teal read faintly on the light cards as they are, so
+    // light mode darkens them as it does a light color of the user's own.
     @Test
-    fun `the presets keep their own tone in light mode, Cyan too`() {
-        assertEquals(color(0x5AC8FA), AccentPolicy.fixedColor(0x5AC8FA, isDark = false))
+    fun `every preset stands out on the light cards in light mode and keeps its dark pair in dark mode`() {
+        val pale = listOf(0xFF9500, 0x34C759, 0x5AC8FA)
+        AppPreferences.themeColors.forEach { (name, hex) ->
+            val light = AccentPolicy.fixedColor(hex, isDark = false)
+            assertTrue("$name in light mode", contrast(light, lightCard) >= 3f)
+            assertEquals("$name in light mode", hex !in pale, light == color(hex))
+            assertEquals("$name in dark mode", color(AppPreferences.accentDarkVariant(hex)), AccentPolicy.fixedColor(hex, isDark = true))
+        }
     }
 }

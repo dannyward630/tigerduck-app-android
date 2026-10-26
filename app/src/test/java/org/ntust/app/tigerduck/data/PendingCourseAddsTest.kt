@@ -2,7 +2,6 @@
 
 package org.ntust.app.tigerduck.data
 
-import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -13,7 +12,6 @@ import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.auth.NotSignedInException
 import org.ntust.app.tigerduck.data.cache.DataCache
@@ -21,10 +19,8 @@ import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.push.PushApiException
 import org.ntust.app.tigerduck.push.ServerCourse
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.IOException
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * A course added by hand whose upload failed ([PendingCourseAdds]), over real files
@@ -32,8 +28,6 @@ import java.io.IOException
  * failed upload left the course on this phone alone, never to reach another device, and lost
  * at sign-out.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class PendingCourseAddsTest {
 
     private lateinit var cache: DataCache
@@ -59,7 +53,7 @@ class PendingCourseAddsTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
         // As PushApiClient.uploadCourses: pinned to a sign-in, the header is that account's or none.
         adds = PendingCourseAdds(cache, { courses, semester, forceKeys, pinned ->

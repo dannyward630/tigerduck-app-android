@@ -197,6 +197,8 @@ class BackgroundSyncWorker @AssistedInject constructor(
             prefs.setLastSyncSource(SyncSource.NONE)
             return
         }
+        // Before anything it sends or fetches, until it is done: see DataCache.beginCourseSync.
+        val courseSync = dataCache.beginCourseSync()
         try {
             val account = authService.storedStudentId
             val generation = courseIgnoreSync.currentGeneration()
@@ -212,7 +214,12 @@ class BackgroundSyncWorker @AssistedInject constructor(
             // A session the backend ended before its access token ran out
             // draws a 401 until a sign-in, and the uploads below would draw
             // one too; as Home's full sync, this signs in again once.
-            val result = retryingAfterRelogin(authService::attemptRelogin) { syncApiClient.fetchFullSync() }
+            val result = retryingAfterRelogin(authService::attemptRelogin) {
+                // An add back made from here on is newer than a course reset the snapshot reads:
+                // marked for each attempt, as the one after a relogin is the snapshot's.
+                courseSync.fetching()
+                syncApiClient.fetchFullSync()
+            }
             pendingCourseAdds.listed(result.serverCourses)
             // With the Assignments switch off, the re-enable check pending,
             // or marks the server lacks on the account's first sync here
@@ -232,7 +239,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
                 applyCourseOverridesBackground(result.courseOverrides, pendingCourseOverrides.held(result.fetchedAtMs))
             }
             if (CourseSyncReconciler.syncsCourseList(prefs.syncCourses, prefs.pendingConflictCategories)) {
-                reconcileCurrentSemester(result)
+                reconcileCurrentSemester(result, courseSync)
             }
             prefs.setLastSyncSource(SyncSource.BACKEND)
             // Where a change another device made to the reminder settings
@@ -265,6 +272,8 @@ class BackgroundSyncWorker @AssistedInject constructor(
         } catch (e: Exception) {
             prefs.setLastSyncSource(SyncSource.LOCAL)
             Log.w(TAG, "override sync failed: ${e.logSummary()}")
+        } finally {
+            dataCache.endCourseSync(courseSync)
         }
     }
 
@@ -287,7 +296,7 @@ class BackgroundSyncWorker @AssistedInject constructor(
      * did, and the cache prune below ignores bare entries rather than
      * delete a retaken course on the strength of one.
      */
-    private suspend fun reconcileCurrentSemester(result: BackendSyncResult) {
+    private suspend fun reconcileCurrentSemester(result: BackendSyncResult, courseSync: DataCache.CourseSync) {
         val semester = courseService.currentSemesterCode()
         // Mid-reset, or a snapshot fetched before this device reset the
         // term — see CourseSyncReconciler.termsResetAfter.
@@ -308,6 +317,8 @@ class BackgroundSyncWorker @AssistedInject constructor(
         val resetElsewhere = CourseSyncReconciler.coursesReset(
             result.coursesResetAt, prefs.lastSeenCoursesResetAt, prefs.legacyLastCourseSyncAtMs,
         ).apply
+        // Nor one whose add back is under way; see DataCache.CourseSync.supersedeAddsBack.
+        if (resetElsewhere) courseSync.supersedeAddsBack()
         val knownHere = storedKnown[semester].orEmpty().toSet()
         val tombstoneNos = CourseSyncReconciler.tombstoneNosFor(semester, result.tombstones)
         val outcome = CourseSyncReconciler.reconcileSemester(
@@ -331,12 +342,11 @@ class BackgroundSyncWorker @AssistedInject constructor(
         // the cache is pruned on the first run, not the next change.
         val pruned = CourseSyncReconciler.pruneHidden(semester, localCourses, outcome.tombstones, legacyBare = false)
         // Merging down is Home's: nothing merged here.
-        commitReconciledTerm(dataCache, semester, stored, outcome.tombstones, tombstoneNos, localCourses, pruned, emptyList())
-        pruned?.let { kept ->
-            // A course hidden since takes its waiting colour and name
-            // with it; see PendingCourseOverrides.forget.
-            pendingCourseOverrides.forget(localCourses.filter { it !in kept }.mapNotNull { it.moodleIdNumber })
-        }
+        // A course it takes out goes with its waiting colour and name.
+        commitReconciledTerm(
+            dataCache, courseSync, semester, stored, outcome.tombstones, tombstoneNos, localCourses, pruned, emptyList(),
+            pendingCourseOverrides,
+        )
         var known = outcome.serverKnownNos
         if (outcome.uploadLocal) {
             // resend: the server has nothing for the term, whatever list the

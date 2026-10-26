@@ -1,29 +1,23 @@
 package org.ntust.app.tigerduck.liveactivity
 
-import android.app.Application
 import java.time.ZonedDateTime
 import java.util.Date
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.AppLink
 import org.ntust.app.tigerduck.data.OutstandingAssignments
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The "assignment due soon" Live Update over what LiveActivityManager hands
  * the resolver: the outstanding assignments, not every cached one; which
  * scenario wins when several apply; and what a tap on each opens.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class LiveActivityResolverTest {
 
     private val now = Date(1_700_000_000_000)
@@ -31,7 +25,7 @@ class LiveActivityResolverTest {
 
     @Before
     fun setUp() {
-        preferences = LiveActivityPreferences(RuntimeEnvironment.getApplication())
+        preferences = LiveActivityPreferences(JvmContext())
     }
 
     private fun dueInHours(id: String, hours: Long) = Assignment(

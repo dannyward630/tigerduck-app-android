@@ -1,22 +1,16 @@
 package org.ntust.app.tigerduck.notification
 
-import android.app.Application
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendar
 import org.ntust.app.tigerduck.academic.SemesterTerm
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
 import java.time.LocalDate
 
 /**
  * Whether a class reminder still goes out when its alarm fires: only for a
  * day classes meet, and only from that day's own term's timetable.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class ClassReminderTermTest {
 
     private val twoTerms = AcademicCalendar(

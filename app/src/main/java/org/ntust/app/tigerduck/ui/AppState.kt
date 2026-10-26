@@ -237,9 +237,11 @@ class AppState @Inject constructor(
     fun pickWallpaperColors() = accentSetting.pickWallpaper()
 
     /**
-     * The swatch's color for the current theme mode. [accentColorHex] always
+     * The accent as the current theme mode draws it. [accentColorHex] always
      * stores the canonical (light) hex; in dark mode we return the paired
-     * dark variant so the tint stays vibrant against dark surfaces.
+     * dark variant so the tint stays vibrant against dark surfaces, and in
+     * light mode a tone dark enough for the light cards, which for Orange,
+     * Green and Teal is darker than their swatches (see [AccentPolicy.fixedColor]).
      */
     fun accentColor(isDark: Boolean = TigerDuckTheme.isDarkMode): Color =
         AccentPolicy.fixedColor(accentColorHex, isDark)

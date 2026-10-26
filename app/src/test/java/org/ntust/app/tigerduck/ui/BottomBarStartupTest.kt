@@ -1,12 +1,10 @@
 package org.ntust.app.tigerduck.ui
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.model.AppFeature
 import org.ntust.app.tigerduck.data.model.AppFeature.CALENDAR
 import org.ntust.app.tigerduck.data.model.AppFeature.CLASS_TABLE
@@ -14,23 +12,19 @@ import org.ntust.app.tigerduck.data.model.AppFeature.HOME
 import org.ntust.app.tigerduck.data.model.AppFeature.SCHOOL_MAIL
 import org.ntust.app.tigerduck.data.model.AppFeature.SCORE
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * [settleBottomBar], the whole startup sequence, against what each older
  * build leaves behind: which one-shot checks it ran, and a stored bar or none.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class BottomBarStartupTest {
 
     private lateinit var prefs: AppPreferences
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         context.getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE).edit().clear().commit()
         prefs = AppPreferences(context)
     }

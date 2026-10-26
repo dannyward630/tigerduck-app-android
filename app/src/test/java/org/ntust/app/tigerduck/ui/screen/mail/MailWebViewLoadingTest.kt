@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.app.Application
-import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
@@ -18,7 +17,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class MailWebViewLoadingTest {
     @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 

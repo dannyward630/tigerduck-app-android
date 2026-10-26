@@ -12,7 +12,8 @@ phone `versionCode` is not above the previous tag's, or whose watch
 `versionCode` is not the phone's plus 10000: Play keeps every bundle it is sent,
 and an unbumped code would publish the old binary under the new name.
 
-A new version builds the same six artifacts as `release-manual.yaml`, then:
+A new version builds the same six artifacts as `release-manual.yaml` (see
+`release-build.yaml` below), then:
 
 1. Uploads the phone and watch bundles to Google Play and sends them for review,
    all in one edit (`tools/play/publish.py`). The phone goes to `internal` and
@@ -23,6 +24,13 @@ A new version builds the same six artifacts as `release-manual.yaml`, then:
 2. Tags the build commit (GPG-signed), pins the F-Droid metadata commit hash,
    and publishes the GitHub Release "TigerDuck Android vX.Y.Z" with every
    artifact attached and its notes written (see below).
+3. Opens a pull request merging `main` back into `dev`
+   (`tools/github/back_merge.py`), so `dev` gets the F-Droid pin and anything
+   that went to `main` on its own, and the next release pull request does not
+   conflict on the metadata file. It opens none when `dev` already has
+   everything, or when one is already open. The Releaser App's token opens it,
+   so its CI runs; the App needs "Pull requests: Read and write" for that, and
+   without it the step only warns. Merge it with a merge commit, not a squash.
 
 Play comes before the tag so that a failed upload leaves nothing tagged and the
 workflow can simply be run again. If a later step fails, use "Re-run failed
@@ -80,6 +88,24 @@ release is created. A release that already exists keeps its notes, so editing
 them on GitHub afterwards is safe. Preview them with
 `python3 tools/github/release_notes.py --repo tigerduck-app/tigerduck-app-android`.
 
+### `release-build.yaml` — Release build
+
+The build both release workflows call: the six files, signed with the release
+key, on three runners side by side, the phone's `play` build, its `fdroid`
+build and the watch, each uploaded as an artifact for the calling workflow's
+`publish` job. A `preflight` job checks the secrets, the Releaser App token and
+the GPG key while they build; `publish` starts only once all three legs and
+the preflight have passed, so nothing is uploaded to Play, tagged or published
+unless every file was built. Each leg gives Gradle 6 GB and the Kotlin daemon
+3 GB, as `ci.yaml`'s legs do: built in one Gradle run on one runner, 2.4.0's
+release ran the Kotlin compiler out of memory.
+
+It also runs on its own, built and signed but uploading nothing, on a pull
+request that changes any of the three release workflows, so a change to how a
+release is built is seen to work before it reaches `main`. A pull request from
+a fork gets no secrets and is skipped. A click in the Actions tab does the same
+for any branch.
+
 ### `release-manual.yaml` — Release (Manual)
 
 Manually dispatched, no inputs. Takes the commit `main` points at when the run
@@ -119,12 +145,13 @@ on release day, as the two upgrade crashes R8 and Gson caused did. Unsigned
 because fork PRs cannot read the `KEYSTORE_*` secrets, and the phone's without
 `google-services.json`, which only the release workflow decodes.
 
-It also tests the two scripts the release workflows run, which otherwise first
+It also tests the scripts the release workflows run, which otherwise first
 run once the PR is already on `main`: `tools/play/test_publish.py` runs the
 Play upload script against a fake Play (which bundles are uploaded, what each
-track is sent, the staged rollout, the commit and its fallback), and
+track is sent, the staged rollout, the commit and its fallback), ,
 `tools/github/test_release_notes.py` renders the GitHub Release notes from a
-scratch checkout.
+scratch checkout, and `tools/github/test_back_merge.py` runs the pull request
+that merges `main` back into `dev` against a fake `gh`.
 
 ### `submodules-up-to-date.yaml`
 

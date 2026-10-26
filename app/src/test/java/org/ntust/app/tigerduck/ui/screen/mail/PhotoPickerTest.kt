@@ -28,6 +28,9 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
+// API 33, where every phone has the framework's Photo Picker: below it androidx
+// looks for an SDK extension or another picker first, and may fall back to the
+// document picker.
 @Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
 class PhotoPickerTest {
     @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()

@@ -1,26 +1,21 @@
 package org.ntust.app.tigerduck.browser
 
-import android.app.Application
+import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The developer page's changes to the allowlist, and a release build ignoring them. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class BrowserAllowlistStoreTest {
 
-    private lateinit var context: Application
+    private lateinit var context: Context
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         context.getSharedPreferences(BrowserAllowlistStore.PREFS_FILE, 0).edit().clear().commit()
     }
 

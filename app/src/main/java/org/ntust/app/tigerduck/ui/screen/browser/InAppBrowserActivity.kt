@@ -58,6 +58,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -188,10 +190,19 @@ class InAppBrowserActivity : AppCompatActivity() {
 
     /** The scheme the page was last told; see [tellPage]. */
     private var toldDark: Boolean? = null
+
+    /** Whether the WebView darkens a page told dark that has no dark style of its own; see [BrowserColors.allowDarkening]. */
+    private var darkensPages = false
     private var schemePokePending = false
 
     private lateinit var loads: BrowserLoads
     private lateinit var signInFlow: BrowserSignInFlow
+
+    /** Whether the page's scroll has put the bars away; see [BrowserChromeCollapse]. */
+    private lateinit var chrome: BrowserChromeCollapse
+
+    /** Whether the keyboard was up at the last layout. */
+    private var keyboardShown = false
     private var appliedHost: String? = null
 
     private var pendingUpload: UploadRequest? = null
@@ -246,6 +257,13 @@ class InAppBrowserActivity : AppCompatActivity() {
         pageTheme = ContextThemeWrapper(this, R.style.Theme_TigerDuck)
         tellPage(BrowserColors.pageToldDark(appearance, appIsDark(systemDark = isNight(resources.configuration))))
         loads = BrowserLoads(state, signIns)
+        val density = resources.displayMetrics.density
+        chrome = BrowserChromeCollapse(
+            jitterPx = (BrowserChromeCollapse.JITTER_DP * density).toInt(),
+            topZonePx = (BrowserChromeCollapse.TOP_ZONE_DP * density).toInt(),
+            endZonePx = (BrowserChromeCollapse.END_ZONE_DP * density).toInt(),
+            growthPx = (BrowserChromeCollapse.GROWTH_DP * density).toInt(),
+        )
         signInFlow = BrowserSignInFlow(
             state, loads, signIns, lifecycleScope,
             load = ::load,
@@ -267,6 +285,14 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
 
         onBackPressedDispatcher.addCallback(this) { handleBack() }
+        // The keyboard's coming or going moves the page without a scroll; see BrowserChromeCollapse.
+        window.decorView.viewTreeObserver.addOnGlobalLayoutListener {
+            val keyboard = ViewCompat.getRootWindowInsets(window.decorView)?.isVisible(WindowInsetsCompat.Type.ime()) == true
+            if (keyboard != keyboardShown) {
+                keyboardShown = keyboard
+                chrome.keyboardMoved()
+            }
+        }
 
         setContent {
             val appDark = appIsDark(systemDark = isSystemInDarkTheme())
@@ -409,7 +435,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun createWebView(): WebView = WebView(pageTheme).apply {
+    private fun createWebView(): WebView = BrowserWebView(pageTheme).apply {
         layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         setBackgroundColor(BrowserColors.webBackground(appearance, pageDark = null))
         settings.apply {
@@ -426,6 +452,7 @@ class InAppBrowserActivity : AppCompatActivity() {
             builtInZoomControls = true
             displayZoomControls = false
         }
+        darkensPages = runCatching { BrowserColors.allowDarkening(settings) }.getOrDefault(false)
         mobileUserAgent = settings.userAgentString
         val web = this
         CookieManager.getInstance().apply {
@@ -439,6 +466,10 @@ class InAppBrowserActivity : AppCompatActivity() {
             state.find = state.find?.copy(ordinal = if (count == 0) 0 else ordinal + 1, count = count, done = done)
         }
         setOnLongClickListener { onLongPress() }
+        setOnScrollChangeListener { _, _, scrollY, _, _ ->
+            chrome.scrolled(scrollY, leftBelow = scrollLeftBelow, contentWidth = contentWidth)
+            state.barsCollapsed = chrome.collapsed
+        }
         // Before the page's own scripts, in each of its frames. Every WebView the browser opens in has
         // this: deleting all browsing data (InAppBrowser.canClearEverything) came long after it.
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
@@ -516,6 +547,9 @@ class InAppBrowserActivity : AppCompatActivity() {
             pokeSettings()
         }
         loads.started(url)
+        // A new page starts at its top, with the bars shown.
+        chrome.reset()
+        state.barsCollapsed = false
         state.url = loads.address(url)
         state.loading = true
         state.certificate = null
@@ -544,7 +578,7 @@ class InAppBrowserActivity : AppCompatActivity() {
     private fun probeTone() {
         val told = toldDark ?: false
         webView.evaluateJavascript(BrowserColors.TONE_PROBE) { result ->
-            runCatching { BrowserColors.pageTone(result, told) }.getOrNull()?.let { state.pageDark = it }
+            runCatching { BrowserColors.pageTone(result, told, darkened = darkensPages) }.getOrNull()?.let { state.pageDark = it }
         }
     }
 
@@ -799,6 +833,10 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
         override fun stayHere() { state.outsideUrl = null }
         override fun closeLinkMenu() { state.linkMenuUrl = null }
+        override fun expandBars() {
+            chrome.expand()
+            state.barsCollapsed = false
+        }
         override fun answerDialog(confirmed: Boolean, value: String?) {
             val dialog = state.dialog ?: return
             state.dialog = null
@@ -806,8 +844,7 @@ class InAppBrowserActivity : AppCompatActivity() {
         }
         override fun pickUpload(source: UploadSource) = this@InAppBrowserActivity.pickUpload(source)
         override fun cancelUpload() = deliverUpload(null)
-        override fun signInAgain() = signInFlow.signInAgain()
-        override fun signInOnWeb() = signInFlow.signInOnWeb()
+        override fun retrySignIn() = signInFlow.retry()
     }
 
     // ── WebView callbacks ─────────────────────────────────────────────────
@@ -913,6 +950,21 @@ class InAppBrowserActivity : AppCompatActivity() {
 
         override fun onGeolocationPermissionsShowPrompt(origin: String?, callback: GeolocationPermissions.Callback?) {
             callback?.invoke(origin, false, false)
+        }
+    }
+
+    /**
+     * The browser's WebView, which tells how far the page can still scroll down and how wide it is
+     * laid out, and tells the bars' collapse when it changes size: as the keyboard comes or goes,
+     * the page's offset moves without a scroll.
+     */
+    private inner class BrowserWebView(context: Context) : WebView(context) {
+        val scrollLeftBelow: Int get() = computeVerticalScrollRange() - computeVerticalScrollExtent() - computeVerticalScrollOffset()
+        val contentWidth: Int get() = computeHorizontalScrollRange()
+
+        override fun onSizeChanged(w: Int, h: Int, ow: Int, oh: Int) {
+            super.onSizeChanged(w, h, ow, oh)
+            chrome.resized()
         }
     }
 

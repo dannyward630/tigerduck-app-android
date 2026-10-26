@@ -34,6 +34,7 @@ import org.robolectric.annotation.Config
 
 /** The School Mail notifications page says when the system blocks notifications, and checks again on return. */
 @RunWith(RobolectricTestRunner::class)
+// API 33, the first with POST_NOTIFICATIONS; one test below takes 30, which has none.
 @Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
 class SchoolMailSettingsPermissionTest {
 

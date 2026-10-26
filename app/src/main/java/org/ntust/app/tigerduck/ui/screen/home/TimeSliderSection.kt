@@ -98,13 +98,16 @@ fun TimeSliderSection(
     initialLoadComplete: Boolean = true,
     /** Signed out: where its "Sign in" button goes. */
     onSignIn: () -> Unit = {},
+    /**
+     * The slider's state, the time picked above all. Home holds its own, so the time outlives
+     * the section's turn as an outline while Home is arranged.
+     */
+    viewModel: TimeSliderViewModel = remember { TimeSliderViewModel() },
     // 翹課 — parked until after add-friend. See HomeViewModel._skippedDates.
     // skippedDates: Map<String, List<String>> = emptyMap(),
     // onSkipCourse: (Course, Date) -> Unit = { _, _ -> },
     onSelectCourse: (CourseTimeSlot) -> Unit
 ) {
-    val viewModel = remember { TimeSliderViewModel() }
-
     LaunchedEffect(courses, quietDays) {
         viewModel.configure(courses, quietDays::contains)
     }

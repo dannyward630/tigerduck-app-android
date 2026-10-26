@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -9,23 +8,18 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.library.FakeLibraryServer
 import org.ntust.app.tigerduck.shared.LibraryServiceError
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * A school sign-out takes the school account alone: the library account stays signed in, whoever's
  * it is, as each account signs in and out by itself (decided for Android on 2026-10-22).
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class CredentialManagerSchoolSignOutTest {
 
-    // Plain preferences: Robolectric has no Android keystore for the encrypted ones.
-    private val prefs = RuntimeEnvironment.getApplication()
+    // Plain preferences: the JVM has no Android keystore for the encrypted ones.
+    private val prefs = JvmContext()
         .getSharedPreferences("credentials-school-sign-out-test", Context.MODE_PRIVATE)
     private lateinit var credentials: CredentialManager
 

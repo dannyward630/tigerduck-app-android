@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.test.runTest
@@ -9,23 +8,18 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.DepartingRefresh
 import org.ntust.app.tigerduck.auth.DepartingSession
 import org.ntust.app.tigerduck.push.DepartingDeviceUnregister
 import org.ntust.app.tigerduck.push.OwedUnregister
 import org.ntust.app.tigerduck.push.PendingUnregister
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.File
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The owed unregister outlasts the sign-out and the process; see DepartingDeviceUnregister. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class PendingUnregisterPrefsTest {
 
-    private val prefs = RuntimeEnvironment.getApplication()
+    private val prefs = JvmContext()
         .getSharedPreferences("pending-unregister-test", Context.MODE_PRIVATE)
 
     @Test

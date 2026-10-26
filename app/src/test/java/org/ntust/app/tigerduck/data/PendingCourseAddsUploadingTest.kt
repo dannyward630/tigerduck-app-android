@@ -2,7 +2,6 @@
 
 package org.ntust.app.tigerduck.data
 
-import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.joinAll
@@ -12,25 +11,20 @@ import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.cache.DataCache
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * A term's upload keeps to the order the backend's DELETEs run in ([PendingCourseAdds.removing]),
  * as an add's does: one past a DELETE of its term would bring the courses back.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class PendingCourseAddsUploadingTest {
 
     @Test
     fun `an upload under way lands before a DELETE, and one begun after the DELETE waits for it`() = runTest {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
         val adds = PendingCourseAdds(cache, { _, _, _, _ -> emptyList() }, signInGeneration = { 1 })
         val order = mutableListOf<String>()

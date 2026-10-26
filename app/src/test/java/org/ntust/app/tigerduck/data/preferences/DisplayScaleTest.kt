@@ -1,21 +1,15 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The sizes on the Display and text size page, as stored and read back. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class DisplayScaleTest {
 
-    private val context: Context = RuntimeEnvironment.getApplication()
+    private val context: Context = JvmContext()
     private val file get() = context.getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE)
 
     @Before

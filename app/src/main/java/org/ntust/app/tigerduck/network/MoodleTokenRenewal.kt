@@ -51,7 +51,7 @@ internal class MoodleTokenRenewal(
 
 /**
  * The rules every automatic SSO sign-in with the stored password keeps, whatever it signs in for
- * (a Moodle token, [MoodleTokenRenewal], or Moodle's website for the TigerDuck browser):
+ * (a Moodle token, [MoodleTokenRenewal]):
  * - one at a time, whose answer, a failure included, every caller waiting shares;
  * - none for [pauseMs] after one that failed for a reason other than the network, whose error
  *   is handed back instead;

@@ -2,7 +2,6 @@ package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.app.Application
 import android.content.Intent
-import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -13,7 +12,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class MailtoLinkRoutingTest {
     private val context = RuntimeEnvironment.getApplication()
 

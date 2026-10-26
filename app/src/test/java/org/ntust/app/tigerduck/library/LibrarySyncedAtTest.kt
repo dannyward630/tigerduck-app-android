@@ -1,25 +1,19 @@
 package org.ntust.app.tigerduck.library
 
-import android.app.Application
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The Library page's "Last synced" row, [AppPreferences.librarySyncedAtMs]: kept across
  * restarts while a library account is signed in, and gone with the kept code once none is.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class LibrarySyncedAtTest {
 
-    private val context = RuntimeEnvironment.getApplication()
+    private val context = JvmContext()
     private val prefs = AppPreferences(context)
 
     @Test

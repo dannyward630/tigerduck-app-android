@@ -1,13 +1,11 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.model.AppFeature
 import org.ntust.app.tigerduck.data.model.AppFeature.ANNOUNCEMENTS
 import org.ntust.app.tigerduck.data.model.AppFeature.CALENDAR
@@ -16,16 +14,12 @@ import org.ntust.app.tigerduck.data.model.AppFeature.HOME
 import org.ntust.app.tigerduck.data.model.AppFeature.LIBRARY
 import org.ntust.app.tigerduck.data.model.AppFeature.SCHOOL_MAIL
 import org.ntust.app.tigerduck.data.model.AppFeature.SCORE
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * [LibraryTabKeepMigration] against the preferences an older build left behind:
  * the library opt-in switch, and a stored bottom bar or none.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class LibraryTabKeepMigrationTest {
 
     private lateinit var context: Context
@@ -33,7 +27,7 @@ class LibraryTabKeepMigrationTest {
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         raw().edit().clear().commit()
         prefs = AppPreferences(context)
     }

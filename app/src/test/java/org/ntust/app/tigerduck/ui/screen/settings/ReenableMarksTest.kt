@@ -1,19 +1,15 @@
 package org.ntust.app.tigerduck.ui.screen.settings
 
-import android.app.Application
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.DataMigration
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.ui.screen.home.AssignmentOverrideReconciler
 import org.ntust.app.tigerduck.ui.screen.home.CourseSyncReconciler
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * [markForReenableCheck]: which categories switched back on wait for the
@@ -21,16 +17,13 @@ import org.robolectric.annotation.Config
  * account holds none of its data, so the check has nothing to compare there,
  * and Use Local would send the emptied caches over the server's.
  */
-@RunWith(RobolectricTestRunner::class)
-// A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class)
 class ReenableMarksTest {
 
     private lateinit var prefs: AppPreferences
 
     @Before
     fun setUp() {
-        prefs = AppPreferences(RuntimeEnvironment.getApplication())
+        prefs = AppPreferences(JvmContext())
     }
 
     // What HomeBackendSync.pull records once a full sync has run.

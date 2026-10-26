@@ -5,9 +5,10 @@ import okhttp3.CookieJar
 import okhttp3.HttpUrl
 
 /**
- * The cookies of one sign-in run, in memory and nowhere else: the run's own, so it neither reads
- * nor overwrites the app's shared jar ([NtustSessionManager]'s), which other sign-ins wipe, and
- * the session it gets is never one the app's own calls also use. Kept as a browser keeps them:
+ * The cookies of one sign-in run, in memory and nowhere else: the run's own, so it never
+ * overwrites the app's shared jar ([NtustSessionManager]'s), which other sign-ins wipe, and the
+ * session it gets is never one the app's own calls also use. A run may start from cookies of the
+ * shared jar, as the website sign-in starts from its SSO session. Kept as a browser keeps them:
  * one per name, domain and path, the newest winning, gone once expired.
  */
 class SignInCookieJar(private val now: () -> Long = System::currentTimeMillis) : CookieJar {

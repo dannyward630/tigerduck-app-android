@@ -1,6 +1,6 @@
 package org.ntust.app.tigerduck.data.cache
 
-import android.app.Application
+import android.content.Context
 import java.io.File
 import java.util.Date
 import java.util.concurrent.CountDownLatch
@@ -20,29 +20,23 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.CourseIgnores
 import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.model.PendingCourseIgnore
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.shared.Course
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
-/** The cache over real files, in Robolectric's per-test app directories. */
-@RunWith(RobolectricTestRunner::class)
-// A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class)
+/** The cache over real files, in each test's own app folders. */
 class DataCacheTest {
 
-    private lateinit var context: Application
+    private lateinit var context: Context
     private lateinit var cache: DataCache
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         val calendar = AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context))
         cache = DataCache(context, calendar)
     }
@@ -120,6 +114,19 @@ class DataCacheTest {
         assertEquals(emptyList<PendingCourseIgnore>(), cache.loadPendingCourseIgnores())
         assertFalse(File(context.filesDir, "TigerDuckData/ignored_courses.json").exists())
         assertFalse(File(context.filesDir, "TigerDuckData/pending_course_ignores.json").exists())
+    }
+
+    // A process death between a write's temporary file and its rename leaves that file beside
+    // the one it was to replace, holding the departing student's data.
+    @Test
+    fun `signing out deletes what a write cut short left behind`() = runTest {
+        val leftInCache = File(context.cacheDir, "TigerDuckCache/assignments.json.tmp").apply { writeText("[]") }
+        val leftInData = File(context.filesDir, "TigerDuckData/manual_courses_1141.json.tmp").apply { writeText("[]") }
+
+        cache.clearAllUserData()
+
+        assertFalse(leftInCache.exists())
+        assertFalse(leftInData.exists())
     }
 
     @Test

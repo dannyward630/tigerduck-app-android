@@ -1,26 +1,20 @@
 package org.ntust.app.tigerduck.browser
 
-import android.app.Application
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** Zoom steps, each site's zoom and desktop choice, and the Appearance kept. */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class BrowserSettingsTest {
 
     private lateinit var settings: BrowserSettings
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         context.getSharedPreferences(BrowserSettings.PREFS_FILE, 0).edit().clear().commit()
         settings = BrowserSettings(context)
     }

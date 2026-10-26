@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.app.Application
-import android.os.Build
 import android.widget.Magnifier
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.Text
@@ -32,7 +31,7 @@ class NoOpMagnifierShadow {
 }
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU], shadows = [NoOpMagnifierShadow::class])
+@Config(application = Application::class, shadows = [NoOpMagnifierShadow::class])
 class MessageHeaderSelectionTest {
     @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 

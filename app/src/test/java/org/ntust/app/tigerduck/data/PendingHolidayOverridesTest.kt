@@ -2,7 +2,6 @@
 
 package org.ntust.app.tigerduck.data
 
-import android.app.Application
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -11,12 +10,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.io.IOException
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * Holiday choices whose PUT has not landed ([PendingHolidayOverrides]). A
@@ -24,8 +20,6 @@ import java.io.IOException
  * the next full sync, which replaced the set with the server's, took it back.
  * As the iPhone's `holidayOverridesAwaitingUpload`.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class PendingHolidayOverridesTest {
 
     private lateinit var prefs: AppPreferences
@@ -50,7 +44,7 @@ class PendingHolidayOverridesTest {
 
     @Before
     fun setUp() {
-        prefs = AppPreferences(RuntimeEnvironment.getApplication())
+        prefs = AppPreferences(JvmContext())
         holidays = PendingHolidayOverrides(
             prefs = prefs,
             sender = HolidayOverrideSender { id, notify, signIn ->

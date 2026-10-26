@@ -127,13 +127,7 @@ internal fun AccentPickerSheet(
                         .fillMaxWidth()
                         .height(64.dp)
                         .clip(RoundedCornerShape(14.dp))
-                        .background(
-                            if (isGradient) {
-                                gradientSwatch(colors[0].hex, colors[1].hex, direction, isDark)
-                            } else {
-                                solidSwatch(colors[0].hex, isDark)
-                            },
-                        ),
+                        .background(drawnAccent(colors[0].hex, colors.getOrNull(1)?.hex, direction, isDark)),
                 )
                 if (isGradient) {
                     Spacer(Modifier.height(16.dp))

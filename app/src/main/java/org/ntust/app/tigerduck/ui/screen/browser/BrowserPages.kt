@@ -79,40 +79,21 @@ internal fun BrowserErrorPage(error: BrowserError, actions: BrowserActions, modi
 }
 
 /**
- * The browser's sign-in screen, in place of the site's own sign-in page: it
- * signs in again when it can, counting down to the next try when the site
- * asks for a wait, and offers the site's web sign-in, where the student
- * signs in themselves.
+ * The browser's sign-in screen, in place of the site's own sign-in page: it says so while the
+ * browser signs in again by itself, and offers Retry once that failed.
  */
 @Composable
 internal fun BrowserSignInPage(signIn: SignInState, actions: BrowserActions, modifier: Modifier = Modifier) {
-    val message = when {
-        signIn.working -> stringResource(R.string.browser_sign_in_working)
-        signIn.msLeft > 0 -> stringResource(R.string.browser_sign_in_wait).replaceIosArg(1, countdown(signIn.msLeft))
-        signIn.failed -> stringResource(R.string.browser_sign_in_failed)
-        else -> stringResource(R.string.browser_sign_in_message)
-    }
     StatusPage(
         icon = Icons.Filled.Person,
         title = stringResource(R.string.browser_sign_in_title).replaceIosArg(1, signIn.siteName),
-        message = message,
+        message = stringResource(if (signIn.working) R.string.browser_sign_in_working else R.string.browser_sign_in_failed_short),
         modifier = modifier,
     ) {
         if (signIn.working) {
             CircularProgressIndicator(Modifier.align(Alignment.CenterHorizontally))
         } else {
-            Button(onClick = actions::signInAgain, enabled = signIn.msLeft <= 0, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.action_sign_in_again))
-            }
-        }
-        if (signIn.hasWebSignIn) {
-            OutlinedButton(onClick = actions::signInOnWeb, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.browser_sign_in_web)) }
+            Button(onClick = actions::retrySignIn, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.action_retry)) }
         }
     }
-}
-
-/** [ms] as minutes and seconds, `5:07`, rounded up so it never shows 0:00 while waiting. */
-internal fun countdown(ms: Long): String {
-    val seconds = (ms + 999) / 1000
-    return "%d:%02d".format(seconds / 60, seconds % 60)
 }

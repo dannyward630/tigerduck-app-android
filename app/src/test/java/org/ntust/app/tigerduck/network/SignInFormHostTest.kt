@@ -2,7 +2,6 @@
 
 package org.ntust.app.tigerduck.network
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -16,23 +15,20 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.PersistedStoredPasswordLatch
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.debug.DebugFixtureStore
 import org.ntust.app.tigerduck.debug.DemoModeInterceptor
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.concurrent.CopyOnWriteArrayList
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The sign-in form is posted only to the school's sign-in host, over HTTPS, as on the iPhone,
  * whatever the page names as the form's action. Hand-made pages throughout.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class SignInFormHostTest {
+
+    private val context = JvmContext()
 
     private val posts = CopyOnWriteArrayList<String>()
 
@@ -51,13 +47,12 @@ class SignInFormHostTest {
         .build()
 
     private fun latch(): PersistedStoredPasswordLatch {
-        val prefs = RuntimeEnvironment.getApplication().getSharedPreferences("form-host-test", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("form-host-test", Context.MODE_PRIVATE)
         prefs.edit().clear().commit()
         return PersistedStoredPasswordLatch(prefs, now = { 1_800_000_000_000L }) { STUDENT to PASSWORD }
     }
 
     private fun ssoLogin(action: String): SsoLoginService {
-        val context = RuntimeEnvironment.getApplication()
         val sessionManager = NtustSessionManager(AppPreferences(context), DemoModeInterceptor(DebugFixtureStore(context)))
         val school = client(action)
         return SsoLoginService(sessionManager, latch()) { school }

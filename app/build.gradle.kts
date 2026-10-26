@@ -148,12 +148,20 @@ android {
             // which java.base does not export. Without this, any test pinned
             // to API 36 fails before its first line runs.
             all { it.jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED") }
-            // Every unit test runs in one JVM, and Gradle gives it 512 MB. The
-            // suite fills that: G1 runs out of room to copy into and stops for
-            // a full collection, which a 4-core CI runner takes long enough
-            // over for a Glance test's 10 s wait to run out (WidgetScaleTest).
-            // At 320 MB it runs out of memory; at 1 GB it never collects in full.
+            // Gradle gives each test JVM 512 MB. One JVM running the whole suite
+            // filled that: G1 ran out of room to copy into and stopped for a
+            // full collection, which a 4-core CI runner took long enough over
+            // for a Glance test's 10 s wait to run out (WidgetScaleTest). At
+            // 320 MB it ran out of memory; at 1 GB it never collects in full.
             all { it.maxHeapSize = "1g" }
+            // The test classes are dealt out to several JVMs at once: half the
+            // cores, and at most four. A CI runner's four cores are two, with two
+            // threads each, which one JVM nearly keeps busy: there two JVMs took
+            // the suite from 126-133 s to 105-114 s, and three were no faster
+            // for 1.5 GB more. Where there are more cores the JVMs gain more:
+            // four on sixteen took 52-65 s, against 103-123 s for one. Each JVM
+            // builds the Robolectric sandboxes its own classes need.
+            all { it.maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 4) }
             // ReleaseLogRulesTest reads the R8 rules, which are no input of the
             // test task otherwise: a change to them alone would leave it UP-TO-DATE.
             all { it.inputs.file("proguard-rules.pro") }
@@ -176,6 +184,15 @@ android {
                 it.inputs.files(
                     fileTree("../wear/src/main") { include("**/*.kt", "AndroidManifest.xml", "res/xml/**") },
                     file("../wear/build.gradle.kts"),
+                ).withPathSensitivity(PathSensitivity.RELATIVE)
+            }
+            // AccountStateInventoryTest and AccountSwitchTest read the account state inventory
+            // and every source set's sources, the other flavor's and debug's included, which a
+            // test task of one variant does not compile.
+            all {
+                it.inputs.files(
+                    file("../docs/account-state.md"),
+                    fileTree("src") { include("main/java/**/*.kt", "play/java/**/*.kt", "fdroid/java/**/*.kt", "debug/java/**/*.kt") },
                 ).withPathSensitivity(PathSensitivity.RELATIVE)
             }
         }

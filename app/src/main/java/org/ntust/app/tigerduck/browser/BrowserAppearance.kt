@@ -1,6 +1,9 @@
 package org.ntust.app.tigerduck.browser
 
 import android.graphics.Color
+import android.webkit.WebSettings
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import kotlin.math.pow
@@ -28,6 +31,26 @@ enum class BrowserAppearance(val code: String) {
 enum class PageSchemeFollow { LIVE, NEXT_LOAD }
 
 object BrowserColors {
+    /**
+     * Lets the WebView darken a page that has no dark style of its own while
+     * the page is told dark ([pageToldDark], through the theme's
+     * `isLightTheme`): under Dark, and under Automatic while the app is dark.
+     * AndroidX WebKit's algorithmic darkening, where the WebView has it
+     * ([supported]; WebView 105 and later have it on any Android this app runs
+     * on). A page that uses `prefers-color-scheme` keeps its own dark style,
+     * and one that says `color-scheme: only light` stays light. The darkening
+     * is in how the page is drawn on screen, so a print keeps the site's
+     * colors. True once allowed; where the WebView cannot, pages show as they are.
+     */
+    fun allowDarkening(
+        settings: WebSettings,
+        supported: Boolean = WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING),
+    ): Boolean {
+        if (!supported) return false
+        WebSettingsCompat.setAlgorithmicDarkeningAllowed(settings, true)
+        return true
+    }
+
     /**
      * Whether the browser's bars are dark: as [appearance] says, or in Auto as
      * the page is ([pageDark], from [pageTone]), and light until the page is
@@ -64,16 +87,41 @@ object BrowserColors {
     /**
      * The script the browser runs on a page to tell how dark it is: the
      * background of the body and of the page, the `theme-color` it names and
-     * its `color-scheme`. Reads only; the page sees nothing.
+     * its `color-scheme`, as its style and its `color-scheme` meta say, and
+     * whether its style sheets ask `prefers-color-scheme` (those it may read:
+     * another site's sheet keeps its rules to itself). Reads only; the page
+     * sees nothing.
      */
     const val TONE_PROBE = """(function() {
   function bg(el) { return el ? getComputedStyle(el).backgroundColor : null; }
+  var asks = /prefers-color-scheme/i;
+  function ruleAsks(list, depth) {
+    for (var i = 0; i < list.length; i++) {
+      var rule = list[i];
+      if (rule.media && asks.test(rule.media.mediaText)) return true;
+      if (depth < 4 && rule.cssRules && ruleAsks(rule.cssRules, depth + 1)) return true;
+      if (depth < 4 && rule.styleSheet && sheetAsks(rule.styleSheet, depth + 1)) return true;
+    }
+    return false;
+  }
+  function sheetAsks(sheet, depth) {
+    if (sheet.media && asks.test(sheet.media.mediaText)) return true;
+    try { return ruleAsks(sheet.cssRules, depth); } catch (e) { return false; }
+  }
+  function prefersScheme() {
+    for (var i = 0; i < document.styleSheets.length; i++) if (sheetAsks(document.styleSheets[i], 0)) return true;
+    return false;
+  }
+  var root = document.documentElement;
   var meta = document.querySelector('meta[name="theme-color"]');
+  var scheme = document.querySelector('meta[name="color-scheme"]');
   return {
     body: bg(document.body),
-    root: bg(document.documentElement),
+    root: bg(root),
     theme: meta ? meta.getAttribute('content') : null,
-    scheme: getComputedStyle(document.documentElement).colorScheme || null
+    scheme: root ? getComputedStyle(root).colorScheme || null : null,
+    meta: scheme ? scheme.getAttribute('content') : null,
+    prefersScheme: prefersScheme()
   };
 })();"""
 
@@ -84,16 +132,32 @@ object BrowserColors {
      * The first background that is drawn decides, the body's then the
      * page's; else the `theme-color`; else the `color-scheme`, where a page
      * that offers both takes the one it was told ([toldDark]). A page that
-     * draws nothing and names nothing is the WebView's white.
+     * draws nothing and names nothing is the WebView's white, unless the
+     * WebView darkens it.
+     *
+     * Where the WebView darkens pages ([darkened], see [allowDarkening]), a
+     * light page told dark is dark when it names no dark scheme of its own,
+     * does not keep itself light (`only light`) and has no style that asks
+     * `prefers-color-scheme`, which the WebView takes as a dark style of its
+     * own: the darkening is in how it is drawn, not in the colors its styles
+     * give. Its scheme is its root's `color-scheme` style, or its meta where
+     * the style says nothing.
      */
-    fun pageTone(probeResult: String?, toldDark: Boolean): Boolean? {
+    fun pageTone(probeResult: String?, toldDark: Boolean, darkened: Boolean = false): Boolean? {
         val probe = runCatching { JsonParser.parseString(probeResult ?: return null) }.getOrNull()
             ?.takeIf { it.isJsonObject }?.asJsonObject ?: return null
+        val own = ownTone(probe, toldDark)
+        if (own || !darkened || !toldDark || probe.flag("prefersScheme")) return own
+        val scheme = probe.pageScheme()
+        return "dark" !in scheme && "only" !in scheme
+    }
+
+    private fun ownTone(probe: JsonObject, toldDark: Boolean): Boolean {
         listOf("body", "root").forEach { name ->
             parseColor(probe.text(name))?.takeIf { it.alpha > 0.5 }?.let { return it.isDark }
         }
         parseColor(probe.text("theme"))?.takeIf { it.alpha > 0.5 }?.let { return it.isDark }
-        val scheme = probe.text("scheme")?.lowercase().orEmpty().split(' ', ',').filter { it.isNotBlank() }
+        val scheme = probe.schemes("scheme")
         return when {
             "dark" in scheme && "light" in scheme -> toldDark
             "dark" in scheme -> true
@@ -101,7 +165,29 @@ object BrowserColors {
         }
     }
 
+    /**
+     * The page's color scheme as the WebView reads it: its root's `color-scheme` style, or its
+     * meta where the style is `normal`. Words apart by any white space, as CSS parses them; a value
+     * with a comma is none at all.
+     */
+    private fun JsonObject.pageScheme(): List<String> {
+        fun words(name: String): List<String> {
+            val value = text(name)?.trim()?.lowercase().orEmpty()
+            if (value.isEmpty() || ',' in value) return emptyList()
+            return value.split(WHITE_SPACE).filter { it != "normal" }
+        }
+        return words("scheme").ifEmpty { words("meta") }
+    }
+
+    private val WHITE_SPACE = Regex("""\s+""")
+
+    private fun JsonObject.schemes(name: String): List<String> =
+        text(name)?.lowercase().orEmpty().split(' ', ',').filter { it.isNotBlank() }
+
     private fun JsonObject.text(name: String): String? = get(name)?.takeIf { it.isJsonPrimitive }?.asString
+
+    private fun JsonObject.flag(name: String): Boolean =
+        get(name)?.takeIf { it.isJsonPrimitive && it.asJsonPrimitive.isBoolean }?.asBoolean == true
 
     /** An sRGB color with its alpha, 0 to 1. */
     data class Rgba(val red: Int, val green: Int, val blue: Int, val alpha: Double) {

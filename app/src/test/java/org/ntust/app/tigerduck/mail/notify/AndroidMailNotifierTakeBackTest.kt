@@ -3,7 +3,6 @@ package org.ntust.app.tigerduck.mail.notify
 import android.Manifest
 import android.app.Application
 import android.app.NotificationManager
-import android.os.Build
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -25,7 +24,7 @@ import org.robolectric.annotation.Config
  */
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class AndroidMailNotifierTakeBackTest {
 
     private val context: Application = RuntimeEnvironment.getApplication()

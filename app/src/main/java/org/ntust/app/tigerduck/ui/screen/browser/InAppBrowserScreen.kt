@@ -1,5 +1,14 @@
 package org.ntust.app.tigerduck.ui.screen.browser
 
+import android.view.accessibility.AccessibilityManager
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +49,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,8 +62,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -100,11 +115,13 @@ open class BrowserActions {
     open fun leaveFor(url: String) {}
     open fun stayHere() {}
     open fun closeLinkMenu() {}
+
+    /** The bars back after the page scrolled them away. */
+    open fun expandBars() {}
     open fun answerDialog(confirmed: Boolean, value: String?) {}
     open fun pickUpload(source: UploadSource) {}
     open fun cancelUpload() {}
-    open fun signInAgain() {}
-    open fun signInOnWeb() {}
+    open fun retrySignIn() {}
 }
 
 /**
@@ -113,6 +130,14 @@ open class BrowserActions {
  * progress line, the page, and a bottom bar with Back, Forward, Reload or
  * Stop, Find and ⋮, whose menu shares. [web] draws the page; the screen
  * draws everything around and over it.
+ *
+ * As the page scrolls down the bars collapse ([BrowserPageState.barsCollapsed]),
+ * as the iPhone's do: the top bar shrinks to the host, whose tap brings them
+ * back, and the bottom bar goes; the page grows into the room, and the
+ * progress line stays. Collapsed buttons take no taps and are gone from
+ * TalkBack. The bars stay shown while TalkBack is on, and while a sheet, the
+ * find bar, a dialog, an error page or the sign-in screen is up. With
+ * animations removed in the phone's settings they change at once.
  */
 @Composable
 fun InAppBrowserScreen(
@@ -125,6 +150,14 @@ fun InAppBrowserScreen(
     // The browser's own sheet, as its pages: the one it opened at, then each opened from the one before.
     var pages by rememberSaveable(stateSaver = BrowserSheetPagesSaver) { mutableStateOf(emptyList<BrowserSheet>()) }
     val colors = MaterialTheme.colorScheme
+
+    val talkBack = rememberTouchExploration()
+    val barsHeld = talkBack || pages.isNotEmpty() || state.find != null || state.dialog != null || state.upload != null ||
+        state.linkMenuUrl != null || state.outsideUrl != null || state.error != null || state.signIn != null
+    val collapsed = state.barsCollapsed && !barsHeld
+    // Held, they come back for good, till the page scrolls down again.
+    val heldCollapsed = barsHeld && state.barsCollapsed
+    LaunchedEffect(heldCollapsed) { if (heldCollapsed) actions.expandBars() }
 
     // Text and icons that name no color take the bars' own: a background alone leaves them
     // black, which dark bars hide.
@@ -141,7 +174,12 @@ fun InAppBrowserScreen(
             if (find != null) {
                 FindBar(find, actions)
             } else {
-                TopBar(state, onAddress = { pages = listOf(BrowserSheet.ADDRESS) }, onClose = actions::close)
+                TopBar(
+                    state,
+                    collapsed = collapsed,
+                    onAddress = { if (collapsed) actions.expandBars() else pages = listOf(BrowserSheet.ADDRESS) },
+                    onClose = actions::close,
+                )
             }
             Box(Modifier.fillMaxWidth().height(2.dp)) {
                 if (state.loading) {
@@ -162,8 +200,17 @@ fun InAppBrowserScreen(
                     modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
                 )
             }
-            HorizontalDivider(color = colors.outlineVariant)
-            BottomBar(state, actions, onMenu = { pages = listOf(BrowserSheet.MENU) })
+            AnimatedVisibility(
+                visible = !collapsed,
+                enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
+            ) {
+                Column {
+                    HorizontalDivider(color = colors.outlineVariant)
+                    // Off the moment the bars collapse, while they still fade.
+                    BottomBar(state, actions, usable = !collapsed, onMenu = { pages = listOf(BrowserSheet.MENU) })
+                }
+            }
         }
     }
 
@@ -209,25 +256,34 @@ private val BrowserSheetPagesSaver = listSaver<List<BrowserSheet>, String>(
     restore = { names -> names.map(BrowserSheet::valueOf) },
 )
 
+/** The top bar; [collapsed], the host alone in a shorter bar, whose tap ([onAddress]) brings the bars back. */
 @Composable
-private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onClose: () -> Unit) {
+private fun TopBar(state: BrowserPageState, collapsed: Boolean, onAddress: () -> Unit, onClose: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val host = state.host.orEmpty()
     val addressLabel = stringResource(R.string.browser_address).replaceIosArg(1, host)
+    val height by animateDpAsState(
+        (if (collapsed) BrowserChromeCollapse.TOP_BAR_COLLAPSED_DP else BrowserChromeCollapse.TOP_BAR_DP).dp,
+        label = "browser top bar",
+    )
     Row(
-        Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp),
+        Modifier.fillMaxWidth().height(height).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onClose) {
-            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.browser_close))
+        AnimatedVisibility(visible = !collapsed, enter = fadeIn() + expandHorizontally(), exit = fadeOut() + shrinkHorizontally()) {
+            // Off the moment the bars collapse, while it still fades.
+            IconButton(onClick = onClose, enabled = !collapsed, modifier = if (collapsed) Modifier.clearAndSetSemantics {} else Modifier) {
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.browser_close))
+            }
         }
         Column(
             Modifier
                 .weight(1f)
-                .clickable(onClickLabel = stringResource(R.string.browser_show_address), role = Role.Button, onClick = onAddress)
+                .clickable(onClickLabel = if (collapsed) null else stringResource(R.string.browser_show_address), role = Role.Button, onClick = onAddress)
                 .semantics(mergeDescendants = true) { contentDescription = addressLabel }
-                .padding(horizontal = 4.dp, vertical = 6.dp),
+                .padding(horizontal = 4.dp, vertical = if (collapsed) 2.dp else 6.dp),
             verticalArrangement = Arrangement.Center,
+            horizontalAlignment = if (collapsed) Alignment.CenterHorizontally else Alignment.Start,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 if (state.isHttps) {
@@ -241,14 +297,14 @@ private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onClose: () -
                 }
                 Text(
                     host,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = if (collapsed) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
             val title = state.title?.takeIf { it.isNotBlank() && it != state.url && it != host }
-            if (title != null) {
+            if (title != null && !collapsed) {
                 Text(
                     title,
                     style = MaterialTheme.typography.bodySmall,
@@ -260,6 +316,27 @@ private fun TopBar(state: BrowserPageState, onAddress: () -> Unit, onClose: () -
         }
         Spacer(Modifier.width(12.dp))
     }
+}
+
+/** Takes every touch for itself, before anything under it sees one. */
+private fun Modifier.noTouches(): Modifier = pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+    }
+}
+
+/** Whether TalkBack (touch exploration) is on, as it changes. */
+@Composable
+private fun rememberTouchExploration(): Boolean {
+    val context = LocalContext.current
+    val manager = remember(context) { context.getSystemService(AccessibilityManager::class.java) }
+    var on by remember(manager) { mutableStateOf(manager?.isTouchExplorationEnabled == true) }
+    DisposableEffect(manager) {
+        val listener = AccessibilityManager.TouchExplorationStateChangeListener { on = it }
+        manager?.addTouchExplorationStateChangeListener(listener)
+        onDispose { manager?.removeTouchExplorationStateChangeListener(listener) }
+    }
+    return on
 }
 
 @Composable
@@ -308,9 +385,13 @@ private fun FindBar(find: FindState, actions: BrowserActions) {
 }
 
 @Composable
-private fun BottomBar(state: BrowserPageState, actions: BrowserActions, onMenu: () -> Unit) {
+private fun BottomBar(state: BrowserPageState, actions: BrowserActions, usable: Boolean, onMenu: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().height(56.dp),
+        Modifier
+            .fillMaxWidth()
+            .height(BrowserChromeCollapse.BOTTOM_BAR_DP.dp)
+            // Going away: gone from TalkBack, and no touch or key reaches its buttons.
+            .then(if (usable) Modifier else Modifier.clearAndSetSemantics {}.noTouches().onPreviewKeyEvent { true }),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
     ) {

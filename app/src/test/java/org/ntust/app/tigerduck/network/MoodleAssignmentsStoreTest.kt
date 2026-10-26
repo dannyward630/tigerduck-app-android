@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.network
 
-import android.app.Application
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import org.junit.Assert.assertEquals
@@ -8,7 +7,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.academic.AcademicCalendarStore
 import org.ntust.app.tigerduck.data.CourseRosterMerge
 import org.ntust.app.tigerduck.data.cache.DataCache
@@ -16,18 +14,14 @@ import org.ntust.app.tigerduck.data.model.Assignment
 import org.ntust.app.tigerduck.data.moodle.AssignmentStatusLedger
 import org.ntust.app.tigerduck.data.moodle.SubmissionStatusAnswer
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.Date
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * What a round's writer gets back to show, upload and arm reminders from: the list as written,
  * which the reconciliation may have changed from the one it merged, and nothing once the write
  * was refused.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class MoodleAssignmentsStoreTest {
 
     private lateinit var cache: DataCache
@@ -35,7 +29,7 @@ class MoodleAssignmentsStoreTest {
 
     @Before
     fun setUp() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         cache = DataCache(context, AcademicCalendarStore(context, OkHttpClient(), AppPreferences(context)))
         ledger = AssignmentStatusLedger { cache.userDataGeneration }
     }

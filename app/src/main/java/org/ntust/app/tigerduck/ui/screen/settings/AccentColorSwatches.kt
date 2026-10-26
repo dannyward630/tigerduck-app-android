@@ -114,13 +114,37 @@ internal fun wallpaperColors(isDark: Boolean): ColorScheme? {
 /** The wallpaper's swatch: its primary running into its tertiary, as Android's own pickers show it. */
 internal fun ColorScheme.wallpaperSwatch(): Brush = Brush.linearGradient(listOf(primary, tertiary))
 
-/** A single color's swatch, as [isDark]'s theme draws it. */
-internal fun solidSwatch(lightHex: Int, isDark: Boolean): Brush =
-    SolidColor(AccentPolicy.fixedColor(lightHex, isDark))
+/**
+ * [lightHex] as its swatch shows it in [isDark]'s theme: as the theme draws
+ * it, but a preset in light mode in its own color, as on iOS, though the
+ * theme draws Orange, Green and Teal darker there.
+ */
+private fun swatchColor(lightHex: Int, isDark: Boolean): Color =
+    if (!isDark && AccentPolicy.isPreset(lightHex)) {
+        Color(0xFF000000L or (lightHex.toLong() and 0xFFFFFFL))
+    } else {
+        AccentPolicy.fixedColor(lightHex, isDark)
+    }
 
-/** A gradient's swatch along [direction], each end as [isDark]'s theme draws it. */
+/** A single color's swatch, as [isDark]'s theme shows it (see [swatchColor]). */
+internal fun solidSwatch(lightHex: Int, isDark: Boolean): Brush =
+    SolidColor(swatchColor(lightHex, isDark))
+
+/** A gradient's swatch along [direction], each end as [isDark]'s theme shows it (see [swatchColor]). */
 internal fun gradientSwatch(startHex: Int, endHex: Int, direction: AccentGradientDirection, isDark: Boolean): Brush =
-    AccentGradientBrush(AccentPolicy.fixedColor(startHex, isDark), AccentPolicy.fixedColor(endHex, isDark), direction)
+    AccentGradientBrush(swatchColor(startHex, isDark), swatchColor(endHex, isDark), direction)
+
+/**
+ * The accent [startHex], or with [endHex] the gradient from it, as [isDark]'s
+ * theme will draw it, a preset too: the color picker's preview, which a
+ * nudge off a preset would otherwise darken in one jump.
+ */
+internal fun drawnAccent(startHex: Int, endHex: Int?, direction: AccentGradientDirection, isDark: Boolean): Brush =
+    if (endHex == null) {
+        SolidColor(AccentPolicy.fixedColor(startHex, isDark))
+    } else {
+        AccentGradientBrush(AccentPolicy.fixedColor(startHex, isDark), AccentPolicy.fixedColor(endHex, isDark), direction)
+    }
 
 /** The check on the accent [lightHex]: white on a preset, and on a color of the user's own whatever reads. */
 internal fun checkOn(lightHex: Int, isDark: Boolean): Color = AccentPolicy.onAccent(lightHex, isDark) ?: Color.White
@@ -130,8 +154,8 @@ internal fun checkOn(lightHex: Int, isDark: Boolean): Color = AccentPolicy.onAcc
  * its middle, where it sits, which may not be what reads on its start.
  */
 internal fun checkOnGradient(startHex: Int, endHex: Int, isDark: Boolean): Color = readableOnGradient(
-    AccentPolicy.fixedColor(startHex, isDark),
-    AccentPolicy.fixedColor(endHex, isDark),
+    swatchColor(startHex, isDark),
+    swatchColor(endHex, isDark),
     onStart = checkOn(startHex, isDark),
 )
 

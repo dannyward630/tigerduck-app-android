@@ -12,17 +12,18 @@ import org.ntust.app.tigerduck.util.logSummary
 /**
  * The TigerDuck browser's Moodle session from the app's own sign-in to Moodle's website ([run],
  * MoodleTokenService.signInToWebsite), for when Moodle has no autologin key to give: Moodle allows
- * one every 6 minutes. The app posts the password itself and never fills one into a page; the
- * browser gets Moodle's session cookies, and nothing else of the run ([writeCookie], then [flush]).
+ * one every 6 minutes. The run uses the school SSO session the app already holds and posts no
+ * password; the browser gets Moodle's session cookies, and nothing else of the run
+ * ([writeCookie], then [flush]).
  *
  * Nothing runs for the demo account or while the browser cannot be used ([usable]: a clearing is
  * owed), and nothing is kept of a run a sign-out or an account change overtook ([generation],
  * which a clearing moves) or that [usable] no longer allows, or that took longer than [timeoutMs].
  *
  * By itself it runs at most once every [INTERVAL_MS], for every browser screen alike, a run that
- * failed included, so Moodle not keeping the session it gets never makes it post the password
- * again and again; asked for by hand ("Sign in again") it may run at once. The count starts
- * afresh for another sign-in.
+ * failed included, so Moodle not keeping the session it gets never sends the browser round and
+ * round; asked for by hand (Retry) it may run at once. The count starts afresh for another
+ * sign-in.
  */
 class MoodleWebSessionSignIn(
     private val run: suspend () -> List<Cookie>,

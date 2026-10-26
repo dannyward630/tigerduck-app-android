@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.push
 
-import android.app.Application
 import android.content.Context
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -10,17 +9,14 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.auth.AuthTokenManager
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.data.preferences.V3TokenStore
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
+import org.ntust.app.tigerduck.util.JvmContext
 
 /**
  * The upload ledger's record and a sign-out exclude each other
@@ -28,8 +24,6 @@ import kotlin.concurrent.thread
  * the sign-out fell into, its clearing of the stamps landing between the two, and the departing
  * account's list stayed for the next account to skip.
  */
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class UploadRecordLockTest {
 
     /** Whether [thread] reaches [state] within [timeoutMs]; false at once should it end instead. */
@@ -46,7 +40,7 @@ class UploadRecordLockTest {
 
     @Test
     fun `a sign-out waits for a record under way, and its clear then takes the record with it`() {
-        val context = RuntimeEnvironment.getApplication()
+        val context = JvmContext()
         val prefs = AppPreferences(context)
         val tokens = V3TokenStore(context.getSharedPreferences("v3-tokens-upload-record-lock-test", Context.MODE_PRIVATE))
         tokens.save("access", "refresh", Long.MAX_VALUE)

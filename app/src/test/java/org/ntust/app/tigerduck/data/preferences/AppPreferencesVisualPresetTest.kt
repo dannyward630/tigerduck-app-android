@@ -1,6 +1,5 @@
 package org.ntust.app.tigerduck.data.preferences
 
-import android.app.Application
 import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -10,16 +9,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.ntust.app.tigerduck.shared.WearProtocol
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.ui.theme.VisualPreset
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
 /** The interface style picked in Settings > Display, as it is stored and read back. */
-@RunWith(RobolectricTestRunner::class)
-// A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class AppPreferencesVisualPresetTest {
 
@@ -27,7 +20,7 @@ class AppPreferencesVisualPresetTest {
 
     @Before
     fun setUp() {
-        context = RuntimeEnvironment.getApplication()
+        context = JvmContext()
         context.getSharedPreferences("tigerduck_prefs", Context.MODE_PRIVATE).edit().clear().commit()
     }
 

@@ -1,23 +1,17 @@
 package org.ntust.app.tigerduck.network.tls
 
-import android.app.Application
 import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
 import org.ntust.app.tigerduck.shared.tls.PinAcceptance
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.annotation.Config
+import org.ntust.app.tigerduck.util.JvmContext
 
-@RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class)
 class PinAcceptanceStoreTest {
 
-    private val context = ApplicationProvider.getApplicationContext<Context>()
+    private val context = JvmContext()
     private val prefs get() = context.getSharedPreferences(PinAcceptanceStore.FILE, Context.MODE_PRIVATE)
 
     private fun store(versionCode: Long = 30) = PinAcceptanceStore(prefs, versionCode)

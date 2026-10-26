@@ -1,7 +1,5 @@
 package org.ntust.app.tigerduck.browser
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
@@ -9,7 +7,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** Moodle's sign-in provider: its site, its session, its sign-in page. */
-@OptIn(ExperimentalCoroutinesApi::class)
 class BrowserSignInTest {
 
     @Test
@@ -42,7 +39,7 @@ class BrowserSignInTest {
     @Test
     fun `a sign-in goes on to Moodle's pages, never to its sign-in pages, links or entries`() {
         assertTrue(MoodleBrowserSignIn.isMoodleReturnPage("https://moodle2.ntust.edu.tw/user/edit.php"))
-        assertFalse(MoodleBrowserSignIn.isMoodleReturnPage(MoodleBrowserSignIn.WEB_SIGN_IN_URL))
+        assertFalse(MoodleBrowserSignIn.isMoodleReturnPage("https://moodle2.ntust.edu.tw/auth/oidc/?source=loginpage"))
         assertFalse(MoodleBrowserSignIn.isMoodleReturnPage("https://moodle2.ntust.edu.tw/login/index.php"))
         assertFalse(MoodleBrowserSignIn.isMoodleReturnPage("https://moodle2.ntust.edu.tw/admin/tool/mobile/autologin.php?key=k"))
         assertFalse(MoodleBrowserSignIn.isMoodleReturnPage("https://example.com/user/edit.php"))
@@ -55,12 +52,6 @@ class BrowserSignInTest {
         assertFalse(MoodleBrowserSignIn.isMoodleSignInLink("https://moodle2.ntust.edu.tw/user/edit.php"))
         assertFalse(MoodleBrowserSignIn.isMoodleSignInLink("https://moodle2.ntust.edu.tw/login/index.php"))
         assertFalse(MoodleBrowserSignIn.isMoodleSignInLink("https://example.com/admin/tool/mobile/autologin.php?key=k"))
-    }
-
-    @Test
-    fun `the web sign-in goes through Moodle's OIDC entry, never its password form`() {
-        assertEquals("https://moodle2.ntust.edu.tw/auth/oidc/?source=loginpage", MoodleBrowserSignIn.WEB_SIGN_IN_URL)
-        assertFalse(MoodleBrowserSignIn.isMoodleSignInPage(MoodleBrowserSignIn.WEB_SIGN_IN_URL))
     }
 
     @Test
@@ -82,43 +73,5 @@ class BrowserSignInTest {
         override fun isReturnPage(url: String) = true
         override fun isSignInLink(url: String) = false
         override suspend fun signedInUrl(target: String): String? = null
-        override fun msUntilRetry() = 0L
-        override fun webSignInUrl(target: String): String? = null
-    }
-
-    @Test
-    fun `the wait counts down and tries again once, when a counting wait runs out`() = kotlinx.coroutines.test.runTest {
-        val shown = mutableListOf<Long>()
-        var retries = 0
-        watchSignInRetry(
-            msUntilRetry = { (1_500L - testScheduler.currentTime).coerceAtLeast(0) },
-            show = { shown += it },
-            retry = { retries++ },
-            stillShowing = { true },
-        )
-        assertEquals(listOf(1_500L, 1_000L, 500L, 0L), shown)
-        assertEquals(1, retries)
-    }
-
-    @Test
-    fun `a key that comes late starts a wait the screen counts down too`() = kotlinx.coroutines.test.runTest {
-        // Nothing to wait for at first: the key request is still out. Then it comes and Moodle's wait starts.
-        val answers = ArrayDeque(listOf(0L, 0L, 0L, 1_000L, 500L, 0L))
-        var retries = 0
-        watchSignInRetry(
-            msUntilRetry = { answers.removeFirstOrNull() ?: 0L },
-            show = {},
-            retry = { retries++ },
-            stillShowing = { true },
-        )
-        assertEquals(1, retries)
-    }
-
-    @Test
-    fun `nothing is tried once the screen is gone`() = kotlinx.coroutines.test.runTest {
-        var showing = 3
-        var retries = 0
-        watchSignInRetry(msUntilRetry = { 0L }, show = {}, retry = { retries++ }, stillShowing = { showing-- > 0 })
-        assertEquals(0, retries)
     }
 }

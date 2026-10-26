@@ -65,8 +65,6 @@ class MoodleTokenService internal constructor(
     scope: CoroutineScope,
     /** A jar for one sign-in to Moodle's website, its own; see [signInToWebsite]. */
     private val newCookieJar: () -> SignInCookieJar = { SignInCookieJar() },
-    /** How long a sign-in to Moodle's website may take; see [MoodleTokenCoordinator]. */
-    websiteDeadlineMs: Long = WEBSITE_DEADLINE_MS,
     now: () -> Long,
 ) {
     @Inject
@@ -166,8 +164,6 @@ class MoodleTokenService internal constructor(
         now = now,
         pauseMs = SIGN_IN_PAUSE_MS,
         passwordLatch = passwordLatch,
-        websiteLogin = { studentId, password, posting -> performWebsiteSignIn(studentId, password, posting) },
-        websiteDeadlineMs = websiteDeadlineMs,
     )
 
     /**
@@ -180,14 +176,13 @@ class MoodleTokenService internal constructor(
     suspend fun renewToken(rejected: String?): String = coordinator.renew(rejected)
 
     /**
-     * Signs in to Moodle's website with the stored account, through the school's SSO as the
-     * website's own sign-in does, and hands back the session's cookies: Moodle's alone, for the
-     * TigerDuck browser when Moodle has no autologin key for it. Never fills a password into a
-     * page: the app posts it, as it does for a token, under every rule a renewal keeps (one at a
-     * time, the pause after a failure, nothing while the stored password is refused). Throws when
-     * no session can be had; a sign-out meanwhile leaves none of it.
+     * Signs in to Moodle's website with the school SSO session the app already holds, as the
+     * iPhone's browser does, and hands back the session's cookies: Moodle's alone, for the
+     * TigerDuck browser when Moodle has no autologin key for it. No password is posted, and none
+     * is filled into a page: SSO asking for one ends it ([SsoSessionMissing]). Throws when no
+     * session can be had; a sign-out meanwhile leaves none of it.
      */
-    suspend fun signInToWebsite(): List<Cookie> = coordinator.website()
+    suspend fun signInToWebsite(): List<Cookie> = withContext(Dispatchers.IO) { walkWebsiteSignIn(RunningCalls()) }
 
     /**
      * Fetch a fresh token using the supplied credentials (first-time login). It is stored only
@@ -244,26 +239,17 @@ class MoodleTokenService internal constructor(
 
     /**
      * Signs in to Moodle's website: Moodle's OIDC entry, the school's SSO, the bridge back to
-     * Moodle, all in a jar of this run's own ([newCookieJar]). Done once it lands on a Moodle page
-     * past its sign-in, and only once a page no one signed out gets ([SIGNED_IN_CHECK]) opens there
-     * rather than sending it back to sign in: a second factor or a challenge SSO asks for is never
-     * taken for a session. Moodle's session cookies are what it hands back.
+     * Moodle, in a jar of this run's own ([newCookieJar]) that starts with the SSO session of the
+     * app's shared jar, the session manager's. SSO, holding its session, answers with the bridge
+     * at once; asking for the password instead, or anything else, ends the run with nothing posted.
+     * Done once it lands on a Moodle page past its sign-in, and only once a page no one signed out
+     * gets ([SIGNED_IN_CHECK]) opens there rather than sending it back to sign in. Moodle's
+     * session cookies are what it hands back; nothing goes back into the shared jar.
      */
-    private suspend fun performWebsiteSignIn(
-        studentId: String,
-        password: String,
-        posting: PasswordPosting,
-    ): List<Cookie> = withContext(Dispatchers.IO) {
-        walkWebsiteSignIn(studentId, password, posting, RunningCalls())
-    }
-
-    private suspend fun walkWebsiteSignIn(
-        studentId: String,
-        password: String,
-        posting: PasswordPosting,
-        calls: RunningCalls,
-    ): List<Cookie> {
+    private suspend fun walkWebsiteSignIn(calls: RunningCalls): List<Cookie> {
+        val account = tokens.studentId ?: throw MoodleWebserviceError.MissingStoredCredentials()
         val jar = newCookieJar()
+        jar.saveFromResponse(SSO_SITE, clientFor().cookieJar.loadForRequest(SSO_SITE))
         val client = tokenClient.newBuilder()
             .cookieJar(jar)
             // Each call as it starts, whatever its interceptors do with it.
@@ -271,18 +257,26 @@ class MoodleTokenService internal constructor(
             .build()
         val entry = moodleBaseUrl.resolve(WEBSITE_SIGN_IN_ENTRY)!!
         Log.i("MoodleTokenService", "website sign-in GET ${entry.redactForLog()}")
-        val (html, finalUrl) = awaitApart(calls::cancelAll) { getPage(client, entry) }
-        walkOidc(
-            client = client,
-            html = html,
-            responseUrl = finalUrl,
-            studentId = studentId,
-            password = password,
-            posting = posting,
-            remainingSteps = 6,
-            arrived = { _, url -> url.takeIf(::isPastMoodleSignIn) },
-            io = { call -> awaitApart(calls::cancelAll, call = call) },
-        )
+        var (html, url) = awaitApart(calls::cancelAll) { getPage(client, entry) }
+        var steps = 0
+        while (!isPastMoodleSignIn(url)) {
+            if (++steps > WEBSITE_SIGN_IN_STEPS) throw MoodleWebserviceError.MalformedResponse("OIDC flow exceeded maximum step count")
+            // SSO's sign-in form, a challenge, a page of its own: no session the app can use.
+            val bridge = parseOIDCBridge(html) ?: throw SsoSessionMissing()
+            // As the token's walk reads it: a path alone is Moodle's.
+            val target = (if (bridge.action.startsWith("/")) moodleBaseUrl.resolve(bridge.action) else url.resolve(bridge.action))
+                ?: throw MoodleWebserviceError.MalformedResponse("Invalid bridge action: ${bridge.action}")
+            // The code passes the sign-in on to Moodle, so it goes to the school's hosts over HTTPS
+            // and nowhere else.
+            if (!CredentialPost.isSchoolTarget(target)) {
+                throw MoodleWebserviceError.MalformedResponse("OIDC bridge action outside the school's HTTPS hosts")
+            }
+            Log.i("MoodleTokenService", "posting OIDC bridge → ${target.redactForLog()}")
+            val referer = url.toString()
+            val next = awaitApart(calls::cancelAll) { postForm(client, target, bridge.payload, referer = referer) }
+            html = next.first
+            url = next.second
+        }
         val (editor, checked) = awaitApart(calls::cancelAll) { getPage(client, moodleBaseUrl.resolve(SIGNED_IN_CHECK)!!) }
         if (!checked.host.equals(moodleBaseUrl.host, ignoreCase = true) ||
             checked.encodedPath != SIGNED_IN_CHECK ||
@@ -290,6 +284,8 @@ class MoodleTokenService internal constructor(
         ) {
             throw MoodleWebserviceError.MalformedResponse("Moodle's website did not keep the session")
         }
+        // Signed out, or signed in as another student, while it ran: the session is the departing one's.
+        if (tokens.studentId != account) throw MoodleWebserviceError.MissingStoredCredentials()
         return jar.loadForRequest(moodleBaseUrl)
             .filter { it.name.startsWith(MOODLE_SESSION_COOKIE) || it.name.startsWith(MOODLE_ID_COOKIE) }
             .takeIf { cookies -> cookies.any { it.name.startsWith(MOODLE_SESSION_COOKIE) } }
@@ -348,8 +344,6 @@ class MoodleTokenService internal constructor(
         posting: PasswordPosting,
         remainingSteps: Int,
         arrived: (html: String, url: HttpUrl) -> T?,
-        /** How each of its calls is run: as it is, or apart from a caller that may be cancelled. */
-        io: suspend (() -> Pair<String, HttpUrl>) -> Pair<String, HttpUrl> = { it() },
     ): T {
         if (remainingSteps <= 0) {
             throw MoodleWebserviceError.MalformedResponse("OIDC flow exceeded maximum step count")
@@ -374,15 +368,13 @@ class MoodleTokenService internal constructor(
                 throw MoodleWebserviceError.MalformedResponse("OIDC bridge action outside the school's HTTPS hosts")
             }
             Log.i("MoodleTokenService", "posting OIDC bridge → ${url.redactForLog()}")
-            val (nextHtml, nextUrl) = io {
-                postForm(
-                    client,
-                    url,
-                    bridge.payload,
-                    referer = responseUrl.toString()
-                )
-            }
-            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived, io)
+            val (nextHtml, nextUrl) = postForm(
+                client,
+                url,
+                bridge.payload,
+                referer = responseUrl.toString()
+            )
+            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived)
         }
 
         // SSO login step: we landed on ssoam2.ntust.edu.tw with a form.
@@ -418,15 +410,13 @@ class MoodleTokenService internal constructor(
             // lets go.
             val (nextHtml, nextUrl) = posting.post {
                 Log.i("MoodleTokenService", "posting SSO login → ${postUrl.redactForLog()}")
-                val answer = io {
-                    postLoginForm(
-                        client = client,
-                        url = postUrl,
-                        fields = payload,
-                        referer = responseUrl.toString(),
-                        origin = "https://ssoam2.ntust.edu.tw",
-                    )
-                }
+                val answer = postLoginForm(
+                    client = client,
+                    url = postUrl,
+                    fields = payload,
+                    referer = responseUrl.toString(),
+                    origin = "https://ssoam2.ntust.edu.tw",
+                )
                 // If we're still at /account/login and neither a token nor an OIDC
                 // bridge is in sight, the credentials were rejected.
                 if (answer.second.encodedPath.contains("/account/login") &&
@@ -437,7 +427,7 @@ class MoodleTokenService internal constructor(
                 }
                 answer
             }
-            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived, io)
+            return walkOidc(client, nextHtml, nextUrl, studentId, password, posting, remainingSteps - 1, arrived)
         }
 
         // Redact secrets before they hit logs/crash reports: the URL goes
@@ -663,6 +653,12 @@ class MoodleTokenService internal constructor(
         /** A page Moodle shows only a signed-in student, and sends anyone else to sign in from. */
         const val SIGNED_IN_CHECK = "/user/edit.php"
 
+        /** The bridge posts a sign-in to Moodle's website may take: SSO's form_post, and one to spare. */
+        const val WEBSITE_SIGN_IN_STEPS = 2
+
+        /** The school SSO's sign-in host, whose session the app's shared jar keeps. */
+        val SSO_SITE = "https://ssoam2.ntust.edu.tw/".toHttpUrl()
+
         /** Moodle's session cookie, with the site's suffix if it sets one, and its remembered username. */
         const val MOODLE_SESSION_COOKIE = "MoodleSession"
         const val MOODLE_ID_COOKIE = "MOODLEID1_"
@@ -676,11 +672,10 @@ class MoodleTokenService internal constructor(
 /**
  * Runs [call], a blocking one, apart from its caller on [dispatcher], and hands its answer over
  * only while the caller is still there for it. Cancelled (at a deadline, say), the caller stops
- * waiting at once and lets its locks go then, a password post's among them: a blocking call does
- * not stop for a cancelled coroutine, and one stuck where Call.cancel cannot reach (an address
- * lookup) would hold them. Then [onCancel] cancels what the call is doing, and its answer is
- * never read, even one that came in just as the caller was cancelled: no refusal counted, no
- * password taken.
+ * waiting at once: a blocking call does not stop for a cancelled coroutine, and one stuck where
+ * Call.cancel cannot reach (an address lookup) would hold the caller till it ended. Then
+ * [onCancel] cancels what the call is doing, and its answer is never read, even one that came
+ * in just as the caller was cancelled: no session taken from a run given up on.
  */
 internal suspend fun <T> awaitApart(
     onCancel: () -> Unit,
@@ -697,3 +692,9 @@ internal suspend fun <T> awaitApart(
         throw e
     }
 }
+
+/**
+ * A sign-in to Moodle's website that found no school SSO session to use: SSO asked for the
+ * password, or answered with no bridge back to Moodle. Nothing was posted.
+ */
+internal class SsoSessionMissing : Exception("SSO holds no session the app can use; no password is posted")

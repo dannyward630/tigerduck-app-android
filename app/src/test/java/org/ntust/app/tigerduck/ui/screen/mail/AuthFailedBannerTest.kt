@@ -1,7 +1,6 @@
 package org.ntust.app.tigerduck.ui.screen.mail
 
 import android.app.Application
-import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -17,7 +16,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.TIRAMISU])
+@Config(application = Application::class)
 class AuthFailedBannerTest {
     @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 

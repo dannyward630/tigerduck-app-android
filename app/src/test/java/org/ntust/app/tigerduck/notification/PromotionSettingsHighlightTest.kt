@@ -9,7 +9,6 @@
 package org.ntust.app.tigerduck.notification
 
 import android.app.Application
-import android.os.Build
 import android.provider.Settings
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -20,7 +19,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = Application::class, sdk = [Build.VERSION_CODES.BAKLAVA])
+@Config(application = Application::class)
 class PromotionSettingsHighlightTest {
 
     private fun skin(manufacturer: String) = DeviceSkin(

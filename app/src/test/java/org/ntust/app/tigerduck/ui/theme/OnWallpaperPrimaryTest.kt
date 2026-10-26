@@ -47,7 +47,7 @@ import kotlin.math.abs
 
 @RunWith(RobolectricTestRunner::class)
 // A plain Application: the real one is a Hilt app these tests do not need.
-@Config(application = Application::class, sdk = [31])
+@Config(application = Application::class)
 // Real drawing, so the captured image holds actual pixels.
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class OnWallpaperPrimaryTest {
