@@ -10,9 +10,16 @@ import org.junit.Test
 /** The browser's bars following the page, and what the page is told. */
 class BrowserColorsTest {
 
-    private fun probe(body: String? = null, root: String? = null, theme: String? = null, scheme: String? = null, meta: String? = null): String {
+    private fun probe(
+        body: String? = null,
+        root: String? = null,
+        theme: String? = null,
+        scheme: String? = null,
+        meta: String? = null,
+        prefersScheme: Boolean = false,
+    ): String {
         fun q(v: String?) = v?.let { "\"$it\"" } ?: "null"
-        return """{"body":${q(body)},"root":${q(root)},"theme":${q(theme)},"scheme":${q(scheme)},"meta":${q(meta)}}"""
+        return """{"body":${q(body)},"root":${q(root)},"theme":${q(theme)},"scheme":${q(scheme)},"meta":${q(meta)},"prefersScheme":$prefersScheme}"""
     }
 
     @Test
@@ -104,6 +111,13 @@ class BrowserColorsTest {
     }
 
     @Test
+    fun `a page whose style asks prefers-color-scheme is left as it draws itself`() {
+        // Its own style answers dark, white background and all, and the WebView leaves it alone.
+        assertFalse(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", prefersScheme = true), toldDark = true, darkened = true)!!)
+        assertTrue(BrowserColors.pageTone(probe(body = "rgb(20, 20, 20)", prefersScheme = true), toldDark = true, darkened = true)!!)
+    }
+
+    @Test
     fun `the page's own color-scheme style wins over its meta`() {
         // Its style lets the WebView darken it, whatever the meta said.
         assertTrue(BrowserColors.pageTone(probe(body = "rgb(255, 255, 255)", scheme = "light", meta = "only light"), toldDark = true, darkened = true)!!)
@@ -123,6 +137,7 @@ class BrowserColorsTest {
     fun `the probe reads the page's color-scheme meta, and a page with no root`() {
         assertTrue(BrowserColors.TONE_PROBE.contains("meta[name=\"color-scheme\"]"))
         assertTrue(BrowserColors.TONE_PROBE.contains("meta: "))
+        assertTrue(BrowserColors.TONE_PROBE.contains("prefersScheme: "))
         assertTrue(BrowserColors.TONE_PROBE.contains("scheme: root ?"))
     }
 
