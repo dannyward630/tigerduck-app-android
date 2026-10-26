@@ -62,8 +62,7 @@ class InAppBrowserScreenTest {
         override fun stayHere() { calls += "stay" }
         override fun retry() { calls += "retry" }
         override fun openCurrentExternal() { calls += "external" }
-        override fun signInAgain() { calls += "signIn" }
-        override fun signInOnWeb() { calls += "signInWeb" }
+        override fun retrySignIn() { calls += "signIn" }
         override fun pickUpload(source: UploadSource) { calls += "upload $source" }
         override fun cancelUpload() { calls += "uploadCancel" }
         override fun answerDialog(confirmed: Boolean, value: String?) { calls += "dialog $confirmed" }
@@ -418,25 +417,23 @@ class InAppBrowserScreenTest {
     }
 
     @Test
-    fun `the sign-in screen counts down to the next try and offers the web sign-in`() {
-        show(loaded().apply { signIn = SignInState("Moodle", page, msLeft = 65_000) })
+    fun `a sign-in that failed says so and offers Retry, with no countdown and no web sign-in`() {
+        show(loaded().apply { signIn = SignInState("Moodle", page) })
 
         composeRule.onNodeWithText(string(R.string.browser_sign_in_title).replaceIosArg(1, "Moodle")).assertExists()
-        composeRule.onNodeWithText(string(R.string.browser_sign_in_wait).replaceIosArg(1, "1:05")).assertExists()
-        composeRule.onNodeWithText(string(R.string.action_sign_in_again)).assertIsNotEnabled()
-        composeRule.onNodeWithText(string(R.string.browser_sign_in_web)).performClick()
+        composeRule.onNodeWithText(string(R.string.browser_sign_in_failed_short)).assertExists()
+        composeRule.onNodeWithText(string(R.string.browser_sign_in_web)).assertDoesNotExist()
+        composeRule.onNodeWithText(string(R.string.action_retry)).performClick()
 
-        assertEquals(listOf("signInWeb"), calls)
+        assertEquals(listOf("signIn"), calls)
     }
 
     @Test
-    fun `when a try may go, sign in again tries`() {
-        show(loaded().apply { signIn = SignInState("Moodle", page, msLeft = 0, failed = true) })
+    fun `a sign-in on its way says so, with nothing to tap`() {
+        show(loaded().apply { signIn = SignInState("Moodle", page, working = true) })
 
-        composeRule.onNodeWithText(string(R.string.browser_sign_in_failed)).assertExists()
-        composeRule.onNodeWithText(string(R.string.action_sign_in_again)).performClick()
-
-        assertEquals(listOf("signIn"), calls)
+        composeRule.onNodeWithText(string(R.string.browser_sign_in_working)).assertExists()
+        composeRule.onNodeWithText(string(R.string.action_retry)).assertDoesNotExist()
     }
 
     @Test
@@ -479,13 +476,6 @@ class InAppBrowserScreenTest {
         composeRule.onNodeWithText(string(R.string.browser_download_open)).performClick()
 
         assertEquals(listOf("open week3.pdf"), calls)
-    }
-
-    @Test
-    fun `the countdown shows minutes and seconds, rounded up`() {
-        assertEquals("6:00", countdown(360_000))
-        assertEquals("1:05", countdown(64_001))
-        assertEquals("0:01", countdown(1))
     }
 
     @Test

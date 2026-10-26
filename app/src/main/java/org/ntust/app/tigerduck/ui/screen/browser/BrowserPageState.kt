@@ -98,15 +98,11 @@ data class UploadRequest(
 )
 
 /**
- * The browser's own sign-in screen, in place of a site's sign-in page.
- * [msLeft] counts down to the next try; [working] while one is on its way;
- * [failed] once a try came back with nothing.
+ * The browser's own sign-in screen, in place of a site's sign-in page: [working] while a try is
+ * on its way, and otherwise the automatic sign-in failed, for Retry.
  */
 data class SignInState(
     val siteName: String,
     val target: String,
-    val msLeft: Long,
     val working: Boolean = false,
-    val failed: Boolean = false,
-    val hasWebSignIn: Boolean = true,
 )
