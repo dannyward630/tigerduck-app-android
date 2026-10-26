@@ -138,6 +138,9 @@ fun HomeScreen(
     var showAddSectionDialog by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
     HomeEditingLeaveEffect(editing, listState)
+    // Here rather than in the time slider: arranged, Home draws its outline in
+    // its place, and a time the user picked would go with it.
+    val timeSlider = remember { TimeSliderViewModel() }
 
     // Intercept the system back gesture while editing — exit edit mode
     // instead of navigating away. This matches Android-native expectations
@@ -239,6 +242,7 @@ fun HomeScreen(
             HomeSectionContent(
                 section = section,
                 allCourses = allCourses,
+                timeSlider = timeSlider,
                 quietDays = quietDays,
                 upcomingAssignments = upcomingAssignments,
                 assignmentFilter = assignmentFilter,

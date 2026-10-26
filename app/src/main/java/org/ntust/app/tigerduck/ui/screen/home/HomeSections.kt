@@ -313,6 +313,8 @@ private fun OutlineBar(height: Dp, modifier: Modifier = Modifier.fillMaxWidth())
 internal fun HomeSectionContent(
     section: HomeSection,
     allCourses: List<Course>,
+    /** The time slider's state, held above the section so editing does not reset it. */
+    timeSlider: TimeSliderViewModel,
     quietDays: QuietDays,
     upcomingAssignments: List<Assignment>,
     assignmentFilter: AssignmentFilter,
@@ -341,6 +343,7 @@ internal fun HomeSectionContent(
         when (section.type) {
             HomeSection.HomeSectionType.TODAY_COURSES -> {
                 TimeSliderSection(
+                    viewModel = timeSlider,
                     courses = allCourses,
                     quietDays = quietDays,
                     invertDirection = invertDirection,

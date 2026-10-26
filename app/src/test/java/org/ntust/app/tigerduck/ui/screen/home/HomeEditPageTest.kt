@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.assertIsDisplayed
@@ -25,6 +26,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import dagger.hilt.internal.GeneratedComponent
 import dagger.hilt.internal.GeneratedComponentManager
@@ -34,6 +36,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.ntust.app.tigerduck.AppConstants
 import org.ntust.app.tigerduck.R
 import org.ntust.app.tigerduck.academic.AcademicCalendar
 import org.ntust.app.tigerduck.academic.QuietDays
@@ -43,11 +46,15 @@ import org.ntust.app.tigerduck.data.model.HomeSection
 import org.ntust.app.tigerduck.data.model.HomeSection.HomeSectionType
 import org.ntust.app.tigerduck.data.model.WidgetItem
 import org.ntust.app.tigerduck.data.preferences.AppPreferences
+import org.ntust.app.tigerduck.shared.Course
+import org.ntust.app.tigerduck.shared.clock.AppClock
+import org.ntust.app.tigerduck.shared.clock.ClockOverride
 import org.ntust.app.tigerduck.ui.haptics.Haptics
 import org.ntust.app.tigerduck.ui.theme.TigerDuckAppTheme
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 
 /**
  * Home while it is being arranged: each section an outline with a drag handle above its header
@@ -93,12 +100,18 @@ class HomeEditPageTest {
     // A flow, as HomeViewModel's: a move reaches the page a little after the drag that made it.
     private val sections = MutableStateFlow(emptyList<HomeSection>())
     private lateinit var listState: LazyListState
+    private lateinit var timeSlider: TimeSliderViewModel
+
+    /** The classes the time slider shows; with none, a stand-in takes its place, since the real one ticks. */
+    private var courses = emptyList<Course>()
 
     private fun show(sections: List<HomeSection>, isEditing: Boolean) {
         this.sections.value = sections
         editing.value = isEditing
         composeRule.setContent {
             listState = rememberLazyListState()
+            // Outside the page, where HomeScreen holds it.
+            timeSlider = remember { TimeSliderViewModel() }
             val shown by this.sections.collectAsState()
             TigerDuckAppTheme(darkTheme = false) {
                 HomePage(
@@ -125,13 +138,14 @@ class HomeEditPageTest {
     /** What Home browses: the real sections, but the time slider, which ticks, as a stand-in. */
     @androidx.compose.runtime.Composable
     private fun LiveContent(section: HomeSection) {
-        if (section.type == HomeSectionType.TODAY_COURSES) {
+        if (section.type == HomeSectionType.TODAY_COURSES && courses.isEmpty()) {
             Text("live time machine")
             return
         }
         HomeSectionContent(
             section = section,
-            allCourses = emptyList(),
+            allCourses = courses,
+            timeSlider = timeSlider,
             quietDays = QuietDays(AcademicCalendar.EMPTY, emptySet()),
             upcomingAssignments = emptyList(),
             assignmentFilter = AssignmentFilter.INCOMPLETE,
@@ -354,6 +368,31 @@ class HomeEditPageTest {
             .map { it.boundsInRoot }
             .filter { it.bottom <= header.top }
             .maxBy { it.bottom }
+    }
+
+    @Test
+    fun `a time picked on the slider is still there after editing`() {
+        // Period 3, 10:20 to 11:10, every day, and the clock frozen at 10:40 on a Monday.
+        courses = listOf(Course.fromSchedule("CS1001", "Calculus", schedule = (1..7).associateWith { listOf("3") }))
+        val tenForty = LocalDate.parse("2026-09-28").atTime(10, 40).atZone(AppConstants.TAIPEI_ZONE).toInstant().toEpochMilli()
+        AppClock.setOverride(ClockOverride(tenForty, frozen = true, savedAtRealMillis = 0L))
+        try {
+            show(listOf(today), isEditing = false)
+            composeRule.onNode(hasContentDescription(text(R.string.home_time_slider_title), substring = true))
+                .performTouchInput { swipeLeft() }
+            composeRule.waitForIdle()
+            // Off "now", which the slider says with its button back to it.
+            composeRule.onNodeWithText(text(R.string.home_time_slider_now)).assertIsDisplayed()
+
+            editing.value = true
+            composeRule.waitForIdle()
+            editing.value = false
+            composeRule.waitForIdle()
+
+            composeRule.onNodeWithText(text(R.string.home_time_slider_now)).assertIsDisplayed()
+        } finally {
+            AppClock.setOverride(null)
+        }
     }
 
     @Test
