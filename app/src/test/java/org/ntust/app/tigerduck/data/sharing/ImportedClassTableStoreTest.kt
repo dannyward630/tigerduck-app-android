@@ -248,6 +248,17 @@ class ImportedClassTableStoreTest {
         assertFalse(file.exists())
     }
 
+    // A process death between the write's temporary file and its rename leaves that file, which
+    // holds the departing student's classmates.
+    @Test
+    fun `a sign-out deletes what a write cut short left behind`() = runTest {
+        val unfinished = File(file.parentFile, "${file.name}.tmp").apply { writeText("{}") }
+
+        store().clearForSignOut()
+
+        assertFalse(unfinished.exists())
+    }
+
     @Test
     fun `a file whose account is no longer the one signed in is emptied, not read back`() = runTest {
         // The app stopped before a sign-out emptied the store, or before another account's sign-in did.

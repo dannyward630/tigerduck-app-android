@@ -166,6 +166,9 @@ class BulletinCache @Inject constructor(@ApplicationContext context: Context) {
         mutex.withLock {
             runCatching { file.delete() }
             runCatching { fetchedAtFile.delete() }
+            // A write a process death cut short leaves its temporary file beside them.
+            runCatching { temporary(file).delete() }
+            runCatching { temporary(fetchedAtFile).delete() }
         }
         // Detail file deletion is intentionally outside the mutex lock.
         val files = detailDir.listFiles() ?: return@withContext
@@ -180,10 +183,13 @@ class BulletinCache @Inject constructor(@ApplicationContext context: Context) {
         }
     }
 
+    /** Where [writeAtomically] writes [target] before it renames it into place. */
+    private fun temporary(target: File) = File(target.parentFile, "${target.name}.tmp")
+
     /** Truncating writeText leaves a partial file if the process dies mid-write,
      *  which fails JSON parse on next launch and discards the whole cache. */
     private fun writeAtomically(target: File, content: String) {
-        val tmp = File(target.parentFile, "${target.name}.tmp")
+        val tmp = temporary(target)
         try {
             tmp.writeText(content)
             if (!tmp.renameTo(target)) {
