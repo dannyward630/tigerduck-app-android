@@ -75,8 +75,8 @@ object BrowserModule {
 
     /**
      * Who signs the browser in where: Moodle, through its autologin, and between
-     * its keys through the app's own sign-in to its website. A school SSO
-     * provider would join this list; none is written yet.
+     * its keys through the app's own sign-in to its website with the SSO session
+     * the app holds. A school SSO provider would join this list; none is written yet.
      */
     @Provides
     @Singleton
