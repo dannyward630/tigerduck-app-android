@@ -10,15 +10,32 @@
 Make sure each of these holds before a PR is merged. Nothing checks them automatically; reviewers
 rely on the author having done them.
 
+**Any PR**
+
+- Before opening it, I talked the change over with @SamWang8891 and @xinshoutw in #devs-chat on
+  the TigerDuck Discord (https://discord.gg/Mxb344qKRu), and they know the plan. A pull request
+  nobody heard about first may be closed.
+- I have **not** edited anything inside `app-translation/`. A string change goes through a pull
+  request in [app-translation](https://github.com/tigerduck-app/app-translation) and follows that
+  repo's rules
+  ([CONVENTIONS.md](https://github.com/tigerduck-app/app-translation/blob/main/CONVENTIONS.md)).
+- If this PR needs strings from such a pull request, it pins `app-translation` at that pull
+  request's head commit and links it in the PR body. CI fetches the submodule from
+  tigerduck-app/app-translation, where a pull request's head can always be fetched and a commit
+  only on a fork may not. A core developer merges the app-translation pull request first, moves
+  the pin to its `main`, then merges this PR.
+
 **Into `dev`**
 
 - I have tested on my phone (watch) / emulator that this branch does **not** break other functions
   it is not meant to touch.
 - I have tested on my phone (watch) / emulator that this branch successfully fixes/adds the
   function(s) it is intended to fix/add.
+- I have **not** changed the app's version (`versionCode` or `versionName`).
 
 **Into `main`**
 
+- Only core developers open pull requests into `main`.
 - I have compiled both the **fdroid** and **play** flavors using the scripts under
   [`debug/`](debug) (`install-fdroid.sh`, `install-play.sh`, `install-play-release.sh`) and
   confirmed they all pass compilation without any warnings.
@@ -26,4 +43,4 @@ rely on the author having done them.
 - I have tested on my phone (watch) / emulator that upgrading from the previous version does not
   break the app.
 
-See [`debug/DEBUG.md`](debug/DEBUG.md) for details on the install scripts and build variants.
+See [`debug/DEBUG.md`](debug/DEBUG.md) for details on the installation scripts and build variants.
