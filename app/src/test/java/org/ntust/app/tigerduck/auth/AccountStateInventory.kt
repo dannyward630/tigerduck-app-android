@@ -61,60 +61,117 @@ internal class AccountStateInventory(
         bare = lexed.mapValues { it.value.second }
     }
 
-    private fun lex(text: String): Pair<String, String> {
+    /**
+     * [text] with its comments blanked, and the same with its strings' and characters' literal
+     * text blanked too. A string template's expression stays code, its own strings and comments
+     * read as such.
+     */
+    private fun lex(text: String): Pair<String, String> =
+        Lexer(text).lexCode(0, template = false).let { it.code.toString() to it.bare.toString() }
+
+    private class Lexer(val text: String) {
         val code = StringBuilder(text)
         val bare = StringBuilder(text)
-        fun blank(into: StringBuilder, from: Int, to: Int) {
+
+        private fun blank(into: StringBuilder, from: Int, to: Int) {
             for (index in from until minOf(to, text.length)) if (into[index] != '\n') into.setCharAt(index, ' ')
         }
-        var index = 0
-        while (index < text.length) {
-            when {
-                text.startsWith("//", index) -> {
-                    val end = text.indexOf('\n', index).let { if (it < 0) text.length else it }
-                    blank(code, index, end)
-                    blank(bare, index, end)
-                    index = end
-                }
-                text.startsWith("/*", index) -> {
-                    var depth = 0
-                    var end = index
-                    while (end < text.length) {
-                        when {
-                            text.startsWith("/*", end) -> {
-                                depth++
-                                end += 2
-                            }
-                            text.startsWith("*/", end) -> {
-                                end += 2
-                                if (--depth == 0) break
-                            }
-                            else -> end++
-                        }
-                    }
-                    blank(code, index, end)
-                    blank(bare, index, end)
-                    index = end
-                }
-                text.startsWith("\"\"\"", index) -> {
-                    val end = text.indexOf("\"\"\"", index + 3).let { if (it < 0) text.length else it }
-                    blank(bare, index + 3, end)
-                    index = end + 3
-                }
-                text[index] == '"' || text[index] == '\'' -> {
-                    val quote = text[index]
-                    var end = index + 1
-                    while (end < text.length && text[end] != quote && text[end] != '\n') {
-                        if (text[end] == '\\') end++
-                        end++
-                    }
-                    blank(bare, index + 1, end)
-                    index = end + 1
-                }
-                else -> index++
-            }
+
+        /** Reads code from [start] to the end, or in a template to the `}` closing it; returns this. */
+        fun lexCode(start: Int, template: Boolean): Lexer {
+            code(start, template)
+            return this
         }
-        return code.toString() to bare.toString()
+
+        /** Code from [start] to the end, or in a template to the `}` closing it; the index after. */
+        private fun code(start: Int, template: Boolean): Int {
+            var index = start
+            var depth = 0
+            while (index < text.length) {
+                when {
+                    text.startsWith("//", index) -> {
+                        val end = text.indexOf('\n', index).let { if (it < 0) text.length else it }
+                        blank(code, index, end)
+                        blank(bare, index, end)
+                        index = end
+                    }
+                    text.startsWith("/*", index) -> {
+                        var nested = 0
+                        var end = index
+                        while (end < text.length) {
+                            when {
+                                text.startsWith("/*", end) -> {
+                                    nested++
+                                    end += 2
+                                }
+                                text.startsWith("*/", end) -> {
+                                    end += 2
+                                    if (--nested == 0) break
+                                }
+                                else -> end++
+                            }
+                        }
+                        blank(code, index, end)
+                        blank(bare, index, end)
+                        index = end
+                    }
+                    text.startsWith("\"\"\"", index) -> index = string(index + 3, raw = true)
+                    text[index] == '"' -> index = string(index + 1, raw = false)
+                    text[index] == '\'' -> {
+                        var end = index + 1
+                        while (end < text.length && text[end] != '\'' && text[end] != '\n') {
+                            if (text[end] == '\\') end++
+                            end++
+                        }
+                        blank(bare, index + 1, end)
+                        index = end + 1
+                    }
+                    template && text[index] == '{' -> {
+                        depth++
+                        index++
+                    }
+                    template && text[index] == '}' -> {
+                        if (depth-- == 0) return index + 1
+                        index++
+                    }
+                    else -> index++
+                }
+            }
+            return index
+        }
+
+        /** A string's text from [start], its templates' expressions read as code; the index after it. */
+        private fun string(start: Int, raw: Boolean): Int {
+            var index = start
+            var literal = start
+            while (index < text.length) {
+                when {
+                    raw && text.startsWith("\"\"\"", index) -> {
+                        blank(bare, literal, index)
+                        var end = index + 3
+                        while (end < text.length && text[end] == '"') end++
+                        return end
+                    }
+                    !raw && text[index] == '"' -> {
+                        blank(bare, literal, index)
+                        return index + 1
+                    }
+                    !raw && text[index] == '\n' -> {
+                        blank(bare, literal, index)
+                        return index
+                    }
+                    !raw && text[index] == '\\' -> index += 2
+                    text.startsWith("\${", index) -> {
+                        blank(bare, literal, index)
+                        index = code(index + 2, template = true)
+                        literal = index
+                    }
+                    else -> index++
+                }
+            }
+            blank(bare, literal, index)
+            return index
+        }
     }
 
     private val constantPattern = Regex("""\bconst\s+val\s+(\w+)\s*=\s*"((?:[^"\\$]|\\.)*)"""")
@@ -258,6 +315,9 @@ internal class AccountStateInventory(
         """(\.?)\b(get(?:Boolean|Int|Long|Float|String|StringSet)|put(?:Boolean|Int|Long|Float|String|StringSet)|remove|contains)\(""",
     )
 
+    /** [receivers] of each source. */
+    private val receiverMaps: Map<String, Map<String, String>> by lazy { code.keys.associateWith(::receivers) }
+
     /** The file each SharedPreferences variable, editor or function of [path] is, by its name. */
     private fun receivers(path: String): Map<String, String> {
         val text = code.getValue(path)
@@ -310,6 +370,8 @@ internal class AccountStateInventory(
      * editor's chain; null anywhere else.
      */
     private fun editorBlockStart(path: String, at: Int): String? {
+        val named = receiverMaps.getValue(path)
+        val fallback = prefsFiles.filterValues { path in it }.keys.singleOrNull()
         val text = bare.getValue(path)
         var depth = 0
         var index = at - 1
@@ -333,7 +395,9 @@ internal class AccountStateInventory(
                     val stop = end
                     while (end >= 0 && text[end].isJavaIdentifierPart()) end--
                     if (end >= 0 && text[end] == '.' && text.substring(end + 1, stop + 1) in setOf("apply", "edit", "run", "also")) {
-                        return chainStart(path, end)
+                        // Another scope function's block inside the editor's goes on outward.
+                        val receiver = chainStart(path, end)
+                        if (receiver != null && (receiver in named || fallback != null && isPrefsName(receiver))) return receiver
                     }
                 }
             }
@@ -341,6 +405,9 @@ internal class AccountStateInventory(
         }
         return null
     }
+
+    /** Whether [name] reads as a SharedPreferences, an editor of one, or a DataStore's preferences. */
+    private fun isPrefsName(name: String) = Regex("""(?i)(prefs|preferences|editor|edit)$""").containsMatchIn(name)
 
     /**
      * A function of a source: its name, its parameters' names, where its body is, and whether it
@@ -387,8 +454,8 @@ internal class AccountStateInventory(
                 val before = callerText.substring(maxOf(0, call.range.first - 60), call.range.first)
                 if (Regex("""\bfun\s+(?:<[^>]*>\s*)?(?:[\w.]+\.)?$""").containsMatchIn(before)) return@forEach
                 val receiver = call.groupValues[1].removeSuffix(".")
-                // On another call's result, a SharedPreferences editor's among them.
-                if (bare.getValue(caller).substring(0, call.range.first).trimEnd().let { it.endsWith(".") || it.endsWith(")") }) return@forEach
+                // A link of a chain, on another call's result: a SharedPreferences editor's among them.
+                if (bare.getValue(caller).substring(0, call.range.first).trimEnd().endsWith(".")) return@forEach
                 if (receiver.isNotEmpty()) {
                     if (!Regex("""(?i)(prefs|preferences)$|^this$""").containsMatchIn(receiver)) return@forEach
                 } else if (caller != path || enclosing(caller, call.range.first)?.extension == true ||
@@ -421,7 +488,7 @@ internal class AccountStateInventory(
     val keys: Map<String, List<Key>> by lazy {
         val found = mutableListOf<Key>()
         code.forEach { (path, text) ->
-            val named = receivers(path)
+            val named = receiverMaps.getValue(path)
             val fallback = prefsFiles.filterValues { path in it }.keys.singleOrNull()
             keyCall.findAll(text).forEach { match ->
                 val call = match.groupValues[2]
@@ -430,7 +497,7 @@ internal class AccountStateInventory(
                 if (args.size != wanted) return@forEach
                 val receiver = if (match.groupValues[1] == ".") chainStart(path, match.range.first) else editorBlockStart(path, match.range.first)
                 val file = named[receiver]
-                    ?: fallback?.takeIf { receiver != null && Regex("""(?i)(prefs|preferences|editor|edit)$""").containsMatchIn(receiver) }
+                    ?: fallback?.takeIf { receiver != null && isPrefsName(receiver) }
                     ?: return@forEach
                 val expr = args[0]
                 val type = Regex("""^(?:get|put)(\w+)$""").find(call)?.groupValues?.get(1)

@@ -226,6 +226,54 @@ class AccountStateInventoryTest {
         assertTrue(problems.toString(), problems.any { "a key of tigerduck_prefs this cannot read: `key`" in it })
     }
 
+    @Test
+    fun `a key handed through a parameter is read at a call right after another`() {
+        listOf(
+            "        println(value)\n        keep(\"lastViewedCourse\", value)",
+            "        if (value.isNotEmpty()) keep(\"lastViewedCourse\", value)",
+        ).forEach { call ->
+            val problems = edited(
+                "AppPreferences.kt",
+                "    var hasCompletedOnboarding: Boolean",
+                "    private fun keep(key: String, value: String) {\n" +
+                    "        prefs.edit().putString(key, value).apply()\n" +
+                    "    }\n\n" +
+                    "    fun keepLastViewedCourse(value: String) {\n$call\n    }\n\n" +
+                    "    var hasCompletedOnboarding: Boolean",
+            ).problems()
+            assertTrue("$call: $problems", "tigerduck_prefs `lastViewedCourse` has no row in docs/account-state.md" in problems)
+        }
+    }
+
+    @Test
+    fun `a key written in another scope function's block inside an editor's without a row fails`() {
+        val problems = edited(
+            "AppPreferences.kt",
+            "    var hasCompletedOnboarding: Boolean",
+            "    fun keepLastViewedCourse(value: String) {\n" +
+                "        prefs.edit(commit = true) { value.apply { putString(\"lastViewedCourse\", this) } }\n" +
+                "    }\n\n" +
+                "    var hasCompletedOnboarding: Boolean",
+        ).problems()
+        assertTrue(problems.toString(), "tigerduck_prefs `lastViewedCourse` has no row in docs/account-state.md" in problems)
+    }
+
+    // A template's expression is code, and a string inside it no comment.
+    @Test
+    fun `a key written in a string template, or after a slash pair quoted in one, without a row fails`() {
+        listOf(
+            "        val note = \"\${prefs.edit().putString(\"lastViewedCourse\", value).commit()}\"",
+            "        val slashes = \"\${\"//\"}\"; prefs.edit().putString(\"lastViewedCourse\", value).apply()",
+        ).forEach { line ->
+            val problems = edited(
+                "AppPreferences.kt",
+                "    var hasCompletedOnboarding: Boolean",
+                "    fun keepLastViewedCourse(value: String) {\n$line\n    }\n\n    var hasCompletedOnboarding: Boolean",
+            ).problems()
+            assertTrue("$line: $problems", "tigerduck_prefs `lastViewedCourse` has no row in docs/account-state.md" in problems)
+        }
+    }
+
     // A comment is no code: the removal it holds removes nothing.
     @Test
     fun `a credential whose removal is commented out fails`() {
